@@ -29,7 +29,14 @@ import { Board } from './Board';
 import type { Language } from './i18n';
 import { cardTitle, categoryLabel, defaultLanguage, text } from './i18n';
 
-const SERVER_URL = `http://${window.location.hostname}:8000`;
+const SERVER_URL_STORAGE_KEY = 'joj-server-url-v1';
+const DEFAULT_SERVER_URL = `http://${window.location.hostname}:8000`;
+const normalizeServerUrl = (value: string) => value.trim().replace(/\/+$/, '');
+const getConfiguredServerUrl = () => {
+  const saved = window.localStorage.getItem(SERVER_URL_STORAGE_KEY);
+  return normalizeServerUrl(saved || DEFAULT_SERVER_URL) || DEFAULT_SERVER_URL;
+};
+const SERVER_URL = getConfiguredServerUrl();
 const GAME_NAME = 'joj-game';
 
 const NetworkClient = Client({
@@ -45,6 +52,7 @@ const lobbyClient = new LobbyClient({ server: SERVER_URL });
 const SHARED_TEMPLATE_STORAGE_KEY = 'joj-shared-deck-template-v1';
 const PLAYER_NAME_STORAGE_KEY = 'joj-player-name-v1';
 const SESSION_STORAGE_KEY = 'joj-network-session-v1';
+const ADMIN_TOKEN_STORAGE_KEY = 'joj-admin-token-v1';
 const TEMPLATE_API = `${SERVER_URL}/api/shared-deck-template`;
 const RANKS_STORAGE_KEY = 'joj-shared-ranks-v1';
 const RANKS_API = `${SERVER_URL}/api/shared-ranks`;
@@ -64,6 +72,7 @@ type LobbyMatch = {
 type SharedDeckTemplate = {
   deck: CardDefinition[];
   legendaryDeck: CardDefinition[];
+  rankTrack: CardDefinition[];
   deckBackImage?: string;
 };
 
@@ -125,6 +134,13 @@ export const App = () => {
   const [sharedRanks, setSharedRanksState] = useState<RankDefinition[]>(getSharedRanks);
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
+  const [adminToken, setAdminToken] = useState<string>(() => window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? '');
+  const [adminTokenDraft, setAdminTokenDraft] = useState<string>(() => window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? '');
+  const [serverUrlDraft, setServerUrlDraft] = useState<string>(() => window.localStorage.getItem(SERVER_URL_STORAGE_KEY) ?? SERVER_URL);
+  const [adminAuthChecking, setAdminAuthChecking] = useState<boolean>(false);
+  const [adminAuthorized, setAdminAuthorized] = useState<boolean>(!isAdminRoute);
+  const [adminAuthEnabled, setAdminAuthEnabled] = useState<boolean | null>(null);
+  const [adminAuthError, setAdminAuthError] = useState<string>('');
 
   const t = text(lang);
   const sharedDeckStats = getSharedDeckTemplateStats();
@@ -136,10 +152,57 @@ export const App = () => {
   const effectLabel = (resource: 'time' | 'reputation' | 'discipline' | 'documents' | 'tech' | 'rank') =>
     resource === 'rank' ? t.rankResource : t.resources[resource];
   const rules = t.rulesList;
+  const saveServerUrl = (nextValue: string) => {
+    const normalized = normalizeServerUrl(nextValue || DEFAULT_SERVER_URL) || DEFAULT_SERVER_URL;
+    window.localStorage.setItem(SERVER_URL_STORAGE_KEY, normalized);
+    setServerUrlDraft(normalized);
+    window.location.reload();
+  };
+  const resetServerUrl = () => {
+    window.localStorage.removeItem(SERVER_URL_STORAGE_KEY);
+    setServerUrlDraft(DEFAULT_SERVER_URL);
+    window.location.reload();
+  };
+  const adminFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const headers = new Headers(init?.headers ?? undefined);
+    const token = adminToken.trim();
+    if (token) headers.set('x-admin-token', token);
+    const response = await fetch(input, { ...init, headers });
+    if (response.status === 401) {
+      setAdminAuthorized(false);
+      setAdminAuthError(t.adminUnauthorized);
+    }
+    return response;
+  };
+
+  const verifyAdminToken = async (candidateToken: string): Promise<boolean> => {
+    setAdminAuthChecking(true);
+    setAdminAuthError('');
+    try {
+      const headers = new Headers();
+      if (candidateToken.trim()) headers.set('x-admin-token', candidateToken.trim());
+      const response = await fetch(`${SERVER_URL}/api/admin/verify`, { headers });
+      if (!response.ok) {
+        setAdminAuthorized(false);
+        setAdminAuthError(response.status === 401 ? t.adminUnauthorized : t.serverUnavailable);
+        return false;
+      }
+      setAdminToken(candidateToken.trim());
+      window.localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, candidateToken.trim());
+      setAdminAuthorized(true);
+      return true;
+    } catch {
+      setAdminAuthorized(false);
+      setAdminAuthError(t.serverUnavailable);
+      return false;
+    } finally {
+      setAdminAuthChecking(false);
+    }
+  };
 
   const syncTemplateToServer = async (json: string) => {
     try {
-      const response = await fetch(`${TEMPLATE_API}/import`, {
+      const response = await adminFetch(`${TEMPLATE_API}/import`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ json }),
@@ -153,7 +216,7 @@ export const App = () => {
 
   const syncRanksToServer = async (ranks: RankDefinition[]) => {
     try {
-      const response = await fetch(RANKS_API, {
+      const response = await adminFetch(RANKS_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ranks }),
@@ -369,7 +432,36 @@ export const App = () => {
   }, [sessionBroken]);
 
   useEffect(() => {
+    if (!isAdminRoute) {
+      setAdminAuthorized(true);
+      setAdminAuthError('');
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch(`${SERVER_URL}/api/health`);
+        if (response.ok) {
+          const payload = (await response.json()) as { adminAuthEnabled?: boolean };
+          if (!cancelled && typeof payload.adminAuthEnabled === 'boolean') {
+            setAdminAuthEnabled(payload.adminAuthEnabled);
+          }
+        }
+      } catch {
+        if (!cancelled) setAdminAuthEnabled(null);
+      }
+      if (!cancelled) {
+        void verifyAdminToken(adminToken);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdminRoute]);
+
+  useEffect(() => {
     if (!isAdminRoute) return;
+    if (!adminAuthorized) return;
     if (!adminMatchID) {
       setSnapshot(null);
       return;
@@ -378,7 +470,7 @@ export const App = () => {
     let cancelled = false;
     const fetchSnapshot = async () => {
       try {
-        const response = await fetch(`${ADMIN_MATCH_STATE_API}?matchID=${encodeURIComponent(adminMatchID)}`);
+        const response = await adminFetch(`${ADMIN_MATCH_STATE_API}?matchID=${encodeURIComponent(adminMatchID)}`);
         if (!response.ok) {
           if (!cancelled) setSnapshot(null);
           return;
@@ -406,7 +498,7 @@ export const App = () => {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [adminMatchID, isAdminRoute]);
+  }, [adminMatchID, isAdminRoute, adminAuthorized, adminToken, t.adminUnauthorized, t.serverUnavailable]);
 
   useEffect(() => {
     window.localStorage.setItem('joj-lang', lang);
@@ -433,6 +525,49 @@ export const App = () => {
       <p className="app-link-row">
         {isAdminRoute ? <a href="/">{t.openGame}</a> : <a href="/admin">{t.openAdmin}</a>}
       </p>
+
+      {isAdminRoute ? (
+        <section className="board admin-auth-card">
+          <h2>{t.adminLoginTitle}</h2>
+          <p>{adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminLoginHint}</p>
+          <p>
+            {t.serverUrlLabel}: <code>{SERVER_URL}</code>
+          </p>
+          <p className="admin-auth-form">
+            <label>
+              {t.adminTokenLabel}:{' '}
+              <input
+                type="password"
+                value={adminTokenDraft}
+                onChange={(e) => setAdminTokenDraft(e.target.value)}
+                placeholder="ADMIN_TOKEN"
+              />
+            </label>{' '}
+            <button
+              type="button"
+              onClick={() => {
+                void verifyAdminToken(adminTokenDraft);
+              }}
+              disabled={adminAuthChecking}
+            >
+              {adminAuthChecking ? t.adminAuthChecking : t.adminSignIn}
+            </button>{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setAdminToken('');
+                setAdminTokenDraft('');
+                setAdminAuthorized(false);
+                setAdminAuthError('');
+                window.localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+              }}
+            >
+              {t.adminSignOut}
+            </button>
+          </p>
+          {adminAuthError ? <p className="admin-error">{adminAuthError}</p> : null}
+        </section>
+      ) : null}
 
       {!isAdminRoute ? (
         <p className="user-tabs">
@@ -603,9 +738,15 @@ export const App = () => {
         </section>
       ) : null}
 
-      {isAdminRoute ? (
+      {isAdminRoute && adminAuthorized ? (
         <AdminPage
           lang={lang}
+          adminToken={adminToken}
+          serverUrl={SERVER_URL}
+          serverUrlDraft={serverUrlDraft}
+          onServerUrlDraftChange={setServerUrlDraft}
+          onSaveServerUrl={saveServerUrl}
+          onResetServerUrl={resetServerUrl}
           matches={matches.map((m) => ({ id: m.matchID, createdAt: Date.now() }))}
           activeMatchId={adminMatchID}
           snapshot={snapshot}
@@ -613,6 +754,7 @@ export const App = () => {
             deck: sharedDeckStats.deck,
             discard: 0,
             legendary: sharedDeckStats.legendary,
+            rankTrack: sharedDeckStats.rankTrack,
           }}
           sharedDeckTemplate={sharedDeckTemplate}
           cardCatalog={cardCatalog}
@@ -629,7 +771,7 @@ export const App = () => {
           }}
           onRestartServer={async () => {
             try {
-              const response = await fetch(ADMIN_RESTART_API, { method: 'POST' });
+              const response = await adminFetch(ADMIN_RESTART_API, { method: 'POST' });
               return response.ok;
             } catch {
               return false;
@@ -685,7 +827,7 @@ export const App = () => {
             const normalized = getSharedRanks();
             setSharedRanksState(normalized);
             window.localStorage.setItem(RANKS_STORAGE_KEY, JSON.stringify(normalized));
-            void fetch(`${RANKS_API}/reset`, { method: 'POST' });
+            void adminFetch(`${RANKS_API}/reset`, { method: 'POST' });
           }}
           onRunSimulations={(players: number, simulations: number) =>
             runGameSimulations(players, simulations)

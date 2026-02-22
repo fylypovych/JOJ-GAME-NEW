@@ -1,0 +1,15 @@
+[2026-02-22T15:04:39.265Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-22T15:05:20.513Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-22T15:11:19.924Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-22T15:11:36.050Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-22T15:14:42.092Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-22T15:14:42.100Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-22T15:19:59.828Z] [INFO] admin auth enabled (ADMIN_TOKEN set)
+[2026-02-22T15:19:59.834Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-22T15:20:21.156Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-22T15:32:08.048Z] [INFO] admin auth enabled (ADMIN_TOKEN set)
+[2026-02-22T15:32:08.055Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-22T15:46:55.511Z] [INFO] admin auth enabled (ADMIN_TOKEN set)
+[2026-02-22T15:46:55.520Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-22T15:47:53.658Z] [INFO] admin auth enabled (ADMIN_TOKEN set)
+[2026-02-22T15:47:53.666Z] [INFO] boardgame.io server running at http://localhost:8000

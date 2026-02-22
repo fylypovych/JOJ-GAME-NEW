@@ -121,15 +121,17 @@ const stableIndex = (seed: string, modulo: number): number => {
 type SharedDeckTemplate = {
   deck: CardDefinition[];
   legendaryDeck: CardDefinition[];
+  rankTrack: CardDefinition[];
   deckBackImage?: string;
 };
 
-export type DeckTarget = 'deck' | 'legendaryDeck';
+export type DeckTarget = 'deck' | 'legendaryDeck' | 'rankTrack';
 export type SharedRanks = RankDefinition[];
 
 const defaultSharedDeckTemplate = (): SharedDeckTemplate => ({
   deck: baseDeck.map(cloneCard),
   legendaryDeck: legendaryCards.map(cloneCard),
+  rankTrack: [],
   deckBackImage: undefined,
 });
 
@@ -195,7 +197,7 @@ export const resetSharedRanks = () => {
 
 const buildCardCatalog = (template: SharedDeckTemplate): CardDefinition[] => {
   const byId = new Map<string, CardDefinition>();
-  [...template.deck, ...template.legendaryDeck].forEach((card) => {
+  [...template.deck, ...template.legendaryDeck, ...template.rankTrack].forEach((card) => {
     if (!byId.has(card.id)) {
       byId.set(card.id, cloneCard(card));
     }
@@ -206,18 +208,34 @@ const buildCardCatalog = (template: SharedDeckTemplate): CardDefinition[] => {
 export const getSharedDeckTemplateStats = () => ({
   deck: sharedDeckTemplate.deck.length,
   legendary: sharedDeckTemplate.legendaryDeck.length,
+  rankTrack: sharedDeckTemplate.rankTrack.length,
 });
 
 export const getSharedDeckTemplate = (): SharedDeckTemplate => ({
   deck: sharedDeckTemplate.deck.map(cloneCard),
   legendaryDeck: sharedDeckTemplate.legendaryDeck.map(cloneCard),
+  rankTrack: sharedDeckTemplate.rankTrack.map(cloneCard),
   deckBackImage: sharedDeckTemplate.deckBackImage,
 });
 
 export const getCardCatalog = (): CardDefinition[] => buildCardCatalog(sharedDeckTemplate);
 
-export const exportSharedDeckTemplateJson = (): string =>
-  JSON.stringify(getSharedDeckTemplate(), null, 2);
+export const exportSharedDeckTemplateJson = (): string => {
+  const template = getSharedDeckTemplate();
+  const catalog = buildCardCatalog(template);
+  const payload = {
+    version: 2,
+    catalog,
+    deckIds: template.deck.map((card) => card.id),
+    legendaryDeckIds: template.legendaryDeck.map((card) => card.id),
+    rankTrackIds: template.rankTrack.map((card) => card.id),
+    deck: template.deck,
+    legendaryDeck: template.legendaryDeck,
+    rankTrack: template.rankTrack,
+    deckBackImage: template.deckBackImage,
+  };
+  return JSON.stringify(payload, null, 2);
+};
 
 const validCategories = new Set<CardDefinition['category']>([
   'LYAP',
@@ -281,17 +299,75 @@ export const importSharedDeckTemplateJson = (
   }
 
   const raw = parsed as Record<string, unknown>;
-  if (!Array.isArray(raw.deck) || !Array.isArray(raw.legendaryDeck)) {
-    return { ok: false, error: 'Template must contain deck and legendaryDeck arrays' };
+  let typedDeck: CardDefinition[] = [];
+  let typedLegendaryDeck: CardDefinition[] = [];
+  let typedRankTrack: CardDefinition[] = [];
+
+  const importByFullCards = () => {
+    if (!Array.isArray(raw.deck) || !Array.isArray(raw.legendaryDeck)) {
+      return { ok: false as const, error: 'Template must contain deck and legendaryDeck arrays' };
+    }
+    const deck = raw.deck.map(parseCard);
+    const legendaryDeck = raw.legendaryDeck.map(parseCard);
+    const rankTrackRaw = Array.isArray(raw.rankTrack) ? raw.rankTrack : [];
+    const rankTrack = rankTrackRaw.map(parseCard);
+    if (deck.some((card) => !card) || legendaryDeck.some((card) => !card) || rankTrack.some((card) => !card)) {
+      return { ok: false as const, error: 'One or more cards have invalid schema' };
+    }
+    typedDeck = (deck as CardDefinition[]).map(cloneCard);
+    typedLegendaryDeck = (legendaryDeck as CardDefinition[]).map(cloneCard);
+    typedRankTrack = (rankTrack as CardDefinition[]).map(cloneCard);
+    return { ok: true as const };
+  };
+
+  const importByCatalogIds = () => {
+    if (!Array.isArray(raw.catalog) || !Array.isArray(raw.deckIds) || !Array.isArray(raw.legendaryDeckIds)) {
+      return { ok: false as const, error: 'Template must contain catalog, deckIds and legendaryDeckIds arrays' };
+    }
+    const catalogParsed = raw.catalog.map(parseCard);
+    if (catalogParsed.some((card) => !card)) {
+      return { ok: false as const, error: 'One or more catalog cards have invalid schema' };
+    }
+    const byId = new Map<string, CardDefinition>();
+    (catalogParsed as CardDefinition[]).forEach((card) => {
+      if (!byId.has(card.id)) byId.set(card.id, cloneCard(card));
+    });
+    const resolveIds = (ids: unknown[], field: string): CardDefinition[] | null => {
+      const out: CardDefinition[] = [];
+      for (const idRaw of ids) {
+        if (typeof idRaw !== 'string') return null;
+        const card = byId.get(idRaw);
+        if (!card) {
+          throw new Error(`Unknown card id in ${field}: ${idRaw}`);
+        }
+        out.push(cloneCard(card));
+      }
+      return out;
+    };
+    try {
+      const deck = resolveIds(raw.deckIds as unknown[], 'deckIds');
+      const legendary = resolveIds(raw.legendaryDeckIds as unknown[], 'legendaryDeckIds');
+      const rankTrack = resolveIds(Array.isArray(raw.rankTrackIds) ? raw.rankTrackIds : [], 'rankTrackIds');
+      if (!deck || !legendary || !rankTrack) {
+        return { ok: false as const, error: 'Template id arrays must contain strings only' };
+      }
+      typedDeck = deck;
+      typedLegendaryDeck = legendary;
+      typedRankTrack = rankTrack;
+      return { ok: true as const };
+    } catch (error) {
+      return { ok: false as const, error: String(error instanceof Error ? error.message : error) };
+    }
+  };
+
+  if (Array.isArray(raw.catalog) && Array.isArray(raw.deckIds) && Array.isArray(raw.legendaryDeckIds)) {
+    const result = importByCatalogIds();
+    if (!result.ok) return result;
+  } else {
+    const result = importByFullCards();
+    if (!result.ok) return result;
   }
 
-  const deck = raw.deck.map(parseCard);
-  const legendaryDeck = raw.legendaryDeck.map(parseCard);
-  if (deck.some((card) => !card) || legendaryDeck.some((card) => !card)) {
-    return { ok: false, error: 'One or more cards have invalid schema' };
-  }
-  const typedDeck = deck as CardDefinition[];
-  const typedLegendaryDeck = legendaryDeck as CardDefinition[];
   const deckBackImage = normalizeImagePath(
     typeof raw.deckBackImage === 'string' ? raw.deckBackImage : undefined,
   );
@@ -299,6 +375,7 @@ export const importSharedDeckTemplateJson = (
   sharedDeckTemplate = {
     deck: typedDeck.map(cloneCard),
     legendaryDeck: typedLegendaryDeck.map(cloneCard),
+    rankTrack: typedRankTrack.map(cloneCard),
     deckBackImage,
   };
   return { ok: true };

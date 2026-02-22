@@ -21,16 +21,24 @@ type DeckStats = {
   deck: number;
   discard: number;
   legendary: number;
+  rankTrack: number;
 };
 
 type SharedDeckTemplate = {
   deck: CardDefinition[];
   legendaryDeck: CardDefinition[];
+  rankTrack: CardDefinition[];
   deckBackImage?: string;
 };
 
 type AdminPageProps = {
   lang: Language;
+  adminToken: string;
+  serverUrl: string;
+  serverUrlDraft: string;
+  onServerUrlDraftChange: (value: string) => void;
+  onSaveServerUrl: (value: string) => void;
+  onResetServerUrl: () => void;
   matches: MatchInfo[];
   activeMatchId: string;
   snapshot: Snapshot | null;
@@ -91,7 +99,7 @@ const blankCard = (): CardDefinition => ({
 
 type ImportCategoryMode = CardCategory | 'AS_IS';
 type CategoryFilter = CardCategory | 'ALL';
-type AdminTab = 'matches' | 'deck' | 'import' | 'state' | 'ranks' | 'simulation';
+type AdminTab = 'matches' | 'deck' | 'import' | 'state' | 'ranks' | 'settings' | 'simulation';
 type CropDraft = {
   filename: string;
   sourceBlob: Blob;
@@ -155,6 +163,12 @@ const HoverImage = ({ src, alt, className = 'admin-thumb', onLoad, onError }: Ho
 
 export const AdminPage = ({
   lang,
+  adminToken,
+  serverUrl,
+  serverUrlDraft,
+  onServerUrlDraftChange,
+  onSaveServerUrl,
+  onResetServerUrl,
   matches,
   activeMatchId,
   snapshot,
@@ -405,8 +419,12 @@ export const AdminPage = ({
       const raw = value as Record<string, unknown>;
       const deck = Array.isArray(raw.deck) ? (raw.deck as CardDefinition[]) : [];
       const legendaryDeck = Array.isArray(raw.legendaryDeck) ? (raw.legendaryDeck as CardDefinition[]) : [];
-      if (deck.length === 0 && legendaryDeck.length === 0) return null;
-      return [...deck, ...legendaryDeck];
+      const rankTrack = Array.isArray(raw.rankTrack) ? (raw.rankTrack as CardDefinition[]) : [];
+      const catalog = Array.isArray(raw.catalog) ? (raw.catalog as CardDefinition[]) : [];
+      const merged = [...deck, ...legendaryDeck, ...rankTrack];
+      if (merged.length > 0) return merged;
+      if (catalog.length > 0) return catalog;
+      return null;
     };
 
     const cards = toCardList(parsed);
@@ -424,6 +442,7 @@ export const AdminPage = ({
     const nextTemplate: SharedDeckTemplate = {
       deck: sharedDeckTemplate.deck.map((card) => ({ ...card })),
       legendaryDeck: sharedDeckTemplate.legendaryDeck.map((card) => ({ ...card })),
+      rankTrack: sharedDeckTemplate.rankTrack.map((card) => ({ ...card })),
       deckBackImage: sharedDeckTemplate.deckBackImage,
       [importTarget]: [...sharedDeckTemplate[importTarget], ...normalizedCards],
     };
@@ -435,7 +454,11 @@ export const AdminPage = ({
       return;
     }
     setImportError('');
-    const targetLabel = importTarget === 'deck' ? t.mainDeck : t.legendaryDeckLabel;
+    const targetLabel = importTarget === 'deck'
+      ? t.mainDeck
+      : importTarget === 'legendaryDeck'
+        ? t.legendaryDeckLabel
+        : t.rankTrackDeckLabel;
     const suffix = importCategoryMode === 'AS_IS' ? t.importCategoryAsIs : importCategoryMode;
     setImportStatus(
       lang === 'uk'
@@ -460,9 +483,12 @@ export const AdminPage = ({
   };
   const uploadDataUrl = async (filename: string, dataUrl: string, cardId?: string): Promise<string | null> => {
     try {
-      const response = await fetch('/api/upload-card-image', {
+      const response = await fetch(`${serverUrl}/api/upload-card-image`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(adminToken.trim() ? { 'x-admin-token': adminToken.trim() } : {}),
+        },
         body: JSON.stringify({
           filename,
           dataUrl,
@@ -884,14 +910,13 @@ export const AdminPage = ({
   return (
     <section className="board admin-panel">
       <h2>{t.adminTitle}</h2>
-      <p>{t.adminPath}: <code>/admin</code></p>
-      <p>{t.adminMode}: {t.adminModeLocal}</p>
       <p className="admin-controls">
         <button type="button" onClick={() => setActiveTab('matches')} disabled={activeTab === 'matches'}>{t.tabMatches}</button>
         <button type="button" onClick={() => setActiveTab('deck')} disabled={activeTab === 'deck'}>{t.tabDeck}</button>
         <button type="button" onClick={() => setActiveTab('import')} disabled={activeTab === 'import'}>{t.tabImportExport}</button>
         <button type="button" onClick={() => setActiveTab('ranks')} disabled={activeTab === 'ranks'}>{t.tabRanks}</button>
         <button type="button" onClick={() => setActiveTab('state')} disabled={activeTab === 'state'}>{t.tabState}</button>
+        <button type="button" onClick={() => setActiveTab('settings')} disabled={activeTab === 'settings'}>{t.tabSettings}</button>
         <button type="button" onClick={() => setActiveTab('simulation')} disabled={activeTab === 'simulation'}>{t.tabSimulation}</button>
       </p>
       <hr />
@@ -910,6 +935,37 @@ export const AdminPage = ({
             <button type="button" onClick={onCreateMatch}>{t.createMatch}</button>
             <button type="button" onClick={onResetMatch}>{t.resetMatch}</button>
             <button type="button" onClick={onDeleteMatch} disabled={matches.length <= 1}>{t.deleteMatch}</button>
+          </p>
+        </>
+      ) : null}
+
+      {activeTab === 'settings' ? (
+        <>
+          <h3>{t.settingsTitle}</h3>
+          <p>{t.settingsHint}</p>
+          <p>{t.adminPath}: <code>/admin</code></p>
+          <p>{t.adminMode}: {t.adminModeLocal}</p>
+          <h4>{t.serverSettingsTitle}</h4>
+          <p className="admin-controls">
+            <label>
+              {t.serverUrlLabel}
+              <input
+                value={serverUrlDraft}
+                onChange={(e) => onServerUrlDraftChange(e.target.value)}
+                placeholder="http://192.168.0.25:8000"
+              />
+            </label>
+            <button type="button" onClick={() => onSaveServerUrl(serverUrlDraft)}>
+              {t.saveServerUrl}
+            </button>
+            <button type="button" onClick={onResetServerUrl}>
+              {t.resetServerUrl}
+            </button>
+          </p>
+          <p>{t.currentServerUrl}: <code>{serverUrl}</code></p>
+          <p>{t.serverUrlReloadHint}</p>
+          <h4>{t.systemActions}</h4>
+          <p className="admin-controls">
             <button type="button" onClick={onResetAll}>{t.resetAll}</button>
             <button
               type="button"
@@ -934,12 +990,13 @@ export const AdminPage = ({
         <>
           <h3>{t.deckControls}</h3>
           <p>
-            {t.deckCount}: {deckStats.deck} | {t.discardCount}: {deckStats.discard} | {t.legendaryCount}: {deckStats.legendary}
+            {t.deckCount}: {deckStats.deck} | {t.discardCount}: {deckStats.discard} | {t.legendaryCount}: {deckStats.legendary} | {t.rankTrackCount}: {deckStats.rankTrack}
           </p>
           <p className="admin-controls">
             <select value={target} onChange={(e) => setTarget(e.target.value as DeckTarget)}>
               <option value="deck">{t.mainDeck}</option>
               <option value="legendaryDeck">{t.legendaryDeckLabel}</option>
+              <option value="rankTrack">{t.rankTrackDeckLabel}</option>
             </select>
             <label>
               {t.categoryFilter}
@@ -1020,7 +1077,10 @@ export const AdminPage = ({
           <div className="admin-deck-list">
             <h4>{t.mainDeck}</h4>
             <ul>
-              {sharedDeckTemplate.deck.map((card, index) => (
+              {sharedDeckTemplate.deck
+                .map((card, index) => ({ card, index }))
+                .filter(({ card }) => categoryFilter === 'ALL' || card.category === categoryFilter)
+                .map(({ card, index }) => (
                 <li key={`deck-${index}-${card.id}`}>
                   <span>
                     <HoverImage
@@ -1043,12 +1103,15 @@ export const AdminPage = ({
                   </span>
                   {editTarget === 'deck' && editIndex === index ? inlineEditor : null}
                 </li>
-              ))}
+                ))}
             </ul>
 
             <h4>{t.legendaryDeckLabel}</h4>
             <ul>
-              {sharedDeckTemplate.legendaryDeck.map((card, index) => (
+              {sharedDeckTemplate.legendaryDeck
+                .map((card, index) => ({ card, index }))
+                .filter(({ card }) => categoryFilter === 'ALL' || card.category === categoryFilter)
+                .map(({ card, index }) => (
                 <li key={`legendary-${index}-${card.id}`}>
                   <span>
                     <HoverImage
@@ -1071,7 +1134,38 @@ export const AdminPage = ({
                   </span>
                   {editTarget === 'legendaryDeck' && editIndex === index ? inlineEditor : null}
                 </li>
-              ))}
+                ))}
+            </ul>
+
+            <h4>{t.rankTrackDeckLabel}</h4>
+            <ul>
+              {sharedDeckTemplate.rankTrack
+                .map((card, index) => ({ card, index }))
+                .filter(({ card }) => categoryFilter === 'ALL' || card.category === categoryFilter)
+                .map(({ card, index }) => (
+                <li key={`rank-track-${index}-${card.id}`}>
+                  <span>
+                    <HoverImage
+                      src={withCacheBust(getImageSrc(card))}
+                      className="admin-thumb"
+                      alt={card.id}
+                      onLoad={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.visibility = 'visible';
+                        (e.currentTarget as HTMLImageElement).style.display = 'inline-block';
+                      }}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+                      }}
+                    />
+                    {index + 1}. {card.id} | {cardTitle(card.id, card.title, lang)}{card.effects?.length ? ` | effects: ${card.effects.length}` : ''}
+                  </span>
+                  <span className="admin-controls">
+                    <button type="button" onClick={() => beginEdit('rankTrack', index, card)}>{t.editCard}</button>
+                    <button type="button" onClick={() => onRemoveCard('rankTrack', index)}>{t.removeCard}</button>
+                  </span>
+                  {editTarget === 'rankTrack' && editIndex === index ? inlineEditor : null}
+                </li>
+                ))}
             </ul>
           </div>
         </>
@@ -1093,6 +1187,7 @@ export const AdminPage = ({
               >
                 <option value="deck">{t.mainDeck}</option>
                 <option value="legendaryDeck">{t.legendaryDeckLabel}</option>
+                <option value="rankTrack">{t.rankTrackDeckLabel}</option>
               </select>
             </label>
             <label>

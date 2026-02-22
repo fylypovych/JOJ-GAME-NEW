@@ -498,6 +498,36 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+.admin-auth-card {
+  margin-bottom: 12px;
+}
+
+.admin-auth-card h2 {
+  margin: 0 0 8px;
+}
+
+.admin-auth-card p {
+  margin: 6px 0;
+}
+
+.admin-auth-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.admin-auth-form label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-auth-form input {
+  min-width: 260px;
+  padding: 7px 8px;
+}
+
 .admin-json {
   background: #0f172a;
   color: #e2e8f0;
