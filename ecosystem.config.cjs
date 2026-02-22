@@ -8,7 +8,8 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: '8000',
-        FRONTEND_ORIGIN: 'https://your-domain.example',
+        // Intentionally omitted: FRONTEND_ORIGIN should come from .env or shell env.
+        // Hardcoding here can override .env and break CORS during LAN/HTTPS tests.
       },
       autorestart: true,
       max_restarts: 10,
@@ -24,6 +25,8 @@ module.exports = {
       cwd: __dirname,
       env: {
         NODE_ENV: 'production',
+        // Comma-separated list for Vite preview host allowlist (optional)
+        // VITE_PREVIEW_ALLOWED_HOSTS: 'joj.lol,www.joj.lol,192.168.1.210',
       },
       autorestart: true,
       max_restarts: 10,

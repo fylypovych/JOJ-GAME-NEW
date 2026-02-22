@@ -78,9 +78,59 @@ pm2 status
 ```
 
 Notes:
-- Update `FRONTEND_ORIGIN` in `ecosystem.config.cjs` before open testing.
+- Set `FRONTEND_ORIGIN` in `.env` (preferred) before LAN/public testing.
 - `joj-game-web` uses `vite preview` on `:4173` (place behind reverse proxy).
 - `joj-game-server` runs on `:8000` (keep private; proxy through `80/443`).
+- `vite preview` host allowlist is configured in `vite.config.ts` via `preview.allowedHosts`.
+
+## Orange Pi / Armbian Quick Install
+
+Run on the Orange Pi (as root) after cloning the repo:
+
+```bash
+bash scripts/install-orangepi.sh
+```
+
+What it does:
+- installs base packages + Node.js 22 + PM2
+- installs helper command `joj` (and `start joj` compatibility wrapper if free)
+- creates `.env` from `.env.example` (if missing)
+- runs `npm install`
+- runs `npx tsc -b` and `npx vite build`
+- starts PM2 processes from `ecosystem.config.cjs`
+- opens LAN ports `4173` and `8000` in `ufw`
+
+Helper commands after install:
+
+```bash
+joj start
+joj restart
+joj status
+joj logs
+joj health
+start joj   # compatibility shortcut
+```
+
+## Local HTTPS (LAN) with Caddy + hosts file
+
+For local HTTPS before public DNS is ready, use Caddy internal CA:
+
+```caddy
+joj.lol, www.joj.lol {
+  tls internal
+  encode gzip
+
+  @api path /api/* /games/* /socket.io/*
+  reverse_proxy @api 127.0.0.1:8000
+
+  reverse_proxy 127.0.0.1:4173
+}
+```
+
+Requirements:
+- Windows `hosts` entries for `joj.lol` and `www.joj.lol` -> Orange Pi LAN IP
+- import Caddy local root certificate (`root.crt`) into Windows Trusted Root store
+- browser `Server URL` in app admin settings set to `https://joj.lol`
 
 ## Backend Protections (Implemented)
 
