@@ -47,6 +47,8 @@ Server reads `.env` automatically on startup (if file exists).
 Available keys:
 - `PORT` (default `8000`)
 - `FRONTEND_ORIGIN` (default `http://localhost:5173`)
+- `WEB_PORT` (default `4173`, Vite preview port)
+- `VITE_PREVIEW_ALLOWED_HOSTS` (comma-separated host allowlist for `vite preview`)
 - `ADMIN_TOKEN` (empty = auth disabled; set this for LAN/public testing)
 
 To enable admin protection (recommended):
@@ -78,10 +80,10 @@ pm2 status
 ```
 
 Notes:
-- Set `FRONTEND_ORIGIN` in `.env` (preferred) before LAN/public testing.
+- Set `FRONTEND_ORIGIN` / `WEB_PORT` / `VITE_PREVIEW_ALLOWED_HOSTS` in `.env` (preferred) before LAN/public testing.
 - `joj-game-web` uses `vite preview` on `:4173` (place behind reverse proxy).
 - `joj-game-server` runs on `:8000` (keep private; proxy through `80/443`).
-- `vite preview` host allowlist is configured in `vite.config.ts` via `preview.allowedHosts`.
+- Avoid editing `ecosystem.config.cjs` or `vite.config.ts` directly on the server; use `.env` instead to keep Git working tree clean.
 
 ## Orange Pi / Armbian Quick Install
 

@@ -1,3 +1,36 @@
+const fs = require('node:fs');
+const path = require('node:path');
+
+const envPath = path.resolve(__dirname, '.env');
+const readDotEnv = () => {
+  const out = {};
+  try {
+    const raw = fs.readFileSync(envPath, 'utf8');
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eq = trimmed.indexOf('=');
+      if (eq <= 0) continue;
+      const key = trimmed.slice(0, eq).trim();
+      let value = trimmed.slice(eq + 1).trim();
+      if (!key) continue;
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+      out[key] = value;
+    }
+  } catch {
+    // .env is optional
+  }
+  return out;
+};
+
+const dotenv = readDotEnv();
+const envValue = (key, fallback) => process.env[key] ?? dotenv[key] ?? fallback;
+
 module.exports = {
   apps: [
     {
@@ -7,9 +40,8 @@ module.exports = {
       cwd: __dirname,
       env: {
         NODE_ENV: 'production',
-        PORT: '8000',
-        // Intentionally omitted: FRONTEND_ORIGIN should come from .env or shell env.
-        // Hardcoding here can override .env and break CORS during LAN/HTTPS tests.
+        PORT: String(envValue('PORT', '8000')),
+        FRONTEND_ORIGIN: String(envValue('FRONTEND_ORIGIN', 'http://localhost:5173')),
       },
       autorestart: true,
       max_restarts: 10,
@@ -21,12 +53,13 @@ module.exports = {
     {
       name: 'joj-game-web',
       script: 'npm',
-      args: 'run preview -- --host 0.0.0.0 --port 4173',
+      args: `run preview -- --host 0.0.0.0 --port ${String(envValue('WEB_PORT', '4173'))}`,
       cwd: __dirname,
       env: {
         NODE_ENV: 'production',
-        // Comma-separated list for Vite preview host allowlist (optional)
-        // VITE_PREVIEW_ALLOWED_HOSTS: 'joj.lol,www.joj.lol,192.168.1.210',
+        VITE_PREVIEW_ALLOWED_HOSTS: String(
+          envValue('VITE_PREVIEW_ALLOWED_HOSTS', 'joj.lol,www.joj.lol,localhost,127.0.0.1'),
+        ),
       },
       autorestart: true,
       max_restarts: 10,
