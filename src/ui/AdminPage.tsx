@@ -17,6 +17,18 @@ type Snapshot = {
   updatedAt: number;
 };
 
+type GitUpdateStatus = {
+  branch: string;
+  remote: string;
+  upstream: string;
+  ahead: number;
+  behind: number;
+  dirty: boolean;
+  canUpdate: boolean;
+  head: string;
+  note?: string;
+};
+
 type DeckStats = {
   deck: number;
   discard: number;
@@ -195,6 +207,7 @@ export const AdminPage = ({
   onRunSimulations,
 }: AdminPageProps) => {
   const t = text(lang);
+  const adminHeaders = () => ({ ...(adminToken.trim() ? { 'x-admin-token': adminToken.trim() } : {}) });
   const localizedRankName = (rankId: string) =>
     sharedRanks.find((row) => row.id === rankId)?.name ?? rankLabel(rankId, lang);
   const activeMatch = matches.find((m) => m.id === activeMatchId);
@@ -230,6 +243,10 @@ export const AdminPage = ({
   const [imagePreviewNonce, setImagePreviewNonce] = useState<number>(0);
   const [restartingServer, setRestartingServer] = useState<boolean>(false);
   const [adminActionError, setAdminActionError] = useState<string>('');
+  const [gitStatus, setGitStatus] = useState<GitUpdateStatus | null>(null);
+  const [gitStatusLoading, setGitStatusLoading] = useState<boolean>(false);
+  const [gitUpdateRunning, setGitUpdateRunning] = useState<boolean>(false);
+  const [gitActionMessage, setGitActionMessage] = useState<string>('');
   const [activeTab, setActiveTab] = useState<AdminTab>('matches');
   const [deckBackImageInput, setDeckBackImageInput] = useState<string>(sharedDeckTemplate.deckBackImage ?? '');
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null);
@@ -487,7 +504,7 @@ export const AdminPage = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(adminToken.trim() ? { 'x-admin-token': adminToken.trim() } : {}),
+          ...adminHeaders(),
         },
         body: JSON.stringify({
           filename,
@@ -504,6 +521,68 @@ export const AdminPage = ({
     } catch {
       setEditError(lang === 'uk' ? 'Помилка завантаження' : 'Upload failed');
       return null;
+    }
+  };
+  const checkGitUpdates = async () => {
+    setGitStatusLoading(true);
+    setAdminActionError('');
+    setGitActionMessage('');
+    try {
+      const response = await fetch(`${serverUrl}/api/admin/git/status`, { headers: adminHeaders() });
+      const payload = (await response.json()) as ({ ok?: boolean; error?: string } & Partial<GitUpdateStatus>);
+      if (!response.ok || !payload.ok) {
+        setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates'));
+        return;
+      }
+      setGitStatus({
+        branch: payload.branch ?? '',
+        remote: payload.remote ?? '',
+        upstream: payload.upstream ?? '',
+        ahead: Number(payload.ahead ?? 0),
+        behind: Number(payload.behind ?? 0),
+        dirty: Boolean(payload.dirty),
+        canUpdate: Boolean(payload.canUpdate),
+        head: payload.head ?? '',
+        note: payload.note,
+      });
+      setGitActionMessage(lang === 'uk' ? 'Стан репозиторію оновлено' : 'Repository status updated');
+    } catch {
+      setAdminActionError(lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates');
+    } finally {
+      setGitStatusLoading(false);
+    }
+  };
+  const applyGitUpdate = async () => {
+    setGitUpdateRunning(true);
+    setAdminActionError('');
+    setGitActionMessage('');
+    try {
+      const response = await fetch(`${serverUrl}/api/admin/git/update`, {
+        method: 'POST',
+        headers: adminHeaders(),
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+        updated?: boolean;
+        status?: GitUpdateStatus;
+      };
+      if (!response.ok || !payload.ok) {
+        setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося оновити файли' : 'Failed to update files'));
+        return;
+      }
+      if (payload.status) setGitStatus(payload.status);
+      setGitActionMessage(
+        payload.message ??
+          (payload.updated
+            ? (lang === 'uk' ? 'Оновлення застосовано' : 'Update applied')
+            : (lang === 'uk' ? 'Оновлення відсутні' : 'Already up to date')),
+      );
+    } catch {
+      setAdminActionError(lang === 'uk' ? 'Не вдалося оновити файли' : 'Failed to update files');
+    } finally {
+      setGitUpdateRunning(false);
     }
   };
   const attachImageFile = async (file: File | null) => {
@@ -964,6 +1043,32 @@ export const AdminPage = ({
           </p>
           <p>{t.currentServerUrl}: <code>{serverUrl}</code></p>
           <p>{t.serverUrlReloadHint}</p>
+          <h4>{t.githubUpdatesTitle}</h4>
+          <p className="admin-controls">
+            <button type="button" onClick={() => void checkGitUpdates()} disabled={gitStatusLoading || gitUpdateRunning}>
+              {gitStatusLoading ? t.githubCheckUpdatesLoading : t.githubCheckUpdates}
+            </button>
+            <button
+              type="button"
+              onClick={() => void applyGitUpdate()}
+              disabled={gitUpdateRunning || gitStatusLoading || (gitStatus ? !gitStatus.canUpdate : false)}
+            >
+              {gitUpdateRunning ? t.githubApplyUpdateLoading : t.githubApplyUpdate}
+            </button>
+          </p>
+          {gitStatus ? (
+            <div className="admin-inline-editor">
+              <p>{t.githubBranch}: <code>{gitStatus.branch || '-'}</code></p>
+              <p>{t.githubRemote}: <code>{gitStatus.remote || '-'}</code></p>
+              <p>{t.githubUpstream}: <code>{gitStatus.upstream || '-'}</code></p>
+              <p>{t.githubCommits}: {t.githubAhead} {gitStatus.ahead} | {t.githubBehind} {gitStatus.behind}</p>
+              <p>{t.githubDirty}: {gitStatus.dirty ? t.yes : t.no}</p>
+              <p>{t.githubCanUpdate}: {gitStatus.canUpdate ? t.yes : t.no}</p>
+              <p>{t.githubHead}: <code>{gitStatus.head || '-'}</code></p>
+              {gitStatus.note ? <p>{t.githubNote}: {gitStatus.note}</p> : null}
+            </div>
+          ) : null}
+          {gitActionMessage ? <p className="admin-success">{gitActionMessage}</p> : null}
           <h4>{t.systemActions}</h4>
           <p className="admin-controls">
             <button type="button" onClick={onResetAll}>{t.resetAll}</button>

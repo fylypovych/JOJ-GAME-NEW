@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+import { execFile } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { access, appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -88,6 +89,7 @@ const router = (server as { router?: any }).router;
 const templatePath = path.resolve(process.cwd(), 'database', 'shared-deck-template.json');
 const ranksPath = path.resolve(process.cwd(), 'database', 'shared-ranks.json');
 const uploadsDir = path.resolve(process.cwd(), 'public', 'cards');
+const repoDir = process.cwd();
 
 const getClientIp = (ctx: any): string => {
   const forwarded = ctx?.request?.headers?.['x-forwarded-for'];
@@ -208,6 +210,73 @@ const readJsonBodySafe = async (
   }
 };
 
+const runGit = async (args: string[]): Promise<{ ok: true; stdout: string; stderr: string } | { ok: false; error: string }> =>
+  new Promise((resolve) => {
+    execFile('git', args, { cwd: repoDir, windowsHide: true, timeout: 30_000 }, (error, stdout, stderr) => {
+      if (error) {
+        resolve({ ok: false, error: String(stderr || error.message || error) });
+        return;
+      }
+      resolve({ ok: true, stdout: String(stdout ?? ''), stderr: String(stderr ?? '') });
+    });
+  });
+
+const getGitUpdateStatus = async () => {
+  const branchRes = await runGit(['rev-parse', '--abbrev-ref', 'HEAD']);
+  if (!branchRes.ok) return { ok: false as const, error: branchRes.error };
+  const branch = branchRes.stdout.trim();
+
+  const remoteRes = await runGit(['remote', 'get-url', 'origin']);
+  const remote = remoteRes.ok ? remoteRes.stdout.trim() : '';
+
+  const fetchRes = await runGit(['fetch', '--prune', 'origin']);
+  if (!fetchRes.ok) return { ok: false as const, error: fetchRes.error };
+
+  const statusRes = await runGit(['status', '--porcelain']);
+  if (!statusRes.ok) return { ok: false as const, error: statusRes.error };
+  const dirty = statusRes.stdout.trim().length > 0;
+
+  const headRes = await runGit(['rev-parse', 'HEAD']);
+  if (!headRes.ok) return { ok: false as const, error: headRes.error };
+  const head = headRes.stdout.trim();
+
+  const upstreamRes = await runGit(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}']);
+  if (!upstreamRes.ok) {
+    return {
+      ok: true as const,
+      branch,
+      remote,
+      upstream: '',
+      ahead: 0,
+      behind: 0,
+      dirty,
+      canUpdate: false,
+      head,
+      note: 'No upstream branch configured',
+    };
+  }
+  const upstream = upstreamRes.stdout.trim();
+
+  const countsRes = await runGit(['rev-list', '--left-right', '--count', `HEAD...${upstream}`]);
+  if (!countsRes.ok) return { ok: false as const, error: countsRes.error };
+  const [aheadStr, behindStr] = countsRes.stdout.trim().split(/\s+/);
+  const ahead = Number(aheadStr || 0);
+  const behind = Number(behindStr || 0);
+
+  return {
+    ok: true as const,
+    branch,
+    remote,
+    upstream,
+    ahead: Number.isFinite(ahead) ? ahead : 0,
+    behind: Number.isFinite(behind) ? behind : 0,
+    dirty,
+    canUpdate: !dirty && (Number.isFinite(behind) ? behind : 0) > 0,
+    head,
+    note: dirty ? 'Working tree has local changes' : undefined,
+  };
+};
+
 const saveTemplateToDisk = async () => {
   await mkdir(path.dirname(templatePath), { recursive: true });
   await writeFile(templatePath, exportSharedDeckTemplateJson(), 'utf8');
@@ -299,6 +368,19 @@ if (router) {
         updatedAt: metadata?.updatedAt ?? Date.now(),
       },
     };
+  });
+
+  router.get('/api/admin/git/status', async (ctx: any) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/git/status'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-git-status', 20, 60_000))) return;
+    const result = await getGitUpdateStatus();
+    if (!result.ok) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: result.error };
+      await logLine('ERROR', `git status failed: ${result.error}`);
+      return;
+    }
+    ctx.body = result;
   });
 
   router.get('/api/shared-deck-template', (ctx: any) => {
@@ -444,6 +526,52 @@ if (router) {
     setTimeout(() => {
       process.exit(0);
     }, 150);
+  });
+
+  router.post('/api/admin/git/update', async (ctx: any) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/git/update'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-git-update', 5, 60_000))) return;
+    const status = await getGitUpdateStatus();
+    if (!status.ok) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: status.error };
+      await logLine('ERROR', `git pre-update status failed: ${status.error}`);
+      return;
+    }
+    if (status.dirty) {
+      ctx.status = 409;
+      ctx.body = { ok: false, error: 'Working tree has local changes. Commit or stash before update.', status };
+      return;
+    }
+    if (status.behind <= 0) {
+      ctx.body = { ok: true, updated: false, message: 'Already up to date', status };
+      return;
+    }
+
+    const pullRes = await runGit(['pull', '--ff-only']);
+    if (!pullRes.ok) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: pullRes.error, status };
+      await logLine('ERROR', `git update failed: ${pullRes.error}`);
+      return;
+    }
+
+    const nextStatus = await getGitUpdateStatus();
+    if (!nextStatus.ok) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: nextStatus.error };
+      await logLine('ERROR', `git post-update status failed: ${nextStatus.error}`);
+      return;
+    }
+
+    await logLine('WARN', `git update applied on branch=${status.branch}; pull output=${pullRes.stdout.trim() || '(no output)'}`);
+    ctx.body = {
+      ok: true,
+      updated: true,
+      message: 'Update applied',
+      output: pullRes.stdout.trim(),
+      status: nextStatus,
+    };
   });
 }
 
