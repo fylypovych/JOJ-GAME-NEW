@@ -36,6 +36,8 @@ export interface Rank {
   requirement: Partial<Record<ResourceKey, number>>;
   cost: Partial<Record<ResourceKey, number>>;
   bonus: Partial<Record<ResourceKey, number>>;
+  victory?: boolean;
+  flavor?: string;
 }
 
 export interface JOJState {

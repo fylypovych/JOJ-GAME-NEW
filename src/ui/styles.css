@@ -346,6 +346,7 @@ button:disabled {
   text-align: left;
   position: relative;
   overflow: visible;
+  z-index: 0;
 }
 
 .game-card-media {
@@ -411,6 +412,16 @@ button:disabled {
 .game-card:hover .game-card-popover,
 .game-card:focus-visible .game-card-popover {
   display: block;
+}
+
+.game-card:hover,
+.game-card:focus-visible {
+  z-index: 2001;
+}
+
+.pile-preview:hover,
+.pile-preview:focus-within {
+  z-index: 2001;
 }
 
 .pile-preview {

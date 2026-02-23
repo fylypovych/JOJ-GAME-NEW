@@ -357,3 +357,8 @@
 [2026-02-23T19:53:10.822Z] [INFO] boardgame.io server running at http://localhost:8000
 [2026-02-23T19:54:38.795Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
 [2026-02-23T19:54:38.802Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T20:23:51.265Z] [INFO] shared-deck-template imported
+[2026-02-23T20:40:20.070Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T20:40:20.087Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T20:40:44.552Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T20:40:44.566Z] [INFO] boardgame.io server running at http://localhost:8000

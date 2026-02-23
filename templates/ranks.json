@@ -1,15 +1,32 @@
 [
   {
+    "id": "recruit",
+    "name": "Рекрут",
+    "requirement": {},
+    "cost": {},
+    "bonus": {
+      "tech": 1,
+      "documents": 1,
+      "time": 1,
+      "reputation": 1,
+      "discipline": 1
+    },
+    "flavor": "Знає різницю між наказом і порадою."
+  },
+  {
     "id": "soldier",
     "name": "Солдат",
     "requirement": {
       "reputation": 3,
       "discipline": 2
     },
-    "bonus": {
-      "time": -1
+    "cost": {
+      "time": 1
     },
-    "cost": {}
+    "bonus": {
+      "discipline": 1
+    },
+    "flavor": "Навчився не лише слухати, а й виконувати."
   },
   {
     "id": "senior_soldier",
@@ -18,10 +35,14 @@
       "reputation": 4,
       "discipline": 3
     },
-    "bonus": {
-      "time": -2
+    "cost": {
+      "time": 2
     },
-    "cost": {}
+    "bonus": {
+      "documents": 1,
+      "reputation": 1
+    },
+    "flavor": "Молодим — приклад, старшим — пам’ятка."
   },
   {
     "id": "junior_sergeant",
@@ -31,10 +52,14 @@
       "discipline": 3,
       "documents": 1
     },
-    "bonus": {
-      "time": -2
+    "cost": {
+      "time": 2
     },
-    "cost": {}
+    "bonus": {
+      "tech": 1,
+      "discipline": 1
+    },
+    "flavor": "Перше “так точно” з нотками відповідальності."
   },
   {
     "id": "sergeant",
@@ -43,11 +68,15 @@
       "reputation": 6,
       "discipline": 4
     },
-    "bonus": {
-      "time": -1,
-      "documents": -1
+    "cost": {
+      "time": 1,
+      "documents": 1
     },
-    "cost": {}
+    "bonus": {
+      "reputation": 1,
+      "tech": 1
+    },
+    "flavor": "Командуєш малими, але відповідаєш за всіх."
   },
   {
     "id": "senior_sergeant",
@@ -56,10 +85,14 @@
       "reputation": 7,
       "discipline": 5
     },
-    "bonus": {
-      "time": -2
+    "cost": {
+      "time": 2
     },
-    "cost": {}
+    "bonus": {
+      "reputation": 1,
+      "discipline": 1
+    },
+    "flavor": "Коли треба — наказує, коли можна — радить."
   },
   {
     "id": "chief_sergeant",
@@ -69,10 +102,80 @@
       "discipline": 6,
       "documents": 1
     },
-    "bonus": {
-      "time": -2
+    "cost": {
+      "time": 2
     },
-    "cost": {}
+    "bonus": {
+      "documents": 1,
+      "reputation": 1
+    },
+    "flavor": "Веде журнал точніше, ніж взвод у бій."
+  },
+  {
+    "id": "staff_sergeant",
+    "name": "Штаб-сержант",
+    "requirement": {
+      "reputation": 9,
+      "discipline": 7
+    },
+    "cost": {
+      "time": 3,
+      "documents": 1
+    },
+    "bonus": {
+      "tech": 1,
+      "discipline": 1
+    },
+    "flavor": "Знає, де журнал, і хто його не здав."
+  },
+  {
+    "id": "master_sergeant",
+    "name": "Майстер-сержант",
+    "requirement": {
+      "reputation": 10,
+      "discipline": 7
+    },
+    "cost": {
+      "time": 2
+    },
+    "bonus": {
+      "tech": 1,
+      "discipline": 1
+    },
+    "flavor": "Майстер не тому, що вміє, а тому, що вже бачив."
+  },
+  {
+    "id": "senior_master_sergeant",
+    "name": "Старший майстер-сержант",
+    "requirement": {
+      "reputation": 12,
+      "discipline": 8
+    },
+    "cost": {
+      "time": 3,
+      "documents": 1
+    },
+    "bonus": {
+      "tech": 1,
+      "discipline": 1
+    },
+    "flavor": "Підлеглі слухають, навіть коли мовчиш."
+  },
+  {
+    "id": "chief_master_sergeant",
+    "name": "Головний майстер-сержант",
+    "requirement": {
+      "reputation": 13,
+      "discipline": 9
+    },
+    "cost": {
+      "time": 3
+    },
+    "bonus": {
+      "documents": 1,
+      "reputation": 1
+    },
+    "flavor": "Той, хто вміє навести лад навіть у ладах."
   },
   {
     "id": "junior_lieutenant",
@@ -81,11 +184,15 @@
       "reputation": 9,
       "discipline": 7
     },
-    "bonus": {
-      "time": -3,
-      "documents": -1
+    "cost": {
+      "time": 3,
+      "documents": 1
     },
-    "cost": {}
+    "bonus": {
+      "reputation": 1,
+      "tech": 1
+    },
+    "flavor": "Перший підпис — і перший стрес."
   },
   {
     "id": "lieutenant",
@@ -94,10 +201,14 @@
       "reputation": 10,
       "discipline": 7
     },
-    "bonus": {
-      "time": -2
+    "cost": {
+      "time": 2
     },
-    "cost": {}
+    "bonus": {
+      "tech": 1,
+      "discipline": 1
+    },
+    "flavor": "Вивчив різницю між планом і реальністю."
   },
   {
     "id": "senior_lieutenant",
@@ -106,11 +217,15 @@
       "reputation": 12,
       "discipline": 8
     },
-    "bonus": {
-      "time": -3,
-      "documents": -1
+    "cost": {
+      "time": 3,
+      "documents": 1
     },
-    "cost": {}
+    "bonus": {
+      "reputation": 1,
+      "tech": 1
+    },
+    "flavor": "Звикаєш до фрази “за власною ініціативою”."
   },
   {
     "id": "captain",
@@ -119,10 +234,14 @@
       "reputation": 13,
       "discipline": 9
     },
-    "bonus": {
-      "time": -3
+    "cost": {
+      "time": 3
     },
-    "cost": {}
+    "bonus": {
+      "tech": 1,
+      "discipline": 1
+    },
+    "flavor": "Відповідає за все, навіть за погоду."
   },
   {
     "id": "major",
@@ -132,10 +251,14 @@
       "discipline": 10,
       "tech": 1
     },
-    "bonus": {
-      "time": -4
+    "cost": {
+      "time": 4
     },
-    "cost": {}
+    "bonus": {
+      "documents": 1,
+      "discipline": 1
+    },
+    "flavor": "Якщо нічого не згоріло — значить, керував майор."
   },
   {
     "id": "lieutenant_colonel",
@@ -144,11 +267,15 @@
       "reputation": 17,
       "discipline": 11
     },
-    "bonus": {
-      "time": -4,
-      "documents": -1
+    "cost": {
+      "time": 4,
+      "documents": 1
     },
-    "cost": {}
+    "bonus": {
+      "reputation": 2,
+      "discipline": 1
+    },
+    "flavor": "Твій спокій — найкраща зброя в штабі."
   },
   {
     "id": "colonel",
@@ -157,10 +284,14 @@
       "reputation": 19,
       "discipline": 12
     },
-    "bonus": {
-      "time": -5
+    "cost": {
+      "time": 5
     },
-    "cost": {}
+    "bonus": {
+      "documents": 1,
+      "reputation": 1
+    },
+    "flavor": "Розпорядження, накази, вказівки — і все з підписом."
   },
   {
     "id": "brigadier_general",
@@ -170,48 +301,63 @@
       "discipline": 13,
       "tech": 1
     },
-    "bonus": {
-      "time": -5
+    "cost": {
+      "time": 5
     },
-    "cost": {}
+    "bonus": {
+      "documents": 1,
+      "discipline": 1
+    },
+    "flavor": "Якщо бачиш порядок — десь поруч генерал."
   },
   {
     "id": "major_general",
     "name": "Генерал-майор",
     "requirement": {
-      "reputation": 22,
-      "discipline": 14,
-      "tech": 2
+      "reputation": 23,
+      "discipline": 14
+    },
+    "cost": {
+      "time": 6
     },
     "bonus": {
-      "time": -5
+      "documents": 1,
+      "discipline": 1
     },
-    "cost": {}
+    "flavor": "Планує стратегічно, рахує дріб’язково."
   },
   {
     "id": "lieutenant_general",
     "name": "Генерал-лейтенант",
     "requirement": {
-      "reputation": 23,
-      "discipline": 14
+      "reputation": 25,
+      "discipline": 15,
+      "documents": 1
+    },
+    "cost": {
+      "time": 6,
+      "tech": 1
     },
     "bonus": {
-      "time": -6
+      "documents": 1,
+      "reputation": 2
     },
-    "cost": {}
+    "flavor": "Журнали самі тебе знаходять."
   },
   {
-    "id": "army_general",
-    "name": "Генерал армії України",
+    "id": "general",
+    "name": "Генерал",
     "requirement": {
       "reputation": 25,
       "discipline": 15,
       "documents": 1
     },
-    "bonus": {
-      "time": -6,
-      "tech": -1
+    "cost": {
+      "time": 6,
+      "tech": 1
     },
-    "cost": {}
+    "bonus": {},
+    "victory": true,
+    "flavor": "Доки хтось шукає винних — він шукає рішення."
   }
 ]

@@ -83,6 +83,8 @@ const cloneRank = (rank: RankDefinition): RankDefinition => ({
   requirement: { ...rank.requirement },
   cost: { ...rank.cost },
   bonus: { ...rank.bonus },
+  victory: rank.victory === true ? true : undefined,
+  flavor: typeof rank.flavor === 'string' ? rank.flavor : undefined,
 });
 
 const getPlayerLabel = (G: JojGameState, playerID: string) => {
@@ -151,11 +153,15 @@ const isValidRank = (rank: unknown): rank is RankDefinition => {
   if (typeof raw.id !== 'string' || !raw.id.trim()) return false;
   if (typeof raw.name !== 'string' || !raw.name.trim()) return false;
   if (!raw.requirement || typeof raw.requirement !== 'object') return false;
+  if (raw.effect !== undefined && (!raw.effect || typeof raw.effect !== 'object')) return false;
   if (raw.cost !== undefined && (!raw.cost || typeof raw.cost !== 'object')) return false;
   if (raw.bonus !== undefined && (!raw.bonus || typeof raw.bonus !== 'object')) return false;
+  if (raw.victory !== undefined && typeof raw.victory !== 'boolean') return false;
+  if (raw.flavor !== undefined && typeof raw.flavor !== 'string') return false;
   const req = raw.requirement as Record<string, unknown>;
   const costSource = (raw.cost as Record<string, unknown> | undefined) ?? {};
-  const bonusSource = (raw.bonus as Record<string, unknown> | undefined) ?? {};
+  const effectSource = (raw.effect as Record<string, unknown> | undefined) ?? {};
+  const bonusSource = ((raw.bonus as Record<string, unknown> | undefined) ?? effectSource) as Record<string, unknown>;
   for (const key of Object.keys(req)) {
     if (!resourceKeys.includes(key as ResourceKey)) return false;
     if (typeof req[key] !== 'number') return false;
@@ -179,14 +185,27 @@ export const setSharedRanks = (next: SharedRanks): boolean => {
   const ids = next.map((rank) => rank.id.trim());
   if (new Set(ids).size !== ids.length) return false;
   sharedRanks = next.map((rank) => {
-    const cost = rank.cost ? { ...rank.cost } : {};
-    const bonus = rank.bonus ? { ...rank.bonus } : {};
+    const rawRank = rank as RankDefinition & { effect?: Partial<Record<ResourceKey, number>> };
+    const costSource = rawRank.cost ? { ...rawRank.cost } : {};
+    const bonusSource = rawRank.bonus ? { ...rawRank.bonus } : { ...(rawRank.effect ?? {}) };
+    const cost: Partial<Record<ResourceKey, number>> = {};
+    resourceKeys.forEach((key) => {
+      const rawValue = costSource[key] ?? 0;
+      if (rawValue !== 0) cost[key] = Math.abs(rawValue);
+    });
+    const bonus: Partial<Record<ResourceKey, number>> = {};
+    resourceKeys.forEach((key) => {
+      const rawValue = bonusSource[key] ?? 0;
+      if (rawValue !== 0) bonus[key] = rawValue;
+    });
     return cloneRank({
       ...rank,
       id: rank.id.trim(),
       name: rank.name.trim(),
       cost,
       bonus,
+      victory: rawRank.victory === true ? true : undefined,
+      flavor: typeof rawRank.flavor === 'string' ? rawRank.flavor : undefined,
     });
   });
   return true;
@@ -852,9 +871,16 @@ const buildVvnzRankSystemMessage = (
 };
 
 const getWinner = (G: JojGameState): string | undefined => {
-  const topRankId = getTopRankId();
-  const generalPlayer = Object.entries(G.ranks).find(([, rankId]) => rankId === topRankId)?.[0];
-  if (generalPlayer) return generalPlayer;
+  const activeRanks = getActiveRanks();
+  const victoryRankIds = new Set(activeRanks.filter((rank) => rank.victory).map((rank) => rank.id));
+  if (victoryRankIds.size > 0) {
+    const byVictoryFlag = Object.entries(G.ranks).find(([, rankId]) => victoryRankIds.has(rankId))?.[0];
+    if (byVictoryFlag) return byVictoryFlag;
+  } else {
+    const topRankId = getTopRankId();
+    const topRankPlayer = Object.entries(G.ranks).find(([, rankId]) => rankId === topRankId)?.[0];
+    if (topRankPlayer) return topRankPlayer;
+  }
   if (G.deck.length === 0) {
     const hasCardsInHands = Object.values(G.hands).some((hand) => hand.length > 0);
     if (hasCardsInHands) return undefined;
