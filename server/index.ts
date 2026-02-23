@@ -221,6 +221,34 @@ const runGit = async (args: string[]): Promise<{ ok: true; stdout: string; stder
     });
   });
 
+type GitPorcelainEntry = {
+  xy: string;
+  path: string;
+};
+
+const runtimeGitIgnorePatterns = [
+  /^logs\/.*\.log$/i,
+  /^database\/matches(\/|$)/i,
+  /^caddy-local-root\.crt$/i,
+];
+
+const isRuntimeGitNoise = (filePath: string): boolean =>
+  runtimeGitIgnorePatterns.some((pattern) => pattern.test(filePath.replace(/\\/g, '/')));
+
+const parseGitPorcelain = (stdout: string): GitPorcelainEntry[] =>
+  stdout
+    .split(/\r?\n/)
+    .map((line) => line.trimEnd())
+    .filter(Boolean)
+    .map((line) => {
+      const xy = line.slice(0, 2);
+      let rest = line.slice(3).trim();
+      if (rest.includes(' -> ')) {
+        rest = rest.split(' -> ').pop() ?? rest;
+      }
+      return { xy, path: rest };
+    });
+
 const getGitUpdateStatus = async () => {
   const branchRes = await runGit(['rev-parse', '--abbrev-ref', 'HEAD']);
   if (!branchRes.ok) return { ok: false as const, error: branchRes.error };
@@ -232,9 +260,12 @@ const getGitUpdateStatus = async () => {
   const fetchRes = await runGit(['fetch', '--prune', 'origin']);
   if (!fetchRes.ok) return { ok: false as const, error: fetchRes.error };
 
-  const statusRes = await runGit(['status', '--porcelain']);
+  const statusRes = await runGit(['status', '--porcelain', '--untracked-files=all']);
   if (!statusRes.ok) return { ok: false as const, error: statusRes.error };
-  const dirty = statusRes.stdout.trim().length > 0;
+  const statusEntries = parseGitPorcelain(statusRes.stdout);
+  const meaningfulDirtyEntries = statusEntries.filter((row) => !isRuntimeGitNoise(row.path));
+  const runtimeOnlyDirtyEntries = statusEntries.filter((row) => isRuntimeGitNoise(row.path));
+  const dirty = meaningfulDirtyEntries.length > 0;
 
   const headRes = await runGit(['rev-parse', 'HEAD']);
   if (!headRes.ok) return { ok: false as const, error: headRes.error };
@@ -250,6 +281,8 @@ const getGitUpdateStatus = async () => {
       ahead: 0,
       behind: 0,
       dirty,
+      dirtyFiles: meaningfulDirtyEntries.map((row) => row.path),
+      ignoredRuntimeDirtyFiles: runtimeOnlyDirtyEntries.map((row) => row.path),
       canUpdate: false,
       head,
       note: 'No upstream branch configured',
@@ -271,6 +304,8 @@ const getGitUpdateStatus = async () => {
     ahead: Number.isFinite(ahead) ? ahead : 0,
     behind: Number.isFinite(behind) ? behind : 0,
     dirty,
+    dirtyFiles: meaningfulDirtyEntries.map((row) => row.path),
+    ignoredRuntimeDirtyFiles: runtimeOnlyDirtyEntries.map((row) => row.path),
     canUpdate: !dirty && (Number.isFinite(behind) ? behind : 0) > 0,
     head,
     note: dirty ? 'Working tree has local changes' : undefined,
@@ -542,6 +577,16 @@ if (router) {
       ctx.status = 409;
       ctx.body = { ok: false, error: 'Working tree has local changes. Commit or stash before update.', status };
       return;
+    }
+    if (Array.isArray(status.ignoredRuntimeDirtyFiles) && status.ignoredRuntimeDirtyFiles.length > 0) {
+      const stashRes = await runGit(['stash', 'push', '-u', '-m', 'admin-auto-stash-runtime']);
+      if (!stashRes.ok) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: `Failed to stash runtime files: ${stashRes.error}`, status };
+        await logLine('ERROR', `git runtime stash failed: ${stashRes.error}`);
+        return;
+      }
+      await logLine('INFO', `git runtime auto-stash created before update (${status.ignoredRuntimeDirtyFiles.length} files)`);
     }
     if (status.behind <= 0) {
       ctx.body = { ok: true, updated: false, message: 'Already up to date', status };
