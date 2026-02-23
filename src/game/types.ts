@@ -44,6 +44,7 @@ export interface JOJState {
   deck: Card[];
   discard: Card[];
   legendaryDeck: Card[];
+  legendaryDiscard: Card[];
   deckBackImage?: string;
   systemMessageSeq: number;
   playerNames: Record<string, string>;
@@ -56,6 +57,7 @@ export interface JOJState {
   }>;
   players: Record<string, PlayerState>;
   hands: Record<string, Card[]>;
+  legendaryHands: Record<string, Card[]>;
   ranks: Record<string, string>;
   resources: Record<string, Record<ResourceKey, number>>;
   promotedThisTurn: Record<string, boolean>;

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { BoardProps } from 'boardgame.io/react';
 import type { JojGameState, RankDefinition, ResourceKey } from '../game/types';
-import { getReplacementUnitsForCard, normalizeImagePath } from '../game/jojGame';
+import { normalizeImagePath } from '../game/jojGame';
 import type { Language } from './i18n';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 
@@ -31,6 +31,7 @@ export const Board = ({
   const resourceLabels: Record<ResourceKey, string> = t.resources;
   const id = playerID ?? '0';
   const hand = G?.hands?.[id] ?? [];
+  const legendaryHand = G?.legendaryHands?.[id] ?? [];
   const resources = G?.resources?.[id];
   const rankId = G?.ranks?.[id];
   const rankName = sharedRanks.find((row) => row.id === (rankId ?? ''))?.name ?? rankLabel(rankId ?? '', lang);
@@ -41,6 +42,7 @@ export const Board = ({
   const canEndTurn = isCurrentPlayer && (stage === 'play' || stage === 'end');
   const deckBackImage = G?.deckBackImage ? normalizeImagePath(G.deckBackImage) : undefined;
   const lastDiscard = G?.discard?.length ? G.discard[G.discard.length - 1] : null;
+  const lastLegendaryDiscard = G?.legendaryDiscard?.length ? G.legendaryDiscard[G.legendaryDiscard.length - 1] : null;
   const effectLabel = (resource: ResourceKey | 'rank') =>
     resource === 'rank' ? t.rankResource : resourceLabels[resource];
   const [chatInput, setChatInput] = useState<string>('');
@@ -52,45 +54,6 @@ export const Board = ({
     const name = G?.playerNames?.[idValue]?.trim() || knownPlayerNames[idValue]?.trim();
     return name || t.genericPlayer;
   };
-  const promptReplacementResources = (required: number): ResourceKey[] | null => {
-    const options: ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
-    const aliases: Record<string, ResourceKey> = {
-      time: 'time',
-      reputation: 'reputation',
-      discipline: 'discipline',
-      documents: 'documents',
-      tech: 'tech',
-      '1': 'time',
-      '2': 'reputation',
-      '3': 'discipline',
-      '4': 'documents',
-      '5': 'tech',
-      час: 'time',
-      авторитет: 'reputation',
-      дисципліна: 'discipline',
-      документи: 'documents',
-      технології: 'tech',
-    };
-    const optionsHint = lang === 'uk'
-      ? '1-time(час), 2-reputation(авторитет), 3-discipline(дисципліна), 4-documents(документи), 5-tech(технології)'
-      : '1-time, 2-reputation, 3-discipline, 4-documents, 5-tech';
-    const picked: ResourceKey[] = [];
-    for (let i = 0; i < required; i += 1) {
-      const value = window.prompt(
-        `${t.chooseReplacementPrompt} ${i + 1}/${required}: ${optionsHint}`,
-      );
-      if (value === null) return null;
-      const normalized = value.trim().toLowerCase();
-      const resolved = aliases[normalized];
-      if (!resolved || !options.includes(resolved)) {
-        i -= 1;
-        continue;
-      }
-      picked.push(resolved);
-    }
-    return picked;
-  };
-
   useEffect(() => {
     if (!G || !ctx) return;
     onStateChange?.({
@@ -242,13 +205,9 @@ export const Board = ({
             className="game-card"
             onClick={() => {
               if (!canPlay) return;
-              const requiresReplacement = !['LYAP', 'SCANDAL'].includes(card.category);
-              const required = requiresReplacement ? getReplacementUnitsForCard(resources, card) : 0;
-              const replacements = required > 0 ? promptReplacementResources(required) : [];
-              if (replacements === null) return;
               const target = card.category === 'LYAP' ? promptLyapTarget() : undefined;
               if (card.category === 'LYAP' && !target) return;
-              moves.playCard(card.id, replacements, target);
+              moves.playCard(card.id, [], target);
             }}
             disabled={!canPlay}
           >
@@ -287,6 +246,59 @@ export const Board = ({
           );
         })}
       </div>
+
+      <h2>{t.legendaryHand} ({legendaryHand.length})</h2>
+      <p className="legendary-hint">{t.legendaryHandHint}</p>
+      <div className="hand">
+        {legendaryHand.map((card) => {
+          const effectEntries = card.effects ?? [];
+          return (
+            <button
+              key={`legendary-${card.id}`}
+              type="button"
+              className="game-card"
+              onClick={() => moves.playLegendaryCard(card.id)}
+              disabled={typeof moves.playLegendaryCard !== 'function'}
+            >
+              <div className="game-card-media">
+                <img
+                  src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
+                  alt={cardTitle(card.id, card.title, lang)}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+              <div className="game-card-popover" aria-hidden="true">
+                <img
+                  src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
+                  alt={cardTitle(card.id, card.title, lang)}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+              <div className="game-card-body">
+                <strong>{cardTitle(card.id, card.title, lang)}</strong>
+                <small>{categoryLabel(card.category, lang)}</small>
+                {effectEntries.length ? (
+                  <div className="game-card-row">
+                    {effectEntries.map((effect, index) => (
+                      <span key={`legendary-effect-${card.id}-${effect.resource}-${index}`} className="pill pill-effect">
+                        {effectLabel(effect.resource)}: {effect.value > 0 ? `+${effect.value}` : effect.value}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <p>
+        {t.legendaryDiscardPile}: {G.legendaryDiscard?.length ?? 0}
+        {lastLegendaryDiscard ? ` | ${t.lastPlayedCard}: ${cardTitle(lastLegendaryDiscard.id, lastLegendaryDiscard.title, lang)}` : ''}
+      </p>
 
       <div className="board-actions">
         <button type="button" onClick={() => moves.drawCard()} disabled={!canDraw}>

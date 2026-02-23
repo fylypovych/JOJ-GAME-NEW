@@ -5,6 +5,7 @@ import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from '
 
 const INVALID_MOVE = 'INVALID_MOVE' as const;
 const STARTING_HAND_SIZE = 5;
+const STARTING_LEGENDARY_HAND_SIZE = 5;
 const HAND_LIMIT = 8;
 const DRAW_STAGE = 'draw';
 const PLAY_STAGE = 'play';
@@ -787,6 +788,10 @@ const drawCards = (G: JojGameState, playerID: string, amount: number): void => {
   }
 };
 
+const drawLegendaryCards = (G: JojGameState, playerID: string, amount: number): void => {
+  G.legendaryHands[playerID] = shuffle(sharedDeckTemplate.legendaryDeck.map(cloneCard)).slice(0, Math.max(0, amount));
+};
+
 const syncPlayerState = (G: JojGameState, playerID: string): void => {
   G.players[playerID].hand = G.hands[playerID];
   G.players[playerID].rankId = G.ranks[playerID];
@@ -967,12 +972,14 @@ const simulateSingleMatch = (
     deck: shuffle(sharedDeckTemplate.deck.map(cloneCard)),
     discard: [],
     legendaryDeck: shuffle(sharedDeckTemplate.legendaryDeck.map(cloneCard)),
+    legendaryDiscard: [],
     deckBackImage: sharedDeckTemplate.deckBackImage,
     systemMessageSeq: 0,
     playerNames: {},
     chat: [],
     players: {},
     hands: {},
+    legendaryHands: {},
     ranks: {},
     resources: {},
     promotedThisTurn: {},
@@ -980,12 +987,14 @@ const simulateSingleMatch = (
 
   playerIDs.forEach((pid, index) => {
     G.hands[pid] = [];
+    G.legendaryHands[pid] = [];
     G.ranks[pid] = getActiveRanks()[0]?.id ?? 'cadet';
     G.resources[pid] = { time: 2, reputation: 2, discipline: 2, documents: 2, tech: 2 };
     G.players[pid] = { hand: G.hands[pid], rankId: G.ranks[pid], resources: G.resources[pid] };
     G.playerNames[pid] = `P${index + 1}`;
     G.promotedThisTurn[pid] = false;
     drawCards(G, pid, STARTING_HAND_SIZE);
+    drawLegendaryCards(G, pid, STARTING_LEGENDARY_HAND_SIZE);
     syncPlayerState(G, pid);
   });
 
@@ -1264,12 +1273,14 @@ export const jojGame: Game<JojGameState> = {
       deck,
       discard: [],
       legendaryDeck: shuffle(sharedDeckTemplate.legendaryDeck.map(cloneCard)),
+      legendaryDiscard: [],
       deckBackImage: sharedDeckTemplate.deckBackImage,
       systemMessageSeq: 0,
       playerNames: {},
       chat: [],
       players: {},
       hands: {},
+      legendaryHands: {},
       ranks: {},
       resources: {},
       promotedThisTurn: {},
@@ -1277,6 +1288,7 @@ export const jojGame: Game<JojGameState> = {
 
     players.forEach((playerID) => {
       state.hands[playerID] = [];
+      state.legendaryHands[playerID] = [];
       state.ranks[playerID] = getActiveRanks()[0]?.id ?? 'cadet';
       state.resources[playerID] = {
         time: 2,
@@ -1293,6 +1305,7 @@ export const jojGame: Game<JojGameState> = {
       state.promotedThisTurn[playerID] = false;
       state.playerNames[playerID] = '';
       drawCards(state, playerID, STARTING_HAND_SIZE);
+      drawLegendaryCards(state, playerID, STARTING_LEGENDARY_HAND_SIZE);
     });
 
     return state;
@@ -1547,6 +1560,26 @@ export const jojGame: Game<JojGameState> = {
       args.events?.setStage(END_STAGE);
       return undefined;
     },
+    playLegendaryCard: (args, cardId: string) => {
+      const playerID = args.playerID;
+      if (!playerID) return INVALID_MOVE;
+      const hand = args.G.legendaryHands[playerID] ?? [];
+      const idx = hand.findIndex((card) => card.id === cardId);
+      if (idx === -1) return INVALID_MOVE;
+      const card = hand[idx];
+
+      try {
+        const applied = applyCardEffects(args.G, playerID, card.effects, []);
+        if (!applied) return INVALID_MOVE;
+      } catch {
+        return INVALID_MOVE;
+      }
+
+      hand.splice(idx, 1);
+      args.G.legendaryDiscard.push(card);
+      syncPlayerState(args.G, playerID);
+      return undefined;
+    },
     promote: (args) => {
       const playerID = args.playerID;
       if (!playerID || args.ctx.currentPlayer !== playerID) return INVALID_MOVE;
@@ -1597,14 +1630,22 @@ export const jojGame: Game<JojGameState> = {
     enumerate: (G, ctx, playerID) => {
       const currentPlayer = playerID ?? ctx.currentPlayer;
       const hand = G.hands[currentPlayer] ?? [];
+      const legendaryHand = G.legendaryHands[currentPlayer] ?? [];
       const stage = ctx.activePlayers?.[currentPlayer];
       if (stage === DRAW_STAGE) {
-        return [{ move: 'drawCard' as const }];
+        return [
+          { move: 'drawCard' as const },
+          ...legendaryHand.map((card) => ({ move: 'playLegendaryCard' as const, args: [card.id] })),
+        ];
       }
       if (stage === END_STAGE) {
-        return [{ move: 'pass' as const }];
+        return [
+          { move: 'pass' as const },
+          ...legendaryHand.map((card) => ({ move: 'playLegendaryCard' as const, args: [card.id] })),
+        ];
       }
       return [
+        ...legendaryHand.map((card) => ({ move: 'playLegendaryCard' as const, args: [card.id] })),
         ...hand.map((card) => ({ move: 'playCard' as const, args: [card.id] })),
         { move: 'promote' as const },
         { move: 'pass' as const },
@@ -1614,8 +1655,19 @@ export const jojGame: Game<JojGameState> = {
   playerView: ({ G, ctx, playerID }) => {
     if (!playerID) return G;
     const filteredHands: JojGameState['hands'] = {};
+    const filteredLegendaryHands: JojGameState['legendaryHands'] = {};
     Object.entries(G.hands as Record<string, CardDefinition[]>).forEach(([pid, cards]) => {
       filteredHands[pid] = pid === playerID ? cards : cards.map(({ id, title, category, image, effects, flavor }) => ({
+        id,
+        title,
+        category,
+        image,
+        effects,
+        flavor,
+      }));
+    });
+    Object.entries(G.legendaryHands as Record<string, CardDefinition[]>).forEach(([pid, cards]) => {
+      filteredLegendaryHands[pid] = pid === playerID ? cards : cards.map(({ id, title, category, image, effects, flavor }) => ({
         id,
         title,
         category,
@@ -1636,6 +1688,7 @@ export const jojGame: Game<JojGameState> = {
       ...G,
       players: filteredPlayers,
       hands: filteredHands,
+      legendaryHands: filteredLegendaryHands,
       deck: ctx.gameover ? G.deck : new Array(G.deck.length).fill({ id: 'hidden', title: 'Hidden', category: 'NEUTRAL' }),
     };
   },
