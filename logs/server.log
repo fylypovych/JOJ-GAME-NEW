@@ -13,3 +13,98 @@
 [2026-02-22T15:46:55.520Z] [INFO] boardgame.io server running at http://localhost:8000
 [2026-02-22T15:47:53.658Z] [INFO] admin auth enabled (ADMIN_TOKEN set)
 [2026-02-22T15:47:53.666Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T17:59:32.557Z] [INFO] admin auth enabled (ADMIN_TOKEN set)
+[2026-02-23T17:59:32.566Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T17:59:52.306Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T17:59:58.563Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:00.978Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:01.418Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:01.584Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:01.753Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:01.920Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:02.088Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:02.283Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:02.458Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:02.632Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:02.800Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:06.764Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:07.171Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:07.312Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:07.477Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:00:07.654Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:01:40.113Z] [INFO] admin auth enabled (ADMIN_TOKEN set)
+[2026-02-23T18:01:40.121Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T18:01:50.329Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:01:55.681Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:01:56.254Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:01:56.422Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:01:56.589Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:01:56.753Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:01:56.907Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:01:57.070Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:01:57.267Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:01:57.428Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:01:57.616Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:10.764Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:11.517Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:11.678Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:11.867Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:12.043Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:12.219Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:12.398Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:12.571Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:12.756Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:12.936Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:13.115Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:13.300Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:45.828Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:51.065Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:54.859Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:55.365Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:55.541Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:55.708Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:02:55.886Z] [WARN] unauthorized route=/api/admin/verify ip=::1
+[2026-02-23T18:03:24.124Z] [INFO] admin auth enabled (ADMIN_TOKEN set)
+[2026-02-23T18:03:24.132Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T18:04:17.286Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T18:04:17.296Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T18:29:10.936Z] [INFO] shared-deck-template imported
+[2026-02-23T18:29:25.946Z] [INFO] shared-deck-template imported
+[2026-02-23T18:29:33.812Z] [INFO] image uploaded: card-1771871373786.png
+[2026-02-23T18:29:56.522Z] [INFO] image uploaded: card-1771871396499.png
+[2026-02-23T18:30:20.562Z] [INFO] image uploaded: card-1771871420538.png
+[2026-02-23T18:30:22.453Z] [INFO] shared-deck-template imported
+[2026-02-23T18:30:39.471Z] [INFO] image uploaded: card-1771871439446.png
+[2026-02-23T18:30:42.491Z] [INFO] shared-deck-template imported
+[2026-02-23T18:30:53.580Z] [INFO] image uploaded: card-1771871453560.png
+[2026-02-23T18:30:55.685Z] [INFO] shared-deck-template imported
+[2026-02-23T18:31:07.996Z] [INFO] image uploaded: card-1771871467975.png
+[2026-02-23T18:31:10.274Z] [INFO] shared-deck-template imported
+[2026-02-23T18:31:24.545Z] [INFO] image uploaded: card-1771871484518.png
+[2026-02-23T18:31:26.519Z] [INFO] shared-deck-template imported
+[2026-02-23T18:31:40.072Z] [INFO] image uploaded: card-1771871500051.png
+[2026-02-23T18:31:42.700Z] [INFO] shared-deck-template imported
+[2026-02-23T18:31:59.501Z] [INFO] image uploaded: card-1771871519462.png
+[2026-02-23T18:32:01.232Z] [INFO] shared-deck-template imported
+[2026-02-23T18:32:17.771Z] [INFO] image uploaded: card-1771871537749.png
+[2026-02-23T18:32:19.846Z] [INFO] shared-deck-template imported
+[2026-02-23T18:32:32.014Z] [INFO] image uploaded: card-1771871551984.png
+[2026-02-23T18:32:34.629Z] [INFO] shared-deck-template imported
+[2026-02-23T18:32:53.661Z] [INFO] image uploaded: card-1771871573623.png
+[2026-02-23T18:32:56.057Z] [INFO] shared-deck-template imported
+[2026-02-23T18:33:08.062Z] [INFO] image uploaded: card-1771871588026.png
+[2026-02-23T18:33:10.138Z] [INFO] shared-deck-template imported
+[2026-02-23T18:33:20.301Z] [INFO] image uploaded: card-1771871600284.png
+[2026-02-23T18:33:22.841Z] [INFO] shared-deck-template imported
+[2026-02-23T18:33:32.743Z] [INFO] image uploaded: card-1771871612720.png
+[2026-02-23T18:33:34.492Z] [INFO] shared-deck-template imported
+[2026-02-23T18:33:47.121Z] [INFO] image uploaded: card-1771871627089.png
+[2026-02-23T18:33:48.600Z] [INFO] shared-deck-template imported
+[2026-02-23T18:34:07.224Z] [INFO] image uploaded: card-1771871647198.png
+[2026-02-23T18:34:10.068Z] [INFO] shared-deck-template imported
+[2026-02-23T18:34:20.570Z] [INFO] image uploaded: card-1771871660520.png
+[2026-02-23T18:34:22.480Z] [INFO] shared-deck-template imported
+[2026-02-23T18:34:32.520Z] [INFO] image uploaded: card-1771871672495.png
+[2026-02-23T18:34:34.013Z] [INFO] shared-deck-template imported
+[2026-02-23T18:44:27.436Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T18:44:27.443Z] [INFO] boardgame.io server running at http://localhost:8000

@@ -126,6 +126,9 @@ type CropDraft = {
 };
 
 const CARD_ASPECT_RATIO = 352 / 540; // width / height
+const MAX_CARD_UPLOAD_WIDTH = 1408;
+const MAX_CARD_UPLOAD_HEIGHT = 2160;
+const DEFAULT_UPLOAD_QUALITY = 0.88;
 
 const clampPx = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
@@ -246,7 +249,9 @@ export const AdminPage = ({
   const [gitStatus, setGitStatus] = useState<GitUpdateStatus | null>(null);
   const [gitStatusLoading, setGitStatusLoading] = useState<boolean>(false);
   const [gitUpdateRunning, setGitUpdateRunning] = useState<boolean>(false);
+  const [gitDeployRunning, setGitDeployRunning] = useState<boolean>(false);
   const [gitActionMessage, setGitActionMessage] = useState<string>('');
+  const [imageRegenRunning, setImageRegenRunning] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<AdminTab>('matches');
   const [deckBackImageInput, setDeckBackImageInput] = useState<string>(sharedDeckTemplate.deckBackImage ?? '');
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null);
@@ -341,6 +346,52 @@ export const AdminPage = ({
       reader.onerror = () => resolve('');
       reader.readAsDataURL(blob);
     });
+
+  const optimizeBlobForUpload = async (
+    blob: Blob,
+    filename: string,
+    options?: { maxWidth?: number; maxHeight?: number; quality?: number },
+  ): Promise<{ dataUrl: string; filename: string } | null> => {
+    const sourceUrl = URL.createObjectURL(blob);
+    try {
+      const image = new Image();
+      const loaded = await new Promise<boolean>((resolve) => {
+        image.onload = () => resolve(true);
+        image.onerror = () => resolve(false);
+        image.src = sourceUrl;
+      });
+      if (!loaded || !image.width || !image.height) return null;
+
+      const maxWidth = options?.maxWidth ?? MAX_CARD_UPLOAD_WIDTH;
+      const maxHeight = options?.maxHeight ?? MAX_CARD_UPLOAD_HEIGHT;
+      const quality = options?.quality ?? DEFAULT_UPLOAD_QUALITY;
+
+      const scale = Math.min(1, maxWidth / image.width, maxHeight / image.height);
+      const targetWidth = Math.max(1, Math.round(image.width * scale));
+      const targetHeight = Math.max(1, Math.round(image.height * scale));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      ctx.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+      let dataUrl = canvas.toDataURL('image/webp', quality);
+      let ext = 'webp';
+      if (!dataUrl.startsWith('data:image/webp')) {
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+        ext = 'jpg';
+      }
+
+      const parsed = filename.split('.');
+      if (parsed.length > 1) parsed.pop();
+      const baseName = (parsed.join('.') || 'card-image').trim();
+      return { dataUrl, filename: `${baseName}.${ext}` };
+    } finally {
+      URL.revokeObjectURL(sourceUrl);
+    }
+  };
 
   const beginEdit = (nextTarget: DeckTarget, index: number, card: CardDefinition) => {
     setEditTarget(nextTarget);
@@ -585,6 +636,42 @@ export const AdminPage = ({
       setGitUpdateRunning(false);
     }
   };
+  const applyGitDeploy = async () => {
+    setGitDeployRunning(true);
+    setAdminActionError('');
+    setGitActionMessage('');
+    try {
+      const response = await fetch(`${serverUrl}/api/admin/git/deploy`, {
+        method: 'POST',
+        headers: adminHeaders(),
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+        status?: GitUpdateStatus;
+      };
+      if (!response.ok || !payload.ok) {
+        setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося оновити/зібрати проект' : 'Failed to update/build project'));
+        return;
+      }
+      if (payload.status) setGitStatus(payload.status);
+      setGitActionMessage(
+        payload.message ??
+          (lang === 'uk'
+            ? 'Оновлення, збірка і рестарт запущені'
+            : 'Update, build and restart started'),
+      );
+      // Restart may briefly drop the server; refresh repo status after a short delay.
+      setTimeout(() => {
+        void checkGitUpdates();
+      }, 3000);
+    } catch {
+      setAdminActionError(lang === 'uk' ? 'Не вдалося оновити/зібрати проект' : 'Failed to update/build project');
+    } finally {
+      setGitDeployRunning(false);
+    }
+  };
   const attachImageFile = async (file: File | null) => {
     if (!file) return;
     const sourceUrl = URL.createObjectURL(file);
@@ -633,12 +720,13 @@ export const AdminPage = ({
   };
   const uploadOriginalFromCropDraft = async () => {
     if (!cropDraft) return;
-    const dataUrl = await blobToDataUrl(cropDraft.sourceBlob);
+    const optimized = await optimizeBlobForUpload(cropDraft.sourceBlob, cropDraft.filename);
+    const dataUrl = optimized?.dataUrl ?? (await blobToDataUrl(cropDraft.sourceBlob));
     if (!dataUrl) {
       setEditError(lang === 'uk' ? 'Не вдалося прочитати зображення' : 'Failed to read image');
       return;
     }
-    const path = await uploadDataUrl(cropDraft.filename, dataUrl);
+    const path = await uploadDataUrl(optimized?.filename ?? cropDraft.filename, dataUrl);
     if (!path) return;
     setEditError('');
     setEditCard((prev) => ({ ...prev, image: path }));
@@ -670,8 +758,14 @@ export const AdminPage = ({
     }
     ctx.drawImage(image, sx, sy, sw, sh, 0, 0, sw, sh);
 
-    const outDataUrl = canvas.toDataURL(cropDraft.mime);
-    const path = await uploadDataUrl(cropDraft.filename, outDataUrl);
+    let outDataUrl = canvas.toDataURL('image/webp', DEFAULT_UPLOAD_QUALITY);
+    let outFilename = cropDraft.filename.replace(/\.[^.]+$/u, '') || cropDraft.filename || 'card-image';
+    outFilename = `${outFilename}.webp`;
+    if (!outDataUrl.startsWith('data:image/webp')) {
+      outDataUrl = canvas.toDataURL('image/jpeg', DEFAULT_UPLOAD_QUALITY);
+      outFilename = outFilename.replace(/\.webp$/u, '.jpg');
+    }
+    const path = await uploadDataUrl(outFilename, outDataUrl);
     if (!path) return;
     setEditError('');
     setEditCard((prev) => ({ ...prev, image: path }));
@@ -684,23 +778,166 @@ export const AdminPage = ({
   };
   const uploadDeckBackImage = async (file: File | null) => {
     if (!file) return;
-    const reader = new FileReader();
-    const dataUrl = await new Promise<string>((resolve) => {
-      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-      reader.onerror = () => resolve('');
-      reader.readAsDataURL(file);
-    });
+    const optimized = await optimizeBlobForUpload(file, file.name, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
+    const dataUrl = optimized?.dataUrl ?? (await blobToDataUrl(file));
     if (!dataUrl) {
       setEditError(lang === 'uk' ? 'Не вдалося прочитати файл зображення' : 'Failed to read image file');
       return;
     }
-    const path = await uploadDataUrl(file.name, dataUrl, 'deck-back');
+    const path = await uploadDataUrl(optimized?.filename ?? file.name, dataUrl, 'deck-back');
     if (!path) {
       return;
     }
     onSetDeckBackImage(path);
     setDeckBackImageInput(path);
     setImagePreviewNonce((v) => v + 1);
+  };
+  const regenerateAllTemplateImages = async () => {
+    if (imageRegenRunning) return;
+    setImageRegenRunning(true);
+    setAdminActionError('');
+    setGitActionMessage('');
+
+    const normalizeLocalCardPath = (value?: string) => {
+      if (!value) return null;
+      const normalized = normalizeImagePath(value);
+      if (!normalized) return null;
+      return normalized.startsWith('/cards/') ? normalized : null;
+    };
+
+    let scanned = 0;
+    let updated = 0;
+    let failed = 0;
+    let skippedWebp = 0;
+    let deletedOriginals = 0;
+    const transformedBySource = new Map<string, string | null>();
+    const originalsToDelete = new Set<string>();
+
+    const deleteUploadedImage = async (imagePath: string): Promise<boolean> => {
+      try {
+        const response = await fetch(`${serverUrl}/api/admin/delete-card-image`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...adminHeaders(),
+          },
+          body: JSON.stringify({ path: imagePath }),
+        });
+        const payload = (await response.json()) as { ok?: boolean };
+        return Boolean(response.ok && payload.ok);
+      } catch {
+        return false;
+      }
+    };
+
+    const shouldConvertPath = (localPath: string) => {
+      const clean = localPath.split('?')[0].toLowerCase();
+      if (clean.endsWith('.webp')) return false;
+      return clean.endsWith('.png') || clean.endsWith('.jpg') || clean.endsWith('.jpeg') || clean.endsWith('.bmp');
+    };
+
+    try {
+      const processCardList = async (targetName: DeckTarget, cards: CardDefinition[]) => {
+        for (let i = 0; i < cards.length; i += 1) {
+          const card = cards[i];
+          const localPath = normalizeLocalCardPath(card.image);
+          if (!localPath) continue;
+          scanned += 1;
+          if (!shouldConvertPath(localPath)) {
+            if (localPath.toLowerCase().split('?')[0].endsWith('.webp')) skippedWebp += 1;
+            continue;
+          }
+          if (transformedBySource.has(localPath)) {
+            const cachedNewPath = transformedBySource.get(localPath);
+            if (cachedNewPath && cachedNewPath !== card.image) {
+              onUpdateCard(targetName, i, { ...card, image: cachedNewPath });
+              updated += 1;
+            }
+            continue;
+          }
+          try {
+            const response = await fetch(`${localPath}${localPath.includes('?') ? '&' : '?'}regen=${Date.now()}`);
+            if (!response.ok) {
+              transformedBySource.set(localPath, null);
+              failed += 1;
+              continue;
+            }
+            const blob = await response.blob();
+            const fileName = localPath.split('/').pop() || `${card.id}.png`;
+            const optimized = await optimizeBlobForUpload(blob, fileName);
+            if (!optimized?.dataUrl) {
+              transformedBySource.set(localPath, null);
+              failed += 1;
+              continue;
+            }
+            const nextPath = await uploadDataUrl(optimized.filename, optimized.dataUrl, card.id);
+            if (!nextPath) {
+              transformedBySource.set(localPath, null);
+              failed += 1;
+              continue;
+            }
+            transformedBySource.set(localPath, nextPath);
+            onUpdateCard(targetName, i, { ...card, image: nextPath });
+            if (nextPath !== localPath) originalsToDelete.add(localPath);
+            updated += 1;
+          } catch {
+            transformedBySource.set(localPath, null);
+            failed += 1;
+          }
+        }
+      };
+
+      await processCardList('deck', sharedDeckTemplate.deck);
+      await processCardList('legendaryDeck', sharedDeckTemplate.legendaryDeck);
+      await processCardList('rankTrack', sharedDeckTemplate.rankTrack);
+
+      const deckBackLocalPath = normalizeLocalCardPath(sharedDeckTemplate.deckBackImage);
+      if (deckBackLocalPath) {
+        scanned += 1;
+        if (!shouldConvertPath(deckBackLocalPath)) {
+          if (deckBackLocalPath.toLowerCase().split('?')[0].endsWith('.webp')) skippedWebp += 1;
+        } else {
+          try {
+            const response = await fetch(`${deckBackLocalPath}${deckBackLocalPath.includes('?') ? '&' : '?'}regen=${Date.now()}`);
+            if (response.ok) {
+              const blob = await response.blob();
+              const fileName = deckBackLocalPath.split('/').pop() || 'deck-back.png';
+              const optimized = await optimizeBlobForUpload(blob, fileName, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
+              if (optimized?.dataUrl) {
+                const nextPath = await uploadDataUrl(optimized.filename, optimized.dataUrl, 'deck-back');
+                if (nextPath) {
+                  onSetDeckBackImage(nextPath);
+                  if (nextPath !== deckBackLocalPath) originalsToDelete.add(deckBackLocalPath);
+                  updated += 1;
+                } else {
+                  failed += 1;
+                }
+              } else {
+                failed += 1;
+              }
+            } else {
+              failed += 1;
+            }
+          } catch {
+            failed += 1;
+          }
+        }
+      }
+
+      for (const oldPath of originalsToDelete) {
+        // Ignore delete failures for files that may already be gone or reused.
+        if (await deleteUploadedImage(oldPath)) deletedOriginals += 1;
+      }
+
+      setGitActionMessage(
+        lang === 'uk'
+          ? `Перегенерацію завершено. Перевірено: ${scanned}, оновлено: ${updated}, пропущено webp: ${skippedWebp}, видалено оригінали: ${deletedOriginals}, помилок: ${failed}.`
+          : `Regeneration complete. Scanned: ${scanned}, updated: ${updated}, skipped webp: ${skippedWebp}, deleted originals: ${deletedOriginals}, failed: ${failed}.`,
+      );
+      setImagePreviewNonce((v) => v + 1);
+    } finally {
+      setImageRegenRunning(false);
+    }
   };
   const importFromFile = (file: File | null) => {
     if (!file) return;
@@ -1045,15 +1282,23 @@ export const AdminPage = ({
           <p>{t.serverUrlReloadHint}</p>
           <h4>{t.githubUpdatesTitle}</h4>
           <p className="admin-controls">
-            <button type="button" onClick={() => void checkGitUpdates()} disabled={gitStatusLoading || gitUpdateRunning}>
+            <button type="button" onClick={() => void checkGitUpdates()} disabled={gitStatusLoading || gitUpdateRunning || gitDeployRunning}>
               {gitStatusLoading ? t.githubCheckUpdatesLoading : t.githubCheckUpdates}
             </button>
             <button
               type="button"
               onClick={() => void applyGitUpdate()}
-              disabled={gitUpdateRunning || gitStatusLoading || (gitStatus ? !gitStatus.canUpdate : false)}
+              disabled={gitUpdateRunning || gitDeployRunning || gitStatusLoading || (gitStatus ? !gitStatus.canUpdate : false)}
             >
               {gitUpdateRunning ? t.githubApplyUpdateLoading : t.githubApplyUpdate}
+            </button>
+            <button
+              type="button"
+              onClick={() => void applyGitDeploy()}
+              disabled={gitDeployRunning || gitUpdateRunning || gitStatusLoading || (gitStatus ? gitStatus.dirty : false)}
+              title={lang === 'uk' ? 'Git pull + npm install + tsc + vite build + pm2 restart' : 'Git pull + npm install + tsc + vite build + pm2 restart'}
+            >
+              {gitDeployRunning ? t.githubDeployLoading : t.githubDeploy}
             </button>
           </p>
           {gitStatus ? (
@@ -1072,6 +1317,9 @@ export const AdminPage = ({
           <h4>{t.systemActions}</h4>
           <p className="admin-controls">
             <button type="button" onClick={onResetAll}>{t.resetAll}</button>
+            <button type="button" onClick={() => void regenerateAllTemplateImages()} disabled={imageRegenRunning}>
+              {imageRegenRunning ? t.regenerateImagesRunning : t.regenerateImages}
+            </button>
             <button
               type="button"
               onClick={() => {

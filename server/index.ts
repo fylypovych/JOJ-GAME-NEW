@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { access, appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { access, appendFile, mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
   exportSharedDeckTemplateJson,
@@ -66,7 +66,8 @@ const loadEnvFile = () => {
 loadEnvFile();
 
 const adminToken = (process.env.ADMIN_TOKEN ?? '').trim();
-const isAdminAuthEnabled = adminToken.length > 0;
+const disableAdminAuth = /^(1|true|yes)$/i.test((process.env.DISABLE_ADMIN_AUTH ?? '').trim());
+const isAdminAuthEnabled = !disableAdminAuth && adminToken.length > 0;
 
 const logLine = async (level: 'INFO' | 'WARN' | 'ERROR', message: string) => {
   const line = `[${new Date().toISOString()}] [${level}] ${message}\n`;
@@ -221,6 +222,46 @@ const runGit = async (args: string[]): Promise<{ ok: true; stdout: string; stder
     });
   });
 
+const runShellCommand = async (
+  command: string,
+  timeoutMs = 15 * 60_000,
+): Promise<{ ok: true; stdout: string; stderr: string } | { ok: false; error: string }> =>
+  new Promise((resolve) => {
+    const isWin = process.platform === 'win32';
+    const file = isWin ? 'cmd.exe' : 'sh';
+    const args = isWin ? ['/d', '/s', '/c', command] : ['-lc', command];
+    execFile(
+      file,
+      args,
+      {
+        cwd: repoDir,
+        windowsHide: true,
+        timeout: timeoutMs,
+        maxBuffer: 64 * 1024 * 1024,
+      },
+      (error, stdout, stderr) => {
+        if (error) {
+          resolve({ ok: false, error: String(stderr || stdout || error.message || error) });
+          return;
+        }
+        resolve({ ok: true, stdout: String(stdout ?? ''), stderr: String(stderr ?? '') });
+      },
+    );
+  });
+
+const spawnDetachedShell = (command: string) => {
+  const isWin = process.platform === 'win32';
+  const file = isWin ? 'cmd.exe' : 'sh';
+  const args = isWin ? ['/d', '/s', '/c', command] : ['-lc', command];
+  const child = spawn(file, args, {
+    cwd: repoDir,
+    windowsHide: true,
+    detached: true,
+    stdio: 'ignore',
+  });
+  child.unref();
+};
+
 type GitPorcelainEntry = {
   xy: string;
   path: string;
@@ -248,6 +289,18 @@ const parseGitPorcelain = (stdout: string): GitPorcelainEntry[] =>
       }
       return { xy, path: rest };
     });
+
+const autoStashRuntimeNoise = async (status: {
+  ignoredRuntimeDirtyFiles?: string[];
+}): Promise<{ ok: true } | { ok: false; error: string }> => {
+  if (!Array.isArray(status.ignoredRuntimeDirtyFiles) || status.ignoredRuntimeDirtyFiles.length === 0) {
+    return { ok: true };
+  }
+  const stashRes = await runGit(['stash', 'push', '-u', '-m', 'admin-auto-stash-runtime']);
+  if (!stashRes.ok) return { ok: false, error: stashRes.error };
+  await logLine('INFO', `git runtime auto-stash created (${status.ignoredRuntimeDirtyFiles.length} files)`);
+  return { ok: true };
+};
 
 const getGitUpdateStatus = async () => {
   const branchRes = await runGit(['rev-parse', '--abbrev-ref', 'HEAD']);
@@ -553,6 +606,40 @@ if (router) {
     }
   });
 
+  router.post('/api/admin/delete-card-image', async (ctx: any) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/delete-card-image'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-delete-card-image', 60, 60_000))) return;
+    const body = await readJsonBodySafe(ctx, '/api/admin/delete-card-image', JSON_BODY_LIMIT);
+    if (!body) return;
+    const imagePath = typeof body.path === 'string' ? body.path.trim() : '';
+    if (!imagePath.startsWith('/cards/')) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Only /cards/* paths can be deleted' };
+      return;
+    }
+    const fileName = path.basename(imagePath);
+    if (!fileName || fileName === '.' || fileName === '..') {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Invalid file path' };
+      return;
+    }
+    const targetPath = path.resolve(uploadsDir, fileName);
+    if (!targetPath.startsWith(uploadsDir + path.sep) && targetPath !== path.resolve(uploadsDir, fileName)) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Invalid target path' };
+      return;
+    }
+    try {
+      await unlink(targetPath);
+      await logLine('INFO', `image deleted: ${fileName}`);
+      ctx.body = { ok: true };
+    } catch (error) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: 'Failed to delete image' };
+      await logLine('ERROR', `image delete failed (${fileName}): ${String(error)}`);
+    }
+  });
+
   router.post('/api/admin/restart', async (ctx: any) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/restart'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-restart', 5, 60_000))) return;
@@ -578,15 +665,12 @@ if (router) {
       ctx.body = { ok: false, error: 'Working tree has local changes. Commit or stash before update.', status };
       return;
     }
-    if (Array.isArray(status.ignoredRuntimeDirtyFiles) && status.ignoredRuntimeDirtyFiles.length > 0) {
-      const stashRes = await runGit(['stash', 'push', '-u', '-m', 'admin-auto-stash-runtime']);
-      if (!stashRes.ok) {
-        ctx.status = 500;
-        ctx.body = { ok: false, error: `Failed to stash runtime files: ${stashRes.error}`, status };
-        await logLine('ERROR', `git runtime stash failed: ${stashRes.error}`);
-        return;
-      }
-      await logLine('INFO', `git runtime auto-stash created before update (${status.ignoredRuntimeDirtyFiles.length} files)`);
+    const stashRuntime = await autoStashRuntimeNoise(status);
+    if (!stashRuntime.ok) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: `Failed to stash runtime files: ${stashRuntime.error}`, status };
+      await logLine('ERROR', `git runtime stash failed: ${stashRuntime.error}`);
+      return;
     }
     if (status.behind <= 0) {
       ctx.body = { ok: true, updated: false, message: 'Already up to date', status };
@@ -617,6 +701,100 @@ if (router) {
       output: pullRes.stdout.trim(),
       status: nextStatus,
     };
+  });
+
+  router.post('/api/admin/git/deploy', async (ctx: any) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/git/deploy'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-git-deploy', 3, 60_000))) return;
+
+    const status = await getGitUpdateStatus();
+    if (!status.ok) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: status.error };
+      await logLine('ERROR', `git pre-deploy status failed: ${status.error}`);
+      return;
+    }
+    if (status.dirty) {
+      ctx.status = 409;
+      ctx.body = { ok: false, error: 'Working tree has local changes. Commit or stash before deploy.', status };
+      return;
+    }
+
+    const stashRuntime = await autoStashRuntimeNoise(status);
+    if (!stashRuntime.ok) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: `Failed to stash runtime files: ${stashRuntime.error}`, status };
+      await logLine('ERROR', `git runtime stash failed before deploy: ${stashRuntime.error}`);
+      return;
+    }
+
+    const steps: Array<{ step: string; output?: string }> = [];
+
+    if (status.behind > 0) {
+      const pullRes = await runGit(['pull', '--ff-only']);
+      if (!pullRes.ok) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: pullRes.error, status };
+        await logLine('ERROR', `git deploy pull failed: ${pullRes.error}`);
+        return;
+      }
+      steps.push({ step: 'git pull --ff-only', output: pullRes.stdout.trim() || pullRes.stderr.trim() || '(ok)' });
+    } else {
+      steps.push({ step: 'git pull --ff-only', output: 'Already up to date' });
+    }
+
+    const installRes = await runShellCommand('npm install', 30 * 60_000);
+    if (!installRes.ok) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: `npm install failed: ${installRes.error}`, steps };
+      await logLine('ERROR', `deploy npm install failed: ${installRes.error}`);
+      return;
+    }
+    steps.push({ step: 'npm install', output: installRes.stdout.trim() || '(ok)' });
+
+    const tscRes = await runShellCommand('npx tsc -b', 20 * 60_000);
+    if (!tscRes.ok) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: `TypeScript build failed: ${tscRes.error}`, steps };
+      await logLine('ERROR', `deploy tsc failed: ${tscRes.error}`);
+      return;
+    }
+    steps.push({ step: 'npx tsc -b', output: tscRes.stdout.trim() || '(ok)' });
+
+    const viteRes = await runShellCommand('npx vite build', 30 * 60_000);
+    if (!viteRes.ok) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: `Vite build failed: ${viteRes.error}`, steps };
+      await logLine('ERROR', `deploy vite build failed: ${viteRes.error}`);
+      return;
+    }
+    steps.push({ step: 'npx vite build', output: viteRes.stdout.trim() || '(ok)' });
+
+    const nextStatus = await getGitUpdateStatus();
+    if (!nextStatus.ok) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: nextStatus.error, steps };
+      await logLine('ERROR', `git post-deploy status failed: ${nextStatus.error}`);
+      return;
+    }
+
+    await logLine('WARN', `admin deploy completed; scheduling PM2 restart; head=${nextStatus.head}`);
+    ctx.body = {
+      ok: true,
+      message: 'Update, build and restart scheduled',
+      restarted: true,
+      steps,
+      status: nextStatus,
+    };
+
+    setTimeout(() => {
+      try {
+        spawnDetachedShell('pm2 restart ecosystem.config.cjs --update-env');
+      } catch {
+        // Fallback if PM2 command is unavailable in PATH of service process.
+        process.exit(0);
+      }
+    }, 300);
   });
 }
 
