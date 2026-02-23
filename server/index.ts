@@ -211,11 +211,32 @@ const readJsonBodySafe = async (
   }
 };
 
+const formatCommandFailure = (
+  command: string,
+  args: string[],
+  error: unknown,
+  stdout: string,
+  stderr: string,
+) => {
+  const err = error as { message?: string; code?: string | number };
+  const parts = [`$ ${command} ${args.join(' ')}`];
+  if (err?.message) parts.push(`message: ${String(err.message)}`);
+  if (err?.code !== undefined) parts.push(`code: ${String(err.code)}`);
+  if (stdout.trim()) parts.push(`stdout:\n${stdout.trim()}`);
+  if (stderr.trim()) parts.push(`stderr:\n${stderr.trim()}`);
+  if (String(err?.code ?? '') === 'ENOENT') {
+    parts.push('hint: executable not found in PATH of the server process');
+  }
+  return parts.join('\n');
+};
+
 const runGit = async (args: string[]): Promise<{ ok: true; stdout: string; stderr: string } | { ok: false; error: string }> =>
   new Promise((resolve) => {
     execFile('git', args, { cwd: repoDir, windowsHide: true, timeout: 30_000 }, (error, stdout, stderr) => {
       if (error) {
-        resolve({ ok: false, error: String(stderr || error.message || error) });
+        const out = String(stdout ?? '');
+        const err = String(stderr ?? '');
+        resolve({ ok: false, error: formatCommandFailure('git', args, error, out, err) });
         return;
       }
       resolve({ ok: true, stdout: String(stdout ?? ''), stderr: String(stderr ?? '') });
@@ -241,7 +262,9 @@ const runShellCommand = async (
       },
       (error, stdout, stderr) => {
         if (error) {
-          resolve({ ok: false, error: String(stderr || stdout || error.message || error) });
+          const out = String(stdout ?? '');
+          const err = String(stderr ?? '');
+          resolve({ ok: false, error: formatCommandFailure(file, args, error, out, err) });
           return;
         }
         resolve({ ok: true, stdout: String(stdout ?? ''), stderr: String(stderr ?? '') });
@@ -464,7 +487,7 @@ if (router) {
     const result = await getGitUpdateStatus();
     if (!result.ok) {
       ctx.status = 500;
-      ctx.body = { ok: false, error: result.error };
+      ctx.body = { ok: false, error: 'Failed to read Git status', details: result.error };
       await logLine('ERROR', `git status failed: ${result.error}`);
       return;
     }
@@ -656,7 +679,7 @@ if (router) {
     const status = await getGitUpdateStatus();
     if (!status.ok) {
       ctx.status = 500;
-      ctx.body = { ok: false, error: status.error };
+      ctx.body = { ok: false, error: 'Failed to read Git status before update', details: status.error };
       await logLine('ERROR', `git pre-update status failed: ${status.error}`);
       return;
     }
@@ -668,7 +691,7 @@ if (router) {
     const stashRuntime = await autoStashRuntimeNoise(status);
     if (!stashRuntime.ok) {
       ctx.status = 500;
-      ctx.body = { ok: false, error: `Failed to stash runtime files: ${stashRuntime.error}`, status };
+      ctx.body = { ok: false, error: 'Failed to stash runtime files', details: stashRuntime.error, status };
       await logLine('ERROR', `git runtime stash failed: ${stashRuntime.error}`);
       return;
     }
@@ -680,7 +703,7 @@ if (router) {
     const pullRes = await runGit(['pull', '--ff-only']);
     if (!pullRes.ok) {
       ctx.status = 500;
-      ctx.body = { ok: false, error: pullRes.error, status };
+      ctx.body = { ok: false, error: 'Git pull failed', details: pullRes.error, status };
       await logLine('ERROR', `git update failed: ${pullRes.error}`);
       return;
     }
@@ -688,7 +711,7 @@ if (router) {
     const nextStatus = await getGitUpdateStatus();
     if (!nextStatus.ok) {
       ctx.status = 500;
-      ctx.body = { ok: false, error: nextStatus.error };
+      ctx.body = { ok: false, error: 'Failed to read Git status after update', details: nextStatus.error };
       await logLine('ERROR', `git post-update status failed: ${nextStatus.error}`);
       return;
     }
@@ -710,7 +733,7 @@ if (router) {
     const status = await getGitUpdateStatus();
     if (!status.ok) {
       ctx.status = 500;
-      ctx.body = { ok: false, error: status.error };
+      ctx.body = { ok: false, error: 'Failed to read Git status before deploy', details: status.error };
       await logLine('ERROR', `git pre-deploy status failed: ${status.error}`);
       return;
     }
@@ -723,7 +746,7 @@ if (router) {
     const stashRuntime = await autoStashRuntimeNoise(status);
     if (!stashRuntime.ok) {
       ctx.status = 500;
-      ctx.body = { ok: false, error: `Failed to stash runtime files: ${stashRuntime.error}`, status };
+      ctx.body = { ok: false, error: 'Failed to stash runtime files', details: stashRuntime.error, status };
       await logLine('ERROR', `git runtime stash failed before deploy: ${stashRuntime.error}`);
       return;
     }
@@ -734,7 +757,7 @@ if (router) {
       const pullRes = await runGit(['pull', '--ff-only']);
       if (!pullRes.ok) {
         ctx.status = 500;
-        ctx.body = { ok: false, error: pullRes.error, status };
+        ctx.body = { ok: false, error: 'Git pull failed', details: pullRes.error, status };
         await logLine('ERROR', `git deploy pull failed: ${pullRes.error}`);
         return;
       }
@@ -746,7 +769,7 @@ if (router) {
     const installRes = await runShellCommand('npm install', 30 * 60_000);
     if (!installRes.ok) {
       ctx.status = 500;
-      ctx.body = { ok: false, error: `npm install failed: ${installRes.error}`, steps };
+      ctx.body = { ok: false, error: 'npm install failed', details: installRes.error, steps };
       await logLine('ERROR', `deploy npm install failed: ${installRes.error}`);
       return;
     }
@@ -755,7 +778,7 @@ if (router) {
     const tscRes = await runShellCommand('npx tsc -b', 20 * 60_000);
     if (!tscRes.ok) {
       ctx.status = 500;
-      ctx.body = { ok: false, error: `TypeScript build failed: ${tscRes.error}`, steps };
+      ctx.body = { ok: false, error: 'TypeScript build failed', details: tscRes.error, steps };
       await logLine('ERROR', `deploy tsc failed: ${tscRes.error}`);
       return;
     }
@@ -764,7 +787,7 @@ if (router) {
     const viteRes = await runShellCommand('npx vite build', 30 * 60_000);
     if (!viteRes.ok) {
       ctx.status = 500;
-      ctx.body = { ok: false, error: `Vite build failed: ${viteRes.error}`, steps };
+      ctx.body = { ok: false, error: 'Vite build failed', details: viteRes.error, steps };
       await logLine('ERROR', `deploy vite build failed: ${viteRes.error}`);
       return;
     }
@@ -773,7 +796,7 @@ if (router) {
     const nextStatus = await getGitUpdateStatus();
     if (!nextStatus.ok) {
       ctx.status = 500;
-      ctx.body = { ok: false, error: nextStatus.error, steps };
+      ctx.body = { ok: false, error: 'Failed to read Git status after deploy', details: nextStatus.error, steps };
       await logLine('ERROR', `git post-deploy status failed: ${nextStatus.error}`);
       return;
     }

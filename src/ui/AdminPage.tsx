@@ -251,6 +251,7 @@ export const AdminPage = ({
   const [gitUpdateRunning, setGitUpdateRunning] = useState<boolean>(false);
   const [gitDeployRunning, setGitDeployRunning] = useState<boolean>(false);
   const [gitActionMessage, setGitActionMessage] = useState<string>('');
+  const [gitActionLog, setGitActionLog] = useState<string>('');
   const [imageRegenRunning, setImageRegenRunning] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<AdminTab>('matches');
   const [deckBackImageInput, setDeckBackImageInput] = useState<string>(sharedDeckTemplate.deckBackImage ?? '');
@@ -578,11 +579,13 @@ export const AdminPage = ({
     setGitStatusLoading(true);
     setAdminActionError('');
     setGitActionMessage('');
+    setGitActionLog('');
     try {
       const response = await fetch(`${serverUrl}/api/admin/git/status`, { headers: adminHeaders() });
-      const payload = (await response.json()) as ({ ok?: boolean; error?: string } & Partial<GitUpdateStatus>);
+      const payload = (await response.json()) as ({ ok?: boolean; error?: string; details?: string } & Partial<GitUpdateStatus>);
       if (!response.ok || !payload.ok) {
         setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates'));
+        setGitActionLog(payload.details ?? payload.error ?? '');
         return;
       }
       setGitStatus({
@@ -599,6 +602,7 @@ export const AdminPage = ({
       setGitActionMessage(lang === 'uk' ? 'Стан репозиторію оновлено' : 'Repository status updated');
     } catch {
       setAdminActionError(lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates');
+      setGitActionLog('');
     } finally {
       setGitStatusLoading(false);
     }
@@ -607,6 +611,7 @@ export const AdminPage = ({
     setGitUpdateRunning(true);
     setAdminActionError('');
     setGitActionMessage('');
+    setGitActionLog('');
     try {
       const response = await fetch(`${serverUrl}/api/admin/git/update`, {
         method: 'POST',
@@ -618,12 +623,16 @@ export const AdminPage = ({
         message?: string;
         updated?: boolean;
         status?: GitUpdateStatus;
+        output?: string;
+        details?: string;
       };
       if (!response.ok || !payload.ok) {
         setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося оновити файли' : 'Failed to update files'));
+        setGitActionLog(payload.details ?? payload.error ?? '');
         return;
       }
       if (payload.status) setGitStatus(payload.status);
+      if (payload.output) setGitActionLog(payload.output);
       setGitActionMessage(
         payload.message ??
           (payload.updated
@@ -632,6 +641,7 @@ export const AdminPage = ({
       );
     } catch {
       setAdminActionError(lang === 'uk' ? 'Не вдалося оновити файли' : 'Failed to update files');
+      setGitActionLog('');
     } finally {
       setGitUpdateRunning(false);
     }
@@ -640,6 +650,7 @@ export const AdminPage = ({
     setGitDeployRunning(true);
     setAdminActionError('');
     setGitActionMessage('');
+    setGitActionLog('');
     try {
       const response = await fetch(`${serverUrl}/api/admin/git/deploy`, {
         method: 'POST',
@@ -650,12 +661,23 @@ export const AdminPage = ({
         error?: string;
         message?: string;
         status?: GitUpdateStatus;
+        steps?: Array<{ step?: string; output?: string }>;
+        details?: string;
       };
       if (!response.ok || !payload.ok) {
         setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося оновити/зібрати проект' : 'Failed to update/build project'));
+        setGitActionLog(payload.details ?? payload.error ?? '');
         return;
       }
       if (payload.status) setGitStatus(payload.status);
+      if (Array.isArray(payload.steps)) {
+        setGitActionLog(
+          payload.steps
+            .map((step) => `$ ${step.step ?? ''}\n${(step.output ?? '').trim()}`.trim())
+            .join('\n\n')
+            .trim(),
+        );
+      }
       setGitActionMessage(
         payload.message ??
           (lang === 'uk'
@@ -668,6 +690,7 @@ export const AdminPage = ({
       }, 3000);
     } catch {
       setAdminActionError(lang === 'uk' ? 'Не вдалося оновити/зібрати проект' : 'Failed to update/build project');
+      setGitActionLog('');
     } finally {
       setGitDeployRunning(false);
     }
@@ -1314,6 +1337,7 @@ export const AdminPage = ({
             </div>
           ) : null}
           {gitActionMessage ? <p className="admin-success">{gitActionMessage}</p> : null}
+          {gitActionLog ? <pre className="admin-textarea">{gitActionLog}</pre> : null}
           <h4>{t.systemActions}</h4>
           <p className="admin-controls">
             <button type="button" onClick={onResetAll}>{t.resetAll}</button>
