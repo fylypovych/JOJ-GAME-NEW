@@ -38,8 +38,12 @@ export const Board = ({
   const isCurrentPlayer = ctx?.currentPlayer === id;
   const stage = ctx?.activePlayers?.[id];
   const canDraw = isCurrentPlayer && stage === 'draw';
-  const canPlay = isCurrentPlayer && stage === 'play';
+  const canPlay = isCurrentPlayer && (stage === 'play' || stage === 'end');
   const canEndTurn = isCurrentPlayer && (stage === 'play' || stage === 'end');
+  const extraHandPlayTokens = G?.extraHandPlayTokens?.[id] ?? 0;
+  const canPlayHandCard = canPlay || extraHandPlayTokens > 0;
+  const handOverflow = Math.max(0, hand.length - 8);
+  const mustDiscardOverflow = isCurrentPlayer && handOverflow > 0 && (stage === 'play' || stage === 'end');
   const deckBackImage = G?.deckBackImage ? normalizeImagePath(G.deckBackImage) : undefined;
   const lastDiscard = G?.discard?.length ? G.discard[G.discard.length - 1] : null;
   const lastLegendaryDiscard = G?.legendaryDiscard?.length ? G.legendaryDiscard[G.legendaryDiscard.length - 1] : null;
@@ -149,7 +153,7 @@ export const Board = ({
       })
       .join('\n');
     const value = window.prompt(
-      `${lang === 'uk' ? 'Оберіть ціль для «Дрончик»' : 'Choose target for "Drone"}:\n${options}\n${lang === 'uk' ? 'Введіть номер або playerID.' : 'Enter option number or playerID.'}`,
+      `${lang === 'uk' ? 'Оберіть ціль для «Дрончик»' : 'Choose target for "Drone"'}:\n${options}\n${lang === 'uk' ? 'Введіть номер або playerID.' : 'Enter option number or playerID.'}`,
     );
     if (value === null) return null;
     const trimmed = value.trim();
@@ -247,7 +251,11 @@ export const Board = ({
             {deckBackImage ? (
               <div className="pile-preview">
                 <img src={deckBackImage} alt={t.drawPile} onClick={(e) => { e.stopPropagation(); togglePreview('pile-deck-back'); }} />
-                <div className={`game-card-popover${openPreviewKey === 'pile-deck-back' ? ' is-open' : ''}`} aria-hidden={openPreviewKey !== 'pile-deck-back'}>
+                <div
+                  className={`game-card-popover${openPreviewKey === 'pile-deck-back' ? ' is-open' : ''}`}
+                  aria-hidden={openPreviewKey !== 'pile-deck-back'}
+                  onClick={(e) => { e.stopPropagation(); setOpenPreviewKey(null); }}
+                >
                   <img src={deckBackImage} alt={t.drawPile} />
                 </div>
               </div>
@@ -266,7 +274,11 @@ export const Board = ({
                   alt={cardTitle(lastDiscard.id, lastDiscard.title, lang)}
                   onClick={(e) => { e.stopPropagation(); togglePreview(`pile-discard-${lastDiscard.id}`); }}
                 />
-                <div className={`game-card-popover${openPreviewKey === `pile-discard-${lastDiscard.id}` ? ' is-open' : ''}`} aria-hidden={openPreviewKey !== `pile-discard-${lastDiscard.id}`}>
+                <div
+                  className={`game-card-popover${openPreviewKey === `pile-discard-${lastDiscard.id}` ? ' is-open' : ''}`}
+                  aria-hidden={openPreviewKey !== `pile-discard-${lastDiscard.id}`}
+                  onClick={(e) => { e.stopPropagation(); setOpenPreviewKey(null); }}
+                >
                   <img
                     src={normalizeImagePath(lastDiscard.image) ?? `/cards/${lastDiscard.id}.png`}
                     alt={cardTitle(lastDiscard.id, lastDiscard.title, lang)}
@@ -293,9 +305,17 @@ export const Board = ({
       </div>
 
       <h2>{t.yourHand} ({hand.length}/8)</h2>
+      {mustDiscardOverflow ? (
+        <p className="legendary-hint">
+          {lang === 'uk'
+            ? `Наприкінці ходу потрібно скинути ${handOverflow} карт(и) до ліміту 8. ЛЯП/СКАНДАЛ скидати кнопкою не можна.`
+            : `Before ending the turn, discard ${handOverflow} card(s) to return to the hand limit of 8. LYAP/SCANDAL cannot be discarded with this button.`}
+        </p>
+      ) : null}
       <div className="hand">
         {hand.map((card) => {
           const effectEntries = card.effects ?? [];
+          const canDiscardThisCard = mustDiscardOverflow && card.category !== 'LYAP' && card.category !== 'SCANDAL';
           return (
           <div
             key={card.id}
@@ -305,15 +325,25 @@ export const Board = ({
               type="button"
               className="game-card-inline-action"
               onClick={() => {
-                if (!canPlay) return;
+                if (!canPlayHandCard) return;
                 const target = card.category === 'LYAP' ? promptLyapTarget() : undefined;
                 if (card.category === 'LYAP' && !target) return;
                 moves.playCard(card.id, [], target);
               }}
-              disabled={!canPlay}
+              disabled={!canPlayHandCard}
             >
               {t.playLegendaryCard}
             </button>
+            {canDiscardThisCard ? (
+              <button
+                type="button"
+                className="game-card-inline-action game-card-inline-discard"
+                onClick={() => moves.discardFromHand(card.id)}
+                disabled={typeof moves.discardFromHand !== 'function'}
+              >
+                {lang === 'uk' ? 'СКИНУТИ В СКИД' : 'DISCARD TO PILE'}
+              </button>
+            ) : null}
             <div className="game-card-media">
               <img
                 src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
@@ -327,7 +357,11 @@ export const Board = ({
                 }}
               />
             </div>
-            <div className={`game-card-popover${openPreviewKey === `hand-${card.id}` ? ' is-open' : ''}`} aria-hidden={openPreviewKey !== `hand-${card.id}`}>
+            <div
+              className={`game-card-popover${openPreviewKey === `hand-${card.id}` ? ' is-open' : ''}`}
+              aria-hidden={openPreviewKey !== `hand-${card.id}`}
+              onClick={(e) => { e.stopPropagation(); setOpenPreviewKey(null); }}
+            >
               <img
                 src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
                 alt={cardTitle(card.id, card.title, lang)}
@@ -392,7 +426,11 @@ export const Board = ({
                   }}
                 />
               </div>
-              <div className={`game-card-popover${openPreviewKey === `legendary-${card.id}` ? ' is-open' : ''}`} aria-hidden={openPreviewKey !== `legendary-${card.id}`}>
+              <div
+                className={`game-card-popover${openPreviewKey === `legendary-${card.id}` ? ' is-open' : ''}`}
+                aria-hidden={openPreviewKey !== `legendary-${card.id}`}
+                onClick={(e) => { e.stopPropagation(); setOpenPreviewKey(null); }}
+              >
                 <img
                   src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
                   alt={cardTitle(card.id, card.title, lang)}

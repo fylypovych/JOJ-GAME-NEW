@@ -366,6 +366,12 @@ button:disabled {
   display: block;
 }
 
+.game-card-inline-discard {
+  background: #fff4ed;
+  border: 1px solid #fdba74;
+  color: #9a3412;
+}
+
 .game-card-media {
   width: 100%;
   aspect-ratio: 352 / 540;

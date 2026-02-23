@@ -1,6 +1,17 @@
 import type { Ctx, Game } from 'boardgame.io';
 import { baseDeck, legendaryCards } from './cards';
 import { GENERAL_RANK_ID, ranks as baseRanks } from './ranks';
+import {
+  buildDecisionMessageText,
+  buildLegendaryPlayedMessageText,
+  buildLyapAutoMessageText,
+  buildPlayedLyapMessageText,
+  buildPlayedScandalMessageText,
+  buildPromotionMessageText,
+  buildScandalAutoMessageText,
+  buildSupportMessageText,
+  legendaryTexts,
+} from './systemMessages';
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from './types';
 
 const INVALID_MOVE = 'INVALID_MOVE' as const;
@@ -21,41 +32,6 @@ const resourceLabelsUk: Record<ResourceKey, string> = {
   documents: 'Документи',
   tech: 'Технології',
 };
-const lyapIntros = [
-  'Бюрократичний всесвіт тихо поплескав у долоні',
-  'Канцелярський маятник хитнувся не в той бік',
-  'Архівні боги перегорнули сторінку з виразом "ой-йой"',
-  'Службовий таймер ввічливо нагадав, що ідеальність переоцінена',
-  'Печатка долі поставила штамп "з несподіванкою"',
-];
-const scandalIntros = [
-  'Інфопривід вийшов у прямий ефір без попередження',
-  'Редакція внутрішніх мемів отримала новий сюжет',
-  'Пресслужба попросила всіх дихати рівно, але запізно',
-  'Новина дня постукала в двері й одразу зайшла',
-  'У стрічці подій раптом зʼявився розділ "гаряче"',
-];
-const lyapClosers = [
-  'Кава зробила вигляд, що це просто планове тренування.',
-  'Папки зберегли спокій, але нервово.',
-  'Протокол зітхнув і пішов на другу ітерацію.',
-  'Саркастичний метроном урочисто відбив такт.',
-  'Усе під контролем. Майже.',
-];
-const scandalClosers = [
-  'Нарада офіційно отримала новий порядок денний.',
-  'Система не панікує, вона "динамічно адаптується".',
-  'Журнали попросили додаткову закладку для епічних моментів.',
-  'Офіційна версія: так і було задумано.',
-  'Робоча атмосфера стала помітно сюжетнішою.',
-];
-const supportIntros = [
-  'Штаб добрих намірів увімкнув режим допомоги',
-  'Логістика посміхнулась і кивнула',
-  'Канцелярський всесвіт раптом став трохи людянішим',
-  'Система зробила вигляд, що все під контролем, і це спрацювало',
-  'Внутрішній відділ підтримки відповів швидше, ніж очікували',
-];
 export const normalizeImagePath = (input?: string): string | undefined => {
   if (!input) return undefined;
   const raw = input.trim();
@@ -113,14 +89,6 @@ const nextSystemMessageSeq = (G: JojGameState): number => {
   const next = (G.systemMessageSeq ?? 0) + 1;
   G.systemMessageSeq = next;
   return next;
-};
-
-const stableIndex = (seed: string, modulo: number): number => {
-  let h = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  }
-  return modulo > 0 ? h % modulo : 0;
 };
 
 type SharedDeckTemplate = {
@@ -707,7 +675,7 @@ const triggerSukhpayZsuOnScandal = (
     const seq = nextSystemMessageSeq(G);
     appendChat(G, {
       type: 'system',
-      text: `🥫 [${seq}] «Сухпай ЗСУ» спрацював: ${getPlayerLabel(G, pid)} отримує +1 Дисципліна після чужого скандалу.`,
+      text: `🥫 [${seq}] ${legendaryTexts.sukhpayTriggered(getPlayerLabel(G, pid))}`,
     });
   });
 };
@@ -802,12 +770,14 @@ const buildLyapSystemMessage = (
   card: CardDefinition,
   summary: { resources: Partial<Record<ResourceKey, number>>; rank: number },
 ) => {
-  const seed = `${seq}:${card.id}:${card.title}:lyap`;
-  const intro = lyapIntros[stableIndex(seed, lyapIntros.length)];
-  const closer = lyapClosers[stableIndex(`${seed}:closer`, lyapClosers.length)];
-  const category = categoryLabelUk(card.category);
-  const flavor = cardFlavorSnippet(card);
-  return `⚠️ [${seq}] ${intro}: ${playerLabel} дістав «${card.title}» (${category}). Цитата з польового щоденника: "${flavor}". Ефект: ${effectSummaryToText(summary)}. ${closer}`;
+  return buildLyapAutoMessageText({
+    seq,
+    playerLabel,
+    cardTitle: card.title,
+    categoryLabel: categoryLabelUk(card.category),
+    flavor: cardFlavorSnippet(card),
+    effectText: effectSummaryToText(summary),
+  });
 };
 
 const buildScandalSystemMessage = (
@@ -816,12 +786,14 @@ const buildScandalSystemMessage = (
   card: CardDefinition,
   targetSummaries: string[],
 ) => {
-  const seed = `${seq}:${card.id}:${card.title}:scandal`;
-  const intro = scandalIntros[stableIndex(seed, scandalIntros.length)];
-  const closer = scandalClosers[stableIndex(`${seed}:closer`, scandalClosers.length)];
-  const category = categoryLabelUk(card.category);
-  const flavor = cardFlavorSnippet(card);
-  return `🗞️ [${seq}] ${intro}: ${playerLabel} підняв «${card.title}» (${category}). Нотатка редакції: "${flavor}". Кому прилетіло: ${targetSummaries.join(' | ')}. ${closer}`;
+  return buildScandalAutoMessageText({
+    seq,
+    playerLabel,
+    cardTitle: card.title,
+    categoryLabel: categoryLabelUk(card.category),
+    flavor: cardFlavorSnippet(card),
+    targetsText: targetSummaries.join(' | '),
+  });
 };
 
 const buildSupportSystemMessage = (
@@ -830,11 +802,14 @@ const buildSupportSystemMessage = (
   card: CardDefinition,
   summary: { resources: Partial<Record<ResourceKey, number>>; rank: number },
 ) => {
-  const seed = `${seq}:${card.id}:${card.title}:support`;
-  const intro = supportIntros[stableIndex(seed, supportIntros.length)];
-  const category = categoryLabelUk(card.category);
-  const flavor = cardFlavorSnippet(card);
-  return `🤝 [${seq}] ${intro}: ${playerLabel} розіграв «${card.title}» (${category}). Коментар: "${flavor}". Ефект: ${effectSummaryToText(summary)}.`;
+  return buildSupportMessageText({
+    seq,
+    playerLabel,
+    cardTitle: card.title,
+    categoryLabel: categoryLabelUk(card.category),
+    flavor: cardFlavorSnippet(card),
+    effectText: effectSummaryToText(summary),
+  });
 };
 
 const buildPlayedLyapSystemMessage = (
@@ -844,9 +819,15 @@ const buildPlayedLyapSystemMessage = (
   card: CardDefinition,
   summary: { resources: Partial<Record<ResourceKey, number>>; rank: number },
 ) => {
-  const category = categoryLabelUk(card.category);
-  const flavor = cardFlavorSnippet(card);
-  return `🎯 [${seq}] ${sourcePlayerLabel} розіграв «${card.title}» (${category}) на ${targetPlayerLabel}. "${flavor}". Ефект: ${effectSummaryToText(summary)}.`;
+  return buildPlayedLyapMessageText({
+    seq,
+    sourcePlayerLabel,
+    targetPlayerLabel,
+    cardTitle: card.title,
+    categoryLabel: categoryLabelUk(card.category),
+    flavor: cardFlavorSnippet(card),
+    effectText: effectSummaryToText(summary),
+  });
 };
 
 const buildPlayedScandalSystemMessage = (
@@ -855,9 +836,14 @@ const buildPlayedScandalSystemMessage = (
   card: CardDefinition,
   targetSummaries: string[],
 ) => {
-  const category = categoryLabelUk(card.category);
-  const flavor = cardFlavorSnippet(card);
-  return `📣 [${seq}] ${sourcePlayerLabel} запустив «${card.title}» (${category}) по столу. "${flavor}". Кому прилетіло: ${targetSummaries.join(' | ')}.`;
+  return buildPlayedScandalMessageText({
+    seq,
+    sourcePlayerLabel,
+    cardTitle: card.title,
+    categoryLabel: categoryLabelUk(card.category),
+    flavor: cardFlavorSnippet(card),
+    targetsText: targetSummaries.join(' | '),
+  });
 };
 
 const buildPlayedDecisionSystemMessage = (
@@ -866,8 +852,13 @@ const buildPlayedDecisionSystemMessage = (
   card: CardDefinition,
   targetSummaries: string[],
 ) => {
-  const flavor = cardFlavorSnippet(card);
-  return `🧭 [${seq}] ${sourcePlayerLabel} оголосив «${card.title}» (РІШЕННЯ КОМАНДУВАННЯ). "${flavor}". Наслідки для столу: ${targetSummaries.join(' | ')}.`;
+  return buildDecisionMessageText({
+    seq,
+    sourcePlayerLabel,
+    cardTitle: card.title,
+    flavor: cardFlavorSnippet(card),
+    targetsText: targetSummaries.join(' | '),
+  });
 };
 
 const buildPromotionSystemMessage = (
@@ -882,7 +873,15 @@ const buildPromotionSystemMessage = (
   const costText = resourceDeltaToText(costToDelta(cost));
   const bonusText = resourceDeltaToText(bonus);
   const totalText = effectSummaryToText(summary);
-  return `🎖️ [${seq}] ${playerLabel} підвищився: ${rankNameById(fromRankId)} → ${rankNameById(toRankId)}. Вартість: ${costText}. Бонус: ${bonusText}. Підсумок: ${totalText}.`;
+  return buildPromotionMessageText({
+    seq,
+    playerLabel,
+    fromRankName: rankNameById(fromRankId),
+    toRankName: rankNameById(toRankId),
+    costText,
+    bonusText,
+    totalText,
+  });
 };
 
 const drawCards = (G: JojGameState, playerID: string, amount: number): void => {
@@ -1540,7 +1539,6 @@ export const jojGame: Game<JojGameState> = {
       if (args.ctx.activePlayers?.[playerID] !== DRAW_STAGE) return INVALID_MOVE;
 
       const hand = args.G.hands[playerID];
-      if (hand.length >= HAND_LIMIT) return INVALID_MOVE;
       let autoPlayed = false;
       const card = args.G.deck.pop();
       if (card) {
@@ -1597,7 +1595,7 @@ export const jojGame: Game<JojGameState> = {
       const usingExtraToken = (args.G.extraHandPlayTokens[playerID] ?? 0) > 0;
       if (!usingExtraToken) {
         if (args.ctx.currentPlayer !== playerID) return INVALID_MOVE;
-        if (args.ctx.activePlayers?.[playerID] !== PLAY_STAGE) return INVALID_MOVE;
+        if (![PLAY_STAGE, END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return INVALID_MOVE;
       }
 
       const hand = args.G.hands[playerID];
@@ -1751,11 +1749,6 @@ export const jojGame: Game<JojGameState> = {
       hand.splice(idx, 1);
       args.G.discard.push(card);
 
-      while (hand.length > HAND_LIMIT) {
-        const overflow = hand.shift();
-        if (overflow) args.G.discard.push(overflow);
-      }
-
       syncPlayerState(args.G, playerID);
       if (usingExtraToken) {
         args.G.extraHandPlayTokens[playerID] = Math.max(0, (args.G.extraHandPlayTokens[playerID] ?? 0) - 1);
@@ -1777,29 +1770,29 @@ export const jojGame: Game<JojGameState> = {
       if (card.id === 'legendary-02') {
         const canceled = cancelLastLyapOrScandalForPlayer(args.G, playerID);
         if (canceled.canceledCard) {
-          specialMessage = `Сміх Буданова скасував для ${playerLabel} дію «${canceled.canceledCard.title}»: ${effectSummaryToText(canceled.summary)}.`;
+          specialMessage = legendaryTexts.budanovCanceled(playerLabel, canceled.canceledCard.title, effectSummaryToText(canceled.summary));
         } else {
-          specialMessage = `Сміх Буданова не знайшов ЛЯП/СКАНДАЛ для скасування у скиді.`;
+          specialMessage = legendaryTexts.budanovNoTarget();
         }
       } else if (card.id === 'legendary-08') {
         const canceled = cancelLastScandalForPlayer(args.G, playerID);
         if (canceled.canceledCard) {
-          specialMessage = `«Старлінк» скасував для ${playerLabel} дію скандалу «${canceled.canceledCard.title}»: ${effectSummaryToText(canceled.summary)}.`;
+          specialMessage = legendaryTexts.starlinkCanceled(playerLabel, canceled.canceledCard.title, effectSummaryToText(canceled.summary));
         } else {
-          specialMessage = `«Старлінк» не знайшов скандалу для скасування у скиді.`;
+          specialMessage = legendaryTexts.starlinkNoTarget();
         }
       } else if (card.id === 'legendary-05') {
         const untilTurn = computeShieldUntilNextOwnTurn(args.ctx, playerID);
         args.G.sukhpayZsuWatchUntilTurn[playerID] = untilTurn;
         args.G.sukhpayZsuPendingBonus[playerID] = true;
-        specialMessage = `«Сухпай ЗСУ» активовано: якщо до наступного ходу ${playerLabel} хтось розіграє СКАНДАЛ, ${playerLabel} отримає +1 Дисципліна.`;
+        specialMessage = legendaryTexts.sukhpayActivated(playerLabel);
       } else if (card.id === 'legendary-12') {
         const untilTurn = computeShieldUntilNextOwnTurn(args.ctx, playerID);
         args.G.lyapScandalShieldUntilTurn[playerID] = untilTurn;
-        specialMessage = `Грамота активувала щит від ЛЯП/СКАНДАЛ до початку наступного ходу ${playerLabel}.`;
+        specialMessage = legendaryTexts.grammarShield(playerLabel);
       } else if (card.id === 'legendary-03') {
         args.G.extraHandPlayTokens[playerID] = (args.G.extraHandPlayTokens[playerID] ?? 0) + 1;
-        specialMessage = `«Посмішка Малюка» дозволяє ${playerLabel} негайно розіграти ще 1 карту з руки. Після цього хід лишається за поточним гравцем.`;
+        specialMessage = legendaryTexts.posmishkaMalyuka(playerLabel);
       } else if (card.id === 'legendary-06') {
         if (!selectedResource || !resourceKeys.includes(selectedResource)) return INVALID_MOVE;
         args.G.resources[playerID][selectedResource] = (args.G.resources[playerID][selectedResource] ?? 0) + 3;
@@ -1812,7 +1805,7 @@ export const jojGame: Game<JojGameState> = {
           });
         clampNonNegativeResources(args.G.resources[playerID]);
         syncPlayerState(args.G, playerID);
-        specialMessage = `«Статуя Святого ТОРа» дала ${playerLabel} +3 ${resourceLabelsUk[selectedResource]}, а решті гравців +1 Документи.`;
+        specialMessage = legendaryTexts.statueTor(playerLabel, resourceLabelsUk[selectedResource]);
       } else if (card.id === 'legendary-07') {
         args.G.resources[playerID].time = (args.G.resources[playerID].time ?? 0) + 2;
         args.G.resources[playerID].reputation = (args.G.resources[playerID].reputation ?? 0) + 2;
@@ -1825,31 +1818,37 @@ export const jojGame: Game<JojGameState> = {
           });
         clampNonNegativeResources(args.G.resources[playerID]);
         syncPlayerState(args.G, playerID);
-        specialMessage = `«Церква Святого Лідерства»: ${playerLabel} отримує +2 Час, +2 Авторитет; інші гравці втрачають 1 Авторитет.`;
+        specialMessage = legendaryTexts.churchLeadership(playerLabel);
       } else if (card.id === 'legendary-09') {
         if (!selectedResource || !resourceKeys.includes(selectedResource)) return INVALID_MOVE;
         const before = args.G.resources[playerID][selectedResource] ?? 0;
         const after = Math.max(before, 3);
         args.G.resources[playerID][selectedResource] = after;
         syncPlayerState(args.G, playerID);
-        specialMessage = after > before
-          ? `«Вода “Прозора”» відновила ресурс ${resourceLabelsUk[selectedResource]} для ${playerLabel}: ${before} → ${after}.`
-          : `«Вода “Прозора”» не змінила ${resourceLabelsUk[selectedResource]} для ${playerLabel}: вже ${before}.`;
+        specialMessage = legendaryTexts.waterRestore(playerLabel, resourceLabelsUk[selectedResource], before, after);
       } else if (card.id === 'legendary-13') {
         const playerCount = Object.keys(args.G.players).length || Number(args.ctx.numPlayers ?? 0) || 2;
         const granted = grantSpecificRankIgnoringRequirements(args.G, playerID, 'senior_lieutenant', playerCount);
         if (!granted.ok) return INVALID_MOVE;
         if (granted.applied) {
-          specialMessage = `«Хороший прес-офіцер» присвоює ${playerLabel} звання ${rankNameById('senior_lieutenant')} без перевірки вимог. Бонус звання застосовано: ${resourceDeltaToText(granted.rank.bonus ?? {})}.`;
+          specialMessage = legendaryTexts.goodPressOfficerGranted(
+            playerLabel,
+            rankNameById('senior_lieutenant'),
+            resourceDeltaToText(granted.rank.bonus ?? {}),
+          );
         } else {
-          specialMessage = `«Хороший прес-офіцер» не змінює звання: у ${playerLabel} вже ${rankNameById(args.G.ranks[playerID])} або вище.`;
+          specialMessage = legendaryTexts.goodPressOfficerNoChange(playerLabel, rankNameById(args.G.ranks[playerID]));
         }
       } else if (card.id === 'legendary-10') {
         if (!targetPlayerID || !(targetPlayerID in args.G.players) || targetPlayerID === playerID) return INVALID_MOVE;
         const playerCount = Object.keys(args.G.players).length || Number(args.ctx.numPlayers ?? 0) || 2;
         const demoted = demoteByOneRankWithSeatCheck(args.G, targetPlayerID, playerCount);
         if (!demoted.ok) return INVALID_MOVE;
-        specialMessage = `«Дрончик» знизив звання ${getPlayerLabel(args.G, targetPlayerID)}: ${rankNameById(demoted.fromRankId)} → ${rankNameById(demoted.toRankId)}.`;
+        specialMessage = legendaryTexts.droidDemote(
+          getPlayerLabel(args.G, targetPlayerID),
+          rankNameById(demoted.fromRankId),
+          rankNameById(demoted.toRankId),
+        );
       }
 
       try {
@@ -1865,10 +1864,36 @@ export const jojGame: Game<JojGameState> = {
       const seq = nextSystemMessageSeq(args.G);
       appendChat(args.G, {
         type: 'system',
-        text: specialMessage
-          ? `🃏 [${seq}] ${playerLabel} розіграв легендарну карту «${card.title}». ${specialMessage}`
-          : `🃏 [${seq}] ${playerLabel} розіграв легендарну карту «${card.title}».`,
+        text: buildLegendaryPlayedMessageText({
+          seq,
+          playerLabel,
+          cardTitle: card.title,
+          specialMessage,
+        }),
       });
+      return undefined;
+    },
+    discardFromHand: (args, cardId: string) => {
+      const playerID = args.playerID;
+      if (!playerID || args.ctx.currentPlayer !== playerID) return INVALID_MOVE;
+      const stage = args.ctx.activePlayers?.[playerID];
+      if (![PLAY_STAGE, END_STAGE].includes(stage as string)) return INVALID_MOVE;
+      const hand = args.G.hands[playerID];
+      if (hand.length <= HAND_LIMIT) return INVALID_MOVE;
+      const idx = hand.findIndex((card) => card.id === cardId);
+      if (idx === -1) return INVALID_MOVE;
+      const card = hand[idx];
+      if (card.category === 'LYAP' || card.category === 'SCANDAL') return INVALID_MOVE;
+      hand.splice(idx, 1);
+      args.G.discard.push(card);
+      syncPlayerState(args.G, playerID);
+      const seq = nextSystemMessageSeq(args.G);
+      appendChat(args.G, {
+        type: 'system',
+        text: `🗂️ [${seq}] ${getPlayerLabel(args.G, playerID)} скидає «${card.title}» у скид, щоб вкластися в ліміт руки (${HAND_LIMIT}).`,
+      });
+      // Discarding overflow is a pre-end-turn action; return player to PLAY stage.
+      args.events?.setStage(PLAY_STAGE);
       return undefined;
     },
     promote: (args) => {
@@ -1908,6 +1933,7 @@ export const jojGame: Game<JojGameState> = {
       const playerID = args.playerID;
       if (!playerID || args.ctx.currentPlayer !== playerID) return INVALID_MOVE;
       if (![PLAY_STAGE, END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return INVALID_MOVE;
+      if ((args.G.hands[playerID]?.length ?? 0) > HAND_LIMIT) return INVALID_MOVE;
       args.events?.endTurn();
       return undefined;
     },
