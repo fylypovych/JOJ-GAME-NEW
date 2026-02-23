@@ -74,6 +74,7 @@ const cloneCard = (card: CardDefinition): CardDefinition => ({
   ...card,
   cost: card.cost ? { ...card.cost } : undefined,
   image: normalizeImagePath(card.image),
+  grantRank: typeof card.grantRank === 'string' ? card.grantRank : undefined,
   effects: card.effects?.map((effect) => ({ ...effect })),
 });
 
@@ -275,11 +276,13 @@ const parseCard = (value: unknown): CardDefinition | null => {
     effects = parsedEffects;
   }
   const flavor = typeof raw.flavor === 'string' ? raw.flavor : undefined;
+  const grantRank = typeof raw.grantRank === 'string' && raw.grantRank.trim() ? raw.grantRank.trim() : undefined;
   return {
     id: raw.id,
     title: raw.title,
     category: raw.category as CardDefinition['category'],
     image,
+    grantRank,
     effects,
     flavor,
   };
@@ -473,61 +476,21 @@ const clampNonNegativeResources = (resources: Record<ResourceKey, number>) => {
 };
 
 const replacementCostUnits = (
-  resources: Record<ResourceKey, number>,
-  effects: CardDefinition['effects'],
+  _resources: Record<ResourceKey, number>,
+  _effects: CardDefinition['effects'],
 ): number => {
-  if (!effects?.length) return 0;
-  const virtual = { ...resources };
-  let needed = 0;
-  effects.forEach((effect) => {
-    if (effect.resource === 'rank') return;
-    if (effect.value >= 0) {
-      virtual[effect.resource] += effect.value;
-      return;
-    }
-
-    let required = Math.abs(effect.value);
-    const available = Math.max(0, virtual[effect.resource]);
-    const direct = Math.min(available, required);
-    virtual[effect.resource] -= direct;
-    required -= direct;
-    if (required > 0) {
-      needed += required * 2;
-    }
-  });
-  return needed;
+  void _resources;
+  void _effects;
+  return 0;
 };
 
 const planReplacementResources = (
   resources: Record<ResourceKey, number>,
   effects: CardDefinition['effects'],
 ): ResourceKey[] | null => {
-  if (!effects?.length) return [];
-  const virtual = { ...resources };
-  const replacements: ResourceKey[] = [];
-
-  for (const effect of effects) {
-    if (effect.resource === 'rank' || effect.value >= 0) continue;
-    let required = Math.abs(effect.value);
-    const available = Math.max(0, virtual[effect.resource]);
-    const direct = Math.min(available, required);
-    virtual[effect.resource] -= direct;
-    required -= direct;
-
-    while (required > 0) {
-      for (let i = 0; i < 2; i += 1) {
-        const pick = [...resourceKeys]
-          .sort((a, b) => virtual[b] - virtual[a])
-          .find((key) => virtual[key] > 0);
-        if (!pick) return null;
-        virtual[pick] -= 1;
-        replacements.push(pick);
-      }
-      required -= 1;
-    }
-  }
-
-  return replacements;
+  void resources;
+  void effects;
+  return [];
 };
 
 export const getReplacementUnitsForCard = (
@@ -552,9 +515,10 @@ const applyCardEffects = (
 ): boolean => {
   if (!effects?.length) return true;
   const playerResources = G.resources[playerID];
-  const needed = replacementCostUnits(playerResources, effects);
-  if (replacementResources.length !== needed) return false;
-  let replacementIndex = 0;
+  if (replacementResources.length !== 0) {
+    // Legacy clients may still send replacements; ignore only if empty contract is respected.
+    return false;
+  }
 
   effects.forEach((effect) => {
     if (effect.resource === 'rank') {
@@ -562,23 +526,7 @@ const applyCardEffects = (
     }
 
     if (effect.value < 0) {
-      let required = Math.abs(effect.value);
-      const available = Math.max(0, playerResources[effect.resource]);
-      const direct = Math.min(available, required);
-      playerResources[effect.resource] -= direct;
-      required -= direct;
-
-      while (required > 0) {
-        for (let i = 0; i < 2; i += 1) {
-          const replacement = replacementResources[replacementIndex];
-          replacementIndex += 1;
-          if (!replacement || playerResources[replacement] <= 0) {
-            throw new Error('INVALID_REPLACEMENT');
-          }
-          playerResources[replacement] -= 1;
-        }
-        required -= 1;
-      }
+      playerResources[effect.resource] = Math.max(0, playerResources[effect.resource] + effect.value);
       return;
     }
 
@@ -602,21 +550,18 @@ const applyCardEffectsSoft = (
   if (!effects?.length) return summary;
   const beforeResources = { ...G.resources[playerID] };
   const beforeRankId = G.ranks[playerID];
-  const replacements = planReplacementResources(G.resources[playerID], effects);
-  if (replacements) {
-    try {
-      const applied = applyCardEffects(G, playerID, effects, replacements);
-      if (applied) {
-        return summarizeAppliedDiff(
-          beforeResources,
-          G.resources[playerID],
-          beforeRankId,
-          G.ranks[playerID],
-        );
-      }
-    } catch {
-      // fallback to safe clamp below
+  try {
+    const applied = applyCardEffects(G, playerID, effects, []);
+    if (applied) {
+      return summarizeAppliedDiff(
+        beforeResources,
+        G.resources[playerID],
+        beforeRankId,
+        G.ranks[playerID],
+      );
     }
+  } catch {
+    // fallback to safe clamp below
   }
 
   const resources = G.resources[playerID];
@@ -858,6 +803,54 @@ const promoteRank = (G: JojGameState, playerID: string, playerCount: number): bo
   return true;
 };
 
+const promoteToSpecificRank = (
+  G: JojGameState,
+  playerID: string,
+  targetRankId: string,
+  playerCount: number,
+): { ok: true; rank: RankDefinition } | { ok: false } => {
+  const ranks = getActiveRanks();
+  const currentRankId = G.ranks[playerID];
+  const currentRankIdx = Math.max(0, ranks.findIndex((r) => r.id === currentRankId));
+  const targetRankIdx = ranks.findIndex((r) => r.id === targetRankId);
+  if (targetRankIdx <= currentRankIdx) return { ok: false };
+  const targetRank = ranks[targetRankIdx];
+  if (!targetRank) return { ok: false };
+
+  const occupied = Object.entries(G.ranks)
+    .filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id)
+    .length;
+  if (occupied >= rankSeatLimit(playerCount)) return { ok: false };
+
+  const playerResources = G.resources[playerID];
+  if (!hasResources(playerResources, targetRank.requirement)) return { ok: false };
+  if (!hasResources(playerResources, targetRank.cost)) return { ok: false };
+
+  spendResources(playerResources, targetRank.cost);
+  applyResourceDelta(playerResources, targetRank.bonus);
+  clampNonNegativeResources(playerResources);
+  G.ranks[playerID] = targetRank.id;
+  syncPlayerState(G, playerID);
+  return { ok: true, rank: targetRank };
+};
+
+const buildVvnzRankSystemMessage = (
+  seq: number,
+  playerLabel: string,
+  card: CardDefinition,
+  fromRankId: string,
+  toRankId: string,
+  cost: Partial<Record<ResourceKey, number>>,
+  bonus: Partial<Record<ResourceKey, number>>,
+  summary: { resources: Partial<Record<ResourceKey, number>>; rank: number },
+) => {
+  const flavor = cardFlavorSnippet(card);
+  const costText = resourceDeltaToText(costToDelta(cost));
+  const bonusText = resourceDeltaToText(bonus);
+  const totalText = effectSummaryToText(summary);
+  return `🎓 [${seq}] ${playerLabel} розіграв «${card.title}» (ВВНЗ) і отримав звання: ${rankNameById(fromRankId)} → ${rankNameById(toRankId)}. "${flavor}". Вартість: ${costText}. Бонус звання: ${bonusText}. Підсумок: ${totalText}.`;
+};
+
 const getWinner = (G: JojGameState): string | undefined => {
   const topRankId = getTopRankId();
   const generalPlayer = Object.entries(G.ranks).find(([, rankId]) => rankId === topRankId)?.[0];
@@ -1027,6 +1020,16 @@ const simulateSingleMatch = (
             applyCardEffectsSoft(G, pid, card.effects);
             syncPlayerState(G, pid);
           });
+        } else if (card.category === 'VVNZ' && card.grantRank) {
+          const promoted = promoteToSpecificRank(G, playerID, card.grantRank, numPlayers);
+          if (!promoted.ok) continue;
+          try {
+            const ok = applyCardEffects(G, playerID, card.effects, []);
+            if (!ok) continue;
+          } catch {
+            continue;
+          }
+          syncPlayerState(G, playerID);
         } else {
           const replacement = buildReplacementPlan(G.resources[playerID], card.effects);
           if (replacement === null) continue;
@@ -1463,6 +1466,39 @@ export const jojGame: Game<JojGameState> = {
         appendChat(args.G, {
           type: 'system',
           text: buildPlayedDecisionSystemMessage(seq, getPlayerLabel(args.G, playerID), card, targetSummaries),
+        });
+      } else if (card.category === 'VVNZ' && card.grantRank) {
+        const beforeResources = { ...args.G.resources[playerID] };
+        const beforeRankId = args.G.ranks[playerID];
+        const playerCount = Object.keys(args.G.players).length || Number(args.ctx.numPlayers ?? 0) || 2;
+        const promoted = promoteToSpecificRank(args.G, playerID, card.grantRank, playerCount);
+        if (!promoted.ok) return INVALID_MOVE;
+        try {
+          const applied = applyCardEffects(args.G, playerID, card.effects, []);
+          if (!applied) return INVALID_MOVE;
+        } catch {
+          return INVALID_MOVE;
+        }
+        const afterRankId = args.G.ranks[playerID];
+        const summary = summarizeAppliedDiff(
+          beforeResources,
+          args.G.resources[playerID],
+          beforeRankId,
+          afterRankId,
+        );
+        const seq = nextSystemMessageSeq(args.G);
+        appendChat(args.G, {
+          type: 'system',
+          text: buildVvnzRankSystemMessage(
+            seq,
+            getPlayerLabel(args.G, playerID),
+            card,
+            beforeRankId,
+            afterRankId,
+            promoted.rank.cost ?? {},
+            promoted.rank.bonus ?? {},
+            summary,
+          ),
         });
       } else {
         try {

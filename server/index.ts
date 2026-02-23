@@ -569,7 +569,7 @@ if (router) {
 
   router.post('/api/upload-card-image', async (ctx: any) => {
     if (!(await requireAdminAuth(ctx, '/api/upload-card-image'))) return;
-    if (!(await enforceRateLimit(ctx, 'upload-card-image', 20, 60_000))) return;
+    if (!(await enforceRateLimit(ctx, 'upload-card-image', 240, 60_000))) return;
     const body = await readJsonBodySafe(ctx, '/api/upload-card-image', IMAGE_UPLOAD_BODY_LIMIT);
     if (!body) return;
     const dataUrl = typeof body.dataUrl === 'string' ? body.dataUrl : '';
@@ -631,7 +631,7 @@ if (router) {
 
   router.post('/api/admin/delete-card-image', async (ctx: any) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/delete-card-image'))) return;
-    if (!(await enforceRateLimit(ctx, 'admin-delete-card-image', 60, 60_000))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-delete-card-image', 240, 60_000))) return;
     const body = await readJsonBodySafe(ctx, '/api/admin/delete-card-image', JSON_BODY_LIMIT);
     if (!body) return;
     const imagePath = typeof body.path === 'string' ? body.path.trim() : '';

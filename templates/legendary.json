@@ -1,0 +1,148 @@
+{
+  "legendaryDeck": [
+    {
+      "id": "legendary-01",
+      "title": "Мислі Залужного",
+      "category": "LEGENDARY",
+      "image": "/cards/legendary-01.png",
+      "effects": [
+        { "resource": "discipline", "value": 3 },
+        { "resource": "reputation", "value": 2 }
+      ],
+      "flavor": "Стислі, як наказ. Мудрі, як тиша перед бурею."
+    },
+    {
+      "id": "legendary-02",
+      "title": "Сміх Буданова",
+      "category": "LEGENDARY",
+      "image": "/cards/legendary-02.png",
+      "effects": [
+        { "resource": "tech", "value": 2 }
+      ],
+      "flavor": "Сміх, що лунає, коли ворог уже мовчить."
+    },
+    {
+      "id": "legendary-03",
+      "title": "Посмішка Малюка",
+      "category": "LEGENDARY",
+      "image": "/cards/legendary-03.png",
+      "effects": [
+        { "resource": "reputation", "value": 2 },
+        { "resource": "discipline", "value": 1 }
+      ],
+      "flavor": "Найкраща мотивація служити далі."
+    },
+    {
+      "id": "legendary-04",
+      "title": "Фонд Притули",
+      "category": "LEGENDARY",
+      "image": "/cards/legendary-04.png",
+      "effects": [
+        { "resource": "documents", "value": 2 },
+        { "resource": "tech", "value": 2 },
+        { "resource": "time", "value": 2 }
+      ],
+      "flavor": "Куплено на совість, перевірено народом."
+    },
+    {
+      "id": "legendary-05",
+      "title": "Сухпай ЗСУ",
+      "category": "LEGENDARY",
+      "image": "/cards/legendary-05.png",
+      "effects": [
+        { "resource": "time", "value": 1 },
+        { "resource": "discipline", "value": 1 },
+        { "resource": "reputation", "value": 1 }
+      ],
+      "flavor": "Їжа, що об’єднує полки."
+    },
+    {
+      "id": "legendary-06",
+      "title": "Статуя Святого ТОРа",
+      "category": "LEGENDARY",
+      "image": "/cards/legendary-06.png",
+      "flavor": "Коли гримить звітність — мовчи і натискай “оновити”."
+    },
+    {
+      "id": "legendary-07",
+      "title": "Церква Святого Лідерства",
+      "category": "LEGENDARY",
+      "image": "/cards/legendary-07.png",
+      "effects": [
+        { "resource": "time", "value": 2 },
+        { "resource": "reputation", "value": 2 }
+      ],
+      "flavor": "Там, де порядок — там і благословення канцелярії."
+    },
+    {
+      "id": "legendary-08",
+      "title": "Старлінк",
+      "category": "LEGENDARY",
+      "image": "/cards/legendary-08.png",
+      "effects": [
+        { "resource": "tech", "value": 2 },
+        { "resource": "time", "value": 1 }
+      ],
+      "flavor": "Коли навіть зв’язок стає союзником."
+    },
+    {
+      "id": "legendary-09",
+      "title": "Вода “Прозора”",
+      "category": "LEGENDARY",
+      "image": "/cards/legendary-09.png",
+      "effects": [
+        { "resource": "discipline", "value": 1 }
+      ],
+      "flavor": "Проста, чиста і на облік поставлена."
+    },
+    {
+      "id": "legendary-10",
+      "title": "Дрончик",
+      "category": "LEGENDARY",
+      "image": "/cards/legendary-10.png",
+      "effects": [
+        { "resource": "tech", "value": 1 }
+      ],
+      "flavor": "Маленький, але грізний. Особливо для бюрократії."
+    },
+    {
+      "id": "legendary-11",
+      "title": "Старий польський корч",
+      "category": "LEGENDARY",
+      "image": "/cards/legendary-11.png",
+      "effects": [
+        { "resource": "time", "value": 3 },
+        { "resource": "tech", "value": -1 }
+      ],
+      "flavor": "Їде, поки не закінчиться терпіння."
+    },
+    {
+      "id": "legendary-12",
+      "title": "Грамота “Єбать ти молодець”",
+      "category": "LEGENDARY",
+      "image": "/cards/legendary-12.png",
+      "effects": [
+        { "resource": "reputation", "value": 4 }
+      ],
+      "flavor": "Офіційно визнано неофіційним героєм."
+    },
+    {
+      "id": "legendary-13",
+      "title": "Хороший прес-офіцер",
+      "category": "LEGENDARY",
+      "image": "/cards/legendary-13.png",
+      "flavor": "Новина — це зброя, якщо подати її з посмішкою."
+    },
+    {
+      "id": "legendary-14",
+      "title": "Відпустка",
+      "category": "LEGENDARY",
+      "image": "/cards/legendary-14.png",
+      "effects": [
+        { "resource": "time", "value": 3 },
+        { "resource": "documents", "value": -1 }
+      ],
+      "flavor": "Головне — повернутись із неї добровільно."
+    }
+  ]
+}

@@ -5,7 +5,7 @@
       "id": "scandal-01",
       "title": "Яйця по 17 гривень",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614354252.png",
+      "image": "/cards/card-1771614354252.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -22,7 +22,7 @@
       "id": "scandal-02",
       "title": "Куртки Резнікова",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614366040.png",
+      "image": "/cards/card-1771614366040.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -39,7 +39,7 @@
       "id": "scandal-03",
       "title": "Дрони по завищеній ціні",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614378587.png",
+      "image": "/cards/card-1771614378587.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -56,7 +56,7 @@
       "id": "scandal-04",
       "title": "Пропажа пального",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614390190.png",
+      "image": "/cards/card-1771614390190.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -69,7 +69,7 @@
       "id": "scandal-05",
       "title": "Закупівля підписів на тендер",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614425063.png",
+      "image": "/cards/card-1771614425063.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -86,7 +86,7 @@
       "id": "scandal-06",
       "title": "Пропажа дронів",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614439747.png",
+      "image": "/cards/card-1771614439747.webp",
       "effects": [
         {
           "resource": "tech",
@@ -99,7 +99,7 @@
       "id": "scandal-07",
       "title": "Списання бронежилетів як витратних",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614451008.png",
+      "image": "/cards/card-1771614451008.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -116,7 +116,7 @@
       "id": "scandal-08",
       "title": "Паперовий аудит без документів",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614500039.png",
+      "image": "/cards/card-1771614500039.webp",
       "effects": [
         {
           "resource": "time",
@@ -133,7 +133,7 @@
       "id": "scandal-09",
       "title": "Відео з полігону",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614508047.png",
+      "image": "/cards/card-1771614508047.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -146,7 +146,7 @@
       "id": "scandal-10",
       "title": "Витік наказів у пресу",
       "category": "SCANDAL",
-      "image": "/cards/card-1771615063474.png",
+      "image": "/cards/card-1771615063474.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -163,7 +163,7 @@
       "id": "scandal-11",
       "title": "Зникнення гуманітарки",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614820343.png",
+      "image": "/cards/card-1771614820343.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -180,7 +180,7 @@
       "id": "scandal-12",
       "title": "Підроблені рапорти",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614939024.png",
+      "image": "/cards/card-1771614939024.webp",
       "effects": [
         {
           "resource": "documents",
@@ -193,7 +193,7 @@
       "id": "scandal-13",
       "title": "Бюджет на ремонт даху",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614949216.png",
+      "image": "/cards/card-1771614949216.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -210,7 +210,7 @@
       "id": "scandal-14",
       "title": "Викриття корупційної схеми",
       "category": "SCANDAL",
-      "image": "/cards/card-1771615029111.png",
+      "image": "/cards/card-1771615029111.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -227,7 +227,7 @@
       "id": "scandal-15",
       "title": "Тушонка",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614982549.png",
+      "image": "/cards/card-1771614982549.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -244,7 +244,7 @@
       "id": "scandal-16",
       "title": "Колаборант",
       "category": "SCANDAL",
-      "image": "/cards/card-1771615017418.png",
+      "image": "/cards/card-1771615017418.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -265,7 +265,7 @@
       "id": "lyap-01",
       "title": "Журнал обліку журналів",
       "category": "LYAP",
-      "image": "/cards/card-1771613013689.png",
+      "image": "/cards/card-1771613013689.webp",
       "effects": [
         {
           "resource": "time",
@@ -282,7 +282,7 @@
       "id": "lyap-02",
       "title": "Три сантиметри відступу",
       "category": "LYAP",
-      "image": "/cards/3-1771613029493.png",
+      "image": "/cards/3-1771613029493.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -295,7 +295,7 @@
       "id": "lyap-03",
       "title": "Кава на журналі обліку",
       "category": "LYAP",
-      "image": "/cards/lyap-03.png",
+      "image": "/cards/lyap-03.webp",
       "effects": [
         {
           "resource": "documents",
@@ -308,7 +308,7 @@
       "id": "lyap-04",
       "title": "Загублений бланк №27",
       "category": "LYAP",
-      "image": "/cards/lyap-04.png",
+      "image": "/cards/lyap-04.webp",
       "effects": [
         {
           "resource": "documents",
@@ -321,7 +321,7 @@
       "id": "lyap-05",
       "title": "План евакуації з орфографічною помилкою",
       "category": "LYAP",
-      "image": "/cards/lyap-05.png",
+      "image": "/cards/lyap-05.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -334,7 +334,7 @@
       "id": "lyap-06",
       "title": "П’ять нарад за один день",
       "category": "LYAP",
-      "image": "/cards/5-1771613043832.png",
+      "image": "/cards/5-1771613043832.webp",
       "effects": [
         {
           "resource": "time",
@@ -347,7 +347,7 @@
       "id": "lyap-07",
       "title": "Підпис за відсутнього начальника",
       "category": "LYAP",
-      "image": "/cards/card-1771613058005.png",
+      "image": "/cards/card-1771613058005.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -364,7 +364,7 @@
       "id": "lyap-08",
       "title": "Фотозвіт без фото",
       "category": "LYAP",
-      "image": "/cards/card-1771613066196.png",
+      "image": "/cards/card-1771613066196.webp",
       "effects": [
         {
           "resource": "tech",
@@ -377,7 +377,7 @@
       "id": "lyap-09",
       "title": "Плутанина з печатками",
       "category": "LYAP",
-      "image": "/cards/card-1771613078854.png",
+      "image": "/cards/card-1771613078854.webp",
       "effects": [
         {
           "resource": "time",
@@ -394,7 +394,7 @@
       "id": "lyap-10",
       "title": "Карта-схема загублена у Google Maps",
       "category": "LYAP",
-      "image": "/cards/card-1771613088169.png",
+      "image": "/cards/card-1771613088169.webp",
       "effects": [
         {
           "resource": "tech",
@@ -407,7 +407,7 @@
       "id": "lyap-11",
       "title": "Плутанина з особовими справами",
       "category": "LYAP",
-      "image": "/cards/3-1771613102827.png",
+      "image": "/cards/3-1771613102827.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -424,7 +424,7 @@
       "id": "lyap-12",
       "title": "Рапорт на ім’я іншого командира",
       "category": "LYAP",
-      "image": "/cards/card-1771613115148.png",
+      "image": "/cards/card-1771613115148.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -437,7 +437,7 @@
       "id": "lyap-13",
       "title": "Неправильна дата у наказі",
       "category": "LYAP",
-      "image": "/cards/card-1771613133973.png",
+      "image": "/cards/card-1771613133973.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -450,7 +450,7 @@
       "id": "lyap-14",
       "title": "Втрачений журнал",
       "category": "LYAP",
-      "image": "/cards/card-1771613146108.png",
+      "image": "/cards/card-1771613146108.webp",
       "effects": [
         {
           "resource": "documents",
@@ -463,7 +463,7 @@
       "id": "lyap-15",
       "title": "Подвійна звітність",
       "category": "LYAP",
-      "image": "/cards/card-1771613156561.png",
+      "image": "/cards/card-1771613156561.webp",
       "effects": [
         {
           "resource": "time",
@@ -476,7 +476,7 @@
       "id": "lyap-16",
       "title": "Рапорт без дати",
       "category": "LYAP",
-      "image": "/cards/card-1771613164308.png",
+      "image": "/cards/card-1771613164308.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -489,7 +489,7 @@
       "id": "lyap-17",
       "title": "Неправильний шрифт у наказі",
       "category": "LYAP",
-      "image": "/cards/card-1771613170671.png",
+      "image": "/cards/card-1771613170671.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -502,7 +502,7 @@
       "id": "lyap-18",
       "title": "Майте повагу до звання",
       "category": "LYAP",
-      "image": "/cards/card-1771613178947.png",
+      "image": "/cards/card-1771613178947.webp",
       "effects": [
         {
           "resource": "rank",
@@ -515,7 +515,7 @@
       "id": "lyap-19",
       "title": "СЗЧ",
       "category": "LYAP",
-      "image": "/cards/card-1771613186122.png",
+      "image": "/cards/card-1771613186122.webp",
       "effects": [
         {
           "resource": "time",
@@ -532,7 +532,7 @@
       "id": "lyap-20",
       "title": "Задувка",
       "category": "LYAP",
-      "image": "/cards/card-1771613196642.png",
+      "image": "/cards/card-1771613196642.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -549,7 +549,7 @@
       "id": "decision-01",
       "title": "Зразковий рапорт",
       "category": "DECISION",
-      "image": "/cards/card-1771871420538.png",
+      "image": "/cards/card-1771871420538.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -566,7 +566,7 @@
       "id": "decision-02",
       "title": "Вдалий виступ на шикуванні",
       "category": "DECISION",
-      "image": "/cards/card-1771871439446.png",
+      "image": "/cards/card-1771871439446.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -579,7 +579,7 @@
       "id": "decision-03",
       "title": "Перемога у спортивних змаганнях",
       "category": "DECISION",
-      "image": "/cards/card-1771871453560.png",
+      "image": "/cards/card-1771871453560.webp",
       "effects": [
         {
           "resource": "time",
@@ -596,7 +596,7 @@
       "id": "decision-04",
       "title": "Успішний ААR",
       "category": "DECISION",
-      "image": "/cards/card-1771871467975.png",
+      "image": "/cards/card-1771871467975.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -613,7 +613,7 @@
       "id": "decision-05",
       "title": "Волонтерська ініціатива",
       "category": "DECISION",
-      "image": "/cards/card-1771871484518.png",
+      "image": "/cards/card-1771871484518.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -630,7 +630,7 @@
       "id": "decision-06",
       "title": "Публікація у військовому журналі",
       "category": "DECISION",
-      "image": "/cards/card-1771871500051.png",
+      "image": "/cards/card-1771871500051.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -647,7 +647,7 @@
       "id": "decision-07",
       "title": "Прийняття на курс лідерства",
       "category": "DECISION",
-      "image": "/cards/card-1771871519462.png",
+      "image": "/cards/card-1771871519462.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -664,7 +664,7 @@
       "id": "decision-08",
       "title": "Затвердження нового SOP",
       "category": "DECISION",
-      "image": "/cards/card-1771871537749.png",
+      "image": "/cards/card-1771871537749.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -681,7 +681,7 @@
       "id": "decision-09",
       "title": "Участь у навчаннях НАТО",
       "category": "DECISION",
-      "image": "/cards/card-1771871551984.png",
+      "image": "/cards/card-1771871551984.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -698,7 +698,7 @@
       "id": "decision-10",
       "title": "Ефективне використання ресурсів",
       "category": "DECISION",
-      "image": "/cards/card-1771871573623.png",
+      "image": "/cards/card-1771871573623.webp",
       "effects": [
         {
           "resource": "time",
@@ -715,7 +715,7 @@
       "id": "decision-11",
       "title": "Вдалий брифінг перед начальством",
       "category": "DECISION",
-      "image": "/cards/card-1771871588026.png",
+      "image": "/cards/card-1771871588026.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -728,7 +728,7 @@
       "id": "decision-12",
       "title": "Відмінна інвентаризація",
       "category": "DECISION",
-      "image": "/cards/card-1771871600284.png",
+      "image": "/cards/card-1771871600284.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -745,7 +745,7 @@
       "id": "decision-13",
       "title": "Курс з кібербезпеки",
       "category": "DECISION",
-      "image": "/cards/card-1771871612720.png",
+      "image": "/cards/card-1771871612720.webp",
       "effects": [
         {
           "resource": "tech",
@@ -758,7 +758,7 @@
       "id": "decision-14",
       "title": "Відзнака командира",
       "category": "DECISION",
-      "image": "/cards/card-1771871627089.png",
+      "image": "/cards/card-1771871627089.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -771,7 +771,7 @@
       "id": "decision-15",
       "title": "Призначення на нову посаду",
       "category": "DECISION",
-      "image": "/cards/card-1771871647198.png",
+      "image": "/cards/card-1771871647198.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -788,7 +788,7 @@
       "id": "decision-16",
       "title": "Успішний аудит холодильника",
       "category": "DECISION",
-      "image": "/cards/card-1771871660520.png",
+      "image": "/cards/card-1771871660520.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -805,7 +805,7 @@
       "id": "decision-17",
       "title": "Підтримка волонтерів",
       "category": "DECISION",
-      "image": "/cards/card-1771871672495.png",
+      "image": "/cards/card-1771871672495.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -822,7 +822,7 @@
       "id": "decision-18",
       "title": "Вдале інтерв’ю для преси",
       "category": "DECISION",
-      "image": "/cards/decision-18.png",
+      "image": "/cards/card-1771873874546.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -835,7 +835,7 @@
       "id": "decision-19",
       "title": "Успішна сертифікація підрозділу",
       "category": "DECISION",
-      "image": "/cards/decision-19.png",
+      "image": "/cards/card-1771873894734.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -848,7 +848,7 @@
       "id": "decision-20",
       "title": "Покращення побутових умов",
       "category": "DECISION",
-      "image": "/cards/decision-20.png",
+      "image": "/cards/card-1771874748714.webp",
       "effects": [
         {
           "resource": "time",
@@ -865,14 +865,14 @@
       "id": "decision-21",
       "title": "Перенесення термінів",
       "category": "DECISION",
-      "image": "/cards/decision-21.png",
+      "image": "/cards/card-1771873958187.webp",
       "effects": [
         {
-          "resource": "documents",
+          "resource": "time",
           "value": 1
         },
         {
-          "resource": "time",
+          "resource": "documents",
           "value": 1
         }
       ],
@@ -882,7 +882,7 @@
       "id": "decision-22",
       "title": "Ротація командирів",
       "category": "DECISION",
-      "image": "/cards/decision-22.png",
+      "image": "/cards/card-1771873978850.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -899,7 +899,7 @@
       "id": "decision-23",
       "title": "Новий наказ про реформу",
       "category": "DECISION",
-      "image": "/cards/decision-23.png",
+      "image": "/cards/card-1771873991299.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1314,6 +1314,210 @@
         }
       ],
       "flavor": "Тепер усі рапорти на місці, але ніхто не знає де."
+    },
+    {
+      "id": "vvnz-01",
+      "title": "Національний університет оборони України імені Івана Черняховського",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875754258.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Тут навіть курсові звучать як накази."
+    },
+    {
+      "id": "vvnz-02",
+      "title": "Харківський національний університет Повітряних Сил імені Івана Кожедуба",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875767843.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "У небі — як у звіті: головне не втратити лінію."
+    },
+    {
+      "id": "vvnz-03",
+      "title": "Національна академія сухопутних військ імені гетьмана Петра Сагайдачного",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875780893.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Тут формується хребет армії — і почерк рапорту."
+    },
+    {
+      "id": "vvnz-04",
+      "title": "Військова академія (м. Одеса)",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875790279.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "На Півдні народжується тактика і легенди."
+    },
+    {
+      "id": "vvnz-05",
+      "title": "Національна академія Національної гвардії України",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875807542.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Тут порядок — не просто слово, а режим доби."
+    },
+    {
+      "id": "vvnz-06",
+      "title": "Академія Державної прикордонної служби України імені Богдана Хмельницького",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875817949.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Кордон починається не з лінії на мапі, а з характеру офіцера."
+    },
+    {
+      "id": "vvnz-07",
+      "title": "Військовий інститут Київського національного університету імені Тараса Шевченка",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875829053.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Магістерська з лідерства — і з трьома підписами."
+    },
+    {
+      "id": "vvnz-08",
+      "title": "Військовий інститут телекомунікацій та інформатизації імені Героїв Крут",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875840664.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Коли мережа лягла — це значить, що курсант встав."
+    },
+    {
+      "id": "vvnz-09",
+      "title": "Інститут Військово-Морських Сил Національного університету «Одеська морська академія»",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875856832.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Швартуй документи, курсант, і тримай горизонт рівно."
+    },
+    {
+      "id": "vvnz-10",
+      "title": "Житомирський військовий інститут імені С. П. Корольова",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875870514.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Космос починається з польового заліку."
+    },
+    {
+      "id": "vvnz-11",
+      "title": "Харківський військовий коледж сержантського складу Повітряних Сил",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875881152.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Тут вчать тримати небо так само впевнено, як стрій."
+    },
+    {
+      "id": "vvnz-12",
+      "title": "Київський військовий ліцей імені Івана Богуна",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875889671.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Тут мрія носить форму ще до звання."
     }
   ],
   "deckIds": [
@@ -1402,7 +1606,19 @@
     "support-24",
     "support-25",
     "support-26",
-    "support-27"
+    "support-27",
+    "vvnz-01",
+    "vvnz-02",
+    "vvnz-03",
+    "vvnz-04",
+    "vvnz-05",
+    "vvnz-06",
+    "vvnz-07",
+    "vvnz-08",
+    "vvnz-09",
+    "vvnz-10",
+    "vvnz-11",
+    "vvnz-12"
   ],
   "legendaryDeckIds": [],
   "rankTrackIds": [],
@@ -1411,7 +1627,7 @@
       "id": "scandal-01",
       "title": "Яйця по 17 гривень",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614354252.png",
+      "image": "/cards/card-1771614354252.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1428,7 +1644,7 @@
       "id": "scandal-02",
       "title": "Куртки Резнікова",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614366040.png",
+      "image": "/cards/card-1771614366040.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1445,7 +1661,7 @@
       "id": "scandal-03",
       "title": "Дрони по завищеній ціні",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614378587.png",
+      "image": "/cards/card-1771614378587.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1462,7 +1678,7 @@
       "id": "scandal-04",
       "title": "Пропажа пального",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614390190.png",
+      "image": "/cards/card-1771614390190.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1475,7 +1691,7 @@
       "id": "scandal-05",
       "title": "Закупівля підписів на тендер",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614425063.png",
+      "image": "/cards/card-1771614425063.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1492,7 +1708,7 @@
       "id": "scandal-06",
       "title": "Пропажа дронів",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614439747.png",
+      "image": "/cards/card-1771614439747.webp",
       "effects": [
         {
           "resource": "tech",
@@ -1505,7 +1721,7 @@
       "id": "scandal-07",
       "title": "Списання бронежилетів як витратних",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614451008.png",
+      "image": "/cards/card-1771614451008.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1522,7 +1738,7 @@
       "id": "scandal-08",
       "title": "Паперовий аудит без документів",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614500039.png",
+      "image": "/cards/card-1771614500039.webp",
       "effects": [
         {
           "resource": "time",
@@ -1539,7 +1755,7 @@
       "id": "scandal-09",
       "title": "Відео з полігону",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614508047.png",
+      "image": "/cards/card-1771614508047.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1552,7 +1768,7 @@
       "id": "scandal-10",
       "title": "Витік наказів у пресу",
       "category": "SCANDAL",
-      "image": "/cards/card-1771615063474.png",
+      "image": "/cards/card-1771615063474.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1569,7 +1785,7 @@
       "id": "scandal-11",
       "title": "Зникнення гуманітарки",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614820343.png",
+      "image": "/cards/card-1771614820343.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1586,7 +1802,7 @@
       "id": "scandal-12",
       "title": "Підроблені рапорти",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614939024.png",
+      "image": "/cards/card-1771614939024.webp",
       "effects": [
         {
           "resource": "documents",
@@ -1599,7 +1815,7 @@
       "id": "scandal-13",
       "title": "Бюджет на ремонт даху",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614949216.png",
+      "image": "/cards/card-1771614949216.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1616,7 +1832,7 @@
       "id": "scandal-14",
       "title": "Викриття корупційної схеми",
       "category": "SCANDAL",
-      "image": "/cards/card-1771615029111.png",
+      "image": "/cards/card-1771615029111.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1633,7 +1849,7 @@
       "id": "scandal-15",
       "title": "Тушонка",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614982549.png",
+      "image": "/cards/card-1771614982549.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1650,7 +1866,7 @@
       "id": "scandal-16",
       "title": "Колаборант",
       "category": "SCANDAL",
-      "image": "/cards/card-1771615017418.png",
+      "image": "/cards/card-1771615017418.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1671,7 +1887,7 @@
       "id": "lyap-01",
       "title": "Журнал обліку журналів",
       "category": "LYAP",
-      "image": "/cards/card-1771613013689.png",
+      "image": "/cards/card-1771613013689.webp",
       "effects": [
         {
           "resource": "time",
@@ -1688,7 +1904,7 @@
       "id": "lyap-02",
       "title": "Три сантиметри відступу",
       "category": "LYAP",
-      "image": "/cards/3-1771613029493.png",
+      "image": "/cards/3-1771613029493.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1701,7 +1917,7 @@
       "id": "lyap-03",
       "title": "Кава на журналі обліку",
       "category": "LYAP",
-      "image": "/cards/lyap-03.png",
+      "image": "/cards/lyap-03.webp",
       "effects": [
         {
           "resource": "documents",
@@ -1714,7 +1930,7 @@
       "id": "lyap-04",
       "title": "Загублений бланк №27",
       "category": "LYAP",
-      "image": "/cards/lyap-04.png",
+      "image": "/cards/lyap-04.webp",
       "effects": [
         {
           "resource": "documents",
@@ -1727,7 +1943,7 @@
       "id": "lyap-05",
       "title": "План евакуації з орфографічною помилкою",
       "category": "LYAP",
-      "image": "/cards/lyap-05.png",
+      "image": "/cards/lyap-05.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1740,7 +1956,7 @@
       "id": "lyap-06",
       "title": "П’ять нарад за один день",
       "category": "LYAP",
-      "image": "/cards/5-1771613043832.png",
+      "image": "/cards/5-1771613043832.webp",
       "effects": [
         {
           "resource": "time",
@@ -1753,7 +1969,7 @@
       "id": "lyap-07",
       "title": "Підпис за відсутнього начальника",
       "category": "LYAP",
-      "image": "/cards/card-1771613058005.png",
+      "image": "/cards/card-1771613058005.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1770,7 +1986,7 @@
       "id": "lyap-08",
       "title": "Фотозвіт без фото",
       "category": "LYAP",
-      "image": "/cards/card-1771613066196.png",
+      "image": "/cards/card-1771613066196.webp",
       "effects": [
         {
           "resource": "tech",
@@ -1783,7 +1999,7 @@
       "id": "lyap-09",
       "title": "Плутанина з печатками",
       "category": "LYAP",
-      "image": "/cards/card-1771613078854.png",
+      "image": "/cards/card-1771613078854.webp",
       "effects": [
         {
           "resource": "time",
@@ -1800,7 +2016,7 @@
       "id": "lyap-10",
       "title": "Карта-схема загублена у Google Maps",
       "category": "LYAP",
-      "image": "/cards/card-1771613088169.png",
+      "image": "/cards/card-1771613088169.webp",
       "effects": [
         {
           "resource": "tech",
@@ -1813,7 +2029,7 @@
       "id": "lyap-11",
       "title": "Плутанина з особовими справами",
       "category": "LYAP",
-      "image": "/cards/3-1771613102827.png",
+      "image": "/cards/3-1771613102827.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1830,7 +2046,7 @@
       "id": "lyap-12",
       "title": "Рапорт на ім’я іншого командира",
       "category": "LYAP",
-      "image": "/cards/card-1771613115148.png",
+      "image": "/cards/card-1771613115148.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1843,7 +2059,7 @@
       "id": "lyap-13",
       "title": "Неправильна дата у наказі",
       "category": "LYAP",
-      "image": "/cards/card-1771613133973.png",
+      "image": "/cards/card-1771613133973.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1856,7 +2072,7 @@
       "id": "lyap-14",
       "title": "Втрачений журнал",
       "category": "LYAP",
-      "image": "/cards/card-1771613146108.png",
+      "image": "/cards/card-1771613146108.webp",
       "effects": [
         {
           "resource": "documents",
@@ -1869,7 +2085,7 @@
       "id": "lyap-15",
       "title": "Подвійна звітність",
       "category": "LYAP",
-      "image": "/cards/card-1771613156561.png",
+      "image": "/cards/card-1771613156561.webp",
       "effects": [
         {
           "resource": "time",
@@ -1882,7 +2098,7 @@
       "id": "lyap-16",
       "title": "Рапорт без дати",
       "category": "LYAP",
-      "image": "/cards/card-1771613164308.png",
+      "image": "/cards/card-1771613164308.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1895,7 +2111,7 @@
       "id": "lyap-17",
       "title": "Неправильний шрифт у наказі",
       "category": "LYAP",
-      "image": "/cards/card-1771613170671.png",
+      "image": "/cards/card-1771613170671.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1908,7 +2124,7 @@
       "id": "lyap-18",
       "title": "Майте повагу до звання",
       "category": "LYAP",
-      "image": "/cards/card-1771613178947.png",
+      "image": "/cards/card-1771613178947.webp",
       "effects": [
         {
           "resource": "rank",
@@ -1921,7 +2137,7 @@
       "id": "lyap-19",
       "title": "СЗЧ",
       "category": "LYAP",
-      "image": "/cards/card-1771613186122.png",
+      "image": "/cards/card-1771613186122.webp",
       "effects": [
         {
           "resource": "time",
@@ -1938,7 +2154,7 @@
       "id": "lyap-20",
       "title": "Задувка",
       "category": "LYAP",
-      "image": "/cards/card-1771613196642.png",
+      "image": "/cards/card-1771613196642.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1955,7 +2171,7 @@
       "id": "decision-01",
       "title": "Зразковий рапорт",
       "category": "DECISION",
-      "image": "/cards/card-1771871420538.png",
+      "image": "/cards/card-1771871420538.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1972,7 +2188,7 @@
       "id": "decision-02",
       "title": "Вдалий виступ на шикуванні",
       "category": "DECISION",
-      "image": "/cards/card-1771871439446.png",
+      "image": "/cards/card-1771871439446.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1985,7 +2201,7 @@
       "id": "decision-03",
       "title": "Перемога у спортивних змаганнях",
       "category": "DECISION",
-      "image": "/cards/card-1771871453560.png",
+      "image": "/cards/card-1771871453560.webp",
       "effects": [
         {
           "resource": "time",
@@ -2002,7 +2218,7 @@
       "id": "decision-04",
       "title": "Успішний ААR",
       "category": "DECISION",
-      "image": "/cards/card-1771871467975.png",
+      "image": "/cards/card-1771871467975.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2019,7 +2235,7 @@
       "id": "decision-05",
       "title": "Волонтерська ініціатива",
       "category": "DECISION",
-      "image": "/cards/card-1771871484518.png",
+      "image": "/cards/card-1771871484518.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2036,7 +2252,7 @@
       "id": "decision-06",
       "title": "Публікація у військовому журналі",
       "category": "DECISION",
-      "image": "/cards/card-1771871500051.png",
+      "image": "/cards/card-1771871500051.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2053,7 +2269,7 @@
       "id": "decision-07",
       "title": "Прийняття на курс лідерства",
       "category": "DECISION",
-      "image": "/cards/card-1771871519462.png",
+      "image": "/cards/card-1771871519462.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2070,7 +2286,7 @@
       "id": "decision-08",
       "title": "Затвердження нового SOP",
       "category": "DECISION",
-      "image": "/cards/card-1771871537749.png",
+      "image": "/cards/card-1771871537749.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -2087,7 +2303,7 @@
       "id": "decision-09",
       "title": "Участь у навчаннях НАТО",
       "category": "DECISION",
-      "image": "/cards/card-1771871551984.png",
+      "image": "/cards/card-1771871551984.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2104,7 +2320,7 @@
       "id": "decision-10",
       "title": "Ефективне використання ресурсів",
       "category": "DECISION",
-      "image": "/cards/card-1771871573623.png",
+      "image": "/cards/card-1771871573623.webp",
       "effects": [
         {
           "resource": "time",
@@ -2121,7 +2337,7 @@
       "id": "decision-11",
       "title": "Вдалий брифінг перед начальством",
       "category": "DECISION",
-      "image": "/cards/card-1771871588026.png",
+      "image": "/cards/card-1771871588026.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2134,7 +2350,7 @@
       "id": "decision-12",
       "title": "Відмінна інвентаризація",
       "category": "DECISION",
-      "image": "/cards/card-1771871600284.png",
+      "image": "/cards/card-1771871600284.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -2151,7 +2367,7 @@
       "id": "decision-13",
       "title": "Курс з кібербезпеки",
       "category": "DECISION",
-      "image": "/cards/card-1771871612720.png",
+      "image": "/cards/card-1771871612720.webp",
       "effects": [
         {
           "resource": "tech",
@@ -2164,7 +2380,7 @@
       "id": "decision-14",
       "title": "Відзнака командира",
       "category": "DECISION",
-      "image": "/cards/card-1771871627089.png",
+      "image": "/cards/card-1771871627089.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2177,7 +2393,7 @@
       "id": "decision-15",
       "title": "Призначення на нову посаду",
       "category": "DECISION",
-      "image": "/cards/card-1771871647198.png",
+      "image": "/cards/card-1771871647198.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2194,7 +2410,7 @@
       "id": "decision-16",
       "title": "Успішний аудит холодильника",
       "category": "DECISION",
-      "image": "/cards/card-1771871660520.png",
+      "image": "/cards/card-1771871660520.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -2211,7 +2427,7 @@
       "id": "decision-17",
       "title": "Підтримка волонтерів",
       "category": "DECISION",
-      "image": "/cards/card-1771871672495.png",
+      "image": "/cards/card-1771871672495.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2228,7 +2444,7 @@
       "id": "decision-18",
       "title": "Вдале інтерв’ю для преси",
       "category": "DECISION",
-      "image": "/cards/decision-18.png",
+      "image": "/cards/card-1771873874546.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2241,7 +2457,7 @@
       "id": "decision-19",
       "title": "Успішна сертифікація підрозділу",
       "category": "DECISION",
-      "image": "/cards/decision-19.png",
+      "image": "/cards/card-1771873894734.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -2254,7 +2470,7 @@
       "id": "decision-20",
       "title": "Покращення побутових умов",
       "category": "DECISION",
-      "image": "/cards/decision-20.png",
+      "image": "/cards/card-1771874748714.webp",
       "effects": [
         {
           "resource": "time",
@@ -2271,14 +2487,14 @@
       "id": "decision-21",
       "title": "Перенесення термінів",
       "category": "DECISION",
-      "image": "/cards/decision-21.png",
+      "image": "/cards/card-1771873958187.webp",
       "effects": [
         {
-          "resource": "documents",
+          "resource": "time",
           "value": 1
         },
         {
-          "resource": "time",
+          "resource": "documents",
           "value": 1
         }
       ],
@@ -2288,7 +2504,7 @@
       "id": "decision-22",
       "title": "Ротація командирів",
       "category": "DECISION",
-      "image": "/cards/decision-22.png",
+      "image": "/cards/card-1771873978850.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2305,7 +2521,7 @@
       "id": "decision-23",
       "title": "Новий наказ про реформу",
       "category": "DECISION",
-      "image": "/cards/decision-23.png",
+      "image": "/cards/card-1771873991299.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2720,9 +2936,213 @@
         }
       ],
       "flavor": "Тепер усі рапорти на місці, але ніхто не знає де."
+    },
+    {
+      "id": "vvnz-01",
+      "title": "Національний університет оборони України імені Івана Черняховського",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875754258.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Тут навіть курсові звучать як накази."
+    },
+    {
+      "id": "vvnz-02",
+      "title": "Харківський національний університет Повітряних Сил імені Івана Кожедуба",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875767843.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "У небі — як у звіті: головне не втратити лінію."
+    },
+    {
+      "id": "vvnz-03",
+      "title": "Національна академія сухопутних військ імені гетьмана Петра Сагайдачного",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875780893.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Тут формується хребет армії — і почерк рапорту."
+    },
+    {
+      "id": "vvnz-04",
+      "title": "Військова академія (м. Одеса)",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875790279.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "На Півдні народжується тактика і легенди."
+    },
+    {
+      "id": "vvnz-05",
+      "title": "Національна академія Національної гвардії України",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875807542.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Тут порядок — не просто слово, а режим доби."
+    },
+    {
+      "id": "vvnz-06",
+      "title": "Академія Державної прикордонної служби України імені Богдана Хмельницького",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875817949.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Кордон починається не з лінії на мапі, а з характеру офіцера."
+    },
+    {
+      "id": "vvnz-07",
+      "title": "Військовий інститут Київського національного університету імені Тараса Шевченка",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875829053.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Магістерська з лідерства — і з трьома підписами."
+    },
+    {
+      "id": "vvnz-08",
+      "title": "Військовий інститут телекомунікацій та інформатизації імені Героїв Крут",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875840664.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Коли мережа лягла — це значить, що курсант встав."
+    },
+    {
+      "id": "vvnz-09",
+      "title": "Інститут Військово-Морських Сил Національного університету «Одеська морська академія»",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875856832.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Швартуй документи, курсант, і тримай горизонт рівно."
+    },
+    {
+      "id": "vvnz-10",
+      "title": "Житомирський військовий інститут імені С. П. Корольова",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875870514.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Космос починається з польового заліку."
+    },
+    {
+      "id": "vvnz-11",
+      "title": "Харківський військовий коледж сержантського складу Повітряних Сил",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875881152.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Тут вчать тримати небо так само впевнено, як стрій."
+    },
+    {
+      "id": "vvnz-12",
+      "title": "Київський військовий ліцей імені Івана Богуна",
+      "category": "VVNZ",
+      "image": "/cards/card-1771875889671.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Тут мрія носить форму ще до звання."
     }
   ],
   "legendaryDeck": [],
   "rankTrack": [],
-  "deckBackImage": "/cards/626a45d5-79de-44ec-b2cf-7bf701c578d6.png"
+  "deckBackImage": "/cards/626a45d5-79de-44ec-b2cf-7bf701c578d6.webp"
 }

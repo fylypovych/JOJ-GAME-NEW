@@ -22,6 +22,7 @@ export interface Card {
   category: CardCategory;
   cost?: Partial<Record<ResourceKey, number>>;
   image?: string;
+  grantRank?: string;
   effects?: Array<{
     resource: EffectResource;
     value: number;
