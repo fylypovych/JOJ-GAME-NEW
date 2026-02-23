@@ -1518,6 +1518,218 @@
         }
       ],
       "flavor": "Тут мрія носить форму ще до звання."
+    },
+    {
+      "id": "legendary-01",
+      "title": "Мислі Залужного",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884318909.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 2
+        },
+        {
+          "resource": "discipline",
+          "value": 3
+        }
+      ],
+      "flavor": "Стислі, як наказ. Мудрі, як тиша перед бурею."
+    },
+    {
+      "id": "legendary-02",
+      "title": "Сміх Буданова",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884335395.webp",
+      "effects": [
+        {
+          "resource": "tech",
+          "value": 2
+        }
+      ],
+      "flavor": "Сміх, що лунає, коли ворог уже мовчить."
+    },
+    {
+      "id": "legendary-03",
+      "title": "Посмішка Малюка",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884348987.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 2
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Найкраща мотивація служити далі."
+    },
+    {
+      "id": "legendary-04",
+      "title": "Фонд Притули",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884366598.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 2
+        },
+        {
+          "resource": "documents",
+          "value": 2
+        },
+        {
+          "resource": "tech",
+          "value": 2
+        }
+      ],
+      "flavor": "Куплено на совість, перевірено народом."
+    },
+    {
+      "id": "legendary-05",
+      "title": "Сухпай ЗСУ",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884379477.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Їжа, що об’єднує полки."
+    },
+    {
+      "id": "legendary-06",
+      "title": "Статуя Святого ТОРа",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884391744.webp",
+      "effects": [],
+      "flavor": "Коли гримить звітність — мовчи і натискай “оновити”."
+    },
+    {
+      "id": "legendary-07",
+      "title": "Церква Святого Лідерства",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884403769.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 2
+        },
+        {
+          "resource": "reputation",
+          "value": 2
+        }
+      ],
+      "flavor": "Там, де порядок — там і благословення канцелярії."
+    },
+    {
+      "id": "legendary-08",
+      "title": "Старлінк",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884418138.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 2
+        }
+      ],
+      "flavor": "Коли навіть зв’язок стає союзником."
+    },
+    {
+      "id": "legendary-09",
+      "title": "Вода “Прозора”",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884430988.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Проста, чиста і на облік поставлена."
+    },
+    {
+      "id": "legendary-10",
+      "title": "Дрончик",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884442233.webp",
+      "effects": [
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Маленький, але грізний. Особливо для бюрократії."
+    },
+    {
+      "id": "legendary-11",
+      "title": "Старий польський корч",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884453732.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 3
+        },
+        {
+          "resource": "tech",
+          "value": -1
+        }
+      ],
+      "flavor": "Їде, поки не закінчиться терпіння."
+    },
+    {
+      "id": "legendary-12",
+      "title": "Грамота “Єбать ти молодець”",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884466520.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 4
+        }
+      ],
+      "flavor": "Офіційно визнано неофіційним героєм."
+    },
+    {
+      "id": "legendary-13",
+      "title": "Хороший прес-офіцер",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884483248.webp",
+      "effects": [],
+      "flavor": "Новина — це зброя, якщо подати її з посмішкою."
+    },
+    {
+      "id": "legendary-14",
+      "title": "Відпустка",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884495159.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 3
+        },
+        {
+          "resource": "documents",
+          "value": -1
+        }
+      ],
+      "flavor": "Головне — повернутись із неї добровільно."
     }
   ],
   "deckIds": [
@@ -1618,21 +1830,24 @@
     "vvnz-09",
     "vvnz-10",
     "vvnz-11",
-    "vvnz-12",
-    "vvnz-01",
-    "vvnz-02",
-    "vvnz-03",
-    "vvnz-04",
-    "vvnz-05",
-    "vvnz-06",
-    "vvnz-07",
-    "vvnz-08",
-    "vvnz-09",
-    "vvnz-10",
-    "vvnz-11",
     "vvnz-12"
   ],
-  "legendaryDeckIds": [],
+  "legendaryDeckIds": [
+    "legendary-01",
+    "legendary-02",
+    "legendary-03",
+    "legendary-04",
+    "legendary-05",
+    "legendary-06",
+    "legendary-07",
+    "legendary-08",
+    "legendary-09",
+    "legendary-10",
+    "legendary-11",
+    "legendary-12",
+    "legendary-13",
+    "legendary-14"
+  ],
   "rankTrackIds": [],
   "deck": [
     {
@@ -3152,213 +3367,222 @@
         }
       ],
       "flavor": "Тут мрія носить форму ще до звання."
-    },
-    {
-      "id": "vvnz-01",
-      "title": "Національний університет оборони України імені Івана Черняховського",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875754258.webp",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Тут навіть курсові звучать як накази."
-    },
-    {
-      "id": "vvnz-02",
-      "title": "Харківський національний університет Повітряних Сил імені Івана Кожедуба",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875767843.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "discipline",
-          "value": 1
-        }
-      ],
-      "flavor": "У небі — як у звіті: головне не втратити лінію."
-    },
-    {
-      "id": "vvnz-03",
-      "title": "Національна академія сухопутних військ імені гетьмана Петра Сагайдачного",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875780893.webp",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Тут формується хребет армії — і почерк рапорту."
-    },
-    {
-      "id": "vvnz-04",
-      "title": "Військова академія (м. Одеса)",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875790279.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "На Півдні народжується тактика і легенди."
-    },
-    {
-      "id": "vvnz-05",
-      "title": "Національна академія Національної гвардії України",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875807542.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "discipline",
-          "value": 1
-        }
-      ],
-      "flavor": "Тут порядок — не просто слово, а режим доби."
-    },
-    {
-      "id": "vvnz-06",
-      "title": "Академія Державної прикордонної служби України імені Богдана Хмельницького",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875817949.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "discipline",
-          "value": 1
-        }
-      ],
-      "flavor": "Кордон починається не з лінії на мапі, а з характеру офіцера."
-    },
-    {
-      "id": "vvnz-07",
-      "title": "Військовий інститут Київського національного університету імені Тараса Шевченка",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875829053.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Магістерська з лідерства — і з трьома підписами."
-    },
-    {
-      "id": "vvnz-08",
-      "title": "Військовий інститут телекомунікацій та інформатизації імені Героїв Крут",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875840664.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Коли мережа лягла — це значить, що курсант встав."
-    },
-    {
-      "id": "vvnz-09",
-      "title": "Інститут Військово-Морських Сил Національного університету «Одеська морська академія»",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875856832.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Швартуй документи, курсант, і тримай горизонт рівно."
-    },
-    {
-      "id": "vvnz-10",
-      "title": "Житомирський військовий інститут імені С. П. Корольова",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875870514.webp",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Космос починається з польового заліку."
-    },
-    {
-      "id": "vvnz-11",
-      "title": "Харківський військовий коледж сержантського складу Повітряних Сил",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875881152.webp",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Тут вчать тримати небо так само впевнено, як стрій."
-    },
-    {
-      "id": "vvnz-12",
-      "title": "Київський військовий ліцей імені Івана Богуна",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875889671.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "discipline",
-          "value": 1
-        }
-      ],
-      "flavor": "Тут мрія носить форму ще до звання."
     }
   ],
-  "legendaryDeck": [],
+  "legendaryDeck": [
+    {
+      "id": "legendary-01",
+      "title": "Мислі Залужного",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884318909.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 2
+        },
+        {
+          "resource": "discipline",
+          "value": 3
+        }
+      ],
+      "flavor": "Стислі, як наказ. Мудрі, як тиша перед бурею."
+    },
+    {
+      "id": "legendary-02",
+      "title": "Сміх Буданова",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884335395.webp",
+      "effects": [
+        {
+          "resource": "tech",
+          "value": 2
+        }
+      ],
+      "flavor": "Сміх, що лунає, коли ворог уже мовчить."
+    },
+    {
+      "id": "legendary-03",
+      "title": "Посмішка Малюка",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884348987.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 2
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Найкраща мотивація служити далі."
+    },
+    {
+      "id": "legendary-04",
+      "title": "Фонд Притули",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884366598.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 2
+        },
+        {
+          "resource": "documents",
+          "value": 2
+        },
+        {
+          "resource": "tech",
+          "value": 2
+        }
+      ],
+      "flavor": "Куплено на совість, перевірено народом."
+    },
+    {
+      "id": "legendary-05",
+      "title": "Сухпай ЗСУ",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884379477.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Їжа, що об’єднує полки."
+    },
+    {
+      "id": "legendary-06",
+      "title": "Статуя Святого ТОРа",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884391744.webp",
+      "effects": [],
+      "flavor": "Коли гримить звітність — мовчи і натискай “оновити”."
+    },
+    {
+      "id": "legendary-07",
+      "title": "Церква Святого Лідерства",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884403769.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 2
+        },
+        {
+          "resource": "reputation",
+          "value": 2
+        }
+      ],
+      "flavor": "Там, де порядок — там і благословення канцелярії."
+    },
+    {
+      "id": "legendary-08",
+      "title": "Старлінк",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884418138.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 2
+        }
+      ],
+      "flavor": "Коли навіть зв’язок стає союзником."
+    },
+    {
+      "id": "legendary-09",
+      "title": "Вода “Прозора”",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884430988.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Проста, чиста і на облік поставлена."
+    },
+    {
+      "id": "legendary-10",
+      "title": "Дрончик",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884442233.webp",
+      "effects": [
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Маленький, але грізний. Особливо для бюрократії."
+    },
+    {
+      "id": "legendary-11",
+      "title": "Старий польський корч",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884453732.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 3
+        },
+        {
+          "resource": "tech",
+          "value": -1
+        }
+      ],
+      "flavor": "Їде, поки не закінчиться терпіння."
+    },
+    {
+      "id": "legendary-12",
+      "title": "Грамота “Єбать ти молодець”",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884466520.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 4
+        }
+      ],
+      "flavor": "Офіційно визнано неофіційним героєм."
+    },
+    {
+      "id": "legendary-13",
+      "title": "Хороший прес-офіцер",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884483248.webp",
+      "effects": [],
+      "flavor": "Новина — це зброя, якщо подати її з посмішкою."
+    },
+    {
+      "id": "legendary-14",
+      "title": "Відпустка",
+      "category": "NEUTRAL",
+      "image": "/cards/card-1771884495159.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 3
+        },
+        {
+          "resource": "documents",
+          "value": -1
+        }
+      ],
+      "flavor": "Головне — повернутись із неї добровільно."
+    }
+  ],
   "rankTrack": [],
   "deckBackImage": "/cards/626a45d5-79de-44ec-b2cf-7bf701c578d6.webp"
 }

@@ -77,7 +77,7 @@ type AdminPageProps = {
   onRunSimulations: (players: number, simulations: number) => SimulationReport;
 };
 
-const categories: CardCategory[] = ['LYAP', 'SCANDAL', 'SUPPORT', 'DECISION', 'NEUTRAL', 'VVNZ', 'LEGENDARY'];
+const categories: CardCategory[] = ['LYAP', 'SCANDAL', 'SUPPORT', 'DECISION', 'NEUTRAL', 'VVNZ'];
 const effectResourceKeys: EffectResource[] = ['time', 'reputation', 'discipline', 'documents', 'tech', 'rank'];
 const rankResourceKeys: ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
 const zeroEffectValues = (): Record<EffectResource, number> => ({
@@ -217,9 +217,23 @@ export const AdminPage = ({
   const [target, setTarget] = useState<DeckTarget>('deck');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('ALL');
   const [selectedCardId, setSelectedCardId] = useState<string>(cardCatalog[0]?.id ?? '');
+  const targetAwareCatalog = useMemo(() => {
+    const isLegendaryId = (id: string) => /^legendary-/i.test(id);
+    if (target === 'deck') {
+      return cardCatalog.filter((card) => !isLegendaryId(card.id));
+    }
+    if (target === 'legendaryDeck') {
+      return cardCatalog.filter((card) => isLegendaryId(card.id));
+    }
+    return cardCatalog;
+  }, [cardCatalog, target]);
   const filteredCatalog = useMemo(
-    () => (categoryFilter === 'ALL' ? cardCatalog : cardCatalog.filter((card) => card.category === categoryFilter)),
-    [cardCatalog, categoryFilter],
+    () => (
+      categoryFilter === 'ALL'
+        ? targetAwareCatalog
+        : targetAwareCatalog.filter((card) => card.category === categoryFilter)
+    ),
+    [targetAwareCatalog, categoryFilter],
   );
   const selectedCard = useMemo(
     () => filteredCatalog.find((card) => card.id === selectedCardId),
@@ -265,6 +279,7 @@ export const AdminPage = ({
   const [editableRanks, setEditableRanks] = useState<RankDefinition[]>(() =>
     sharedRanks.map((row) => ({
       ...row,
+      image: row.image ?? '',
       requirement: { ...row.requirement },
       cost: { ...row.cost },
       bonus: { ...row.bonus },
@@ -273,6 +288,7 @@ export const AdminPage = ({
   const [rankDraft, setRankDraft] = useState<RankDefinition>({
     id: '',
     name: '',
+    image: '',
     requirement: {},
     cost: {},
     bonus: {},
@@ -289,6 +305,7 @@ export const AdminPage = ({
     setRanksJson(JSON.stringify(sharedRanks, null, 2));
     setEditableRanks(sharedRanks.map((row) => ({
       ...row,
+      image: row.image ?? '',
       requirement: { ...row.requirement },
       cost: { ...row.cost },
       bonus: { ...row.bonus },
@@ -502,9 +519,12 @@ export const AdminPage = ({
       return;
     }
 
+    const canOverrideImportCategory = importTarget === 'deck';
+    const effectiveImportCategoryMode: ImportCategoryMode = canOverrideImportCategory ? importCategoryMode : 'AS_IS';
+
     const normalizedCards = cards.map((card) => ({
       ...card,
-      category: importCategoryMode === 'AS_IS' ? card.category : importCategoryMode,
+      category: effectiveImportCategoryMode === 'AS_IS' ? card.category : effectiveImportCategoryMode,
       image: normalizeImagePath(card.image),
     }));
 
@@ -528,7 +548,7 @@ export const AdminPage = ({
       : importTarget === 'legendaryDeck'
         ? t.legendaryDeckLabel
         : t.rankTrackDeckLabel;
-    const suffix = importCategoryMode === 'AS_IS' ? t.importCategoryAsIs : importCategoryMode;
+    const suffix = effectiveImportCategoryMode === 'AS_IS' ? t.importCategoryAsIs : effectiveImportCategoryMode;
     setImportStatus(
       lang === 'uk'
         ? `Імпорт успішний: додано ${normalizedCards.length} карт у «${targetLabel}» (категорія: ${suffix}).`
@@ -1013,6 +1033,32 @@ export const AdminPage = ({
     setRanksImportStatus('');
     setRanksImportError('');
   };
+  const attachRankImageFile = async (index: number, rankId: string, file: File | null) => {
+    if (!file) return;
+    const optimized = await optimizeBlobForUpload(file, file.name, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
+    if (!optimized) {
+      setRanksImportError(lang === 'uk' ? 'Не вдалося обробити файл зображення' : 'Failed to process image file');
+      return;
+    }
+    const path = await uploadDataUrl(optimized.filename, optimized.dataUrl, rankId || 'rank');
+    if (!path) return;
+    updateRankAt(index, (row) => ({ ...row, image: path }));
+    setRanksImportError('');
+    setRanksImportStatus('');
+  };
+  const attachRankDraftImageFile = async (file: File | null) => {
+    if (!file) return;
+    const optimized = await optimizeBlobForUpload(file, file.name, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
+    if (!optimized) {
+      setRanksImportError(lang === 'uk' ? 'Не вдалося обробити файл зображення' : 'Failed to process image file');
+      return;
+    }
+    const path = await uploadDataUrl(optimized.filename, optimized.dataUrl, rankDraft.id || 'rank-draft');
+    if (!path) return;
+    setRankDraft((prev) => ({ ...prev, image: path }));
+    setRanksImportError('');
+    setRanksImportStatus('');
+  };
   const saveRanks = () => {
     const next = editableRanks.map((row) => ({
       ...row,
@@ -1112,11 +1158,13 @@ export const AdminPage = ({
       <div className="admin-editor-grid">
         <label>{t.fieldId}<input value={editCard.id} onChange={(e) => setEditCard((prev) => ({ ...prev, id: e.target.value }))} /></label>
         <label>{t.fieldTitle}<input value={editCard.title} onChange={(e) => setEditCard((prev) => ({ ...prev, title: e.target.value }))} /></label>
-        <label>{t.fieldCategory}
-          <select value={editCard.category} onChange={(e) => setEditCard((prev) => ({ ...prev, category: e.target.value as CardCategory }))}>
-            {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
-          </select>
-        </label>
+        {editTarget !== 'legendaryDeck' ? (
+          <label>{t.fieldCategory}
+            <select value={editCard.category} onChange={(e) => setEditCard((prev) => ({ ...prev, category: e.target.value as CardCategory }))}>
+              {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+            </select>
+          </label>
+        ) : null}
         <label>{t.fieldImagePath}
           <input value={editCard.image ?? ''} onChange={(e) => setEditCard((prev) => ({ ...prev, image: e.target.value }))} />
         </label>
@@ -1391,23 +1439,24 @@ export const AdminPage = ({
         <>
           <h3>{t.deckControls}</h3>
           <p>
-            {t.deckCount}: {deckStats.deck} | {t.discardCount}: {deckStats.discard} | {t.legendaryCount}: {deckStats.legendary} | {t.rankTrackCount}: {deckStats.rankTrack}
+            {t.deckCount}: {deckStats.deck} | {t.discardCount}: {deckStats.discard} | {t.legendaryCount}: {deckStats.legendary}
           </p>
           <p className="admin-controls">
             <select value={target} onChange={(e) => setTarget(e.target.value as DeckTarget)}>
               <option value="deck">{t.mainDeck}</option>
               <option value="legendaryDeck">{t.legendaryDeckLabel}</option>
-              <option value="rankTrack">{t.rankTrackDeckLabel}</option>
             </select>
-            <label>
-              {t.categoryFilter}
-              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}>
-                <option value="ALL">{t.allCategories}</option>
-                {categories.map((cat) => (
-                  <option key={`filter-${cat}`} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </label>
+            {target === 'deck' ? (
+              <label>
+                {t.categoryFilter}
+                <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}>
+                  <option value="ALL">{t.allCategories}</option>
+                  {categories.map((cat) => (
+                    <option key={`filter-${cat}`} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <select value={selectedCardId} onChange={(e) => setSelectedCardId(e.target.value)}>
               {filteredCatalog.map((card) => (
                 <option key={card.id} value={card.id}>
@@ -1476,98 +1525,75 @@ export const AdminPage = ({
           ) : null}
 
           <div className="admin-deck-list">
-            <h4>{t.mainDeck}</h4>
-            <ul>
-              {sharedDeckTemplate.deck
-                .map((card, index) => ({ card, index }))
-                .filter(({ card }) => categoryFilter === 'ALL' || card.category === categoryFilter)
-                .map(({ card, index }) => (
-                <li key={`deck-${index}-${card.id}`}>
-                  <span>
-                    <HoverImage
-                      src={withCacheBust(getImageSrc(card))}
-                      className="admin-thumb"
-                      alt={card.id}
-                      onLoad={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.visibility = 'visible';
-                        (e.currentTarget as HTMLImageElement).style.display = 'inline-block';
-                      }}
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
-                      }}
-                    />
-                    {index + 1}. {card.id} | {cardTitle(card.id, card.title, lang)}{card.effects?.length ? ` | effects: ${card.effects.length}` : ''}
-                  </span>
-                  <span className="admin-controls">
-                    <button type="button" onClick={() => beginEdit('deck', index, card)}>{t.editCard}</button>
-                    <button type="button" onClick={() => onRemoveCard('deck', index)}>{t.removeCard}</button>
-                  </span>
-                  {editTarget === 'deck' && editIndex === index ? inlineEditor : null}
-                </li>
-                ))}
-            </ul>
+            {target === 'deck' ? (
+              <>
+                <h4>{t.mainDeck}</h4>
+                <ul>
+                  {sharedDeckTemplate.deck
+                    .map((card, index) => ({ card, index }))
+                    .filter(({ card }) => categoryFilter === 'ALL' || card.category === categoryFilter)
+                    .map(({ card, index }) => (
+                    <li key={`deck-${index}-${card.id}`}>
+                      <span>
+                        <HoverImage
+                          src={withCacheBust(getImageSrc(card))}
+                          className="admin-thumb"
+                          alt={card.id}
+                          onLoad={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.visibility = 'visible';
+                            (e.currentTarget as HTMLImageElement).style.display = 'inline-block';
+                          }}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+                          }}
+                        />
+                        {index + 1}. {card.id} | {cardTitle(card.id, card.title, lang)}{card.effects?.length ? ` | effects: ${card.effects.length}` : ''}
+                      </span>
+                      <span className="admin-controls">
+                        <button type="button" onClick={() => beginEdit('deck', index, card)}>{t.editCard}</button>
+                        <button type="button" onClick={() => onRemoveCard('deck', index)}>{t.removeCard}</button>
+                      </span>
+                      {editTarget === 'deck' && editIndex === index ? inlineEditor : null}
+                    </li>
+                    ))}
+                </ul>
+              </>
+            ) : null}
 
-            <h4>{t.legendaryDeckLabel}</h4>
-            <ul>
-              {sharedDeckTemplate.legendaryDeck
-                .map((card, index) => ({ card, index }))
-                .filter(({ card }) => categoryFilter === 'ALL' || card.category === categoryFilter)
-                .map(({ card, index }) => (
-                <li key={`legendary-${index}-${card.id}`}>
-                  <span>
-                    <HoverImage
-                      src={withCacheBust(getImageSrc(card))}
-                      className="admin-thumb"
-                      alt={card.id}
-                      onLoad={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.visibility = 'visible';
-                        (e.currentTarget as HTMLImageElement).style.display = 'inline-block';
-                      }}
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
-                      }}
-                    />
-                    {index + 1}. {card.id} | {cardTitle(card.id, card.title, lang)}{card.effects?.length ? ` | effects: ${card.effects.length}` : ''}
-                  </span>
-                  <span className="admin-controls">
-                    <button type="button" onClick={() => beginEdit('legendaryDeck', index, card)}>{t.editCard}</button>
-                    <button type="button" onClick={() => onRemoveCard('legendaryDeck', index)}>{t.removeCard}</button>
-                  </span>
-                  {editTarget === 'legendaryDeck' && editIndex === index ? inlineEditor : null}
-                </li>
-                ))}
-            </ul>
+            {target === 'legendaryDeck' ? (
+              <>
+                <h4>{t.legendaryDeckLabel}</h4>
+                <ul>
+                  {sharedDeckTemplate.legendaryDeck
+                    .map((card, index) => ({ card, index }))
+                    .map(({ card, index }) => (
+                    <li key={`legendary-${index}-${card.id}`}>
+                      <span>
+                        <HoverImage
+                          src={withCacheBust(getImageSrc(card))}
+                          className="admin-thumb"
+                          alt={card.id}
+                          onLoad={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.visibility = 'visible';
+                            (e.currentTarget as HTMLImageElement).style.display = 'inline-block';
+                          }}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+                          }}
+                        />
+                        {index + 1}. {card.id} | {cardTitle(card.id, card.title, lang)}{card.effects?.length ? ` | effects: ${card.effects.length}` : ''}
+                      </span>
+                      <span className="admin-controls">
+                        <button type="button" onClick={() => beginEdit('legendaryDeck', index, card)}>{t.editCard}</button>
+                        <button type="button" onClick={() => onRemoveCard('legendaryDeck', index)}>{t.removeCard}</button>
+                      </span>
+                      {editTarget === 'legendaryDeck' && editIndex === index ? inlineEditor : null}
+                    </li>
+                    ))}
+                </ul>
+              </>
+            ) : null}
 
-            <h4>{t.rankTrackDeckLabel}</h4>
-            <ul>
-              {sharedDeckTemplate.rankTrack
-                .map((card, index) => ({ card, index }))
-                .filter(({ card }) => categoryFilter === 'ALL' || card.category === categoryFilter)
-                .map(({ card, index }) => (
-                <li key={`rank-track-${index}-${card.id}`}>
-                  <span>
-                    <HoverImage
-                      src={withCacheBust(getImageSrc(card))}
-                      className="admin-thumb"
-                      alt={card.id}
-                      onLoad={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.visibility = 'visible';
-                        (e.currentTarget as HTMLImageElement).style.display = 'inline-block';
-                      }}
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
-                      }}
-                    />
-                    {index + 1}. {card.id} | {cardTitle(card.id, card.title, lang)}{card.effects?.length ? ` | effects: ${card.effects.length}` : ''}
-                  </span>
-                  <span className="admin-controls">
-                    <button type="button" onClick={() => beginEdit('rankTrack', index, card)}>{t.editCard}</button>
-                    <button type="button" onClick={() => onRemoveCard('rankTrack', index)}>{t.removeCard}</button>
-                  </span>
-                  {editTarget === 'rankTrack' && editIndex === index ? inlineEditor : null}
-                </li>
-                ))}
-            </ul>
           </div>
         </>
       ) : null}
@@ -1588,24 +1614,25 @@ export const AdminPage = ({
               >
                 <option value="deck">{t.mainDeck}</option>
                 <option value="legendaryDeck">{t.legendaryDeckLabel}</option>
-                <option value="rankTrack">{t.rankTrackDeckLabel}</option>
               </select>
             </label>
-            <label>
-              {t.importCategoryLabel}
-              <select
-                value={importCategoryMode}
-                onChange={(e) => {
-                  setImportCategoryMode(e.target.value as ImportCategoryMode);
-                  setImportStatus('');
-                }}
-              >
-                <option value="AS_IS">{t.importCategoryAsIs}</option>
-                {categories.map((cat) => (
-                  <option key={`import-cat-${cat}`} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </label>
+            {importTarget === 'deck' ? (
+              <label>
+                {t.importCategoryLabel}
+                <select
+                  value={importCategoryMode}
+                  onChange={(e) => {
+                    setImportCategoryMode(e.target.value as ImportCategoryMode);
+                    setImportStatus('');
+                  }}
+                >
+                  <option value="AS_IS">{t.importCategoryAsIs}</option>
+                  {categories.map((cat) => (
+                    <option key={`import-cat-${cat}`} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <button type="button" onClick={runImport}>{t.importJson}</button>
             <label>
               {t.importFile}
@@ -1680,6 +1707,25 @@ export const AdminPage = ({
                           onChange={(e) => updateRankAt(index, (row) => ({ ...row, name: e.target.value }))}
                         />
                       </label>
+                      <label>
+                        {lang === 'uk' ? 'Зображення' : 'Image'}
+                        <input
+                          value={rank.image ?? ''}
+                          onChange={(e) => updateRankAt(index, (row) => ({ ...row, image: e.target.value }))}
+                          placeholder="/cards/rank-*.webp"
+                        />
+                      </label>
+                      <label>
+                        {lang === 'uk' ? 'Файл зображення' : 'Image file'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            void attachRankImageFile(index, rank.id, e.target.files?.[0] ?? null);
+                            e.currentTarget.value = '';
+                          }}
+                        />
+                      </label>
                       {rankResourceKeys.map((key) => (
                         <label key={`req-${rank.id}-${key}`}>
                           {t.resources[key]}
@@ -1752,6 +1798,25 @@ export const AdminPage = ({
               <label>
                 {lang === 'uk' ? 'Назва' : 'Name'}
                 <input value={rankDraft.name} onChange={(e) => setRankDraft((prev) => ({ ...prev, name: e.target.value }))} />
+              </label>
+              <label>
+                {lang === 'uk' ? 'Зображення' : 'Image'}
+                <input
+                  value={rankDraft.image ?? ''}
+                  onChange={(e) => setRankDraft((prev) => ({ ...prev, image: e.target.value }))}
+                  placeholder="/cards/rank-*.webp"
+                />
+              </label>
+              <label>
+                {lang === 'uk' ? 'Файл зображення' : 'Image file'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    void attachRankDraftImageFile(e.target.files?.[0] ?? null);
+                    e.currentTarget.value = '';
+                  }}
+                />
               </label>
               {rankResourceKeys.map((key) => (
                 <label key={`draft-req-${key}`}>

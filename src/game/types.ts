@@ -36,6 +36,7 @@ export interface Rank {
   requirement: Partial<Record<ResourceKey, number>>;
   cost: Partial<Record<ResourceKey, number>>;
   bonus: Partial<Record<ResourceKey, number>>;
+  image?: string;
   victory?: boolean;
   flavor?: string;
 }
@@ -61,6 +62,10 @@ export interface JOJState {
   ranks: Record<string, string>;
   resources: Record<string, Record<ResourceKey, number>>;
   promotedThisTurn: Record<string, boolean>;
+  lyapScandalShieldUntilTurn: Record<string, number>;
+  extraHandPlayTokens: Record<string, number>;
+  sukhpayZsuWatchUntilTurn: Record<string, number>;
+  sukhpayZsuPendingBonus: Record<string, boolean>;
 }
 
 // Backward-compatible aliases for existing code.

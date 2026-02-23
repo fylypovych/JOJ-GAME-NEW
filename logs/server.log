@@ -10,3 +10,94 @@
 [2026-02-23T21:02:09.706Z] [INFO] boardgame.io server running at http://localhost:8000
 [2026-02-23T21:02:26.040Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
 [2026-02-23T21:02:26.051Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T21:16:07.081Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T21:16:07.090Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T21:22:54.462Z] [INFO] shared-deck-template imported
+[2026-02-23T21:31:58.310Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T21:31:58.321Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T21:32:12.810Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T21:32:12.820Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T21:41:00.556Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T21:41:00.567Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T21:46:00.300Z] [INFO] shared-ranks updated (2 rows)
+[2026-02-23T21:46:04.460Z] [INFO] shared-ranks updated (1 rows)
+[2026-02-23T21:46:41.526Z] [INFO] shared-ranks updated (22 rows)
+[2026-02-23T21:47:07.506Z] [INFO] shared-ranks updated (22 rows)
+[2026-02-23T21:47:09.863Z] [INFO] shared-ranks updated (22 rows)
+[2026-02-23T21:51:24.996Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T21:51:25.005Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:05:18.918Z] [INFO] image uploaded: card-1771884318909.webp
+[2026-02-23T22:05:21.335Z] [INFO] shared-deck-template imported
+[2026-02-23T22:05:35.400Z] [INFO] image uploaded: card-1771884335395.webp
+[2026-02-23T22:05:38.784Z] [INFO] shared-deck-template imported
+[2026-02-23T22:05:48.994Z] [INFO] image uploaded: card-1771884348987.webp
+[2026-02-23T22:05:51.643Z] [INFO] shared-deck-template imported
+[2026-02-23T22:06:06.604Z] [INFO] image uploaded: card-1771884366598.webp
+[2026-02-23T22:06:08.594Z] [INFO] shared-deck-template imported
+[2026-02-23T22:06:19.495Z] [INFO] image uploaded: card-1771884379477.webp
+[2026-02-23T22:06:21.896Z] [INFO] shared-deck-template imported
+[2026-02-23T22:06:31.788Z] [INFO] image uploaded: card-1771884391744.webp
+[2026-02-23T22:06:33.839Z] [INFO] shared-deck-template imported
+[2026-02-23T22:06:43.815Z] [INFO] image uploaded: card-1771884403769.webp
+[2026-02-23T22:06:45.587Z] [INFO] shared-deck-template imported
+[2026-02-23T22:06:58.143Z] [INFO] image uploaded: card-1771884418138.webp
+[2026-02-23T22:07:00.103Z] [INFO] shared-deck-template imported
+[2026-02-23T22:07:11.023Z] [INFO] image uploaded: card-1771884430988.webp
+[2026-02-23T22:07:12.433Z] [INFO] shared-deck-template imported
+[2026-02-23T22:07:22.239Z] [INFO] image uploaded: card-1771884442233.webp
+[2026-02-23T22:07:23.835Z] [INFO] shared-deck-template imported
+[2026-02-23T22:07:33.739Z] [INFO] image uploaded: card-1771884453732.webp
+[2026-02-23T22:07:35.882Z] [INFO] shared-deck-template imported
+[2026-02-23T22:07:46.534Z] [INFO] image uploaded: card-1771884466520.webp
+[2026-02-23T22:07:49.566Z] [INFO] shared-deck-template imported
+[2026-02-23T22:08:03.256Z] [INFO] image uploaded: card-1771884483248.webp
+[2026-02-23T22:08:05.022Z] [INFO] shared-deck-template imported
+[2026-02-23T22:08:15.174Z] [INFO] image uploaded: card-1771884495159.webp
+[2026-02-23T22:08:16.732Z] [INFO] shared-deck-template imported
+[2026-02-23T22:08:59.086Z] [INFO] image uploaded: card-1771884539081.webp
+[2026-02-23T22:09:10.284Z] [INFO] image uploaded: card-1771884550277.webp
+[2026-02-23T22:09:20.956Z] [INFO] image uploaded: card-1771884560909.webp
+[2026-02-23T22:27:15.053Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:27:15.060Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:29:18.930Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:29:18.936Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:29:32.962Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:29:32.969Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:29:45.969Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:29:45.976Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:30:09.151Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:30:09.159Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:30:23.073Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:30:23.081Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:31:35.636Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:31:35.643Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:32:51.554Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:32:51.560Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:33:04.269Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:33:04.275Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:33:24.975Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:33:24.984Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:33:42.320Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:33:42.328Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:37:21.672Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:37:21.679Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:38:39.511Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:38:39.516Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:39:57.477Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:39:57.484Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:40:44.788Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:40:44.794Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:41:00.476Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:41:00.481Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:41:00.972Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:41:00.978Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:42:04.869Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:42:04.876Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:42:18.797Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:42:18.806Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:42:31.887Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:42:31.894Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:43:20.202Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:43:20.209Z] [INFO] boardgame.io server running at http://localhost:8000
+[2026-02-23T22:44:03.170Z] [WARN] admin auth disabled (ADMIN_TOKEN is empty)
+[2026-02-23T22:44:03.177Z] [INFO] boardgame.io server running at http://localhost:8000

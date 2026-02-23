@@ -90,7 +90,7 @@ type Session = {
 
 type UserTab = 'games' | 'gallery' | 'rules';
 type GalleryCategoryFilter = CardDefinition['category'] | 'ALL';
-const galleryCategories: CardDefinition['category'][] = ['LYAP', 'SCANDAL', 'SUPPORT', 'DECISION', 'NEUTRAL', 'VVNZ', 'LEGENDARY'];
+const galleryCategories: CardDefinition['category'][] = ['LYAP', 'SCANDAL', 'SUPPORT', 'DECISION', 'NEUTRAL', 'VVNZ'];
 
 const parseSession = (raw: string | null): Session | null => {
   if (!raw) return null;
