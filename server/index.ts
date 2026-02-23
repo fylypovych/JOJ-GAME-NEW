@@ -91,6 +91,7 @@ const templatePath = path.resolve(process.cwd(), 'database', 'shared-deck-templa
 const ranksPath = path.resolve(process.cwd(), 'database', 'shared-ranks.json');
 const uploadsDir = path.resolve(process.cwd(), 'public', 'cards');
 const repoDir = process.cwd();
+const devRestartTouchPath = path.resolve(process.cwd(), 'server', '.restart-touch');
 
 const getClientIp = (ctx: any): string => {
   const forwarded = ctx?.request?.headers?.['x-forwarded-for'];
@@ -666,8 +667,24 @@ if (router) {
   router.post('/api/admin/restart', async (ctx: any) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/restart'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-restart', 5, 60_000))) return;
+    const isPm2Managed =
+      process.env.pm_id !== undefined ||
+      process.env.PM2_HOME !== undefined ||
+      process.env.name === 'joj-game-server';
+    await logLine('WARN', `admin requested server restart (pm2Managed=${isPm2Managed ? 'yes' : 'no'})`);
+    if (!isPm2Managed) {
+      try {
+        await mkdir(path.dirname(devRestartTouchPath), { recursive: true });
+        await writeFile(devRestartTouchPath, `${Date.now()}\n`, 'utf8');
+        ctx.body = { ok: true, message: 'Dev server restart triggered (file watch)' };
+      } catch (error) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: 'Failed to trigger watch-mode restart' };
+        await logLine('ERROR', `dev restart trigger failed: ${String(error)}`);
+      }
+      return;
+    }
     ctx.body = { ok: true, message: 'Server restart scheduled' };
-    await logLine('WARN', 'admin requested server restart');
     setTimeout(() => {
       process.exit(0);
     }, 150);

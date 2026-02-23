@@ -820,6 +820,7 @@ export const AdminPage = ({
     setImageRegenRunning(true);
     setAdminActionError('');
     setGitActionMessage('');
+    setGitActionLog('');
 
     const normalizeLocalCardPath = (value?: string) => {
       if (!value) return null;
@@ -833,8 +834,15 @@ export const AdminPage = ({
     let failed = 0;
     let skippedWebp = 0;
     let deletedOriginals = 0;
+    const errorLines: string[] = [];
     const transformedBySource = new Map<string, string | null>();
     const originalsToDelete = new Set<string>();
+    const pushRegenError = (stage: string, filePath: string, details?: string) => {
+      failed += 1;
+      if (errorLines.length < 80) {
+        errorLines.push(`${stage}: ${filePath}${details ? ` :: ${details}` : ''}`);
+      }
+    };
 
     const deleteUploadedImage = async (imagePath: string): Promise<boolean> => {
       try {
@@ -882,7 +890,7 @@ export const AdminPage = ({
             const response = await fetch(`${localPath}${localPath.includes('?') ? '&' : '?'}regen=${Date.now()}`);
             if (!response.ok) {
               transformedBySource.set(localPath, null);
-              failed += 1;
+              pushRegenError('fetch', localPath, `HTTP ${response.status}`);
               continue;
             }
             const blob = await response.blob();
@@ -890,13 +898,13 @@ export const AdminPage = ({
             const optimized = await optimizeBlobForUpload(blob, fileName);
             if (!optimized?.dataUrl) {
               transformedBySource.set(localPath, null);
-              failed += 1;
+              pushRegenError('optimize', localPath, 'canvas encode failed');
               continue;
             }
             const nextPath = await uploadDataUrl(optimized.filename, optimized.dataUrl, card.id);
             if (!nextPath) {
               transformedBySource.set(localPath, null);
-              failed += 1;
+              pushRegenError('upload', localPath, 'upload endpoint failed');
               continue;
             }
             transformedBySource.set(localPath, nextPath);
@@ -905,7 +913,7 @@ export const AdminPage = ({
             updated += 1;
           } catch {
             transformedBySource.set(localPath, null);
-            failed += 1;
+            pushRegenError('exception', localPath);
           }
         }
       };
@@ -933,16 +941,16 @@ export const AdminPage = ({
                   if (nextPath !== deckBackLocalPath) originalsToDelete.add(deckBackLocalPath);
                   updated += 1;
                 } else {
-                  failed += 1;
+                  pushRegenError('upload', deckBackLocalPath, 'upload endpoint failed');
                 }
               } else {
-                failed += 1;
+                pushRegenError('optimize', deckBackLocalPath, 'canvas encode failed');
               }
             } else {
-              failed += 1;
+              pushRegenError('fetch', deckBackLocalPath, `HTTP ${response.status}`);
             }
           } catch {
-            failed += 1;
+            pushRegenError('exception', deckBackLocalPath);
           }
         }
       }
@@ -950,6 +958,7 @@ export const AdminPage = ({
       for (const oldPath of originalsToDelete) {
         // Ignore delete failures for files that may already be gone or reused.
         if (await deleteUploadedImage(oldPath)) deletedOriginals += 1;
+        else if (errorLines.length < 80) errorLines.push(`delete: ${oldPath} :: failed`);
       }
 
       setGitActionMessage(
@@ -957,6 +966,21 @@ export const AdminPage = ({
           ? `Перегенерацію завершено. Перевірено: ${scanned}, оновлено: ${updated}, пропущено webp: ${skippedWebp}, видалено оригінали: ${deletedOriginals}, помилок: ${failed}.`
           : `Regeneration complete. Scanned: ${scanned}, updated: ${updated}, skipped webp: ${skippedWebp}, deleted originals: ${deletedOriginals}, failed: ${failed}.`,
       );
+      if (errorLines.length > 0) {
+        setGitActionLog(
+          [
+            lang === 'uk' ? 'Лог перегенерації (перші помилки):' : 'Regeneration log (first errors):',
+            ...errorLines,
+            failed > errorLines.length
+              ? (lang === 'uk'
+                  ? `... ще ${failed - errorLines.length} помилок`
+                  : `... and ${failed - errorLines.length} more errors`)
+              : '',
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        );
+      }
       setImagePreviewNonce((v) => v + 1);
     } finally {
       setImageRegenRunning(false);
