@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { JojGameState, ResourceKey } from '../game/types';
+import type { ResourceKey } from '../game/types';
 import { normalizeImagePath } from '../game/imagePaths';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 import { BoardChatPanel, GameCardTile, PilePreview } from './board/components';

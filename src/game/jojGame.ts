@@ -11,33 +11,12 @@ import {
   legendaryTexts,
 } from './systemMessages';
 import { appendChat as appendChatBase, getPlayerLabel, nextSystemMessageSeq } from './chatUtils';
-import { cloneCard, cloneRank } from './cloneUtils';
+import { cloneCard } from './cloneUtils';
 import { resourceKeys, resourceLabelsUk } from './resourceMeta';
 import { createRankEngine } from './rankEngine';
 import { runGameSimulationsWithDeps, type SimulationReport } from './simulation';
-import {
-  addCardToSharedDeckTemplate,
-  addCustomCardToSharedDeckTemplate,
-  exportSharedDeckTemplateJson,
-  getActiveRanks,
-  getCardCatalog,
-  getSharedDeckTemplate,
-  getSharedDeckTemplateStats,
-  getSharedRanks,
-  getTopRankId,
-  importSharedDeckTemplateJson,
-  resetSharedDeckTemplate,
-  resetSharedRanks,
-  removeCardAtFromSharedDeckTemplate,
-  setSharedDeckBackImage,
-  setSharedRanks,
-  shuffle,
-  shuffleSharedDeckTemplate,
-  type DeckTarget,
-  type SharedRanks,
-  updateCardAtInSharedDeckTemplate,
-} from './sharedConfig';
-import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from './types';
+import { getActiveRanks, getSharedDeckTemplate, getTopRankId, shuffle } from './sharedConfig';
+import type { CardDefinition, JojGameState, ResourceKey } from './types';
 export {
   addCardToSharedDeckTemplate,
   addCustomCardToSharedDeckTemplate,
@@ -526,7 +505,6 @@ const syncPlayerState = (G: JojGameState, playerID: string): void => {
   G.players[playerID].resources = G.resources[playerID];
 };
 const {
-  rankSeatLimit,
   promoteRank,
   promoteToSpecificRank,
   grantSpecificRankIgnoringRequirements,

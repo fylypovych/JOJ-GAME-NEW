@@ -151,6 +151,8 @@ export const useAdminGitActions = ({
     gitDeployRunning,
     gitActionMessage,
     gitActionLog,
+    setGitActionMessage,
+    setGitActionLog,
     checkGitUpdates,
     applyGitUpdate,
     applyGitDeploy,

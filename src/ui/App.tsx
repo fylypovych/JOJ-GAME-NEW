@@ -99,6 +99,7 @@ export const App = () => {
   const t = text(lang);
   const {
     adminToken,
+    setAdminToken,
     adminTokenDraft,
     setAdminTokenDraft,
     adminAuthChecking,
@@ -313,7 +314,7 @@ export const App = () => {
     [matches, session?.matchID],
   );
   const adminMatchID = useMemo(() => session?.matchID ?? matches[0]?.matchID ?? '', [matches, session?.matchID]);
-  const { snapshot, setSnapshot } = useAdminSnapshot({
+  const { snapshot } = useAdminSnapshot({
     isAdminRoute,
     adminAuthorized,
     adminMatchID,

@@ -266,7 +266,7 @@ export const GallerySection = ({
   </section>
 );
 
-export const RulesSection = ({ t, rules }: { t: T; rules: string[] }) => (
+export const RulesSection = ({ t, rules }: { t: T; rules: readonly string[] }) => (
   <section className="board">
     <h2>{t.rulesTitle}</h2>
     <ol className="rules-list">

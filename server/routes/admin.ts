@@ -5,7 +5,6 @@ export const registerAdminRoutes = ({
   router,
   requireAdminAuth,
   enforceRateLimit,
-  readJsonBodySafe,
   logLine,
   getGitUpdateStatus,
   autoStashRuntimeNoise,

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DeckTarget, SimulationReport } from '../game/jojGame';
 import { normalizeImagePath } from '../game/imagePaths';
-import type { CardCategory, CardDefinition, EffectResource, RankDefinition, ResourceKey } from '../game/types';
-import { cardTitle, categoryLabel, rankLabel } from './i18n';
+import type { CardCategory, CardDefinition, EffectResource } from '../game/types';
+import { rankLabel } from './i18n';
 import { text } from './i18n';
 import { HoverImage } from './admin/HoverImage';
 import { blobToDataUrl, optimizeBlobForUpload, uploadAdminImageDataUrl } from './admin/imageUpload';
@@ -11,6 +11,7 @@ import { useAdminRanksEditor } from './admin/useAdminRanksEditor';
 import {
   blankCard,
   categories,
+  DEFAULT_UPLOAD_QUALITY,
   effectResourceKeys,
   effectsToValues,
   getAspectLockedCropRect,
@@ -24,6 +25,7 @@ import type {
   CategoryFilter,
   CropDraft,
   ImportCategoryMode,
+  SharedDeckTemplate,
 } from './admin/types';
 import {
   AdminImportTab,
@@ -137,6 +139,8 @@ export const AdminPage = ({
     gitDeployRunning,
     gitActionMessage,
     gitActionLog,
+    setGitActionMessage,
+    setGitActionLog,
     checkGitUpdates,
     applyGitUpdate,
     applyGitDeploy,
@@ -697,7 +701,10 @@ export const AdminPage = ({
     reader.readAsText(file);
   };
 
-  const withCacheBust = (src: string) => `${src}${src.includes('?') ? '&' : '?'}v=${imagePreviewNonce}`;
+  const withCacheBust = (src?: string) => {
+    const value = src ?? '';
+    return `${value}${value.includes('?') ? '&' : '?'}v=${imagePreviewNonce}`;
+  };
   const imageSrc = normalizeImagePath(selectedCard?.image) ?? (selectedCard ? `/cards/${selectedCard.id}.png` : '');
   const getImageSrc = (card: CardDefinition) => normalizeImagePath(card.image) ?? `/cards/${card.id}.png`;
   const closeEditor = () => {
@@ -922,7 +929,7 @@ export const AdminPage = ({
           t={t}
           lang={lang}
           deckStats={deckStats}
-          target={target}
+          target={target === 'rankTrack' ? 'deck' : target}
           setTarget={(v) => setTarget(v as DeckTarget)}
           categoryFilter={categoryFilter}
           setCategoryFilter={(v) => setCategoryFilter(v as CategoryFilter)}
@@ -944,7 +951,7 @@ export const AdminPage = ({
           getImageSrc={getImageSrc}
           beginEdit={(tabTarget, index, card) => beginEdit(tabTarget as DeckTarget, index, card)}
           onRemoveCard={(tabTarget, index) => onRemoveCard(tabTarget as DeckTarget, index)}
-          editTarget={editTarget}
+          editTarget={editTarget === 'rankTrack' ? 'deck' : editTarget}
           editIndex={editIndex}
           inlineEditor={inlineEditor}
         />
@@ -953,7 +960,7 @@ export const AdminPage = ({
       {activeTab === 'import' ? (
         <AdminImportTab
           t={t}
-          importTarget={importTarget}
+          importTarget={importTarget === 'rankTrack' ? 'deck' : importTarget}
           setImportTarget={(v) => setImportTarget(v as DeckTarget)}
           importCategoryMode={importCategoryMode}
           setImportCategoryMode={(v) => setImportCategoryMode(v as ImportCategoryMode)}

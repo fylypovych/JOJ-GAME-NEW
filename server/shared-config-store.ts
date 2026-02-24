@@ -9,7 +9,7 @@ export const createSharedConfigStore = ({
   exportSharedDeckTemplateJson: () => string;
   importSharedDeckTemplateJson: (text: string) => { ok: true } | { ok: false; error: string };
   getSharedRanks: () => unknown;
-  setSharedRanks: (value: unknown) => boolean;
+  setSharedRanks: (value: any) => boolean;
   resetSharedRanks: () => void;
 }) => {
   const saveTemplateToDisk = async () => {
@@ -50,4 +50,3 @@ export const createSharedConfigStore = ({
   };
   return { saveTemplateToDisk, saveRanksToDisk, loadTemplateFromDisk, loadRanksFromDisk };
 };
-
