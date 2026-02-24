@@ -241,23 +241,23 @@ export const registerAdminRoutes = ({
     }
     steps.push({ step: 'npm install', output: installRes.stdout.trim() || '(ok)' });
 
-    const tscRes = await runShellCommand('npx tsc -b', 20 * 60_000);
+    const tscRes = await runShellCommand('npm run typecheck', 20 * 60_000);
     if (!tscRes.ok) {
       ctx.status = 500;
       ctx.body = { ok: false, error: 'TypeScript build failed', details: tscRes.error, steps };
       await logLine('ERROR', `deploy tsc failed: ${tscRes.error}`);
       return;
     }
-    steps.push({ step: 'npx tsc -b', output: tscRes.stdout.trim() || '(ok)' });
+    steps.push({ step: 'npm run typecheck', output: tscRes.stdout.trim() || '(ok)' });
 
-    const viteRes = await runShellCommand('npx vite build', 30 * 60_000);
+    const viteRes = await runShellCommand('npm run build', 30 * 60_000);
     if (!viteRes.ok) {
       ctx.status = 500;
       ctx.body = { ok: false, error: 'Vite build failed', details: viteRes.error, steps };
       await logLine('ERROR', `deploy vite build failed: ${viteRes.error}`);
       return;
     }
-    steps.push({ step: 'npx vite build', output: viteRes.stdout.trim() || '(ok)' });
+    steps.push({ step: 'npm run build', output: viteRes.stdout.trim() || '(ok)' });
 
     const nextStatus = await getGitUpdateStatus(runGit);
     if (!nextStatus.ok) {
