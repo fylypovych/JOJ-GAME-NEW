@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ResourceKey } from '../game/types';
+import type { RankDefinition, ResourceKey } from '../game/types';
 import { normalizeImagePath } from '../game/imagePaths';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 import { BoardChatPanel, GameCardTile, PilePreview } from './board/components';
@@ -25,6 +25,19 @@ export const Board = ({
   const resources = G?.resources?.[id];
   const rankId = G?.ranks?.[id];
   const rankName = sharedRanks.find((row) => row.id === (rankId ?? ''))?.name ?? rankLabel(rankId ?? '', lang);
+  const currentRankIndex = sharedRanks.findIndex((row) => row.id === (rankId ?? ''));
+  const nextRank: RankDefinition | undefined =
+    currentRankIndex >= 0 && currentRankIndex < sharedRanks.length - 1
+      ? sharedRanks[currentRankIndex + 1]
+      : undefined;
+  const nextRankMissing = nextRank && resources
+    ? (Object.entries(nextRank.requirement ?? {}) as Array<[ResourceKey, number]>)
+      .map(([key, required]) => {
+        const missing = Math.max(0, (required ?? 0) - (resources[key] ?? 0));
+        return missing > 0 ? `${resourceLabels[key]} ${missing}` : null;
+      })
+      .filter((v): v is string => Boolean(v))
+    : [];
   const isCurrentPlayer = ctx?.currentPlayer === id;
   const stage = ctx?.activePlayers?.[id];
   const canDraw = isCurrentPlayer && stage === 'draw';
@@ -144,6 +157,17 @@ export const Board = ({
                 : t.stageWaiting}
         </p>
         <p>{t.yourRank}: {rankName}</p>
+        {nextRank ? (
+          <p className="rank-next-hint">
+            {nextRankMissing.length > 0
+              ? (lang === 'uk'
+                ? `До звання «${nextRank.name}» бракує: ${nextRankMissing.join(', ')}`
+                : `Missing for rank "${nextRank.name}": ${nextRankMissing.join(', ')}`)
+              : (lang === 'uk'
+                ? `Можна підвищитися до «${nextRank.name}»`
+                : `You can promote to "${nextRank.name}"`)}
+          </p>
+        ) : null}
       </div>
 
       <h2>{t.boardArea}</h2>
