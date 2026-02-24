@@ -1,3 +1,5 @@
+import type { LogLine as FileLogLine } from '../file-logger';
+
 export type RouteCtx = any;
 
 export type RouterLike = {
@@ -17,7 +19,7 @@ export type ReadJsonBodySafe = (args: {
   ctx: RouteCtx;
   routeLabel: string;
   maxBytes: number;
-  logLine: (level: string, message: string) => Promise<void>;
+  logLine: FileLogLine;
 }) => Promise<any>;
 
-export type LogLine = (level: string, message: string) => Promise<void>;
+export type LogLine = FileLogLine;

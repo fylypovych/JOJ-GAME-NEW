@@ -2,8 +2,9 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { EnforceRateLimit, LogLine, RequireAdminAuth, RouterLike } from './types';
 
-type RunGit = (args: string[]) => Promise<{ ok: boolean; stdout: string; stderr: string; error?: string }>;
-type RunShellCommand = (command: string, timeoutMs?: number) => Promise<{ ok: boolean; stdout: string; stderr: string; error?: string }>;
+type CmdResult = { ok: true; stdout: string; stderr: string } | { ok: false; error: string };
+type RunGit = (args: string[]) => Promise<CmdResult>;
+type RunShellCommand = (command: string, timeoutMs?: number) => Promise<CmdResult>;
 type SpawnDetachedShell = (command: string) => void;
 
 type AdminRoutesDeps = {
