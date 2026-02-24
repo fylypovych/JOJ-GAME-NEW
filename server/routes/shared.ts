@@ -1,3 +1,24 @@
+import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike } from './types';
+
+type SharedRoutesDeps = {
+  router: RouterLike;
+  requireAdminAuth: RequireAdminAuth;
+  enforceRateLimit: EnforceRateLimit;
+  readJsonBodySafe: ReadJsonBodySafe;
+  logLine: LogLine;
+  JSON_BODY_LIMIT: number;
+  LARGE_JSON_BODY_LIMIT: number;
+  exportSharedDeckTemplateJson: () => string;
+  getSharedDeckTemplateStats: () => unknown;
+  getSharedRanks: () => unknown;
+  setSharedRanks: (value: any) => boolean;
+  resetSharedRanks: () => void;
+  importSharedDeckTemplateJson: (json: string) => { ok: true } | { ok: false; error: string };
+  resetSharedDeckTemplate: () => void;
+  saveRanksToDisk: () => Promise<void>;
+  saveTemplateToDisk: () => Promise<void>;
+};
+
 export const registerSharedRoutes = ({
   router,
   requireAdminAuth,
@@ -15,7 +36,7 @@ export const registerSharedRoutes = ({
   resetSharedDeckTemplate,
   saveRanksToDisk,
   saveTemplateToDisk,
-}: any) => {
+}: SharedRoutesDeps) => {
   router.get('/api/shared-deck-template', (ctx: any) => {
     ctx.body = {
       json: exportSharedDeckTemplateJson(),

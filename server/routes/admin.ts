@@ -1,5 +1,24 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import type { EnforceRateLimit, LogLine, RequireAdminAuth, RouterLike } from './types';
+
+type RunGit = (args: string[]) => Promise<{ ok: boolean; stdout: string; stderr: string; error?: string }>;
+type RunShellCommand = (command: string, timeoutMs?: number) => Promise<{ ok: boolean; stdout: string; stderr: string; error?: string }>;
+type SpawnDetachedShell = (command: string) => void;
+
+type AdminRoutesDeps = {
+  router: RouterLike;
+  requireAdminAuth: RequireAdminAuth;
+  enforceRateLimit: EnforceRateLimit;
+  logLine: LogLine;
+  getGitUpdateStatus: (runGit: RunGit) => Promise<any>;
+  autoStashRuntimeNoise: (args: { status: any; runGit: RunGit; logLine: LogLine }) => Promise<{ ok: boolean; error?: string }>;
+  runGit: RunGit;
+  runShellCommand: RunShellCommand;
+  spawnDetachedShell: SpawnDetachedShell;
+  isAdminAuthEnabled: boolean;
+  devRestartTouchPath: string;
+};
 
 export const registerAdminRoutes = ({
   router,
@@ -13,7 +32,7 @@ export const registerAdminRoutes = ({
   spawnDetachedShell,
   isAdminAuthEnabled,
   devRestartTouchPath,
-}: any) => {
+}: AdminRoutesDeps) => {
   router.get('/api/health', (ctx: any) => {
     ctx.body = {
       ok: true,

@@ -73,7 +73,6 @@ if (router) {
     router,
     requireAdminAuth,
     enforceRateLimit,
-    readJsonBodySafe,
     logLine,
     getGitUpdateStatus,
     autoStashRuntimeNoise,

@@ -1,5 +1,17 @@
 import { access, mkdir, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike } from './types';
+
+type UploadRoutesDeps = {
+  router: RouterLike;
+  requireAdminAuth: RequireAdminAuth;
+  enforceRateLimit: EnforceRateLimit;
+  readJsonBodySafe: ReadJsonBodySafe;
+  logLine: LogLine;
+  JSON_BODY_LIMIT: number;
+  IMAGE_UPLOAD_BODY_LIMIT: number;
+  uploadsDir: string;
+};
 
 export const registerUploadRoutes = ({
   router,
@@ -10,7 +22,7 @@ export const registerUploadRoutes = ({
   JSON_BODY_LIMIT,
   IMAGE_UPLOAD_BODY_LIMIT,
   uploadsDir,
-}: any) => {
+}: UploadRoutesDeps) => {
   router.post('/api/upload-card-image', async (ctx: any) => {
     if (!(await requireAdminAuth(ctx, '/api/upload-card-image'))) return;
     if (!(await enforceRateLimit(ctx, 'upload-card-image', 240, 60_000))) return;

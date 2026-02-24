@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { DeckTarget, SimulationReport } from '../game/jojGame';
 import { normalizeImagePath } from '../game/imagePaths';
 import type { CardCategory, CardDefinition, EffectResource } from '../game/types';
@@ -7,11 +7,11 @@ import { text } from './i18n';
 import { HoverImage } from './admin/HoverImage';
 import { blobToDataUrl, optimizeBlobForUpload, uploadAdminImageDataUrl } from './admin/imageUpload';
 import { useAdminGitActions } from './admin/useAdminGitActions';
+import { useAdminImageTools } from './admin/useAdminImageTools';
 import { useAdminRanksEditor } from './admin/useAdminRanksEditor';
 import {
   blankCard,
   categories,
-  DEFAULT_UPLOAD_QUALITY,
   effectResourceKeys,
   effectsToValues,
   getAspectLockedCropRect,
@@ -23,7 +23,6 @@ import type {
   AdminPageProps,
   AdminTab,
   CategoryFilter,
-  CropDraft,
   ImportCategoryMode,
   SharedDeckTemplate,
 } from './admin/types';
@@ -125,9 +124,6 @@ export const AdminPage = ({
   const [imageRegenRunning, setImageRegenRunning] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<AdminTab>('matches');
   const [deckBackImageInput, setDeckBackImageInput] = useState<string>(sharedDeckTemplate.deckBackImage ?? '');
-  const [cropDraft, setCropDraft] = useState<CropDraft | null>(null);
-  const cropPreviewRef = useRef<HTMLCanvasElement | null>(null);
-  const cropObjectUrlRef = useRef<string | null>(null);
   const [simulationPlayers, setSimulationPlayers] = useState<number>(4);
   const [simulationCount, setSimulationCount] = useState<number>(500);
   const [simulationReport, setSimulationReport] = useState<SimulationReport | null>(null);
@@ -154,51 +150,6 @@ export const AdminPage = ({
   useEffect(() => {
     setDeckBackImageInput(sharedDeckTemplate.deckBackImage ?? '');
   }, [sharedDeckTemplate.deckBackImage]);
-
-  useEffect(() => {
-    const current = cropDraft?.sourceUrl ?? null;
-    const prev = cropObjectUrlRef.current;
-    if (prev && prev !== current) {
-      URL.revokeObjectURL(prev);
-    }
-    cropObjectUrlRef.current = current;
-  }, [cropDraft?.sourceUrl]);
-
-  useEffect(() => () => {
-    if (cropObjectUrlRef.current) {
-      URL.revokeObjectURL(cropObjectUrlRef.current);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!cropDraft || !cropPreviewRef.current) return;
-    const canvas = cropPreviewRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const image = new Image();
-    image.onload = () => {
-      if (
-        cropDraft.sourceWidth !== image.width ||
-        cropDraft.sourceHeight !== image.height
-      ) {
-        setCropDraft((prev) => (prev
-          ? {
-              ...prev,
-              sourceWidth: image.width,
-              sourceHeight: image.height,
-            }
-          : prev));
-      }
-      const { sx, sy, sw, sh } = getAspectLockedCropRect(cropDraft, image.width, image.height);
-
-      canvas.width = sw;
-      canvas.height = sh;
-      ctx.clearRect(0, 0, sw, sh);
-      ctx.drawImage(image, sx, sy, sw, sh, 0, 0, sw, sh);
-    };
-    image.src = cropDraft.sourceUrl;
-  }, [cropDraft]);
 
   const beginEdit = (nextTarget: DeckTarget, index: number, card: CardDefinition) => {
     setEditTarget(nextTarget);
@@ -374,6 +325,30 @@ export const AdminPage = ({
     return path;
   };
   const {
+    cropDraft,
+    setCropDraft,
+    cropPreviewRef,
+    attachImageFile,
+    startCropFromCurrentImage,
+    uploadOriginalFromCropDraft,
+    applyCropAndUpload,
+    cancelCropDraft,
+    uploadDeckBackImage,
+  } = useAdminImageTools({
+    lang,
+    editCard,
+    setEditCard,
+    setEditError,
+    setImagePreviewNonce,
+    onSetDeckBackImage,
+    setDeckBackImageInput,
+    uploadDataUrl,
+    blobToDataUrl,
+    optimizeBlobForUpload,
+    getAspectLockedCropRect,
+    cropQuality: 0.85,
+  });
+  const {
     editableRanks,
     rankDraft,
     setRankDraft,
@@ -400,126 +375,6 @@ export const AdminPage = ({
     optimizeBlobForUpload,
     uploadDataUrl,
   });
-  const attachImageFile = async (file: File | null) => {
-    if (!file) return;
-    const sourceUrl = URL.createObjectURL(file);
-    setCropDraft({
-      filename: file.name,
-      sourceBlob: file,
-      sourceUrl,
-      mime: file.type || 'image/png',
-      sourceWidth: 0,
-      sourceHeight: 0,
-      topPx: 0,
-      rightPx: 0,
-      bottomPx: 0,
-      leftPx: 0,
-    });
-    setEditError('');
-  };
-  const startCropFromCurrentImage = async () => {
-    const src = normalizeImagePath(editCard.image?.trim());
-    if (!src) return;
-    try {
-      const response = await fetch(src);
-      if (!response.ok) {
-        setEditError(lang === 'uk' ? 'Не вдалося завантажити поточне зображення' : 'Failed to load current image');
-        return;
-      }
-      const blob = await response.blob();
-      const nameFromPath = src.split('/').pop() || `${editCard.id || 'card-image'}.png`;
-      const sourceUrl = URL.createObjectURL(blob);
-      setCropDraft({
-        filename: nameFromPath,
-        sourceBlob: blob,
-        sourceUrl,
-        mime: blob.type || 'image/png',
-        sourceWidth: 0,
-        sourceHeight: 0,
-        topPx: 0,
-        rightPx: 0,
-        bottomPx: 0,
-        leftPx: 0,
-      });
-      setEditError('');
-    } catch {
-      setEditError(lang === 'uk' ? 'Не вдалося завантажити поточне зображення' : 'Failed to load current image');
-    }
-  };
-  const uploadOriginalFromCropDraft = async () => {
-    if (!cropDraft) return;
-    const optimized = await optimizeBlobForUpload(cropDraft.sourceBlob, cropDraft.filename);
-    const dataUrl = optimized?.dataUrl ?? (await blobToDataUrl(cropDraft.sourceBlob));
-    if (!dataUrl) {
-      setEditError(lang === 'uk' ? 'Не вдалося прочитати зображення' : 'Failed to read image');
-      return;
-    }
-    const path = await uploadDataUrl(optimized?.filename ?? cropDraft.filename, dataUrl);
-    if (!path) return;
-    setEditError('');
-    setEditCard((prev) => ({ ...prev, image: path }));
-    setImagePreviewNonce((v) => v + 1);
-    setCropDraft(null);
-  };
-  const applyCropAndUpload = async () => {
-    if (!cropDraft) return;
-    const image = new Image();
-    const loaded = await new Promise<boolean>((resolve) => {
-      image.onload = () => resolve(true);
-      image.onerror = () => resolve(false);
-      image.src = cropDraft.sourceUrl;
-    });
-    if (!loaded) {
-      setEditError(lang === 'uk' ? 'Не вдалося обробити зображення' : 'Failed to process image');
-      return;
-    }
-
-    const { sx, sy, sw, sh } = getAspectLockedCropRect(cropDraft, image.width, image.height);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = sw;
-    canvas.height = sh;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      setEditError(lang === 'uk' ? 'Не вдалося обробити зображення' : 'Failed to process image');
-      return;
-    }
-    ctx.drawImage(image, sx, sy, sw, sh, 0, 0, sw, sh);
-
-    let outDataUrl = canvas.toDataURL('image/webp', DEFAULT_UPLOAD_QUALITY);
-    let outFilename = cropDraft.filename.replace(/\.[^.]+$/u, '') || cropDraft.filename || 'card-image';
-    outFilename = `${outFilename}.webp`;
-    if (!outDataUrl.startsWith('data:image/webp')) {
-      outDataUrl = canvas.toDataURL('image/jpeg', DEFAULT_UPLOAD_QUALITY);
-      outFilename = outFilename.replace(/\.webp$/u, '.jpg');
-    }
-    const path = await uploadDataUrl(outFilename, outDataUrl);
-    if (!path) return;
-    setEditError('');
-    setEditCard((prev) => ({ ...prev, image: path }));
-    setImagePreviewNonce((v) => v + 1);
-    setCropDraft(null);
-  };
-  const cancelCropDraft = () => {
-    setCropDraft(null);
-    setEditError('');
-  };
-  const uploadDeckBackImage = async (file: File | null) => {
-    if (!file) return;
-    const optimized = await optimizeBlobForUpload(file, file.name, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
-    const dataUrl = optimized?.dataUrl ?? (await blobToDataUrl(file));
-    if (!dataUrl) {
-      setEditError(lang === 'uk' ? 'Не вдалося прочитати файл зображення' : 'Failed to read image file');
-      return;
-    }
-    const path = await uploadDataUrl(optimized?.filename ?? file.name, dataUrl, 'deck-back');
-    if (!path) {
-      return;
-    }
-    onSetDeckBackImage(path);
-    setDeckBackImageInput(path);
-    setImagePreviewNonce((v) => v + 1);
-  };
   const regenerateAllTemplateImages = async () => {
     if (imageRegenRunning) return;
     setImageRegenRunning(true);
