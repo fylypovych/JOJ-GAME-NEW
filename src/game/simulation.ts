@@ -1,0 +1,413 @@
+import type { CardDefinition, JojGameState, ResourceKey } from './types';
+
+export type SimulationReport = {
+  input: {
+    players: number;
+    simulations: number;
+    maxTurns: number;
+  };
+  generatedAt: string;
+  summary: {
+    finished: number;
+    stalled: number;
+    avgTurns: number;
+    avgDeckDepletionTurn: number;
+    rankWins: number;
+    scoreWins: number;
+    avgPassesPerGame: number;
+  };
+  seatWinRates: Array<{
+    playerID: string;
+    wins: number;
+    winRatePct: number;
+  }>;
+  rankReached: Record<string, number>;
+  topReachedRanks: Array<{
+    rankId: string;
+    games: number;
+    pct: number;
+  }>;
+  topReachedRanksByPct: Array<{
+    rankId: string;
+    games: number;
+    pct: number;
+  }>;
+  lastGame: {
+    winnerPlayerID: string;
+    winnerRankId: string;
+    winnerResources: Record<ResourceKey, number>;
+    turns: number;
+  };
+  issues: string[];
+};
+
+type SimulationDeps = {
+  resourceKeys: readonly ResourceKey[];
+  shuffle: <T>(items: T[]) => T[];
+  cloneCard: (card: CardDefinition) => CardDefinition;
+  getSharedDeckTemplate: () => {
+    deck: CardDefinition[];
+    legendaryDeck: CardDefinition[];
+    deckBackImage?: string;
+  };
+  getActiveRanks: () => Array<{ id: string } & Partial<{ victory: boolean }>>;
+  getTopRankId: () => string;
+  drawCards: (G: JojGameState, playerID: string, amount: number) => void;
+  drawLegendaryCards: (G: JojGameState, playerID: string, amount: number) => void;
+  syncPlayerState: (G: JojGameState, playerID: string) => void;
+  promoteRank: (G: JojGameState, playerID: string, playerCount: number) => boolean;
+  promoteToSpecificRank: (G: JojGameState, playerID: string, rankId: string, playerCount: number) => { ok: boolean };
+  triggerSukhpayZsuOnScandal: (G: JojGameState, ctx: { turn: number }, sourcePlayerID: string) => void;
+  applyCardEffects: (
+    G: JojGameState,
+    playerID: string,
+    effects: CardDefinition['effects'],
+    replacementResources?: ResourceKey[],
+  ) => boolean;
+  applyCardEffectsSoft: (
+    G: JojGameState,
+    playerID: string,
+    effects: CardDefinition['effects'],
+  ) => { resources: Partial<Record<ResourceKey, number>>; rank: number };
+  planReplacementResources: (
+    resources: Record<ResourceKey, number>,
+    effects: CardDefinition['effects'],
+  ) => ResourceKey[] | null;
+  getWinner: (G: JojGameState) => string | undefined;
+  startingHandSize: number;
+  startingLegendaryHandSize: number;
+};
+
+const chooseLyapTarget = (
+  deps: Pick<SimulationDeps, 'getActiveRanks' | 'resourceKeys'>,
+  G: JojGameState,
+  sourcePlayerID: string,
+): string | null => {
+  const activeRanks = deps.getActiveRanks();
+  const rankIndex = (playerID: string) => activeRanks.findIndex((r) => r.id === G.ranks[playerID]);
+  const score = (playerID: string) =>
+    deps.resourceKeys.reduce((sum, key) => sum + (G.resources[playerID][key] ?? 0), 0) + rankIndex(playerID) * 2;
+  const candidates = Object.keys(G.players).filter((pid) => pid !== sourcePlayerID);
+  if (!candidates.length) return null;
+  return [...candidates].sort((a, b) => score(b) - score(a))[0];
+};
+
+const simulateSingleMatch = (
+  deps: SimulationDeps,
+  numPlayers: number,
+  maxTurns: number,
+): {
+  winner: string;
+  turns: number;
+  stalled: boolean;
+  deckDepletionTurn: number;
+  wonByRank: boolean;
+  passes: number;
+  reachedRanks: Record<string, string>;
+  finalResources: Record<string, Record<ResourceKey, number>>;
+} => {
+  const playerIDs = Array.from({ length: numPlayers }, (_, i) => String(i));
+  const sharedDeckTemplate = deps.getSharedDeckTemplate();
+  const G: JojGameState = {
+    deck: deps.shuffle(sharedDeckTemplate.deck.map(deps.cloneCard)),
+    discard: [],
+    legendaryDeck: deps.shuffle(sharedDeckTemplate.legendaryDeck.map(deps.cloneCard)),
+    legendaryDiscard: [],
+    deckBackImage: sharedDeckTemplate.deckBackImage,
+    systemMessageSeq: 0,
+    playerNames: {},
+    chat: [],
+    players: {},
+    hands: {},
+    legendaryHands: {},
+    ranks: {},
+    resources: {},
+    promotedThisTurn: {},
+    lyapScandalShieldUntilTurn: {},
+    extraHandPlayTokens: {},
+    sukhpayZsuWatchUntilTurn: {},
+    sukhpayZsuPendingBonus: {},
+  };
+
+  playerIDs.forEach((pid, index) => {
+    G.hands[pid] = [];
+    G.legendaryHands[pid] = [];
+    G.ranks[pid] = deps.getActiveRanks()[0]?.id ?? 'cadet';
+    G.resources[pid] = { time: 2, reputation: 2, discipline: 2, documents: 2, tech: 2 };
+    G.players[pid] = { hand: G.hands[pid], rankId: G.ranks[pid], resources: G.resources[pid] };
+    G.playerNames[pid] = `P${index + 1}`;
+    G.promotedThisTurn[pid] = false;
+    G.lyapScandalShieldUntilTurn[pid] = 0;
+    G.extraHandPlayTokens[pid] = 0;
+    G.sukhpayZsuWatchUntilTurn[pid] = 0;
+    G.sukhpayZsuPendingBonus[pid] = false;
+    deps.drawCards(G, pid, deps.startingHandSize);
+    deps.drawLegendaryCards(G, pid, deps.startingLegendaryHandSize);
+    deps.syncPlayerState(G, pid);
+  });
+
+  let currentIdx = 0;
+  let turns = 0;
+  let deckDepletionTurn = -1;
+  let passes = 0;
+  const tryPromoteOnce = (pid: string) => deps.promoteRank(G, pid, numPlayers);
+
+  while (turns < maxTurns) {
+    const playerID = playerIDs[currentIdx];
+    const hand = G.hands[playerID];
+    let stage: 'play' | 'end' = 'play';
+
+    if (G.deck.length > 0) {
+      const card = G.deck.pop();
+      if (card) {
+        if (card.category === 'LYAP') {
+          deps.applyCardEffectsSoft(G, playerID, card.effects);
+          G.discard.push(card);
+          stage = 'end';
+        } else if (card.category === 'SCANDAL') {
+          playerIDs.forEach((pid) => {
+            deps.applyCardEffectsSoft(G, pid, card.effects);
+            deps.syncPlayerState(G, pid);
+          });
+          deps.triggerSukhpayZsuOnScandal(G, { turn: turns + 1 }, playerID);
+          G.discard.push(card);
+          stage = 'end';
+        } else {
+          hand.push(card);
+          stage = 'play';
+        }
+      }
+      if (G.deck.length === 0 && deckDepletionTurn < 0) {
+        deckDepletionTurn = turns + 1;
+      }
+    }
+
+    if (stage === 'play') {
+      let promotedThisTurn = tryPromoteOnce(playerID);
+      let played = false;
+      for (let i = 0; i < hand.length; i += 1) {
+        const card = hand[i];
+        const allPlayerIDs = playerIDs;
+
+        if (card.category === 'LYAP') {
+          const target = chooseLyapTarget(deps, G, playerID);
+          if (!target) continue;
+          deps.applyCardEffectsSoft(G, target, card.effects);
+          deps.syncPlayerState(G, target);
+        } else if (card.category === 'SCANDAL') {
+          allPlayerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
+            deps.applyCardEffectsSoft(G, pid, card.effects);
+            deps.syncPlayerState(G, pid);
+          });
+          deps.triggerSukhpayZsuOnScandal(G, { turn: turns + 1 }, playerID);
+        } else if (card.category === 'DECISION') {
+          allPlayerIDs.forEach((pid) => {
+            deps.applyCardEffectsSoft(G, pid, card.effects);
+            deps.syncPlayerState(G, pid);
+          });
+        } else if (card.category === 'VVNZ' && card.grantRank) {
+          const promoted = deps.promoteToSpecificRank(G, playerID, card.grantRank, numPlayers);
+          if (!promoted.ok) continue;
+          try {
+            const ok = deps.applyCardEffects(G, playerID, card.effects, []);
+            if (!ok) continue;
+          } catch {
+            continue;
+          }
+          deps.syncPlayerState(G, playerID);
+        } else {
+          const replacement = deps.planReplacementResources(G.resources[playerID], card.effects);
+          if (replacement === null) continue;
+          try {
+            const ok = deps.applyCardEffects(G, playerID, card.effects, replacement);
+            if (!ok) continue;
+          } catch {
+            continue;
+          }
+        }
+
+        hand.splice(i, 1);
+        G.discard.push(card);
+        deps.syncPlayerState(G, playerID);
+        if (!promotedThisTurn) {
+          promotedThisTurn = tryPromoteOnce(playerID);
+        }
+        played = true;
+        break;
+      }
+
+      if (!played) {
+        passes += 1;
+      }
+    } else {
+      passes += 1;
+    }
+
+    turns += 1;
+    const winner = deps.getWinner(G);
+    if (winner) {
+      return {
+        winner,
+        turns,
+        stalled: false,
+        deckDepletionTurn,
+        wonByRank: G.ranks[winner] === deps.getTopRankId(),
+        passes,
+        reachedRanks: { ...G.ranks },
+        finalResources: Object.fromEntries(
+          Object.entries(G.resources).map(([pid, row]) => [pid, { ...row }]),
+        ) as Record<string, Record<ResourceKey, number>>,
+      };
+    }
+
+    currentIdx = (currentIdx + 1) % playerIDs.length;
+  }
+
+  const fallbackWinner = Object.entries(G.resources)
+    .sort(([, a], [, b]) => deps.resourceKeys.reduce((sum, key) => sum + (b[key] - a[key]), 0))
+    .at(0)?.[0] ?? '0';
+
+  return {
+    winner: fallbackWinner,
+    turns: maxTurns,
+    stalled: true,
+    deckDepletionTurn,
+    wonByRank: G.ranks[fallbackWinner] === deps.getTopRankId(),
+    passes,
+    reachedRanks: { ...G.ranks },
+    finalResources: Object.fromEntries(
+      Object.entries(G.resources).map(([pid, row]) => [pid, { ...row }]),
+    ) as Record<string, Record<ResourceKey, number>>,
+  };
+};
+
+export const runGameSimulationsWithDeps = (
+  deps: SimulationDeps,
+  players: number,
+  simulations: number,
+  maxTurns = 600,
+): SimulationReport => {
+  const clampedPlayers = Math.max(2, Math.min(6, Math.floor(players || 2)));
+  const clampedSims = Math.max(1, Math.min(5000, Math.floor(simulations || 1)));
+  const clampedMaxTurns = Math.max(20, Math.min(4000, Math.floor(maxTurns || 600)));
+  const wins: Record<string, number> = {};
+  const rankReached: Record<string, number> = {};
+  let totalTurns = 0;
+  let stalled = 0;
+  let rankWins = 0;
+  let scoreWins = 0;
+  let passesTotal = 0;
+  let deckDepletionTotal = 0;
+  let deckDepletionKnown = 0;
+  const highestRankReachedByGame: Record<string, number> = {};
+  let lastGame: SimulationReport['lastGame'] = {
+    winnerPlayerID: '0',
+    winnerRankId: deps.getActiveRanks()[0]?.id ?? 'cadet',
+    winnerResources: { time: 0, reputation: 0, discipline: 0, documents: 0, tech: 0 },
+    turns: 0,
+  };
+
+  for (let i = 0; i < clampedSims; i += 1) {
+    const result = simulateSingleMatch(deps, clampedPlayers, clampedMaxTurns);
+    wins[result.winner] = (wins[result.winner] ?? 0) + 1;
+    totalTurns += result.turns;
+    passesTotal += result.passes;
+    if (result.stalled) stalled += 1;
+    if (result.wonByRank) rankWins += 1;
+    else scoreWins += 1;
+    if (result.deckDepletionTurn >= 0) {
+      deckDepletionTotal += result.deckDepletionTurn;
+      deckDepletionKnown += 1;
+    }
+    Object.values(result.reachedRanks).forEach((rankId) => {
+      rankReached[rankId] = (rankReached[rankId] ?? 0) + 1;
+    });
+    const activeRanks = deps.getActiveRanks();
+    const highest = Object.values(result.reachedRanks)
+      .map((rankId) => ({ rankId, idx: activeRanks.findIndex((r) => r.id === rankId) }))
+      .sort((a, b) => b.idx - a.idx)[0];
+    if (highest?.rankId) {
+      highestRankReachedByGame[highest.rankId] = (highestRankReachedByGame[highest.rankId] ?? 0) + 1;
+    }
+    lastGame = {
+      winnerPlayerID: result.winner,
+      winnerRankId: result.reachedRanks[result.winner] ?? (deps.getActiveRanks()[0]?.id ?? 'cadet'),
+      winnerResources: { ...result.finalResources[result.winner] },
+      turns: result.turns,
+    };
+  }
+
+  const activeRanks = deps.getActiveRanks();
+  const topReachedRanks = Object.entries(highestRankReachedByGame)
+    .map(([rankId, games]) => ({
+      rankId,
+      games,
+      pct: Number(((games / clampedSims) * 100).toFixed(2)),
+      idx: activeRanks.findIndex((r) => r.id === rankId),
+    }))
+    .sort((a, b) => b.idx - a.idx || b.games - a.games)
+    .slice(0, 3)
+    .map(({ rankId, games, pct }) => ({ rankId, games, pct }));
+  const topReachedRanksByPct = Object.entries(highestRankReachedByGame)
+    .map(([rankId, games]) => ({
+      rankId,
+      games,
+      pct: Number(((games / clampedSims) * 100).toFixed(2)),
+      idx: activeRanks.findIndex((r) => r.id === rankId),
+    }))
+    .sort((a, b) => b.games - a.games || b.pct - a.pct || b.idx - a.idx)
+    .slice(0, 3)
+    .map(({ rankId, games, pct }) => ({ rankId, games, pct }));
+
+  const seatWinRates = Array.from({ length: clampedPlayers }, (_, i) => String(i)).map((playerID) => {
+    const seatWins = wins[playerID] ?? 0;
+    return {
+      playerID,
+      wins: seatWins,
+      winRatePct: Number(((seatWins / clampedSims) * 100).toFixed(2)),
+    };
+  });
+
+  const issues: string[] = [];
+  if (stalled > 0) {
+    issues.push(
+      `Виявлено ${stalled} зациклених/довгих матчів із ${clampedSims} (ліміт ${clampedMaxTurns} ходів).`,
+    );
+  }
+  const bestSeat = [...seatWinRates].sort((a, b) => b.winRatePct - a.winRatePct)[0];
+  const worstSeat = [...seatWinRates].sort((a, b) => a.winRatePct - b.winRatePct)[0];
+  if (bestSeat && worstSeat && bestSeat.winRatePct - worstSeat.winRatePct >= 12) {
+    issues.push(
+      `Можлива перевага порядку ходу: seat ${bestSeat.playerID} (${bestSeat.winRatePct}%) vs seat ${worstSeat.playerID} (${worstSeat.winRatePct}%).`,
+    );
+  }
+  if (rankWins === 0) {
+    issues.push('У симуляціях не зафіксовано перемог через звання Генерала (можливо завеликі вимоги або замалий темп ресурсів).');
+  }
+
+  return {
+    input: {
+      players: clampedPlayers,
+      simulations: clampedSims,
+      maxTurns: clampedMaxTurns,
+    },
+    generatedAt: new Date().toISOString(),
+    summary: {
+      finished: clampedSims - stalled,
+      stalled,
+      avgTurns: Number((totalTurns / clampedSims).toFixed(2)),
+      avgDeckDepletionTurn: Number(
+        (deckDepletionKnown > 0 ? deckDepletionTotal / deckDepletionKnown : 0).toFixed(2),
+      ),
+      rankWins,
+      scoreWins,
+      avgPassesPerGame: Number((passesTotal / clampedSims).toFixed(2)),
+    },
+    seatWinRates,
+    rankReached,
+    topReachedRanks,
+    topReachedRanksByPct,
+    lastGame,
+    issues,
+  };
+};

@@ -1,180 +1,40 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { SyntheticEvent } from 'react';
-import { normalizeImagePath, type DeckTarget, type SimulationReport } from '../game/jojGame';
+import type { DeckTarget, SimulationReport } from '../game/jojGame';
+import { normalizeImagePath } from '../game/imagePaths';
 import type { CardCategory, CardDefinition, EffectResource, RankDefinition, ResourceKey } from '../game/types';
 import { cardTitle, categoryLabel, rankLabel } from './i18n';
-import type { Language } from './i18n';
 import { text } from './i18n';
-
-type MatchInfo = {
-  id: string;
-  createdAt: number;
-};
-
-type Snapshot = {
-  G: unknown;
-  ctx: unknown;
-  updatedAt: number;
-};
-
-type GitUpdateStatus = {
-  branch: string;
-  remote: string;
-  upstream: string;
-  ahead: number;
-  behind: number;
-  dirty: boolean;
-  canUpdate: boolean;
-  head: string;
-  note?: string;
-};
-
-type DeckStats = {
-  deck: number;
-  discard: number;
-  legendary: number;
-  rankTrack: number;
-};
-
-type SharedDeckTemplate = {
-  deck: CardDefinition[];
-  legendaryDeck: CardDefinition[];
-  rankTrack: CardDefinition[];
-  deckBackImage?: string;
-};
-
-type AdminPageProps = {
-  lang: Language;
-  adminToken: string;
-  serverUrl: string;
-  serverUrlDraft: string;
-  onServerUrlDraftChange: (value: string) => void;
-  onSaveServerUrl: (value: string) => void;
-  onResetServerUrl: () => void;
-  matches: MatchInfo[];
-  activeMatchId: string;
-  snapshot: Snapshot | null;
-  deckStats: DeckStats;
-  sharedDeckTemplate: SharedDeckTemplate;
-  cardCatalog: CardDefinition[];
-  sharedRanks: RankDefinition[];
-  onCreateMatch: () => void;
-  onResetMatch: () => void;
-  onDeleteMatch: () => void;
-  onResetAll: () => void;
-  onRestartServer: () => Promise<boolean>;
-  onShuffleDeck: () => void;
-  onAddCard: (target: DeckTarget, cardId: string) => void;
-  onAddCustomCard: (target: DeckTarget, card: CardDefinition) => void;
-  onUpdateCard: (target: DeckTarget, index: number, card: CardDefinition) => void;
-  onRemoveCard: (target: DeckTarget, index: number) => void;
-  onResetTemplate: () => void;
-  onSetDeckBackImage: (path?: string) => void;
-  onExportTemplate: () => string;
-  onImportTemplate: (json: string) => string | null;
-  onUpdateRanks: (nextRanks: RankDefinition[]) => boolean;
-  onResetRanks: () => void;
-  onRunSimulations: (players: number, simulations: number) => SimulationReport;
-};
-
-const categories: CardCategory[] = ['LYAP', 'SCANDAL', 'SUPPORT', 'DECISION', 'NEUTRAL', 'VVNZ'];
-const effectResourceKeys: EffectResource[] = ['time', 'reputation', 'discipline', 'documents', 'tech', 'rank'];
-const rankResourceKeys: ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
-const zeroEffectValues = (): Record<EffectResource, number> => ({
-  time: 0,
-  reputation: 0,
-  discipline: 0,
-  documents: 0,
-  tech: 0,
-  rank: 0,
-});
-
-const effectsToValues = (effects: CardDefinition['effects']): Record<EffectResource, number> => {
-  const next = zeroEffectValues();
-  (effects ?? []).forEach((effect) => {
-    next[effect.resource] = effect.value;
-  });
-  return next;
-};
-
-const valuesToEffects = (values: Record<EffectResource, number>): NonNullable<CardDefinition['effects']> =>
-  effectResourceKeys
-    .filter((key) => values[key] !== 0)
-    .map((key) => ({ resource: key, value: values[key] }));
-
-const blankCard = (): CardDefinition => ({
-  id: '',
-  title: '',
-  category: 'NEUTRAL',
-  image: '',
-});
-
-type ImportCategoryMode = CardCategory | 'AS_IS';
-type CategoryFilter = CardCategory | 'ALL';
-type AdminTab = 'matches' | 'deck' | 'import' | 'state' | 'ranks' | 'settings' | 'simulation';
-type CropDraft = {
-  filename: string;
-  sourceBlob: Blob;
-  sourceUrl: string;
-  mime: string;
-  sourceWidth: number;
-  sourceHeight: number;
-  topPx: number;
-  rightPx: number;
-  bottomPx: number;
-  leftPx: number;
-};
-
-const CARD_ASPECT_RATIO = 352 / 540; // width / height
-const MAX_CARD_UPLOAD_WIDTH = 1408;
-const MAX_CARD_UPLOAD_HEIGHT = 2160;
-const DEFAULT_UPLOAD_QUALITY = 0.88;
-
-const clampPx = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-
-const getAspectLockedCropRect = (draft: CropDraft, imageWidth: number, imageHeight: number) => {
-  const topPx = clampPx(draft.topPx, 0, Math.max(0, imageHeight - 1));
-  const rightPx = clampPx(draft.rightPx, 0, Math.max(0, imageWidth - 1));
-  const bottomPx = clampPx(draft.bottomPx, 0, Math.max(0, imageHeight - 1));
-  const leftPx = clampPx(draft.leftPx, 0, Math.max(0, imageWidth - 1));
-
-  const availablePw = Math.max(1, imageWidth - leftPx - rightPx);
-  const availablePh = Math.max(1, imageHeight - topPx - bottomPx);
-
-  let cropPw = availablePw;
-  let cropPh = availablePh;
-  if (cropPw / cropPh > CARD_ASPECT_RATIO) {
-    cropPw = Math.max(1, Math.floor(cropPh * CARD_ASPECT_RATIO));
-  } else {
-    cropPh = Math.max(1, Math.floor(cropPw / CARD_ASPECT_RATIO));
-  }
-
-  const sx = leftPx + Math.floor((availablePw - cropPw) / 2);
-  const sy = topPx + Math.floor((availablePh - cropPh) / 2);
-  const maxSw = Math.max(1, imageWidth - sx);
-  const maxSh = Math.max(1, imageHeight - sy);
-  const sw = Math.max(1, Math.min(maxSw, cropPw));
-  const sh = Math.max(1, Math.min(maxSh, cropPh));
-
-  return { sx, sy, sw, sh };
-};
-
-type HoverImageProps = {
-  src: string;
-  alt: string;
-  className?: string;
-  onLoad?: (e: SyntheticEvent<HTMLImageElement>) => void;
-  onError?: (e: SyntheticEvent<HTMLImageElement>) => void;
-};
-
-const HoverImage = ({ src, alt, className = 'admin-thumb', onLoad, onError }: HoverImageProps) => (
-  <span className="admin-hover-image">
-    <img className={className} src={src} alt={alt} onLoad={onLoad} onError={onError} />
-    <span className="admin-hover-popover" aria-hidden="true">
-      <img src={src} alt={alt} />
-    </span>
-  </span>
-);
+import { HoverImage } from './admin/HoverImage';
+import { blobToDataUrl, optimizeBlobForUpload, uploadAdminImageDataUrl } from './admin/imageUpload';
+import { useAdminGitActions } from './admin/useAdminGitActions';
+import { useAdminRanksEditor } from './admin/useAdminRanksEditor';
+import {
+  blankCard,
+  categories,
+  effectResourceKeys,
+  effectsToValues,
+  getAspectLockedCropRect,
+  rankResourceKeys,
+  valuesToEffects,
+  zeroEffectValues,
+} from './admin/helpers';
+import type {
+  AdminPageProps,
+  AdminTab,
+  CategoryFilter,
+  CropDraft,
+  ImportCategoryMode,
+} from './admin/types';
+import {
+  AdminImportTab,
+  AdminDeckTab,
+  AdminMatchesTab,
+  AdminRanksTab,
+  AdminSettingsTab,
+  AdminSimulationTab,
+  AdminStateTab,
+  AdminTabButtons,
+} from './admin/tabs';
 
 export const AdminPage = ({
   lang,
@@ -260,12 +120,6 @@ export const AdminPage = ({
   const [imagePreviewNonce, setImagePreviewNonce] = useState<number>(0);
   const [restartingServer, setRestartingServer] = useState<boolean>(false);
   const [adminActionError, setAdminActionError] = useState<string>('');
-  const [gitStatus, setGitStatus] = useState<GitUpdateStatus | null>(null);
-  const [gitStatusLoading, setGitStatusLoading] = useState<boolean>(false);
-  const [gitUpdateRunning, setGitUpdateRunning] = useState<boolean>(false);
-  const [gitDeployRunning, setGitDeployRunning] = useState<boolean>(false);
-  const [gitActionMessage, setGitActionMessage] = useState<string>('');
-  const [gitActionLog, setGitActionLog] = useState<string>('');
   const [imageRegenRunning, setImageRegenRunning] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<AdminTab>('matches');
   const [deckBackImageInput, setDeckBackImageInput] = useState<string>(sharedDeckTemplate.deckBackImage ?? '');
@@ -276,41 +130,26 @@ export const AdminPage = ({
   const [simulationCount, setSimulationCount] = useState<number>(500);
   const [simulationReport, setSimulationReport] = useState<SimulationReport | null>(null);
   const [simulationRunning, setSimulationRunning] = useState<boolean>(false);
-  const [editableRanks, setEditableRanks] = useState<RankDefinition[]>(() =>
-    sharedRanks.map((row) => ({
-      ...row,
-      image: row.image ?? '',
-      requirement: { ...row.requirement },
-      cost: { ...row.cost },
-      bonus: { ...row.bonus },
-    })),
-  );
-  const [rankDraft, setRankDraft] = useState<RankDefinition>({
-    id: '',
-    name: '',
-    image: '',
-    requirement: {},
-    cost: {},
-    bonus: {},
+  const {
+    gitStatus,
+    gitStatusLoading,
+    gitUpdateRunning,
+    gitDeployRunning,
+    gitActionMessage,
+    gitActionLog,
+    checkGitUpdates,
+    applyGitUpdate,
+    applyGitDeploy,
+  } = useAdminGitActions({
+    lang,
+    serverUrl,
+    adminHeaders,
+    setAdminActionError,
   });
-  const [ranksJson, setRanksJson] = useState<string>(() => JSON.stringify(sharedRanks, null, 2));
-  const [ranksImportError, setRanksImportError] = useState<string>('');
-  const [ranksImportStatus, setRanksImportStatus] = useState<string>('');
 
   useEffect(() => {
     setDeckBackImageInput(sharedDeckTemplate.deckBackImage ?? '');
   }, [sharedDeckTemplate.deckBackImage]);
-
-  useEffect(() => {
-    setRanksJson(JSON.stringify(sharedRanks, null, 2));
-    setEditableRanks(sharedRanks.map((row) => ({
-      ...row,
-      image: row.image ?? '',
-      requirement: { ...row.requirement },
-      cost: { ...row.cost },
-      bonus: { ...row.bonus },
-    })));
-  }, [sharedRanks]);
 
   useEffect(() => {
     const current = cropDraft?.sourceUrl ?? null;
@@ -356,60 +195,6 @@ export const AdminPage = ({
     };
     image.src = cropDraft.sourceUrl;
   }, [cropDraft]);
-
-  const blobToDataUrl = async (blob: Blob): Promise<string> =>
-    new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-      reader.onerror = () => resolve('');
-      reader.readAsDataURL(blob);
-    });
-
-  const optimizeBlobForUpload = async (
-    blob: Blob,
-    filename: string,
-    options?: { maxWidth?: number; maxHeight?: number; quality?: number },
-  ): Promise<{ dataUrl: string; filename: string } | null> => {
-    const sourceUrl = URL.createObjectURL(blob);
-    try {
-      const image = new Image();
-      const loaded = await new Promise<boolean>((resolve) => {
-        image.onload = () => resolve(true);
-        image.onerror = () => resolve(false);
-        image.src = sourceUrl;
-      });
-      if (!loaded || !image.width || !image.height) return null;
-
-      const maxWidth = options?.maxWidth ?? MAX_CARD_UPLOAD_WIDTH;
-      const maxHeight = options?.maxHeight ?? MAX_CARD_UPLOAD_HEIGHT;
-      const quality = options?.quality ?? DEFAULT_UPLOAD_QUALITY;
-
-      const scale = Math.min(1, maxWidth / image.width, maxHeight / image.height);
-      const targetWidth = Math.max(1, Math.round(image.width * scale));
-      const targetHeight = Math.max(1, Math.round(image.height * scale));
-
-      const canvas = document.createElement('canvas');
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return null;
-      ctx.drawImage(image, 0, 0, targetWidth, targetHeight);
-
-      let dataUrl = canvas.toDataURL('image/webp', quality);
-      let ext = 'webp';
-      if (!dataUrl.startsWith('data:image/webp')) {
-        dataUrl = canvas.toDataURL('image/jpeg', quality);
-        ext = 'jpg';
-      }
-
-      const parsed = filename.split('.');
-      if (parsed.length > 1) parsed.pop();
-      const baseName = (parsed.join('.') || 'card-image').trim();
-      return { dataUrl, filename: `${baseName}.${ext}` };
-    } finally {
-      URL.revokeObjectURL(sourceUrl);
-    }
-  };
 
   const beginEdit = (nextTarget: DeckTarget, index: number, card: CardDefinition) => {
     setEditTarget(nextTarget);
@@ -571,150 +356,46 @@ export const AdminPage = ({
     setImportJson(json);
   };
   const uploadDataUrl = async (filename: string, dataUrl: string, cardId?: string): Promise<string | null> => {
-    try {
-      const response = await fetch(`${serverUrl}/api/upload-card-image`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...adminHeaders(),
-        },
-        body: JSON.stringify({
-          filename,
-          dataUrl,
-          cardId,
-        }),
-      });
-      const payload = (await response.json()) as { path?: string; error?: string };
-      if (!response.ok || !payload.path) {
-        setEditError(payload.error ?? (lang === 'uk' ? 'Помилка завантаження' : 'Upload failed'));
-        return null;
-      }
-      return payload.path;
-    } catch {
-      setEditError(lang === 'uk' ? 'Помилка завантаження' : 'Upload failed');
+    const { path, error } = await uploadAdminImageDataUrl({
+      serverUrl,
+      adminHeaders,
+      filename,
+      dataUrl,
+      cardId,
+    });
+    if (!path) {
+      setEditError(error ?? (lang === 'uk' ? 'Помилка завантаження' : 'Upload failed'));
       return null;
     }
+    return path;
   };
-  const checkGitUpdates = async () => {
-    setGitStatusLoading(true);
-    setAdminActionError('');
-    setGitActionMessage('');
-    setGitActionLog('');
-    try {
-      const response = await fetch(`${serverUrl}/api/admin/git/status`, { headers: adminHeaders() });
-      const payload = (await response.json()) as ({ ok?: boolean; error?: string; details?: string } & Partial<GitUpdateStatus>);
-      if (!response.ok || !payload.ok) {
-        setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates'));
-        setGitActionLog(payload.details ?? payload.error ?? '');
-        return;
-      }
-      setGitStatus({
-        branch: payload.branch ?? '',
-        remote: payload.remote ?? '',
-        upstream: payload.upstream ?? '',
-        ahead: Number(payload.ahead ?? 0),
-        behind: Number(payload.behind ?? 0),
-        dirty: Boolean(payload.dirty),
-        canUpdate: Boolean(payload.canUpdate),
-        head: payload.head ?? '',
-        note: payload.note,
-      });
-      setGitActionMessage(lang === 'uk' ? 'Стан репозиторію оновлено' : 'Repository status updated');
-    } catch {
-      setAdminActionError(lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates');
-      setGitActionLog('');
-    } finally {
-      setGitStatusLoading(false);
-    }
-  };
-  const applyGitUpdate = async () => {
-    setGitUpdateRunning(true);
-    setAdminActionError('');
-    setGitActionMessage('');
-    setGitActionLog('');
-    try {
-      const response = await fetch(`${serverUrl}/api/admin/git/update`, {
-        method: 'POST',
-        headers: adminHeaders(),
-      });
-      const payload = (await response.json()) as {
-        ok?: boolean;
-        error?: string;
-        message?: string;
-        updated?: boolean;
-        status?: GitUpdateStatus;
-        output?: string;
-        details?: string;
-      };
-      if (!response.ok || !payload.ok) {
-        setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося оновити файли' : 'Failed to update files'));
-        setGitActionLog(payload.details ?? payload.error ?? '');
-        return;
-      }
-      if (payload.status) setGitStatus(payload.status);
-      if (payload.output) setGitActionLog(payload.output);
-      setGitActionMessage(
-        payload.message ??
-          (payload.updated
-            ? (lang === 'uk' ? 'Оновлення застосовано' : 'Update applied')
-            : (lang === 'uk' ? 'Оновлення відсутні' : 'Already up to date')),
-      );
-    } catch {
-      setAdminActionError(lang === 'uk' ? 'Не вдалося оновити файли' : 'Failed to update files');
-      setGitActionLog('');
-    } finally {
-      setGitUpdateRunning(false);
-    }
-  };
-  const applyGitDeploy = async () => {
-    setGitDeployRunning(true);
-    setAdminActionError('');
-    setGitActionMessage('');
-    setGitActionLog('');
-    try {
-      const response = await fetch(`${serverUrl}/api/admin/git/deploy`, {
-        method: 'POST',
-        headers: adminHeaders(),
-      });
-      const payload = (await response.json()) as {
-        ok?: boolean;
-        error?: string;
-        message?: string;
-        status?: GitUpdateStatus;
-        steps?: Array<{ step?: string; output?: string }>;
-        details?: string;
-      };
-      if (!response.ok || !payload.ok) {
-        setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося оновити/зібрати проект' : 'Failed to update/build project'));
-        setGitActionLog(payload.details ?? payload.error ?? '');
-        return;
-      }
-      if (payload.status) setGitStatus(payload.status);
-      if (Array.isArray(payload.steps)) {
-        setGitActionLog(
-          payload.steps
-            .map((step) => `$ ${step.step ?? ''}\n${(step.output ?? '').trim()}`.trim())
-            .join('\n\n')
-            .trim(),
-        );
-      }
-      setGitActionMessage(
-        payload.message ??
-          (lang === 'uk'
-            ? 'Оновлення, збірка і рестарт запущені'
-            : 'Update, build and restart started'),
-      );
-      // Restart may briefly drop the server; refresh repo status after a short delay.
-      setTimeout(() => {
-        void checkGitUpdates();
-      }, 3000);
-    } catch {
-      setAdminActionError(lang === 'uk' ? 'Не вдалося оновити/зібрати проект' : 'Failed to update/build project');
-      setGitActionLog('');
-    } finally {
-      setGitDeployRunning(false);
-    }
-  };
+  const {
+    editableRanks,
+    rankDraft,
+    setRankDraft,
+    ranksJson,
+    setRanksJson,
+    ranksImportError,
+    setRanksImportError,
+    ranksImportStatus,
+    setRanksImportStatus,
+    updateRankAt,
+    attachRankImageFile,
+    attachRankDraftImageFile,
+    saveRanks,
+    addRank,
+    removeRankAt,
+    exportRanksToFile,
+    importRanks,
+    importRanksFromFile,
+  } = useAdminRanksEditor({
+    lang,
+    t,
+    sharedRanks,
+    onUpdateRanks,
+    optimizeBlobForUpload,
+    uploadDataUrl,
+  });
   const attachImageFile = async (file: File | null) => {
     if (!file) return;
     const sourceUrl = URL.createObjectURL(file);
@@ -1023,135 +704,6 @@ export const AdminPage = ({
     setEditIndex(-1);
     setEditError('');
   };
-  const updateRankAt = (index: number, updater: (rank: RankDefinition) => RankDefinition) => {
-    setEditableRanks((prev) => prev.map((rank, i) => (i === index ? updater({
-      ...rank,
-      requirement: { ...rank.requirement },
-      cost: { ...rank.cost },
-      bonus: { ...rank.bonus },
-    }) : rank)));
-    setRanksImportStatus('');
-    setRanksImportError('');
-  };
-  const attachRankImageFile = async (index: number, rankId: string, file: File | null) => {
-    if (!file) return;
-    const optimized = await optimizeBlobForUpload(file, file.name, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
-    if (!optimized) {
-      setRanksImportError(lang === 'uk' ? 'Не вдалося обробити файл зображення' : 'Failed to process image file');
-      return;
-    }
-    const path = await uploadDataUrl(optimized.filename, optimized.dataUrl, rankId || 'rank');
-    if (!path) return;
-    updateRankAt(index, (row) => ({ ...row, image: path }));
-    setRanksImportError('');
-    setRanksImportStatus('');
-  };
-  const attachRankDraftImageFile = async (file: File | null) => {
-    if (!file) return;
-    const optimized = await optimizeBlobForUpload(file, file.name, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
-    if (!optimized) {
-      setRanksImportError(lang === 'uk' ? 'Не вдалося обробити файл зображення' : 'Failed to process image file');
-      return;
-    }
-    const path = await uploadDataUrl(optimized.filename, optimized.dataUrl, rankDraft.id || 'rank-draft');
-    if (!path) return;
-    setRankDraft((prev) => ({ ...prev, image: path }));
-    setRanksImportError('');
-    setRanksImportStatus('');
-  };
-  const saveRanks = () => {
-    const next = editableRanks.map((row) => ({
-      ...row,
-      requirement: { ...row.requirement },
-      cost: { ...row.cost },
-      bonus: { ...row.bonus },
-    }));
-    const ok = onUpdateRanks(next);
-    if (!ok) {
-      setRanksImportError(t.ranksSchemaError);
-      return;
-    }
-    setRanksImportError('');
-    setRanksImportStatus(lang === 'uk' ? 'Зміни звань збережено.' : 'Rank changes saved.');
-  };
-  const addRank = () => {
-    const id = rankDraft.id.trim();
-    const name = rankDraft.name.trim();
-    if (!id || !name) return;
-    const next: RankDefinition[] = [
-      ...editableRanks.map((row) => ({
-        ...row,
-        requirement: { ...row.requirement },
-        cost: { ...row.cost },
-        bonus: { ...row.bonus },
-      })),
-      {
-        id,
-        name,
-        requirement: { ...rankDraft.requirement },
-        cost: { ...rankDraft.cost },
-        bonus: { ...rankDraft.bonus },
-      },
-    ];
-    setEditableRanks(next);
-    setRanksImportStatus('');
-    setRanksImportError('');
-    setRankDraft({ id: '', name: '', requirement: {}, cost: {}, bonus: {} });
-  };
-  const removeRankAt = (index: number) => {
-    if (editableRanks.length <= 1) return;
-    setEditableRanks((prev) => prev.filter((_, i) => i !== index));
-    setRanksImportStatus('');
-    setRanksImportError('');
-  };
-  const exportRanksToFile = () => {
-    const json = JSON.stringify(editableRanks, null, 2);
-    const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `joj-ranks-${stamp}.json`;
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    setRanksJson(json);
-  };
-  const importRanks = () => {
-    setRanksImportError('');
-    setRanksImportStatus('');
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(ranksJson);
-    } catch {
-      setRanksImportError(t.invalidJson);
-      return;
-    }
-    if (!Array.isArray(parsed)) {
-      setRanksImportError(t.ranksJsonArrayError);
-      return;
-    }
-    const ok = onUpdateRanks(parsed as RankDefinition[]);
-    if (!ok) {
-      setRanksImportError(t.ranksSchemaError);
-      return;
-    }
-    setRanksImportStatus(`${t.ranksImportSuccess} ${parsed.length}.`);
-  };
-  const importRanksFromFile = (file: File | null) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const next = typeof reader.result === 'string' ? reader.result : '';
-      setRanksJson(next);
-      setRanksImportError('');
-      setRanksImportStatus('');
-    };
-    reader.readAsText(file);
-  };
-
   const inlineEditor = (
     <div className="admin-inline-editor">
       <h4>{t.cardEditor}</h4>
@@ -1321,675 +873,151 @@ export const AdminPage = ({
   return (
     <section className="board admin-panel">
       <h2>{t.adminTitle}</h2>
-      <p className="admin-controls">
-        <button type="button" onClick={() => setActiveTab('matches')} disabled={activeTab === 'matches'}>{t.tabMatches}</button>
-        <button type="button" onClick={() => setActiveTab('deck')} disabled={activeTab === 'deck'}>{t.tabDeck}</button>
-        <button type="button" onClick={() => setActiveTab('import')} disabled={activeTab === 'import'}>{t.tabImportExport}</button>
-        <button type="button" onClick={() => setActiveTab('ranks')} disabled={activeTab === 'ranks'}>{t.tabRanks}</button>
-        <button type="button" onClick={() => setActiveTab('state')} disabled={activeTab === 'state'}>{t.tabState}</button>
-        <button type="button" onClick={() => setActiveTab('settings')} disabled={activeTab === 'settings'}>{t.tabSettings}</button>
-        <button type="button" onClick={() => setActiveTab('simulation')} disabled={activeTab === 'simulation'}>{t.tabSimulation}</button>
-      </p>
+      <AdminTabButtons t={t} activeTab={activeTab} setActiveTab={setActiveTab} />
       <hr />
       {activeTab === 'matches' ? (
-        <>
-          <p>
-            {t.matches}: {matches.length}
-          </p>
-          <p>
-            {t.activeMatch}: <code>{activeMatchId || t.notSelected}</code>
-          </p>
-          <p>
-            {t.createdAt}: {activeMatch ? new Date(activeMatch.createdAt).toLocaleString() : t.notSelected}
-          </p>
-          <p className="admin-controls">
-            <button type="button" onClick={onCreateMatch}>{t.createMatch}</button>
-            <button type="button" onClick={onResetMatch}>{t.resetMatch}</button>
-            <button type="button" onClick={onDeleteMatch} disabled={matches.length <= 1}>{t.deleteMatch}</button>
-          </p>
-        </>
+        <AdminMatchesTab
+          t={t}
+          matchesCount={matches.length}
+          activeMatchId={activeMatchId}
+          activeMatchCreatedAt={activeMatch?.createdAt}
+          onCreateMatch={onCreateMatch}
+          onResetMatch={onResetMatch}
+          onDeleteMatch={onDeleteMatch}
+          canDelete={matches.length > 1}
+        />
       ) : null}
 
       {activeTab === 'settings' ? (
-        <>
-          <h3>{t.settingsTitle}</h3>
-          <p>{t.settingsHint}</p>
-          <p>{t.adminPath}: <code>/admin</code></p>
-          <p>{t.adminMode}: {t.adminModeLocal}</p>
-          <h4>{t.serverSettingsTitle}</h4>
-          <p className="admin-controls">
-            <label>
-              {t.serverUrlLabel}
-              <input
-                value={serverUrlDraft}
-                onChange={(e) => onServerUrlDraftChange(e.target.value)}
-                placeholder="http://192.168.0.25:8000"
-              />
-            </label>
-            <button type="button" onClick={() => onSaveServerUrl(serverUrlDraft)}>
-              {t.saveServerUrl}
-            </button>
-            <button type="button" onClick={onResetServerUrl}>
-              {t.resetServerUrl}
-            </button>
-          </p>
-          <p>{t.currentServerUrl}: <code>{serverUrl}</code></p>
-          <p>{t.serverUrlReloadHint}</p>
-          <h4>{t.githubUpdatesTitle}</h4>
-          <p className="admin-controls">
-            <button type="button" onClick={() => void checkGitUpdates()} disabled={gitStatusLoading || gitUpdateRunning || gitDeployRunning}>
-              {gitStatusLoading ? t.githubCheckUpdatesLoading : t.githubCheckUpdates}
-            </button>
-            <button
-              type="button"
-              onClick={() => void applyGitUpdate()}
-              disabled={gitUpdateRunning || gitDeployRunning || gitStatusLoading || (gitStatus ? !gitStatus.canUpdate : false)}
-            >
-              {gitUpdateRunning ? t.githubApplyUpdateLoading : t.githubApplyUpdate}
-            </button>
-            <button
-              type="button"
-              onClick={() => void applyGitDeploy()}
-              disabled={gitDeployRunning || gitUpdateRunning || gitStatusLoading || (gitStatus ? gitStatus.dirty : false)}
-              title={lang === 'uk' ? 'Git pull + npm install + tsc + vite build + pm2 restart' : 'Git pull + npm install + tsc + vite build + pm2 restart'}
-            >
-              {gitDeployRunning ? t.githubDeployLoading : t.githubDeploy}
-            </button>
-          </p>
-          {gitStatus ? (
-            <div className="admin-inline-editor">
-              <p>{t.githubBranch}: <code>{gitStatus.branch || '-'}</code></p>
-              <p>{t.githubRemote}: <code>{gitStatus.remote || '-'}</code></p>
-              <p>{t.githubUpstream}: <code>{gitStatus.upstream || '-'}</code></p>
-              <p>{t.githubCommits}: {t.githubAhead} {gitStatus.ahead} | {t.githubBehind} {gitStatus.behind}</p>
-              <p>{t.githubDirty}: {gitStatus.dirty ? t.yes : t.no}</p>
-              <p>{t.githubCanUpdate}: {gitStatus.canUpdate ? t.yes : t.no}</p>
-              <p>{t.githubHead}: <code>{gitStatus.head || '-'}</code></p>
-              {gitStatus.note ? <p>{t.githubNote}: {gitStatus.note}</p> : null}
-            </div>
-          ) : null}
-          {gitActionMessage ? <p className="admin-success">{gitActionMessage}</p> : null}
-          {gitActionLog ? <pre className="admin-textarea">{gitActionLog}</pre> : null}
-          <h4>{t.systemActions}</h4>
-          <p className="admin-controls">
-            <button type="button" onClick={onResetAll}>{t.resetAll}</button>
-            <button type="button" onClick={() => void regenerateAllTemplateImages()} disabled={imageRegenRunning}>
-              {imageRegenRunning ? t.regenerateImagesRunning : t.regenerateImages}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAdminActionError('');
-                setRestartingServer(true);
-                void onRestartServer().then((ok) => {
-                  setRestartingServer(false);
-                  if (!ok) setAdminActionError(t.restartServerFailed);
-                });
-              }}
-              disabled={restartingServer}
-            >
-              {restartingServer ? t.restartingServer : t.restartServer}
-            </button>
-          </p>
-          {adminActionError ? <p className="admin-error">{adminActionError}</p> : null}
-        </>
+        <AdminSettingsTab
+          t={t}
+          lang={lang}
+          serverUrlDraft={serverUrlDraft}
+          onServerUrlDraftChange={onServerUrlDraftChange}
+          onSaveServerUrl={onSaveServerUrl}
+          onResetServerUrl={onResetServerUrl}
+          serverUrl={serverUrl}
+          checkGitUpdates={checkGitUpdates}
+          applyGitUpdate={applyGitUpdate}
+          applyGitDeploy={applyGitDeploy}
+          gitStatus={gitStatus}
+          gitStatusLoading={gitStatusLoading}
+          gitUpdateRunning={gitUpdateRunning}
+          gitDeployRunning={gitDeployRunning}
+          gitActionMessage={gitActionMessage}
+          gitActionLog={gitActionLog}
+          onResetAll={onResetAll}
+          regenerateAllTemplateImages={regenerateAllTemplateImages}
+          imageRegenRunning={imageRegenRunning}
+          restartingServer={restartingServer}
+          setAdminActionError={setAdminActionError}
+          setRestartingServer={setRestartingServer}
+          onRestartServer={onRestartServer}
+          adminActionError={adminActionError}
+        />
       ) : null}
 
       {activeTab === 'deck' ? (
-        <>
-          <h3>{t.deckControls}</h3>
-          <p>
-            {t.deckCount}: {deckStats.deck} | {t.discardCount}: {deckStats.discard} | {t.legendaryCount}: {deckStats.legendary}
-          </p>
-          <p className="admin-controls">
-            <select value={target} onChange={(e) => setTarget(e.target.value as DeckTarget)}>
-              <option value="deck">{t.mainDeck}</option>
-              <option value="legendaryDeck">{t.legendaryDeckLabel}</option>
-            </select>
-            {target === 'deck' ? (
-              <label>
-                {t.categoryFilter}
-                <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}>
-                  <option value="ALL">{t.allCategories}</option>
-                  {categories.map((cat) => (
-                    <option key={`filter-${cat}`} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-            <select value={selectedCardId} onChange={(e) => setSelectedCardId(e.target.value)}>
-              {filteredCatalog.map((card) => (
-                <option key={card.id} value={card.id}>
-                  {card.id} | {cardTitle(card.id, card.title, lang)}
-                </option>
-              ))}
-            </select>
-            <button type="button" onClick={() => selectedCardId && onAddCard(target, selectedCardId)} disabled={!selectedCardId}>
-              {t.addCardById}
-            </button>
-          </p>
-          {selectedCard ? (
-            <div className="admin-card-preview">
-              <p>
-                <strong>{cardTitle(selectedCard.id, selectedCard.title, lang)}</strong> ({categoryLabel(selectedCard.category, lang)})
-              </p>
-              <HoverImage
-                src={withCacheBust(imageSrc)}
-                alt={cardTitle(selectedCard.id, selectedCard.title, lang)}
-                className="admin-card-preview-image"
-                onLoad={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = 'block';
-                  (e.currentTarget as HTMLImageElement).style.visibility = 'visible';
-                }}
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            </div>
-          ) : null}
-          <p className="admin-controls">
-            <button type="button" onClick={onShuffleDeck}>{t.shuffleDeck}</button>
-            <button type="button" onClick={onResetTemplate}>{t.recycleDiscard}</button>
-          </p>
-          <p className="admin-controls">
-            <label>
-              {t.deckBackImageLabel}
-              <input
-                value={deckBackImageInput}
-                onChange={(e) => setDeckBackImageInput(e.target.value)}
-                placeholder="/cards/deck-back.png"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => onSetDeckBackImage(deckBackImageInput)}
-            >
-              {t.saveCard}
-            </button>
-            <label>
-              {t.deckBackImageFile}
-              <input type="file" accept="image/*" onChange={(e) => uploadDeckBackImage(e.target.files?.[0] ?? null)} />
-            </label>
-            <button type="button" onClick={() => onSetDeckBackImage(undefined)}>
-              {t.clearDeckBackImage}
-            </button>
-          </p>
-          {sharedDeckTemplate.deckBackImage ? (
-            <div className="admin-card-preview">
-              <HoverImage
-                src={withCacheBust(sharedDeckTemplate.deckBackImage)}
-                alt={t.deckBackImageLabel}
-                className="admin-card-preview-image"
-              />
-            </div>
-          ) : null}
-
-          <div className="admin-deck-list">
-            {target === 'deck' ? (
-              <>
-                <h4>{t.mainDeck}</h4>
-                <ul>
-                  {sharedDeckTemplate.deck
-                    .map((card, index) => ({ card, index }))
-                    .filter(({ card }) => categoryFilter === 'ALL' || card.category === categoryFilter)
-                    .map(({ card, index }) => (
-                    <li key={`deck-${index}-${card.id}`}>
-                      <span>
-                        <HoverImage
-                          src={withCacheBust(getImageSrc(card))}
-                          className="admin-thumb"
-                          alt={card.id}
-                          onLoad={(e) => {
-                            (e.currentTarget as HTMLImageElement).style.visibility = 'visible';
-                            (e.currentTarget as HTMLImageElement).style.display = 'inline-block';
-                          }}
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
-                          }}
-                        />
-                        {index + 1}. {card.id} | {cardTitle(card.id, card.title, lang)}{card.effects?.length ? ` | effects: ${card.effects.length}` : ''}
-                      </span>
-                      <span className="admin-controls">
-                        <button type="button" onClick={() => beginEdit('deck', index, card)}>{t.editCard}</button>
-                        <button type="button" onClick={() => onRemoveCard('deck', index)}>{t.removeCard}</button>
-                      </span>
-                      {editTarget === 'deck' && editIndex === index ? inlineEditor : null}
-                    </li>
-                    ))}
-                </ul>
-              </>
-            ) : null}
-
-            {target === 'legendaryDeck' ? (
-              <>
-                <h4>{t.legendaryDeckLabel}</h4>
-                <ul>
-                  {sharedDeckTemplate.legendaryDeck
-                    .map((card, index) => ({ card, index }))
-                    .map(({ card, index }) => (
-                    <li key={`legendary-${index}-${card.id}`}>
-                      <span>
-                        <HoverImage
-                          src={withCacheBust(getImageSrc(card))}
-                          className="admin-thumb"
-                          alt={card.id}
-                          onLoad={(e) => {
-                            (e.currentTarget as HTMLImageElement).style.visibility = 'visible';
-                            (e.currentTarget as HTMLImageElement).style.display = 'inline-block';
-                          }}
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
-                          }}
-                        />
-                        {index + 1}. {card.id} | {cardTitle(card.id, card.title, lang)}{card.effects?.length ? ` | effects: ${card.effects.length}` : ''}
-                      </span>
-                      <span className="admin-controls">
-                        <button type="button" onClick={() => beginEdit('legendaryDeck', index, card)}>{t.editCard}</button>
-                        <button type="button" onClick={() => onRemoveCard('legendaryDeck', index)}>{t.removeCard}</button>
-                      </span>
-                      {editTarget === 'legendaryDeck' && editIndex === index ? inlineEditor : null}
-                    </li>
-                    ))}
-                </ul>
-              </>
-            ) : null}
-
-          </div>
-        </>
+        <AdminDeckTab
+          t={t}
+          lang={lang}
+          deckStats={deckStats}
+          target={target}
+          setTarget={(v) => setTarget(v as DeckTarget)}
+          categoryFilter={categoryFilter}
+          setCategoryFilter={(v) => setCategoryFilter(v as CategoryFilter)}
+          categories={categories}
+          selectedCardId={selectedCardId}
+          setSelectedCardId={setSelectedCardId}
+          filteredCatalog={filteredCatalog}
+          onAddCard={(tabTarget, cardId) => onAddCard(tabTarget as DeckTarget, cardId)}
+          selectedCard={selectedCard}
+          withCacheBust={withCacheBust}
+          imageSrc={imageSrc}
+          onShuffleDeck={onShuffleDeck}
+          onResetTemplate={onResetTemplate}
+          deckBackImageInput={deckBackImageInput}
+          setDeckBackImageInput={setDeckBackImageInput}
+          onSetDeckBackImage={onSetDeckBackImage}
+          uploadDeckBackImage={uploadDeckBackImage}
+          sharedDeckTemplate={sharedDeckTemplate}
+          getImageSrc={getImageSrc}
+          beginEdit={(tabTarget, index, card) => beginEdit(tabTarget as DeckTarget, index, card)}
+          onRemoveCard={(tabTarget, index) => onRemoveCard(tabTarget as DeckTarget, index)}
+          editTarget={editTarget}
+          editIndex={editIndex}
+          inlineEditor={inlineEditor}
+        />
       ) : null}
 
       {activeTab === 'import' ? (
-        <>
-          <h3>{t.importExport}</h3>
-          <p className="admin-controls">
-            <button type="button" onClick={exportToFile}>{t.exportJson}</button>
-            <label>
-              {t.importToDeck}
-              <select
-                value={importTarget}
-                onChange={(e) => {
-                  setImportTarget(e.target.value as DeckTarget);
-                  setImportStatus('');
-                }}
-              >
-                <option value="deck">{t.mainDeck}</option>
-                <option value="legendaryDeck">{t.legendaryDeckLabel}</option>
-              </select>
-            </label>
-            {importTarget === 'deck' ? (
-              <label>
-                {t.importCategoryLabel}
-                <select
-                  value={importCategoryMode}
-                  onChange={(e) => {
-                    setImportCategoryMode(e.target.value as ImportCategoryMode);
-                    setImportStatus('');
-                  }}
-                >
-                  <option value="AS_IS">{t.importCategoryAsIs}</option>
-                  {categories.map((cat) => (
-                    <option key={`import-cat-${cat}`} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-            <button type="button" onClick={runImport}>{t.importJson}</button>
-            <label>
-              {t.importFile}
-              <input type="file" accept="application/json,.json" onChange={(e) => importFromFile(e.target.files?.[0] ?? null)} />
-            </label>
-          </p>
-          {importError ? <p className="admin-error">{importError}</p> : null}
-          {importStatus ? <p className="admin-success">{importStatus}</p> : null}
-          <textarea
-            className="admin-textarea"
-            value={importJson}
-            onChange={(e) => {
-              setImportJson(e.target.value);
-              setImportStatus('');
-            }}
-          />
-        </>
+        <AdminImportTab
+          t={t}
+          importTarget={importTarget}
+          setImportTarget={(v) => setImportTarget(v as DeckTarget)}
+          importCategoryMode={importCategoryMode}
+          setImportCategoryMode={(v) => setImportCategoryMode(v as ImportCategoryMode)}
+          categories={categories}
+          runImport={runImport}
+          importFromFile={importFromFile}
+          exportToFile={exportToFile}
+          importError={importError}
+          importStatus={importStatus}
+          importJson={importJson}
+          setImportJson={setImportJson}
+          clearImportStatus={() => setImportStatus('')}
+        />
       ) : null}
 
       {activeTab === 'state' ? (
-        <>
-          <h3>{t.stateSnapshot}</h3>
-          <p>
-            {t.updatedAt}: {snapshot ? new Date(snapshot.updatedAt).toLocaleString() : t.notSelected}
-          </p>
-          <pre className="admin-json">
-            {snapshot ? JSON.stringify({ G: snapshot.G, ctx: snapshot.ctx }, null, 2) : t.noStateYet}
-          </pre>
-        </>
+        <AdminStateTab t={t} snapshot={snapshot} />
       ) : null}
       {activeTab === 'ranks' ? (
-        <>
-          <h3>{t.ranksTitle}</h3>
-          <p>{t.ranksHint}</p>
-          <h4>{t.ranksImportExportTitle}</h4>
-          <p className="admin-controls">
-            <button type="button" onClick={exportRanksToFile}>{t.ranksExportJson}</button>
-            <button type="button" onClick={importRanks}>{t.ranksImportJson}</button>
-            <label>
-              {t.ranksImportFile}
-              <input type="file" accept="application/json,.json" onChange={(e) => importRanksFromFile(e.target.files?.[0] ?? null)} />
-            </label>
-          </p>
-          {ranksImportError ? <p className="admin-error">{ranksImportError}</p> : null}
-          {ranksImportStatus ? <p className="admin-success">{ranksImportStatus}</p> : null}
-          <textarea
-            className="admin-textarea"
-            value={ranksJson}
-            onChange={(e) => {
-              setRanksJson(e.target.value);
-              setRanksImportError('');
-              setRanksImportStatus('');
-            }}
-          />
-          <div className="admin-deck-list">
-            <ul>
-              {editableRanks.map((rank, index) => (
-                <li key={`rank-${rank.id}-${index}`}>
-                  <div className="admin-inline-editor">
-                    <div className="admin-editor-grid">
-                      <label>
-                        ID
-                        <input
-                          value={rank.id}
-                          onChange={(e) => updateRankAt(index, (row) => ({ ...row, id: e.target.value }))}
-                        />
-                      </label>
-                      <label>
-                        {lang === 'uk' ? 'Назва' : 'Name'}
-                        <input
-                          value={rank.name}
-                          onChange={(e) => updateRankAt(index, (row) => ({ ...row, name: e.target.value }))}
-                        />
-                      </label>
-                      <label>
-                        {lang === 'uk' ? 'Зображення' : 'Image'}
-                        <input
-                          value={rank.image ?? ''}
-                          onChange={(e) => updateRankAt(index, (row) => ({ ...row, image: e.target.value }))}
-                          placeholder="/cards/rank-*.webp"
-                        />
-                      </label>
-                      <label>
-                        {lang === 'uk' ? 'Файл зображення' : 'Image file'}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            void attachRankImageFile(index, rank.id, e.target.files?.[0] ?? null);
-                            e.currentTarget.value = '';
-                          }}
-                        />
-                      </label>
-                      {rankResourceKeys.map((key) => (
-                        <label key={`req-${rank.id}-${key}`}>
-                          {t.resources[key]}
-                          <input
-                            type="number"
-                            min={0}
-                            value={rank.requirement[key] ?? 0}
-                            onChange={(e) => updateRankAt(index, (row) => ({
-                              ...row,
-                              requirement: {
-                                ...row.requirement,
-                                [key]: Math.max(0, Number(e.target.value || 0)),
-                              },
-                            }))}
-                          />
-                        </label>
-                      ))}
-                      {rankResourceKeys.map((key) => (
-                        <label key={`cost-${rank.id}-${key}`}>
-                          {`${t.rankCostLabel} ${t.resources[key]}`}
-                          <input
-                            type="number"
-                            min={0}
-                            value={rank.cost[key] ?? 0}
-                            onChange={(e) => updateRankAt(index, (row) => ({
-                              ...row,
-                              cost: {
-                                ...row.cost,
-                                [key]: Math.max(0, Number(e.target.value || 0)),
-                              },
-                            }))}
-                          />
-                        </label>
-                      ))}
-                      {rankResourceKeys.map((key) => (
-                        <label key={`bonus-${rank.id}-${key}`}>
-                          {`${t.rankBonusLabel} ${t.resources[key]}`}
-                          <input
-                            type="number"
-                            value={rank.bonus[key] ?? 0}
-                            onChange={(e) => updateRankAt(index, (row) => ({
-                              ...row,
-                              bonus: {
-                                ...row.bonus,
-                                [key]: Number(e.target.value || 0),
-                              },
-                            }))}
-                          />
-                        </label>
-                      ))}
-                    </div>
-                    <p className="admin-controls">
-                      <button type="button" onClick={() => removeRankAt(index)} disabled={editableRanks.length <= 1}>
-                        {t.removeCard}
-                      </button>
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <h4>{t.addRank}</h4>
-          <div className="admin-inline-editor">
-            <div className="admin-editor-grid">
-              <label>
-                ID
-                <input value={rankDraft.id} onChange={(e) => setRankDraft((prev) => ({ ...prev, id: e.target.value }))} />
-              </label>
-              <label>
-                {lang === 'uk' ? 'Назва' : 'Name'}
-                <input value={rankDraft.name} onChange={(e) => setRankDraft((prev) => ({ ...prev, name: e.target.value }))} />
-              </label>
-              <label>
-                {lang === 'uk' ? 'Зображення' : 'Image'}
-                <input
-                  value={rankDraft.image ?? ''}
-                  onChange={(e) => setRankDraft((prev) => ({ ...prev, image: e.target.value }))}
-                  placeholder="/cards/rank-*.webp"
-                />
-              </label>
-              <label>
-                {lang === 'uk' ? 'Файл зображення' : 'Image file'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    void attachRankDraftImageFile(e.target.files?.[0] ?? null);
-                    e.currentTarget.value = '';
-                  }}
-                />
-              </label>
-              {rankResourceKeys.map((key) => (
-                <label key={`draft-req-${key}`}>
-                  {t.resources[key]}
-                  <input
-                    type="number"
-                    min={0}
-                    value={rankDraft.requirement[key] ?? 0}
-                    onChange={(e) => setRankDraft((prev) => ({
-                      ...prev,
-                      requirement: {
-                        ...prev.requirement,
-                        [key]: Math.max(0, Number(e.target.value || 0)),
-                      },
-                    }))}
-                  />
-                </label>
-              ))}
-              {rankResourceKeys.map((key) => (
-                <label key={`draft-cost-${key}`}>
-                  {`${t.rankCostLabel} ${t.resources[key]}`}
-                  <input
-                    type="number"
-                    min={0}
-                    value={rankDraft.cost[key] ?? 0}
-                    onChange={(e) => setRankDraft((prev) => ({
-                      ...prev,
-                      cost: {
-                        ...prev.cost,
-                        [key]: Math.max(0, Number(e.target.value || 0)),
-                      },
-                    }))}
-                  />
-                </label>
-              ))}
-              {rankResourceKeys.map((key) => (
-                <label key={`draft-bonus-${key}`}>
-                  {`${t.rankBonusLabel} ${t.resources[key]}`}
-                  <input
-                    type="number"
-                    value={rankDraft.bonus[key] ?? 0}
-                    onChange={(e) => setRankDraft((prev) => ({
-                      ...prev,
-                      bonus: {
-                        ...prev.bonus,
-                        [key]: Number(e.target.value || 0),
-                      },
-                    }))}
-                  />
-                </label>
-              ))}
-            </div>
-            <p className="admin-controls">
-              <button type="button" onClick={saveRanks}>{t.saveRanks}</button>
-              <button type="button" onClick={addRank}>{t.addRank}</button>
-              <button type="button" onClick={onResetRanks}>{t.resetRanks}</button>
-            </p>
-          </div>
-        </>
+        <AdminRanksTab
+          t={t}
+          lang={lang}
+          exportRanksToFile={exportRanksToFile}
+          importRanks={importRanks}
+          importRanksFromFile={importRanksFromFile}
+          ranksImportError={ranksImportError}
+          ranksImportStatus={ranksImportStatus}
+          ranksJson={ranksJson}
+          setRanksJson={setRanksJson}
+          setRanksImportError={setRanksImportError}
+          setRanksImportStatus={setRanksImportStatus}
+          editableRanks={editableRanks}
+          updateRankAt={updateRankAt}
+          attachRankImageFile={attachRankImageFile}
+          rankResourceKeys={rankResourceKeys}
+          removeRankAt={removeRankAt}
+          rankDraft={rankDraft}
+          setRankDraft={setRankDraft}
+          attachRankDraftImageFile={attachRankDraftImageFile}
+          saveRanks={saveRanks}
+          addRank={addRank}
+          onResetRanks={onResetRanks}
+        />
       ) : null}
       {activeTab === 'simulation' ? (
-        <>
-          <h3>{t.simulationTitle}</h3>
-          <p className="admin-controls">
-            <label>
-              {t.simulationPlayers}
-              <select
-                value={simulationPlayers}
-                onChange={(e) => setSimulationPlayers(Number(e.target.value))}
-                disabled={simulationRunning}
-              >
-                <option value={2}>2</option>
-                <option value={3}>3</option>
-                <option value={4}>4</option>
-                <option value={5}>5</option>
-                <option value={6}>6</option>
-              </select>
-            </label>
-            <label>
-              {t.simulationCount}
-              <input
-                type="number"
-                min={1}
-                max={5000}
-                step={1}
-                value={simulationCount}
-                onChange={(e) => setSimulationCount(Number(e.target.value || 1))}
-                disabled={simulationRunning}
-              />
-            </label>
-            <button
-              type="button"
-              disabled={simulationRunning}
-              onClick={() => {
-                setSimulationRunning(true);
-                setTimeout(() => {
-                  const report = onRunSimulations(simulationPlayers, simulationCount);
-                  setSimulationReport(report);
-                  setSimulationRunning(false);
-                }, 0);
-              }}
-            >
-              {simulationRunning ? t.simulationRunning : t.simulationRun}
-            </button>
-          </p>
-          <h4>{t.simulationReport}</h4>
-          {!simulationReport ? <p>{t.simulationNoReport}</p> : (
-            <div>
-              <p>
-                {lang === 'uk'
-                  ? `Виконано симуляцій: ${simulationReport.input.simulations} (гравців у матчі: ${simulationReport.input.players}).`
-                  : `Simulations: ${simulationReport.input.simulations} (players per game: ${simulationReport.input.players}).`}
-              </p>
-              <p>
-                {lang === 'uk'
-                  ? `Завершені: ${simulationReport.summary.finished}, завислі: ${simulationReport.summary.stalled}, середня кількість ходів: ${simulationReport.summary.avgTurns}.`
-                  : `Finished: ${simulationReport.summary.finished}, stalled: ${simulationReport.summary.stalled}, average turns: ${simulationReport.summary.avgTurns}.`}
-              </p>
-              <p>
-                {lang === 'uk'
-                  ? `Перемоги за званням: ${simulationReport.summary.rankWins}, за очками: ${simulationReport.summary.scoreWins}.`
-                  : `Rank wins: ${simulationReport.summary.rankWins}, score wins: ${simulationReport.summary.scoreWins}.`}
-              </p>
-              <p>
-                {lang === 'uk'
-                  ? `Топ-3 звань за найбільшим відсотком досягнення: ${
-                    simulationReport.topReachedRanksByPct.length
-                      ? simulationReport.topReachedRanksByPct
-                        .map((row) => `${localizedRankName(row.rankId)} — ${row.pct}% (${row.games}/${simulationReport.input.simulations})`)
-                        .join(' | ')
-                      : 'немає даних'
-                  }.`
-                  : `Top-3 most reached ranks by percentage: ${
-                    simulationReport.topReachedRanksByPct.length
-                      ? simulationReport.topReachedRanksByPct
-                        .map((row) => `${localizedRankName(row.rankId)} - ${row.pct}% (${row.games}/${simulationReport.input.simulations})`)
-                        .join(' | ')
-                      : 'no data'
-                  }.`}
-              </p>
-              <p>
-                {lang === 'uk'
-                  ? `Топ-3 найвищих за ієрархією звань: ${
-                    simulationReport.topReachedRanks.length
-                      ? simulationReport.topReachedRanks
-                        .map((row) => `${localizedRankName(row.rankId)} — ${row.pct}% (${row.games}/${simulationReport.input.simulations})`)
-                        .join(' | ')
-                      : 'немає даних'
-                  }.`
-                  : `Top-3 highest ranks by hierarchy: ${
-                    simulationReport.topReachedRanks.length
-                      ? simulationReport.topReachedRanks
-                        .map((row) => `${localizedRankName(row.rankId)} - ${row.pct}% (${row.games}/${simulationReport.input.simulations})`)
-                        .join(' | ')
-                      : 'no data'
-                  }.`}
-              </p>
-              <p>
-                {lang === 'uk'
-                  ? `Накопичені ресурси: час ${simulationReport.lastGame.winnerResources.time}, авторитет ${simulationReport.lastGame.winnerResources.reputation}, дисципліна ${simulationReport.lastGame.winnerResources.discipline}, документи ${simulationReport.lastGame.winnerResources.documents}, технології ${simulationReport.lastGame.winnerResources.tech}.`
-                  : `Resources: time ${simulationReport.lastGame.winnerResources.time}, reputation ${simulationReport.lastGame.winnerResources.reputation}, discipline ${simulationReport.lastGame.winnerResources.discipline}, documents ${simulationReport.lastGame.winnerResources.documents}, tech ${simulationReport.lastGame.winnerResources.tech}.`}
-              </p>
-              <p>
-                {lang === 'uk'
-                  ? `Ходів у симуляції: ${simulationReport.lastGame.turns}.`
-                  : `Turns in simulation: ${simulationReport.lastGame.turns}.`}
-              </p>
-              {simulationReport.issues.length ? (
-                <pre className="admin-json">{simulationReport.issues.join('\n')}</pre>
-              ) : null}
-            </div>
-          )}
-        </>
+        <AdminSimulationTab
+          t={t}
+          lang={lang}
+          simulationPlayers={simulationPlayers}
+          setSimulationPlayers={setSimulationPlayers}
+          simulationCount={simulationCount}
+          setSimulationCount={setSimulationCount}
+          simulationRunning={simulationRunning}
+          runSimulation={() => {
+            setSimulationRunning(true);
+            setTimeout(() => {
+              const report = onRunSimulations(simulationPlayers, simulationCount);
+              setSimulationReport(report);
+              setSimulationRunning(false);
+            }, 0);
+          }}
+          simulationReport={simulationReport}
+          localizedRankName={localizedRankName}
+        />
       ) : null}
       <p>
         <a href="/">{t.openGame}</a>

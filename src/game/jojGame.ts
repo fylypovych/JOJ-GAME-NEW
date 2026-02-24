@@ -1,6 +1,4 @@
 import type { Ctx, Game } from 'boardgame.io';
-import { baseDeck, legendaryCards } from './cards';
-import { GENERAL_RANK_ID, ranks as baseRanks } from './ranks';
 import {
   buildDecisionMessageText,
   buildLegendaryPlayedMessageText,
@@ -12,7 +10,52 @@ import {
   buildSupportMessageText,
   legendaryTexts,
 } from './systemMessages';
+import { appendChat as appendChatBase, getPlayerLabel, nextSystemMessageSeq } from './chatUtils';
+import { cloneCard, cloneRank } from './cloneUtils';
+import { resourceKeys, resourceLabelsUk } from './resourceMeta';
+import { createRankEngine } from './rankEngine';
+import { runGameSimulationsWithDeps, type SimulationReport } from './simulation';
+import {
+  addCardToSharedDeckTemplate,
+  addCustomCardToSharedDeckTemplate,
+  exportSharedDeckTemplateJson,
+  getActiveRanks,
+  getCardCatalog,
+  getSharedDeckTemplate,
+  getSharedDeckTemplateStats,
+  getSharedRanks,
+  getTopRankId,
+  importSharedDeckTemplateJson,
+  resetSharedDeckTemplate,
+  resetSharedRanks,
+  removeCardAtFromSharedDeckTemplate,
+  setSharedDeckBackImage,
+  setSharedRanks,
+  shuffle,
+  shuffleSharedDeckTemplate,
+  type DeckTarget,
+  type SharedRanks,
+  updateCardAtInSharedDeckTemplate,
+} from './sharedConfig';
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from './types';
+export {
+  addCardToSharedDeckTemplate,
+  addCustomCardToSharedDeckTemplate,
+  exportSharedDeckTemplateJson,
+  getCardCatalog,
+  getSharedDeckTemplate,
+  getSharedDeckTemplateStats,
+  getSharedRanks,
+  importSharedDeckTemplateJson,
+  resetSharedDeckTemplate,
+  resetSharedRanks,
+  removeCardAtFromSharedDeckTemplate,
+  setSharedDeckBackImage,
+  setSharedRanks,
+  shuffleSharedDeckTemplate,
+  updateCardAtInSharedDeckTemplate,
+} from './sharedConfig';
+export type { DeckTarget, SharedRanks } from './sharedConfig';
 
 const INVALID_MOVE = 'INVALID_MOVE' as const;
 const STARTING_HAND_SIZE = 5;
@@ -24,431 +67,11 @@ const END_STAGE = 'end';
 const IDLE_STAGE = 'idle';
 const CHAT_LIMIT = 200;
 
-const resourceKeys: ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
-const resourceLabelsUk: Record<ResourceKey, string> = {
-  time: 'Час',
-  reputation: 'Авторитет',
-  discipline: 'Дисципліна',
-  documents: 'Документи',
-  tech: 'Технології',
-};
-export const normalizeImagePath = (input?: string): string | undefined => {
-  if (!input) return undefined;
-  const raw = input.trim();
-  if (!raw) return undefined;
-
-  const normalized = raw.replace(/\\/g, '/');
-  if (/^(https?:\/\/|data:|blob:)/i.test(normalized)) return normalized;
-  if (normalized.startsWith('/cards/')) return normalized;
-  if (normalized.startsWith('cards/')) return `/${normalized}`;
-  if (normalized.startsWith('/public/cards/')) return normalized.replace('/public', '');
-  if (normalized.startsWith('public/cards/')) return `/${normalized.replace(/^public\//, '')}`;
-  if (/^[^/]+\.(png|webp|jpg|jpeg|gif|svg)$/i.test(normalized)) return `/cards/${normalized}`;
-  return normalized.startsWith('/') ? normalized : `/${normalized}`;
-};
-
-const cloneCard = (card: CardDefinition): CardDefinition => ({
-  ...card,
-  cost: card.cost ? { ...card.cost } : undefined,
-  image: normalizeImagePath(card.image),
-  grantRank: typeof card.grantRank === 'string' ? card.grantRank : undefined,
-  effects: card.effects?.map((effect) => ({ ...effect })),
-});
-
-const cloneRank = (rank: RankDefinition): RankDefinition => ({
-  ...rank,
-  requirement: { ...rank.requirement },
-  cost: { ...rank.cost },
-  bonus: { ...rank.bonus },
-  image: normalizeImagePath(rank.image),
-  victory: rank.victory === true ? true : undefined,
-  flavor: typeof rank.flavor === 'string' ? rank.flavor : undefined,
-});
-
-const getPlayerLabel = (G: JojGameState, playerID: string) => {
-  const name = G.playerNames[playerID]?.trim();
-  return name || 'Гравець';
-};
 
 const appendChat = (
   G: JojGameState,
   entry: { type: 'player' | 'system'; text: string; playerID?: string },
-) => {
-  const row = {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    createdAt: Date.now(),
-    ...entry,
-  };
-  G.chat.push(row);
-  if (G.chat.length > CHAT_LIMIT) {
-    G.chat = G.chat.slice(-CHAT_LIMIT);
-  }
-};
-
-const nextSystemMessageSeq = (G: JojGameState): number => {
-  const next = (G.systemMessageSeq ?? 0) + 1;
-  G.systemMessageSeq = next;
-  return next;
-};
-
-type SharedDeckTemplate = {
-  deck: CardDefinition[];
-  legendaryDeck: CardDefinition[];
-  rankTrack: CardDefinition[];
-  deckBackImage?: string;
-};
-
-export type DeckTarget = 'deck' | 'legendaryDeck' | 'rankTrack';
-export type SharedRanks = RankDefinition[];
-
-const defaultSharedDeckTemplate = (): SharedDeckTemplate => ({
-  deck: baseDeck.map(cloneCard),
-  legendaryDeck: legendaryCards.map(cloneCard),
-  rankTrack: [],
-  deckBackImage: undefined,
-});
-
-let sharedDeckTemplate: SharedDeckTemplate = defaultSharedDeckTemplate();
-let sharedRanks: SharedRanks = baseRanks.map(cloneRank);
-
-const getActiveRanks = (): SharedRanks => sharedRanks;
-const getTopRankId = (): string => {
-  const active = getActiveRanks();
-  return active[active.length - 1]?.id ?? GENERAL_RANK_ID;
-};
-
-const isValidRank = (rank: unknown): rank is RankDefinition => {
-  if (!rank || typeof rank !== 'object') return false;
-  const raw = rank as Record<string, unknown>;
-  if (typeof raw.id !== 'string' || !raw.id.trim()) return false;
-  if (typeof raw.name !== 'string' || !raw.name.trim()) return false;
-  if (!raw.requirement || typeof raw.requirement !== 'object') return false;
-  if (raw.effect !== undefined && (!raw.effect || typeof raw.effect !== 'object')) return false;
-  if (raw.cost !== undefined && (!raw.cost || typeof raw.cost !== 'object')) return false;
-  if (raw.bonus !== undefined && (!raw.bonus || typeof raw.bonus !== 'object')) return false;
-  if (raw.image !== undefined && typeof raw.image !== 'string') return false;
-  if (raw.victory !== undefined && typeof raw.victory !== 'boolean') return false;
-  if (raw.flavor !== undefined && typeof raw.flavor !== 'string') return false;
-  const req = raw.requirement as Record<string, unknown>;
-  const costSource = (raw.cost as Record<string, unknown> | undefined) ?? {};
-  const effectSource = (raw.effect as Record<string, unknown> | undefined) ?? {};
-  const bonusSource = ((raw.bonus as Record<string, unknown> | undefined) ?? effectSource) as Record<string, unknown>;
-  for (const key of Object.keys(req)) {
-    if (!resourceKeys.includes(key as ResourceKey)) return false;
-    if (typeof req[key] !== 'number') return false;
-  }
-  for (const key of Object.keys(costSource)) {
-    if (!resourceKeys.includes(key as ResourceKey)) return false;
-    if (typeof costSource[key] !== 'number') return false;
-  }
-  for (const key of Object.keys(bonusSource)) {
-    if (!resourceKeys.includes(key as ResourceKey)) return false;
-    if (typeof bonusSource[key] !== 'number') return false;
-  }
-  return true;
-};
-
-export const getSharedRanks = (): SharedRanks => sharedRanks.map(cloneRank);
-
-export const setSharedRanks = (next: SharedRanks): boolean => {
-  if (!Array.isArray(next) || next.length === 0) return false;
-  if (!next.every((rank) => isValidRank(rank))) return false;
-  const ids = next.map((rank) => rank.id.trim());
-  if (new Set(ids).size !== ids.length) return false;
-  sharedRanks = next.map((rank) => {
-    const rawRank = rank as RankDefinition & { effect?: Partial<Record<ResourceKey, number>> };
-    const costSource = rawRank.cost ? { ...rawRank.cost } : {};
-    const bonusSource = rawRank.bonus ? { ...rawRank.bonus } : { ...(rawRank.effect ?? {}) };
-    const cost: Partial<Record<ResourceKey, number>> = {};
-    resourceKeys.forEach((key) => {
-      const rawValue = costSource[key] ?? 0;
-      if (rawValue !== 0) cost[key] = Math.abs(rawValue);
-    });
-    const bonus: Partial<Record<ResourceKey, number>> = {};
-    resourceKeys.forEach((key) => {
-      const rawValue = bonusSource[key] ?? 0;
-      if (rawValue !== 0) bonus[key] = rawValue;
-    });
-    return cloneRank({
-      ...rank,
-      id: rank.id.trim(),
-      name: rank.name.trim(),
-      cost,
-      bonus,
-      image: normalizeImagePath(typeof rawRank.image === 'string' ? rawRank.image : undefined),
-      victory: rawRank.victory === true ? true : undefined,
-      flavor: typeof rawRank.flavor === 'string' ? rawRank.flavor : undefined,
-    });
-  });
-  return true;
-};
-
-export const resetSharedRanks = () => {
-  sharedRanks = baseRanks.map(cloneRank);
-};
-
-const buildCardCatalog = (template: SharedDeckTemplate): CardDefinition[] => {
-  const byId = new Map<string, CardDefinition>();
-  [...template.deck, ...template.legendaryDeck, ...template.rankTrack].forEach((card) => {
-    if (!byId.has(card.id)) {
-      byId.set(card.id, cloneCard(card));
-    }
-  });
-  return [...byId.values()];
-};
-
-export const getSharedDeckTemplateStats = () => ({
-  deck: sharedDeckTemplate.deck.length,
-  legendary: sharedDeckTemplate.legendaryDeck.length,
-  rankTrack: sharedDeckTemplate.rankTrack.length,
-});
-
-export const getSharedDeckTemplate = (): SharedDeckTemplate => ({
-  deck: sharedDeckTemplate.deck.map(cloneCard),
-  legendaryDeck: sharedDeckTemplate.legendaryDeck.map(cloneCard),
-  rankTrack: sharedDeckTemplate.rankTrack.map(cloneCard),
-  deckBackImage: sharedDeckTemplate.deckBackImage,
-});
-
-export const getCardCatalog = (): CardDefinition[] => buildCardCatalog(sharedDeckTemplate);
-
-export const exportSharedDeckTemplateJson = (): string => {
-  const template = getSharedDeckTemplate();
-  const catalog = buildCardCatalog(template);
-  const payload = {
-    version: 2,
-    catalog,
-    deckIds: template.deck.map((card) => card.id),
-    legendaryDeckIds: template.legendaryDeck.map((card) => card.id),
-    rankTrackIds: template.rankTrack.map((card) => card.id),
-    deck: template.deck,
-    legendaryDeck: template.legendaryDeck,
-    rankTrack: template.rankTrack,
-    deckBackImage: template.deckBackImage,
-  };
-  return JSON.stringify(payload, null, 2);
-};
-
-const validCategories = new Set<CardDefinition['category']>([
-  'LYAP',
-  'SCANDAL',
-  'SUPPORT',
-  'DECISION',
-  'NEUTRAL',
-  'VVNZ',
-  'LEGENDARY',
-]);
-const isLegendaryDeckOnlyCardId = (id: string) => /^legendary-/i.test(id);
-const validEffectResources = new Set<string>([
-  'time',
-  'reputation',
-  'discipline',
-  'documents',
-  'tech',
-  'rank',
-]);
-
-const parseCard = (value: unknown): CardDefinition | null => {
-  if (!value || typeof value !== 'object') return null;
-  const raw = value as Record<string, unknown>;
-  if (typeof raw.id !== 'string' || typeof raw.title !== 'string') return null;
-  if (!validCategories.has(raw.category as CardDefinition['category'])) return null;
-  const normalizedCategory = (raw.category === 'LEGENDARY' ? 'NEUTRAL' : raw.category) as CardDefinition['category'];
-  const image = normalizeImagePath(typeof raw.image === 'string' ? raw.image : undefined);
-  let effects: CardDefinition['effects'];
-  if (raw.effects !== undefined) {
-    if (!Array.isArray(raw.effects)) return null;
-    const parsedEffects: NonNullable<CardDefinition['effects']> = [];
-    for (const effect of raw.effects) {
-      if (!effect || typeof effect !== 'object') return null;
-      const row = effect as Record<string, unknown>;
-      if (typeof row.resource !== 'string' || !validEffectResources.has(row.resource)) return null;
-      if (typeof row.value !== 'number') return null;
-      parsedEffects.push({ resource: row.resource as 'rank' | ResourceKey, value: row.value });
-    }
-    effects = parsedEffects;
-  }
-  const flavor = typeof raw.flavor === 'string' ? raw.flavor : undefined;
-  const grantRank = typeof raw.grantRank === 'string' && raw.grantRank.trim() ? raw.grantRank.trim() : undefined;
-  return {
-    id: raw.id,
-    title: raw.title,
-    category: normalizedCategory,
-    image,
-    grantRank,
-    effects,
-    flavor,
-  };
-};
-
-export const importSharedDeckTemplateJson = (
-  text: string,
-): { ok: true } | { ok: false; error: string } => {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    return { ok: false, error: 'Invalid JSON' };
-  }
-  if (!parsed || typeof parsed !== 'object') {
-    return { ok: false, error: 'Template must be an object' };
-  }
-
-  const raw = parsed as Record<string, unknown>;
-  let typedDeck: CardDefinition[] = [];
-  let typedLegendaryDeck: CardDefinition[] = [];
-  let typedRankTrack: CardDefinition[] = [];
-
-  const importByFullCards = () => {
-    if (!Array.isArray(raw.deck) || !Array.isArray(raw.legendaryDeck)) {
-      return { ok: false as const, error: 'Template must contain deck and legendaryDeck arrays' };
-    }
-    const deck = raw.deck.map(parseCard);
-    const legendaryDeck = raw.legendaryDeck.map(parseCard);
-    const rankTrackRaw = Array.isArray(raw.rankTrack) ? raw.rankTrack : [];
-    const rankTrack = rankTrackRaw.map(parseCard);
-    if (deck.some((card) => !card) || legendaryDeck.some((card) => !card) || rankTrack.some((card) => !card)) {
-      return { ok: false as const, error: 'One or more cards have invalid schema' };
-    }
-    typedDeck = (deck as CardDefinition[]).map(cloneCard);
-    typedLegendaryDeck = (legendaryDeck as CardDefinition[]).map(cloneCard);
-    typedRankTrack = (rankTrack as CardDefinition[]).map(cloneCard);
-    return { ok: true as const };
-  };
-
-  const importByCatalogIds = () => {
-    if (!Array.isArray(raw.catalog) || !Array.isArray(raw.deckIds) || !Array.isArray(raw.legendaryDeckIds)) {
-      return { ok: false as const, error: 'Template must contain catalog, deckIds and legendaryDeckIds arrays' };
-    }
-    const catalogParsed = raw.catalog.map(parseCard);
-    if (catalogParsed.some((card) => !card)) {
-      return { ok: false as const, error: 'One or more catalog cards have invalid schema' };
-    }
-    const byId = new Map<string, CardDefinition>();
-    (catalogParsed as CardDefinition[]).forEach((card) => {
-      if (!byId.has(card.id)) byId.set(card.id, cloneCard(card));
-    });
-    const resolveIds = (ids: unknown[], field: string): CardDefinition[] | null => {
-      const out: CardDefinition[] = [];
-      for (const idRaw of ids) {
-        if (typeof idRaw !== 'string') return null;
-        const card = byId.get(idRaw);
-        if (!card) {
-          throw new Error(`Unknown card id in ${field}: ${idRaw}`);
-        }
-        out.push(cloneCard(card));
-      }
-      return out;
-    };
-    try {
-      const deck = resolveIds(raw.deckIds as unknown[], 'deckIds');
-      const legendary = resolveIds(raw.legendaryDeckIds as unknown[], 'legendaryDeckIds');
-      const rankTrack = resolveIds(Array.isArray(raw.rankTrackIds) ? raw.rankTrackIds : [], 'rankTrackIds');
-      if (!deck || !legendary || !rankTrack) {
-        return { ok: false as const, error: 'Template id arrays must contain strings only' };
-      }
-      typedDeck = deck;
-      typedLegendaryDeck = legendary;
-      typedRankTrack = rankTrack;
-      return { ok: true as const };
-    } catch (error) {
-      return { ok: false as const, error: String(error instanceof Error ? error.message : error) };
-    }
-  };
-
-  if (Array.isArray(raw.catalog) && Array.isArray(raw.deckIds) && Array.isArray(raw.legendaryDeckIds)) {
-    const result = importByCatalogIds();
-    if (!result.ok) return result;
-  } else {
-    const result = importByFullCards();
-    if (!result.ok) return result;
-  }
-
-  // New rule: legendary cards exist only in legendaryDeck (not in main deck),
-  // even if older templates/categories still contain LEGENDARY or legendary-* ids.
-  typedDeck = typedDeck.filter((card) => !isLegendaryDeckOnlyCardId(card.id));
-
-  const deckBackImage = normalizeImagePath(
-    typeof raw.deckBackImage === 'string' ? raw.deckBackImage : undefined,
-  );
-
-  sharedDeckTemplate = {
-    deck: typedDeck.map(cloneCard),
-    legendaryDeck: typedLegendaryDeck.map(cloneCard),
-    rankTrack: typedRankTrack.map(cloneCard),
-    deckBackImage,
-  };
-  return { ok: true };
-};
-
-export const resetSharedDeckTemplate = () => {
-  sharedDeckTemplate = defaultSharedDeckTemplate();
-};
-
-export const shuffleSharedDeckTemplate = () => {
-  sharedDeckTemplate = {
-    ...sharedDeckTemplate,
-    deck: shuffle(sharedDeckTemplate.deck),
-  };
-};
-
-export const setSharedDeckBackImage = (path?: string) => {
-  sharedDeckTemplate = {
-    ...sharedDeckTemplate,
-    deckBackImage: normalizeImagePath(path),
-  };
-};
-
-export const addCardToSharedDeckTemplate = (target: DeckTarget, cardId: string): boolean => {
-  if (target === 'deck' && isLegendaryDeckOnlyCardId(cardId)) return false;
-  const card = getCardCatalog().find((item) => item.id === cardId);
-  if (!card) return false;
-  sharedDeckTemplate = {
-    ...sharedDeckTemplate,
-    [target]: [...sharedDeckTemplate[target], cloneCard(card)],
-  };
-  return true;
-};
-
-export const addCustomCardToSharedDeckTemplate = (target: DeckTarget, card: CardDefinition): void => {
-  if (target === 'deck' && isLegendaryDeckOnlyCardId(card.id)) return;
-  sharedDeckTemplate = {
-    ...sharedDeckTemplate,
-    [target]: [...sharedDeckTemplate[target], cloneCard(card)],
-  };
-};
-
-export const removeCardAtFromSharedDeckTemplate = (target: DeckTarget, index: number): boolean => {
-  if (index < 0 || index >= sharedDeckTemplate[target].length) return false;
-  sharedDeckTemplate = {
-    ...sharedDeckTemplate,
-    [target]: sharedDeckTemplate[target].filter((_, i) => i !== index),
-  };
-  return true;
-};
-
-export const updateCardAtInSharedDeckTemplate = (
-  target: DeckTarget,
-  index: number,
-  card: CardDefinition,
-): boolean => {
-  if (index < 0 || index >= sharedDeckTemplate[target].length) return false;
-  if (target === 'deck' && isLegendaryDeckOnlyCardId(card.id)) return false;
-  sharedDeckTemplate = {
-    ...sharedDeckTemplate,
-    [target]: sharedDeckTemplate[target].map((item, i) => (i === index ? cloneCard(card) : item)),
-  };
-  return true;
-};
-
-const shuffle = <T,>(items: T[]): T[] => {
-  const next = [...items];
-  for (let i = next.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [next[i], next[j]] = [next[j], next[i]];
-  }
-  return next;
-};
+) => appendChatBase(G, entry, CHAT_LIMIT);
 
 const hasResources = (resources: Record<ResourceKey, number>, cost: Partial<Record<ResourceKey, number>>): boolean =>
   resourceKeys.every((key) => (resources[key] ?? 0) >= (cost[key] ?? 0));
@@ -893,7 +516,8 @@ const drawCards = (G: JojGameState, playerID: string, amount: number): void => {
 };
 
 const drawLegendaryCards = (G: JojGameState, playerID: string, amount: number): void => {
-  G.legendaryHands[playerID] = shuffle(sharedDeckTemplate.legendaryDeck.map(cloneCard)).slice(0, Math.max(0, amount));
+  const template = getSharedDeckTemplate();
+  G.legendaryHands[playerID] = shuffle(template.legendaryDeck.map(cloneCard)).slice(0, Math.max(0, amount));
 };
 
 const syncPlayerState = (G: JojGameState, playerID: string): void => {
@@ -901,122 +525,20 @@ const syncPlayerState = (G: JojGameState, playerID: string): void => {
   G.players[playerID].rankId = G.ranks[playerID];
   G.players[playerID].resources = G.resources[playerID];
 };
-
-const rankSeatLimit = (playerCount: number): number => {
-  if (playerCount <= 2) return 1;
-  if (playerCount <= 4) return 2;
-  return 3;
-};
-
-const promoteRank = (G: JojGameState, playerID: string, playerCount: number): boolean => {
-  const ranks = getActiveRanks();
-  const currentRankId = G.ranks[playerID];
-  const currentRankIdx = Math.max(0, ranks.findIndex((r) => r.id === currentRankId));
-  const nextRank = ranks[currentRankIdx + 1];
-  if (!nextRank) return false;
-
-  const occupied = Object.entries(G.ranks)
-    .filter(([pid, rankId]) => pid !== playerID && rankId === nextRank.id)
-    .length;
-  if (occupied >= rankSeatLimit(playerCount)) return false;
-
-  const playerResources = G.resources[playerID];
-  if (!hasResources(playerResources, nextRank.requirement)) return false;
-  if (!hasResources(playerResources, nextRank.cost)) return false;
-  spendResources(playerResources, nextRank.cost);
-  applyResourceDelta(playerResources, nextRank.bonus);
-  clampNonNegativeResources(playerResources);
-  G.ranks[playerID] = nextRank.id;
-  syncPlayerState(G, playerID);
-  return true;
-};
-
-const promoteToSpecificRank = (
-  G: JojGameState,
-  playerID: string,
-  targetRankId: string,
-  playerCount: number,
-): { ok: true; rank: RankDefinition } | { ok: false } => {
-  const ranks = getActiveRanks();
-  const currentRankId = G.ranks[playerID];
-  const currentRankIdx = Math.max(0, ranks.findIndex((r) => r.id === currentRankId));
-  const targetRankIdx = ranks.findIndex((r) => r.id === targetRankId);
-  if (targetRankIdx <= currentRankIdx) return { ok: false };
-  const targetRank = ranks[targetRankIdx];
-  if (!targetRank) return { ok: false };
-
-  const occupied = Object.entries(G.ranks)
-    .filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id)
-    .length;
-  if (occupied >= rankSeatLimit(playerCount)) return { ok: false };
-
-  const playerResources = G.resources[playerID];
-  if (!hasResources(playerResources, targetRank.requirement)) return { ok: false };
-  if (!hasResources(playerResources, targetRank.cost)) return { ok: false };
-
-  spendResources(playerResources, targetRank.cost);
-  applyResourceDelta(playerResources, targetRank.bonus);
-  clampNonNegativeResources(playerResources);
-  G.ranks[playerID] = targetRank.id;
-  syncPlayerState(G, playerID);
-  return { ok: true, rank: targetRank };
-};
-
-const grantSpecificRankIgnoringRequirements = (
-  G: JojGameState,
-  playerID: string,
-  targetRankId: string,
-  playerCount: number,
-): { ok: true; rank: RankDefinition; fromRankId: string; applied: boolean }
-  | { ok: false; reason: 'invalid-rank' | 'no-seat' } => {
-  const ranks = getActiveRanks();
-  const currentRankId = G.ranks[playerID];
-  const currentRankIdx = ranks.findIndex((r) => r.id === currentRankId);
-  const targetRankIdx = ranks.findIndex((r) => r.id === targetRankId);
-  if (targetRankIdx < 0) return { ok: false, reason: 'invalid-rank' };
-  const targetRank = ranks[targetRankIdx];
-  if (!targetRank) return { ok: false, reason: 'invalid-rank' };
-
-  // If player already has this rank or higher, do not downgrade / reapply bonus.
-  if (currentRankIdx >= targetRankIdx) {
-    return { ok: true, rank: targetRank, fromRankId: currentRankId, applied: false };
-  }
-
-  const occupied = Object.entries(G.ranks)
-    .filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id)
-    .length;
-  if (occupied >= rankSeatLimit(playerCount)) return { ok: false, reason: 'no-seat' };
-
-  const playerResources = G.resources[playerID];
-  applyResourceDelta(playerResources, targetRank.bonus);
-  clampNonNegativeResources(playerResources);
-  G.ranks[playerID] = targetRank.id;
-  syncPlayerState(G, playerID);
-  return { ok: true, rank: targetRank, fromRankId: currentRankId, applied: true };
-};
-
-const demoteByOneRankWithSeatCheck = (
-  G: JojGameState,
-  targetPlayerID: string,
-  playerCount: number,
-): { ok: true; fromRankId: string; toRankId: string } | { ok: false; reason: 'min-rank' | 'no-seat' | 'invalid-rank' } => {
-  const ranks = getActiveRanks();
-  const currentRankId = G.ranks[targetPlayerID];
-  const currentRankIdx = ranks.findIndex((r) => r.id === currentRankId);
-  if (currentRankIdx < 0) return { ok: false, reason: 'invalid-rank' };
-  if (currentRankIdx === 0) return { ok: false, reason: 'min-rank' };
-  const lowerRank = ranks[currentRankIdx - 1];
-  if (!lowerRank) return { ok: false, reason: 'invalid-rank' };
-
-  const occupied = Object.entries(G.ranks)
-    .filter(([pid, rankId]) => pid !== targetPlayerID && rankId === lowerRank.id)
-    .length;
-  if (occupied >= rankSeatLimit(playerCount)) return { ok: false, reason: 'no-seat' };
-
-  G.ranks[targetPlayerID] = lowerRank.id;
-  syncPlayerState(G, targetPlayerID);
-  return { ok: true, fromRankId: currentRankId, toRankId: lowerRank.id };
-};
+const {
+  rankSeatLimit,
+  promoteRank,
+  promoteToSpecificRank,
+  grantSpecificRankIgnoringRequirements,
+  demoteByOneRankWithSeatCheck,
+} = createRankEngine({
+  getActiveRanks,
+  hasResources,
+  spendResources,
+  applyResourceDelta,
+  clampNonNegativeResources,
+  syncPlayerState,
+});
 
 const buildVvnzRankSystemMessage = (
   seq: number,
@@ -1058,378 +580,37 @@ const getWinner = (G: JojGameState): string | undefined => {
   return undefined;
 };
 
-export type SimulationReport = {
-  input: {
-    players: number;
-    simulations: number;
-    maxTurns: number;
-  };
-  generatedAt: string;
-  summary: {
-    finished: number;
-    stalled: number;
-    avgTurns: number;
-    avgDeckDepletionTurn: number;
-    rankWins: number;
-    scoreWins: number;
-    avgPassesPerGame: number;
-  };
-  seatWinRates: Array<{
-    playerID: string;
-    wins: number;
-    winRatePct: number;
-  }>;
-  rankReached: Record<string, number>;
-  topReachedRanks: Array<{
-    rankId: string;
-    games: number;
-    pct: number;
-  }>;
-  topReachedRanksByPct: Array<{
-    rankId: string;
-    games: number;
-    pct: number;
-  }>;
-  lastGame: {
-    winnerPlayerID: string;
-    winnerRankId: string;
-    winnerResources: Record<ResourceKey, number>;
-    turns: number;
-  };
-  issues: string[];
-};
-
-const chooseLyapTarget = (G: JojGameState, sourcePlayerID: string): string | null => {
-  const activeRanks = getActiveRanks();
-  const rankIndex = (playerID: string) => activeRanks.findIndex((r) => r.id === G.ranks[playerID]);
-  const score = (playerID: string) =>
-    resourceKeys.reduce((sum, key) => sum + (G.resources[playerID][key] ?? 0), 0) + rankIndex(playerID) * 2;
-  const candidates = Object.keys(G.players).filter((pid) => pid !== sourcePlayerID);
-  if (!candidates.length) return null;
-  return [...candidates].sort((a, b) => score(b) - score(a))[0];
-};
-
 const buildReplacementPlan = (
   resources: Record<ResourceKey, number>,
   effects: CardDefinition['effects'],
 ): ResourceKey[] | null => planReplacementResources(resources, effects);
-
-const simulateSingleMatch = (
-  numPlayers: number,
-  maxTurns: number,
-): {
-  winner: string;
-  turns: number;
-  stalled: boolean;
-  deckDepletionTurn: number;
-  wonByRank: boolean;
-  passes: number;
-  reachedRanks: Record<string, string>;
-  finalResources: Record<string, Record<ResourceKey, number>>;
-} => {
-  const playerIDs = Array.from({ length: numPlayers }, (_, i) => String(i));
-  const G: JojGameState = {
-    deck: shuffle(sharedDeckTemplate.deck.map(cloneCard)),
-    discard: [],
-    legendaryDeck: shuffle(sharedDeckTemplate.legendaryDeck.map(cloneCard)),
-    legendaryDiscard: [],
-    deckBackImage: sharedDeckTemplate.deckBackImage,
-    systemMessageSeq: 0,
-    playerNames: {},
-    chat: [],
-    players: {},
-    hands: {},
-    legendaryHands: {},
-    ranks: {},
-    resources: {},
-    promotedThisTurn: {},
-    lyapScandalShieldUntilTurn: {},
-    extraHandPlayTokens: {},
-    sukhpayZsuWatchUntilTurn: {},
-    sukhpayZsuPendingBonus: {},
-  };
-
-  playerIDs.forEach((pid, index) => {
-    G.hands[pid] = [];
-    G.legendaryHands[pid] = [];
-    G.ranks[pid] = getActiveRanks()[0]?.id ?? 'cadet';
-    G.resources[pid] = { time: 2, reputation: 2, discipline: 2, documents: 2, tech: 2 };
-    G.players[pid] = { hand: G.hands[pid], rankId: G.ranks[pid], resources: G.resources[pid] };
-    G.playerNames[pid] = `P${index + 1}`;
-    G.promotedThisTurn[pid] = false;
-    G.lyapScandalShieldUntilTurn[pid] = 0;
-    G.extraHandPlayTokens[pid] = 0;
-    G.sukhpayZsuWatchUntilTurn[pid] = 0;
-    G.sukhpayZsuPendingBonus[pid] = false;
-    drawCards(G, pid, STARTING_HAND_SIZE);
-    drawLegendaryCards(G, pid, STARTING_LEGENDARY_HAND_SIZE);
-    syncPlayerState(G, pid);
-  });
-
-  let currentIdx = 0;
-  let turns = 0;
-  let deckDepletionTurn = -1;
-  let passes = 0;
-  const tryPromoteOnce = (pid: string) => promoteRank(G, pid, numPlayers);
-
-  while (turns < maxTurns) {
-    const playerID = playerIDs[currentIdx];
-    const hand = G.hands[playerID];
-    let stage: 'play' | 'end' = 'play';
-
-    if (G.deck.length > 0) {
-      const card = G.deck.pop();
-      if (card) {
-        if (card.category === 'LYAP') {
-          applyCardEffectsSoft(G, playerID, card.effects);
-          G.discard.push(card);
-          stage = 'end';
-        } else if (card.category === 'SCANDAL') {
-          playerIDs.forEach((pid) => {
-            applyCardEffectsSoft(G, pid, card.effects);
-            syncPlayerState(G, pid);
-          });
-          triggerSukhpayZsuOnScandal(G, { turn: turns + 1 }, playerID);
-          G.discard.push(card);
-          stage = 'end';
-        } else {
-          hand.push(card);
-          stage = 'play';
-        }
-      }
-      if (G.deck.length === 0 && deckDepletionTurn < 0) {
-        deckDepletionTurn = turns + 1;
-      }
-    }
-
-    if (stage === 'play') {
-      let promotedThisTurn = tryPromoteOnce(playerID);
-      let played = false;
-      for (let i = 0; i < hand.length; i += 1) {
-        const card = hand[i];
-        const allPlayerIDs = playerIDs;
-
-        if (card.category === 'LYAP') {
-          const target = chooseLyapTarget(G, playerID);
-          if (!target) continue;
-          applyCardEffectsSoft(G, target, card.effects);
-          syncPlayerState(G, target);
-        } else if (card.category === 'SCANDAL') {
-          allPlayerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
-            applyCardEffectsSoft(G, pid, card.effects);
-            syncPlayerState(G, pid);
-          });
-          triggerSukhpayZsuOnScandal(G, { turn: turns + 1 }, playerID);
-        } else if (card.category === 'DECISION') {
-          allPlayerIDs.forEach((pid) => {
-            applyCardEffectsSoft(G, pid, card.effects);
-            syncPlayerState(G, pid);
-          });
-        } else if (card.category === 'VVNZ' && card.grantRank) {
-          const promoted = promoteToSpecificRank(G, playerID, card.grantRank, numPlayers);
-          if (!promoted.ok) continue;
-          try {
-            const ok = applyCardEffects(G, playerID, card.effects, []);
-            if (!ok) continue;
-          } catch {
-            continue;
-          }
-          syncPlayerState(G, playerID);
-        } else {
-          const replacement = buildReplacementPlan(G.resources[playerID], card.effects);
-          if (replacement === null) continue;
-          try {
-            const ok = applyCardEffects(G, playerID, card.effects, replacement);
-            if (!ok) continue;
-          } catch {
-            continue;
-          }
-        }
-
-        hand.splice(i, 1);
-        G.discard.push(card);
-        syncPlayerState(G, playerID);
-        if (!promotedThisTurn) {
-          promotedThisTurn = tryPromoteOnce(playerID);
-        }
-        played = true;
-        break;
-      }
-
-      if (!played) {
-        passes += 1;
-      }
-    } else {
-      passes += 1;
-    }
-
-    turns += 1;
-    const winner = getWinner(G);
-    if (winner) {
-      return {
-        winner,
-        turns,
-        stalled: false,
-        deckDepletionTurn,
-        wonByRank: G.ranks[winner] === getTopRankId(),
-        passes,
-        reachedRanks: { ...G.ranks },
-        finalResources: Object.fromEntries(
-          Object.entries(G.resources).map(([pid, row]) => [pid, { ...row }]),
-        ) as Record<string, Record<ResourceKey, number>>,
-      };
-    }
-
-    currentIdx = (currentIdx + 1) % playerIDs.length;
-  }
-
-  const fallbackWinner = Object.entries(G.resources)
-    .sort(([, a], [, b]) => resourceKeys.reduce((sum, key) => sum + (b[key] - a[key]), 0))
-    .at(0)?.[0] ?? '0';
-
-  return {
-    winner: fallbackWinner,
-    turns: maxTurns,
-    stalled: true,
-    deckDepletionTurn,
-    wonByRank: G.ranks[fallbackWinner] === getTopRankId(),
-    passes,
-    reachedRanks: { ...G.ranks },
-    finalResources: Object.fromEntries(
-      Object.entries(G.resources).map(([pid, row]) => [pid, { ...row }]),
-    ) as Record<string, Record<ResourceKey, number>>,
-  };
-};
+export { type SimulationReport } from './simulation';
 
 export const runGameSimulations = (
   players: number,
   simulations: number,
   maxTurns = 600,
-): SimulationReport => {
-  const clampedPlayers = Math.max(2, Math.min(6, Math.floor(players || 2)));
-  const clampedSims = Math.max(1, Math.min(5000, Math.floor(simulations || 1)));
-  const clampedMaxTurns = Math.max(20, Math.min(4000, Math.floor(maxTurns || 600)));
-  const wins: Record<string, number> = {};
-  const rankReached: Record<string, number> = {};
-  let totalTurns = 0;
-  let stalled = 0;
-  let rankWins = 0;
-  let scoreWins = 0;
-  let passesTotal = 0;
-  let deckDepletionTotal = 0;
-  let deckDepletionKnown = 0;
-  const highestRankReachedByGame: Record<string, number> = {};
-  let lastGame: SimulationReport['lastGame'] = {
-    winnerPlayerID: '0',
-    winnerRankId: getActiveRanks()[0]?.id ?? 'cadet',
-    winnerResources: { time: 0, reputation: 0, discipline: 0, documents: 0, tech: 0 },
-    turns: 0,
-  };
-
-  for (let i = 0; i < clampedSims; i += 1) {
-    const result = simulateSingleMatch(clampedPlayers, clampedMaxTurns);
-    wins[result.winner] = (wins[result.winner] ?? 0) + 1;
-    totalTurns += result.turns;
-    passesTotal += result.passes;
-    if (result.stalled) stalled += 1;
-    if (result.wonByRank) rankWins += 1;
-    else scoreWins += 1;
-    if (result.deckDepletionTurn >= 0) {
-      deckDepletionTotal += result.deckDepletionTurn;
-      deckDepletionKnown += 1;
-    }
-    Object.values(result.reachedRanks).forEach((rankId) => {
-      rankReached[rankId] = (rankReached[rankId] ?? 0) + 1;
-    });
-    const activeRanks = getActiveRanks();
-    const highest = Object.values(result.reachedRanks)
-      .map((rankId) => ({ rankId, idx: activeRanks.findIndex((r) => r.id === rankId) }))
-      .sort((a, b) => b.idx - a.idx)[0];
-    if (highest?.rankId) {
-      highestRankReachedByGame[highest.rankId] = (highestRankReachedByGame[highest.rankId] ?? 0) + 1;
-    }
-    lastGame = {
-      winnerPlayerID: result.winner,
-      winnerRankId: result.reachedRanks[result.winner] ?? (getActiveRanks()[0]?.id ?? 'cadet'),
-      winnerResources: { ...result.finalResources[result.winner] },
-      turns: result.turns,
-    };
-  }
-
-  const activeRanks = getActiveRanks();
-  const topReachedRanks = Object.entries(highestRankReachedByGame)
-    .map(([rankId, games]) => ({
-      rankId,
-      games,
-      pct: Number(((games / clampedSims) * 100).toFixed(2)),
-      idx: activeRanks.findIndex((r) => r.id === rankId),
-    }))
-    .sort((a, b) => b.idx - a.idx || b.games - a.games)
-    .slice(0, 3)
-    .map(({ rankId, games, pct }) => ({ rankId, games, pct }));
-  const topReachedRanksByPct = Object.entries(highestRankReachedByGame)
-    .map(([rankId, games]) => ({
-      rankId,
-      games,
-      pct: Number(((games / clampedSims) * 100).toFixed(2)),
-      idx: activeRanks.findIndex((r) => r.id === rankId),
-    }))
-    .sort((a, b) => b.games - a.games || b.pct - a.pct || b.idx - a.idx)
-    .slice(0, 3)
-    .map(({ rankId, games, pct }) => ({ rankId, games, pct }));
-
-  const seatWinRates = Array.from({ length: clampedPlayers }, (_, i) => String(i)).map((playerID) => {
-    const seatWins = wins[playerID] ?? 0;
-    return {
-      playerID,
-      wins: seatWins,
-      winRatePct: Number(((seatWins / clampedSims) * 100).toFixed(2)),
-    };
-  });
-
-  const issues: string[] = [];
-  if (stalled > 0) {
-    issues.push(
-      `Виявлено ${stalled} зациклених/довгих матчів із ${clampedSims} (ліміт ${clampedMaxTurns} ходів).`,
-    );
-  }
-  const bestSeat = [...seatWinRates].sort((a, b) => b.winRatePct - a.winRatePct)[0];
-  const worstSeat = [...seatWinRates].sort((a, b) => a.winRatePct - b.winRatePct)[0];
-  if (bestSeat && worstSeat && bestSeat.winRatePct - worstSeat.winRatePct >= 12) {
-    issues.push(
-      `Можлива перевага порядку ходу: seat ${bestSeat.playerID} (${bestSeat.winRatePct}%) vs seat ${worstSeat.playerID} (${worstSeat.winRatePct}%).`,
-    );
-  }
-  if (rankWins === 0) {
-    issues.push('У симуляціях не зафіксовано перемог через звання Генерала (можливо завеликі вимоги або замалий темп ресурсів).');
-  }
-
-  return {
-    input: {
-      players: clampedPlayers,
-      simulations: clampedSims,
-      maxTurns: clampedMaxTurns,
-    },
-    generatedAt: new Date().toISOString(),
-    summary: {
-      finished: clampedSims - stalled,
-      stalled,
-      avgTurns: Number((totalTurns / clampedSims).toFixed(2)),
-      avgDeckDepletionTurn: Number(
-        (deckDepletionKnown > 0 ? deckDepletionTotal / deckDepletionKnown : 0).toFixed(2),
-      ),
-      rankWins,
-      scoreWins,
-      avgPassesPerGame: Number((passesTotal / clampedSims).toFixed(2)),
-    },
-    seatWinRates,
-    rankReached,
-    topReachedRanks,
-    topReachedRanksByPct,
-    lastGame,
-    issues,
-  };
-};
+): SimulationReport => runGameSimulationsWithDeps({
+  resourceKeys,
+  shuffle,
+  cloneCard,
+  getSharedDeckTemplate,
+  getActiveRanks,
+  getTopRankId,
+  drawCards,
+  drawLegendaryCards,
+  syncPlayerState,
+  promoteRank,
+  promoteToSpecificRank,
+  triggerSukhpayZsuOnScandal: (G, ctx, sourcePlayerID) =>
+    triggerSukhpayZsuOnScandal(G, ctx as Ctx, sourcePlayerID),
+  applyCardEffects,
+  applyCardEffectsSoft,
+  planReplacementResources: buildReplacementPlan,
+  getWinner,
+  startingHandSize: STARTING_HAND_SIZE,
+  startingLegendaryHandSize: STARTING_LEGENDARY_HAND_SIZE,
+}, players, simulations, maxTurns);
 
 export const jojGame: Game<JojGameState> = {
   name: 'joj-game',
@@ -1437,14 +618,15 @@ export const jojGame: Game<JojGameState> = {
   maxPlayers: 6,
   setup: ({ ctx }) => {
     const players = [...ctx.playOrder];
-    const deck = shuffle(sharedDeckTemplate.deck.map(cloneCard));
+    const template = getSharedDeckTemplate();
+    const deck = shuffle(template.deck.map(cloneCard));
 
     const state: JojGameState = {
       deck,
       discard: [],
-      legendaryDeck: shuffle(sharedDeckTemplate.legendaryDeck.map(cloneCard)),
+      legendaryDeck: shuffle(template.legendaryDeck.map(cloneCard)),
       legendaryDiscard: [],
-      deckBackImage: sharedDeckTemplate.deckBackImage,
+      deckBackImage: template.deckBackImage,
       systemMessageSeq: 0,
       playerNames: {},
       chat: [],

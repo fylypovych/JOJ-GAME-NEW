@@ -14,7 +14,6 @@ import {
   getSharedDeckTemplateStats,
   importSharedDeckTemplateJson,
   jojGame,
-  normalizeImagePath,
   removeCardAtFromSharedDeckTemplate,
   runGameSimulations,
   setSharedRanks,
@@ -27,17 +26,38 @@ import {
 import { AdminPage } from './AdminPage';
 import { Board } from './Board';
 import type { Language } from './i18n';
-import { cardTitle, categoryLabel, defaultLanguage, text } from './i18n';
+import { defaultLanguage, text } from './i18n';
+import {
+  ADMIN_TOKEN_STORAGE_KEY,
+  DEFAULT_SERVER_URL,
+  GAME_NAME,
+  PLAYER_NAME_STORAGE_KEY,
+  RANKS_STORAGE_KEY,
+  SERVER_URL_STORAGE_KEY,
+  SESSION_STORAGE_KEY,
+  SHARED_TEMPLATE_STORAGE_KEY,
+  type GalleryCategoryFilter,
+  galleryCategories,
+  getConfiguredServerUrl,
+  normalizeServerUrl,
+  parseSession,
+  type LobbyMatch,
+  type Session,
+  type SharedDeckTemplate,
+  type UserTab,
+} from './app/model';
+import {
+  ActiveSessionSection,
+  AdminAuthCard,
+  GallerySection,
+  LobbySection,
+  RulesSection,
+  UserTabs,
+} from './app/sections';
+import { useAdminAuth } from './app/useAdminAuth';
+import { useAdminSnapshot } from './app/useAdminSnapshot';
 
-const SERVER_URL_STORAGE_KEY = 'joj-server-url-v1';
-const DEFAULT_SERVER_URL = `http://${window.location.hostname}:8000`;
-const normalizeServerUrl = (value: string) => value.trim().replace(/\/+$/, '');
-const getConfiguredServerUrl = () => {
-  const saved = window.localStorage.getItem(SERVER_URL_STORAGE_KEY);
-  return normalizeServerUrl(saved || DEFAULT_SERVER_URL) || DEFAULT_SERVER_URL;
-};
 const SERVER_URL = getConfiguredServerUrl();
-const GAME_NAME = 'joj-game';
 
 const NetworkClient = Client({
   game: jojGame,
@@ -49,69 +69,10 @@ const NetworkClient = Client({
 
 const lobbyClient = new LobbyClient({ server: SERVER_URL });
 
-const SHARED_TEMPLATE_STORAGE_KEY = 'joj-shared-deck-template-v1';
-const PLAYER_NAME_STORAGE_KEY = 'joj-player-name-v1';
-const SESSION_STORAGE_KEY = 'joj-network-session-v1';
-const ADMIN_TOKEN_STORAGE_KEY = 'joj-admin-token-v1';
 const TEMPLATE_API = `${SERVER_URL}/api/shared-deck-template`;
-const RANKS_STORAGE_KEY = 'joj-shared-ranks-v1';
 const RANKS_API = `${SERVER_URL}/api/shared-ranks`;
 const ADMIN_RESTART_API = `${SERVER_URL}/api/admin/restart`;
 const ADMIN_MATCH_STATE_API = `${SERVER_URL}/api/admin/match-state`;
-
-type LobbyPlayer = {
-  id: number;
-  name?: string;
-};
-
-type LobbyMatch = {
-  matchID: string;
-  players: LobbyPlayer[];
-};
-
-type SharedDeckTemplate = {
-  deck: CardDefinition[];
-  legendaryDeck: CardDefinition[];
-  rankTrack: CardDefinition[];
-  deckBackImage?: string;
-};
-
-type Snapshot = {
-  G: unknown;
-  ctx: unknown;
-  updatedAt: number;
-};
-
-type Session = {
-  matchID: string;
-  playerID: string;
-  credentials: string;
-};
-
-type UserTab = 'games' | 'gallery' | 'rules';
-type GalleryCategoryFilter = CardDefinition['category'] | 'ALL';
-const galleryCategories: CardDefinition['category'][] = ['LYAP', 'SCANDAL', 'SUPPORT', 'DECISION', 'NEUTRAL', 'VVNZ'];
-
-const parseSession = (raw: string | null): Session | null => {
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    if (
-      typeof parsed.matchID === 'string' &&
-      typeof parsed.playerID === 'string' &&
-      typeof parsed.credentials === 'string'
-    ) {
-      return {
-        matchID: parsed.matchID,
-        playerID: parsed.playerID,
-        credentials: parsed.credentials,
-      };
-    }
-  } catch {
-    // ignore
-  }
-  return null;
-};
 
 export const App = () => {
   const isAdminRoute = window.location.pathname.startsWith('/admin');
@@ -126,7 +87,6 @@ export const App = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [matchesSynced, setMatchesSynced] = useState<boolean>(false);
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
 
   const [, setSharedDeckVersion] = useState<number>(0);
   const [sharedDeckTemplate, setSharedDeckTemplate] = useState<SharedDeckTemplate>(getSharedDeckTemplate);
@@ -134,15 +94,29 @@ export const App = () => {
   const [sharedRanks, setSharedRanksState] = useState<RankDefinition[]>(getSharedRanks);
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
-  const [adminToken, setAdminToken] = useState<string>(() => window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? '');
-  const [adminTokenDraft, setAdminTokenDraft] = useState<string>(() => window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? '');
   const [serverUrlDraft, setServerUrlDraft] = useState<string>(() => window.localStorage.getItem(SERVER_URL_STORAGE_KEY) ?? SERVER_URL);
-  const [adminAuthChecking, setAdminAuthChecking] = useState<boolean>(false);
-  const [adminAuthorized, setAdminAuthorized] = useState<boolean>(!isAdminRoute);
-  const [adminAuthEnabled, setAdminAuthEnabled] = useState<boolean | null>(null);
-  const [adminAuthError, setAdminAuthError] = useState<string>('');
 
   const t = text(lang);
+  const {
+    adminToken,
+    adminTokenDraft,
+    setAdminTokenDraft,
+    adminAuthChecking,
+    adminAuthorized,
+    setAdminAuthorized,
+    adminAuthEnabled,
+    adminAuthError,
+    setAdminAuthError,
+    adminFetch,
+    verifyAdminToken,
+  } = useAdminAuth({
+    isAdminRoute,
+    serverUrl: SERVER_URL,
+    adminTokenStorageKey: ADMIN_TOKEN_STORAGE_KEY,
+    initialToken: window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? '',
+    unauthorizedText: t.adminUnauthorized,
+    serverUnavailableText: t.serverUnavailable,
+  });
   const sharedDeckStats = getSharedDeckTemplateStats();
   const galleryCards = useMemo(() => (
     [...cardCatalog]
@@ -163,43 +137,6 @@ export const App = () => {
     setServerUrlDraft(DEFAULT_SERVER_URL);
     window.location.reload();
   };
-  const adminFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-    const headers = new Headers(init?.headers ?? undefined);
-    const token = adminToken.trim();
-    if (token) headers.set('x-admin-token', token);
-    const response = await fetch(input, { ...init, headers });
-    if (response.status === 401) {
-      setAdminAuthorized(false);
-      setAdminAuthError(t.adminUnauthorized);
-    }
-    return response;
-  };
-
-  const verifyAdminToken = async (candidateToken: string): Promise<boolean> => {
-    setAdminAuthChecking(true);
-    setAdminAuthError('');
-    try {
-      const headers = new Headers();
-      if (candidateToken.trim()) headers.set('x-admin-token', candidateToken.trim());
-      const response = await fetch(`${SERVER_URL}/api/admin/verify`, { headers });
-      if (!response.ok) {
-        setAdminAuthorized(false);
-        setAdminAuthError(response.status === 401 ? t.adminUnauthorized : t.serverUnavailable);
-        return false;
-      }
-      setAdminToken(candidateToken.trim());
-      window.localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, candidateToken.trim());
-      setAdminAuthorized(true);
-      return true;
-    } catch {
-      setAdminAuthorized(false);
-      setAdminAuthError(t.serverUnavailable);
-      return false;
-    } finally {
-      setAdminAuthChecking(false);
-    }
-  };
-
   const syncTemplateToServer = async (json: string) => {
     try {
       const response = await adminFetch(`${TEMPLATE_API}/import`, {
@@ -376,6 +313,13 @@ export const App = () => {
     [matches, session?.matchID],
   );
   const adminMatchID = useMemo(() => session?.matchID ?? matches[0]?.matchID ?? '', [matches, session?.matchID]);
+  const { snapshot, setSnapshot } = useAdminSnapshot({
+    isAdminRoute,
+    adminAuthorized,
+    adminMatchID,
+    adminFetch,
+    adminMatchStateApi: ADMIN_MATCH_STATE_API,
+  });
   const roomPlayerNames = useMemo<Record<string, string>>(() => {
     if (!activeMatch) return {};
     return activeMatch.players.reduce<Record<string, string>>((acc, player) => {
@@ -432,75 +376,6 @@ export const App = () => {
   }, [sessionBroken]);
 
   useEffect(() => {
-    if (!isAdminRoute) {
-      setAdminAuthorized(true);
-      setAdminAuthError('');
-      return;
-    }
-    let cancelled = false;
-    void (async () => {
-      try {
-        const response = await fetch(`${SERVER_URL}/api/health`);
-        if (response.ok) {
-          const payload = (await response.json()) as { adminAuthEnabled?: boolean };
-          if (!cancelled && typeof payload.adminAuthEnabled === 'boolean') {
-            setAdminAuthEnabled(payload.adminAuthEnabled);
-          }
-        }
-      } catch {
-        if (!cancelled) setAdminAuthEnabled(null);
-      }
-      if (!cancelled) {
-        void verifyAdminToken(adminToken);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [isAdminRoute]);
-
-  useEffect(() => {
-    if (!isAdminRoute) return;
-    if (!adminAuthorized) return;
-    if (!adminMatchID) {
-      setSnapshot(null);
-      return;
-    }
-
-    let cancelled = false;
-    const fetchSnapshot = async () => {
-      try {
-        const response = await adminFetch(`${ADMIN_MATCH_STATE_API}?matchID=${encodeURIComponent(adminMatchID)}`);
-        if (!response.ok) {
-          if (!cancelled) setSnapshot(null);
-          return;
-        }
-        const payload = (await response.json()) as {
-          snapshot?: { G: unknown; ctx: unknown; updatedAt?: number };
-        };
-        if (!cancelled && payload.snapshot) {
-          setSnapshot({
-            G: payload.snapshot.G,
-            ctx: payload.snapshot.ctx,
-            updatedAt: payload.snapshot.updatedAt ?? Date.now(),
-          });
-        }
-      } catch {
-        if (!cancelled) setSnapshot(null);
-      }
-    };
-
-    void fetchSnapshot();
-    const timer = window.setInterval(() => {
-      void fetchSnapshot();
-    }, 2500);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-    };
-  }, [adminMatchID, isAdminRoute, adminAuthorized, adminToken, t.adminUnauthorized, t.serverUnavailable]);
-
-  useEffect(() => {
     window.localStorage.setItem('joj-lang', lang);
     document.documentElement.lang = lang;
     document.title = isAdminRoute ? t.adminTitle : t.gameTitle;
@@ -527,130 +402,57 @@ export const App = () => {
       </p>
 
       {isAdminRoute ? (
-        <section className="board admin-auth-card">
-          <h2>{t.adminLoginTitle}</h2>
-          <p>{adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminLoginHint}</p>
-          <p>
-            {t.serverUrlLabel}: <code>{SERVER_URL}</code>
-          </p>
-          <p className="admin-auth-form">
-            <label>
-              {t.adminTokenLabel}:{' '}
-              <input
-                type="password"
-                value={adminTokenDraft}
-                onChange={(e) => setAdminTokenDraft(e.target.value)}
-                placeholder="ADMIN_TOKEN"
-              />
-            </label>{' '}
-            <button
-              type="button"
-              onClick={() => {
-                void verifyAdminToken(adminTokenDraft);
-              }}
-              disabled={adminAuthChecking}
-            >
-              {adminAuthChecking ? t.adminAuthChecking : t.adminSignIn}
-            </button>{' '}
-            <button
-              type="button"
-              onClick={() => {
-                setAdminToken('');
-                setAdminTokenDraft('');
-                setAdminAuthorized(false);
-                setAdminAuthError('');
-                window.localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
-              }}
-            >
-              {t.adminSignOut}
-            </button>
-          </p>
-          {adminAuthError ? <p className="admin-error">{adminAuthError}</p> : null}
-        </section>
+        <AdminAuthCard
+          t={t}
+          serverUrl={SERVER_URL}
+          adminAuthEnabled={adminAuthEnabled}
+          adminTokenDraft={adminTokenDraft}
+          setAdminTokenDraft={setAdminTokenDraft}
+          adminAuthChecking={adminAuthChecking}
+          onSignIn={() => {
+            void verifyAdminToken(adminTokenDraft);
+          }}
+          onSignOut={() => {
+            setAdminToken('');
+            setAdminTokenDraft('');
+            setAdminAuthorized(false);
+            setAdminAuthError('');
+            window.localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+          }}
+          adminAuthError={adminAuthError}
+        />
       ) : null}
 
       {!isAdminRoute ? (
-        <p className="user-tabs">
-          <button type="button" onClick={() => setActiveUserTab('games')} disabled={activeUserTab === 'games'}>
-            {t.userTabGames}
-          </button>
-          <button type="button" onClick={() => setActiveUserTab('gallery')} disabled={activeUserTab === 'gallery'}>
-            {t.userTabGallery}
-          </button>
-          <button type="button" onClick={() => setActiveUserTab('rules')} disabled={activeUserTab === 'rules'}>
-            {t.userTabRules}
-          </button>
-        </p>
+        <UserTabs t={t} activeUserTab={activeUserTab} setActiveUserTab={setActiveUserTab} />
       ) : null}
 
       {!isAdminRoute && activeUserTab === 'games' && !session ? (
-        <section className="board">
-          <h2>{t.lobbyTitle}</h2>
-          <p>
-            {t.playerName}:{' '}
-            <input
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              placeholder={t.playerNamePlaceholder}
-            />
-          </p>
-          <p>
-            {t.roomCapacity}:{' '}
-            <select value={roomCapacity} onChange={(e) => setRoomCapacity(Number(e.target.value))}>
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-              <option value={4}>4</option>
-              <option value={5}>5</option>
-              <option value={6}>6</option>
-            </select>{' '}
-            <button type="button" onClick={createRoom} disabled={!playerName.trim() || loading}>
-              {t.createRoom}
-            </button>{' '}
-            <button type="button" onClick={refreshMatches} disabled={loading}>
-              {t.refreshRooms}
-            </button>
-          </p>
-
-          {error ? <p className="admin-error">{error}</p> : null}
-          {loading ? <p>{t.loadingRooms}</p> : null}
-
-          <h3>{t.availableRooms}</h3>
-          {matches.length === 0 ? <p>{t.noRooms}</p> : null}
-          {matches.map((match) => {
-            const taken = match.players.filter((player) => Boolean(player.name)).length;
-            const capacity = match.players.length;
-            const hasFree = taken < capacity;
-            return (
-              <p key={match.matchID}>
-                {match.matchID} | {taken}/{capacity}{' '}
-                <button
-                  type="button"
-                  onClick={() => joinRoom(match)}
-                  disabled={!playerName.trim() || loading || !hasFree}
-                >
-                  {t.joinRoom}
-                </button>
-              </p>
-            );
-          })}
-
-        </section>
+        <LobbySection
+          t={t}
+          playerName={playerName}
+          setPlayerName={setPlayerName}
+          roomCapacity={roomCapacity}
+          setRoomCapacity={setRoomCapacity}
+          createRoom={() => { void createRoom(); }}
+          refreshMatches={() => { void refreshMatches(); }}
+          loading={loading}
+          error={error}
+          matches={matches}
+          joinRoom={(match) => { void joinRoom(match); }}
+        />
       ) : null}
 
       {!isAdminRoute && activeUserTab === 'games' && session ? (
-        <section className="board">
-          <h2>
-            {t.activeRoom}: {session.matchID}
-          </h2>
-          <p>
-            {t.joinedAs}: {playerName || '-'} (#{session.playerID})
-          </p>
-          {sessionBroken ? <p>{t.noRooms}</p> : null}
-          {!sessionBroken && !canStart ? <p>{t.waitingForPlayers}</p> : null}
-          <button type="button" onClick={leaveRoom} disabled={loading}>
-            {t.leaveRoom}
-          </button>
-        </section>
+        <ActiveSessionSection
+          t={t}
+          session={session}
+          playerName={playerName}
+          sessionBroken={sessionBroken}
+          canStart={canStart}
+          leaveRoom={() => { void leaveRoom(); }}
+          loading={loading}
+        />
       ) : null}
 
       <div style={{ display: !isAdminRoute && activeUserTab === 'games' && session && canStart ? 'block' : 'none' }}>
@@ -669,73 +471,19 @@ export const App = () => {
       </div>
 
       {!isAdminRoute && activeUserTab === 'gallery' ? (
-        <section className="board">
-          <h2>{t.galleryTitle}</h2>
-          <p>{t.galleryDescription}</p>
-          <p className="gallery-category-tabs">
-            <button
-              type="button"
-              onClick={() => setGalleryCategoryFilter('ALL')}
-              disabled={galleryCategoryFilter === 'ALL'}
-            >
-              {t.allCategories}
-            </button>
-              {galleryCategories.map((cat) => (
-                <button
-                  type="button"
-                  key={`gallery-filter-${cat}`}
-                  onClick={() => setGalleryCategoryFilter(cat)}
-                  disabled={galleryCategoryFilter === cat}
-                >
-                  {categoryLabel(cat, lang)}
-                </button>
-              ))}
-          </p>
-          {galleryCards.length === 0 ? <p>{t.noCardsYet}</p> : null}
-          <div className="gallery-grid">
-            {galleryCards.map((card) => (
-              <article key={card.id} className="gallery-card">
-                <div className="gallery-card-image">
-                  <img
-                    src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
-                    alt={cardTitle(card.id, card.title, lang)}
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                  <div className="gallery-card-popover" aria-hidden="true">
-                    <img
-                      src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
-                      alt={cardTitle(card.id, card.title, lang)}
-                    />
-                  </div>
-                </div>
-                <h3>{cardTitle(card.id, card.title, lang)}</h3>
-                <p>{card.flavor ?? ''}</p>
-                <div className="gallery-effects">
-                  {(card.effects ?? []).length === 0 ? (
-                    <span className="pill pill-cost">0</span>
-                  ) : (card.effects ?? []).map((effect, idx) => (
-                    <span key={`${card.id}-effect-${idx}`} className="pill pill-effect">
-                      {effectLabel(effect.resource)}: {effect.value > 0 ? `+${effect.value}` : effect.value}
-                    </span>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
+        <GallerySection
+          t={t}
+          lang={lang}
+          galleryCategoryFilter={galleryCategoryFilter}
+          setGalleryCategoryFilter={setGalleryCategoryFilter}
+          galleryCards={galleryCards}
+          galleryCategories={galleryCategories}
+          effectLabel={effectLabel}
+        />
       ) : null}
 
       {!isAdminRoute && activeUserTab === 'rules' ? (
-        <section className="board">
-          <h2>{t.rulesTitle}</h2>
-          <ol className="rules-list">
-            {rules.map((rule, index) => (
-              <li key={`rule-${index}`}>{rule}</li>
-            ))}
-          </ol>
-        </section>
+        <RulesSection t={t} rules={rules} />
       ) : null}
 
       {isAdminRoute && adminAuthorized ? (
