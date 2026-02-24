@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { DeckTarget, SimulationReport } from '../game/jojGame';
+import type { DeckTarget } from '../game/jojGame';
 import { normalizeImagePath } from '../game/imagePaths';
 import type { CardCategory, CardDefinition, EffectResource } from '../game/types';
 import { rankLabel } from './i18n';
@@ -9,6 +9,7 @@ import { blobToDataUrl, optimizeBlobForUpload, uploadAdminImageDataUrl } from '.
 import { useAdminGitActions } from './admin/useAdminGitActions';
 import { useAdminImageTools } from './admin/useAdminImageTools';
 import { useAdminRanksEditor } from './admin/useAdminRanksEditor';
+import { useAdminSimulation } from './admin/useAdminSimulation';
 import {
   blankCard,
   categories,
@@ -124,10 +125,19 @@ export const AdminPage = ({
   const [imageRegenRunning, setImageRegenRunning] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<AdminTab>('matches');
   const [deckBackImageInput, setDeckBackImageInput] = useState<string>(sharedDeckTemplate.deckBackImage ?? '');
-  const [simulationPlayers, setSimulationPlayers] = useState<number>(4);
-  const [simulationCount, setSimulationCount] = useState<number>(500);
-  const [simulationReport, setSimulationReport] = useState<SimulationReport | null>(null);
-  const [simulationRunning, setSimulationRunning] = useState<boolean>(false);
+  const {
+    simulationPlayers,
+    setSimulationPlayers,
+    simulationCount,
+    setSimulationCount,
+    simulationUseMainDeck,
+    setSimulationUseMainDeck,
+    simulationUseLegendaryDeck,
+    setSimulationUseLegendaryDeck,
+    simulationReport,
+    simulationRunning,
+    runSimulation,
+  } = useAdminSimulation({ onRunSimulations });
   const {
     gitStatus,
     gitStatusLoading,
@@ -868,15 +878,12 @@ export const AdminPage = ({
           setSimulationPlayers={setSimulationPlayers}
           simulationCount={simulationCount}
           setSimulationCount={setSimulationCount}
+          simulationUseMainDeck={simulationUseMainDeck}
+          setSimulationUseMainDeck={setSimulationUseMainDeck}
+          simulationUseLegendaryDeck={simulationUseLegendaryDeck}
+          setSimulationUseLegendaryDeck={setSimulationUseLegendaryDeck}
           simulationRunning={simulationRunning}
-          runSimulation={() => {
-            setSimulationRunning(true);
-            setTimeout(() => {
-              const report = onRunSimulations(simulationPlayers, simulationCount);
-              setSimulationReport(report);
-              setSimulationRunning(false);
-            }, 0);
-          }}
+          runSimulation={runSimulation}
           simulationReport={simulationReport}
           localizedRankName={localizedRankName}
         />

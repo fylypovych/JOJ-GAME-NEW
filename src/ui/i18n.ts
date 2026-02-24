@@ -5,12 +5,13 @@ import {
   categories,
   defaultCardTitlesEnById,
   ranksById,
-  ui,
 } from './i18n-data';
+import { uiUk } from './i18n/uk';
+import { uiEn } from './i18n/en';
 
 export const defaultLanguage: Language = 'uk';
 
-export const text = (lang: Language) => ui[lang];
+export const text = (lang: Language) => (lang === 'uk' ? uiUk : uiEn);
 
 export const rankLabel = (rankId: string, lang: Language): string =>
   ranksById[rankId as keyof typeof ranksById]?.[lang] ?? rankId;

@@ -578,8 +578,8 @@ export const App = () => {
             window.localStorage.setItem(RANKS_STORAGE_KEY, JSON.stringify(normalized));
             void adminFetch(`${RANKS_API}/reset`, { method: 'POST' });
           }}
-          onRunSimulations={(players: number, simulations: number) =>
-            runGameSimulations(players, simulations)
+          onRunSimulations={(players: number, simulations: number, options) =>
+            runGameSimulations(players, simulations, 600, options)
           }
         />
       ) : null}

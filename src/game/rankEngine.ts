@@ -12,6 +12,12 @@ type RankEngineDeps = {
   syncPlayerState: (G: JojGameState, playerID: string) => void;
 };
 
+export function rankSeatLimitForPlayerCount(playerCount: number): number {
+  if (playerCount <= 2) return 1;
+  if (playerCount <= 4) return 2;
+  return 3;
+}
+
 export const createRankEngine = ({
   getActiveRanks,
   hasResources,
@@ -20,11 +26,7 @@ export const createRankEngine = ({
   clampNonNegativeResources,
   syncPlayerState,
 }: RankEngineDeps) => {
-  const rankSeatLimit = (playerCount: number): number => {
-    if (playerCount <= 2) return 1;
-    if (playerCount <= 4) return 2;
-    return 3;
-  };
+  const rankSeatLimit = rankSeatLimitForPlayerCount;
 
   const promoteRank = (G: JojGameState, playerID: string, playerCount: number): boolean => {
     const ranks = getActiveRanks();

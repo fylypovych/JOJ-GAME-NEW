@@ -1,6 +1,6 @@
 import { access, mkdir, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike } from './types';
+import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from './types';
 
 type UploadRoutesDeps = {
   router: RouterLike;
@@ -23,7 +23,7 @@ export const registerUploadRoutes = ({
   IMAGE_UPLOAD_BODY_LIMIT,
   uploadsDir,
 }: UploadRoutesDeps) => {
-  router.post('/api/upload-card-image', async (ctx: any) => {
+  router.post('/api/upload-card-image', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/upload-card-image'))) return;
     if (!(await enforceRateLimit(ctx, 'upload-card-image', 240, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/upload-card-image', maxBytes: IMAGE_UPLOAD_BODY_LIMIT, logLine });
@@ -85,7 +85,7 @@ export const registerUploadRoutes = ({
     }
   });
 
-  router.post('/api/admin/delete-card-image', async (ctx: any) => {
+  router.post('/api/admin/delete-card-image', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/delete-card-image'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-delete-card-image', 240, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/delete-card-image', maxBytes: JSON_BODY_LIMIT, logLine });

@@ -67,7 +67,11 @@ export type AdminPageProps = {
   onImportTemplate: (json: string) => string | null;
   onUpdateRanks: (nextRanks: RankDefinition[]) => boolean;
   onResetRanks: () => void;
-  onRunSimulations: (players: number, simulations: number) => SimulationReport;
+  onRunSimulations: (
+    players: number,
+    simulations: number,
+    options?: { useMainDeck?: boolean; useLegendaryDeck?: boolean },
+  ) => SimulationReport;
 };
 
 export type ImportCategoryMode = CardCategory | 'AS_IS';
@@ -86,4 +90,3 @@ export type CropDraft = {
   bottomPx: number;
   leftPx: number;
 };
-

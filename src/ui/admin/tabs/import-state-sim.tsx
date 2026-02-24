@@ -139,6 +139,8 @@ export const AdminStateTab = ({ t, snapshot }: { t: T; snapshot: Snapshot | null
 export const AdminSimulationTab = ({
   t, lang, simulationPlayers, setSimulationPlayers, simulationCount, setSimulationCount,
   simulationRunning, runSimulation, simulationReport, localizedRankName,
+  simulationUseMainDeck, setSimulationUseMainDeck,
+  simulationUseLegendaryDeck, setSimulationUseLegendaryDeck,
 }: {
   t: T;
   lang: 'uk' | 'en';
@@ -150,6 +152,10 @@ export const AdminSimulationTab = ({
   runSimulation: () => void;
   simulationReport: any;
   localizedRankName: (rankId: string) => string;
+  simulationUseMainDeck: boolean;
+  setSimulationUseMainDeck: (value: boolean) => void;
+  simulationUseLegendaryDeck: boolean;
+  setSimulationUseLegendaryDeck: (value: boolean) => void;
 }) => (
   <>
     <h3>{t.simulationTitle}</h3>
@@ -162,12 +168,33 @@ export const AdminSimulationTab = ({
       <label>{t.simulationCount}
         <input type="number" min={1} max={5000} step={1} value={simulationCount} onChange={(e) => setSimulationCount(Number(e.target.value || 1))} disabled={simulationRunning} />
       </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={simulationUseMainDeck}
+          onChange={(e) => setSimulationUseMainDeck(e.target.checked)}
+          disabled={simulationRunning}
+        />{' '}
+        {lang === 'uk' ? 'Основна колода' : 'Main deck'}
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={simulationUseLegendaryDeck}
+          onChange={(e) => setSimulationUseLegendaryDeck(e.target.checked)}
+          disabled={simulationRunning}
+        />{' '}
+        {lang === 'uk' ? 'Легендарна колода' : 'Legendary deck'}
+      </label>
       <button type="button" disabled={simulationRunning} onClick={runSimulation}>{simulationRunning ? t.simulationRunning : t.simulationRun}</button>
     </p>
     <h4>{t.simulationReport}</h4>
     {!simulationReport ? <p>{t.simulationNoReport}</p> : (
       <div>
         <p>{lang === 'uk' ? `Виконано симуляцій: ${simulationReport.input.simulations} (гравців у матчі: ${simulationReport.input.players}).` : `Simulations: ${simulationReport.input.simulations} (players per game: ${simulationReport.input.players}).`}</p>
+        <p>{lang === 'uk'
+          ? `Колоди: основна ${simulationReport.input.useMainDeck ? 'увімкнена' : 'вимкнена'}, легендарна ${simulationReport.input.useLegendaryDeck ? 'увімкнена' : 'вимкнена'}.`
+          : `Decks: main ${simulationReport.input.useMainDeck ? 'enabled' : 'disabled'}, legendary ${simulationReport.input.useLegendaryDeck ? 'enabled' : 'disabled'}.`}</p>
         <p>{lang === 'uk' ? `Завершені: ${simulationReport.summary.finished}, завислі: ${simulationReport.summary.stalled}, середня кількість ходів: ${simulationReport.summary.avgTurns}.` : `Finished: ${simulationReport.summary.finished}, stalled: ${simulationReport.summary.stalled}, average turns: ${simulationReport.summary.avgTurns}.`}</p>
         <p>{lang === 'uk' ? `Перемоги за званням: ${simulationReport.summary.rankWins}, за очками: ${simulationReport.summary.scoreWins}.` : `Rank wins: ${simulationReport.summary.rankWins}, score wins: ${simulationReport.summary.scoreWins}.`}</p>
         <p>{lang === 'uk'

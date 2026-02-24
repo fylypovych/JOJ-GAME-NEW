@@ -1,19 +1,33 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { EnforceRateLimit, LogLine, RequireAdminAuth, RouterLike } from './types';
+import type { EnforceRateLimit, LogLine, RequireAdminAuth, RouterLike, RouteCtx } from './types';
 
 type CmdResult = { ok: true; stdout: string; stderr: string } | { ok: false; error: string };
 type RunGit = (args: string[]) => Promise<CmdResult>;
 type RunShellCommand = (command: string, timeoutMs?: number) => Promise<CmdResult>;
 type SpawnDetachedShell = (command: string) => void;
+type GitUpdateStatusOk = {
+  ok: true;
+  branch: string;
+  remote: string;
+  upstream: string;
+  ahead: number;
+  behind: number;
+  dirty: boolean;
+  canUpdate: boolean;
+  head: string;
+  note?: string;
+  ignoredRuntimeDirtyFiles?: string[];
+};
+type GitUpdateStatusResult = GitUpdateStatusOk | { ok: false; error: string };
 
 type AdminRoutesDeps = {
   router: RouterLike;
   requireAdminAuth: RequireAdminAuth;
   enforceRateLimit: EnforceRateLimit;
   logLine: LogLine;
-  getGitUpdateStatus: (runGit: RunGit) => Promise<any>;
-  autoStashRuntimeNoise: (args: { status: any; runGit: RunGit; logLine: LogLine }) => Promise<{ ok: boolean; error?: string }>;
+  getGitUpdateStatus: (runGit: RunGit) => Promise<GitUpdateStatusResult>;
+  autoStashRuntimeNoise: (args: { status: { ignoredRuntimeDirtyFiles?: string[] }; runGit: RunGit; logLine: LogLine }) => Promise<{ ok: boolean; error?: string }>;
   runGit: RunGit;
   runShellCommand: RunShellCommand;
   spawnDetachedShell: SpawnDetachedShell;
@@ -34,7 +48,7 @@ export const registerAdminRoutes = ({
   isAdminAuthEnabled,
   devRestartTouchPath,
 }: AdminRoutesDeps) => {
-  router.get('/api/health', (ctx: any) => {
+  router.get('/api/health', (ctx: RouteCtx) => {
     ctx.body = {
       ok: true,
       service: 'joj-game-server',
@@ -45,12 +59,12 @@ export const registerAdminRoutes = ({
     };
   });
 
-  router.get('/api/admin/verify', async (ctx: any) => {
+  router.get('/api/admin/verify', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/verify'))) return;
     ctx.body = { ok: true, adminAuthEnabled: isAdminAuthEnabled };
   });
 
-  router.get('/api/admin/match-state', async (ctx: any) => {
+  router.get('/api/admin/match-state', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/match-state'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-match-state', 60, 60_000))) return;
     const matchID = typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
@@ -86,7 +100,7 @@ export const registerAdminRoutes = ({
     };
   });
 
-  router.get('/api/admin/git/status', async (ctx: any) => {
+  router.get('/api/admin/git/status', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/git/status'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-git-status', 20, 60_000))) return;
     const result = await getGitUpdateStatus(runGit);
@@ -99,7 +113,7 @@ export const registerAdminRoutes = ({
     ctx.body = result;
   });
 
-  router.post('/api/admin/restart', async (ctx: any) => {
+  router.post('/api/admin/restart', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/restart'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-restart', 5, 60_000))) return;
     const isPm2Managed =
@@ -125,7 +139,7 @@ export const registerAdminRoutes = ({
     }, 150);
   });
 
-  router.post('/api/admin/git/update', async (ctx: any) => {
+  router.post('/api/admin/git/update', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/git/update'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-git-update', 5, 60_000))) return;
     const status = await getGitUpdateStatus(runGit);
@@ -178,7 +192,7 @@ export const registerAdminRoutes = ({
     };
   });
 
-  router.post('/api/admin/git/deploy', async (ctx: any) => {
+  router.post('/api/admin/git/deploy', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/git/deploy'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-git-deploy', 3, 60_000))) return;
 

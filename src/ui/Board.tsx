@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import type { RankDefinition, ResourceKey } from '../game/types';
+import type { ResourceKey } from '../game/types';
 import { normalizeImagePath } from '../game/imagePaths';
+import { canPlayHandCardAtStage } from '../game/turnRules';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 import { BoardChatPanel, GameCardTile, PilePreview } from './board/components';
 import { createBoardPrompts } from './board/prompts';
+import { buildNextRankHint, getBoardPromoteBlockedReason, getBoardVvnzBlockedReason } from './board/rankHints';
 import type { LocalizedBoardProps } from './board/types';
 
 export const Board = ({
@@ -25,26 +27,13 @@ export const Board = ({
   const resources = G?.resources?.[id];
   const rankId = G?.ranks?.[id];
   const rankName = sharedRanks.find((row) => row.id === (rankId ?? ''))?.name ?? rankLabel(rankId ?? '', lang);
-  const currentRankIndex = sharedRanks.findIndex((row) => row.id === (rankId ?? ''));
-  const nextRank: RankDefinition | undefined =
-    currentRankIndex >= 0 && currentRankIndex < sharedRanks.length - 1
-      ? sharedRanks[currentRankIndex + 1]
-      : undefined;
-  const nextRankMissing = nextRank && resources
-    ? (Object.entries(nextRank.requirement ?? {}) as Array<[ResourceKey, number]>)
-      .map(([key, required]) => {
-        const missing = Math.max(0, (required ?? 0) - (resources[key] ?? 0));
-        return missing > 0 ? `${resourceLabels[key]} ${missing}` : null;
-      })
-      .filter((v): v is string => Boolean(v))
-    : [];
   const isCurrentPlayer = ctx?.currentPlayer === id;
   const stage = ctx?.activePlayers?.[id];
   const canDraw = isCurrentPlayer && stage === 'draw';
   const canPlay = isCurrentPlayer && (stage === 'play' || stage === 'end');
   const canEndTurn = isCurrentPlayer && (stage === 'play' || stage === 'end');
   const extraHandPlayTokens = G?.extraHandPlayTokens?.[id] ?? 0;
-  const canPlayHandCard = canPlay || extraHandPlayTokens > 0;
+  const canPlayHandCard = canPlayHandCardAtStage({ isCurrentPlayer, stage, extraHandPlayTokens });
   const handOverflow = Math.max(0, hand.length - 8);
   const mustDiscardOverflow = isCurrentPlayer && handOverflow > 0 && (stage === 'play' || stage === 'end');
   const deckBackImage = G?.deckBackImage ? normalizeImagePath(G.deckBackImage) : undefined;
@@ -132,6 +121,28 @@ export const Board = ({
   const togglePreview = (key: string) => {
     setOpenPreviewKey((prev) => (prev === key ? null : key));
   };
+  const getVvnzPlayBlockedReason = (card: { category?: string; grantRank?: string }) => {
+    if (!resources || !G) return null;
+    return getBoardVvnzBlockedReason({
+      card,
+      G,
+      playerID: id,
+      sharedRanks,
+      resources,
+      resourceLabels,
+      lang,
+    });
+  };
+  const getPromoteBlockedReason = () => {
+    if (!G || !resources) return null;
+    return getBoardPromoteBlockedReason({
+      G,
+      playerID: id,
+      sharedRanks,
+      resourceLabels,
+      lang,
+    });
+  };
 
   if (!G || !ctx || !resources) {
     return (
@@ -157,15 +168,17 @@ export const Board = ({
                 : t.stageWaiting}
         </p>
         <p>{t.yourRank}: {rankName}</p>
-        {nextRank ? (
+        {G && resources ? (
           <p className="rank-next-hint">
-            {nextRankMissing.length > 0
-              ? (lang === 'uk'
-                ? `До звання «${nextRank.name}» бракує: ${nextRankMissing.join(', ')}`
-                : `Missing for rank "${nextRank.name}": ${nextRankMissing.join(', ')}`)
-              : (lang === 'uk'
-                ? `Можна підвищитися до «${nextRank.name}»`
-                : `You can promote to "${nextRank.name}"`)}
+            {buildNextRankHint({
+              G,
+              playerID: id,
+              sharedRanks,
+              resources,
+              resourceLabels,
+              promoteLabel: t.promote,
+              lang,
+            })}
           </p>
         ) : null}
       </div>
@@ -178,7 +191,15 @@ export const Board = ({
             <button type="button" onClick={() => moves.drawCard()} disabled={!canDraw}>
               {t.draw}
             </button>
-            <button type="button" onClick={() => moves.promote()} disabled={!canPlay}>
+            <button type="button" onClick={() => {
+              if (!canPlay) return;
+              const promoteReason = getPromoteBlockedReason();
+              if (promoteReason) {
+                window.alert(promoteReason);
+                return;
+              }
+              moves.promote();
+            }} disabled={!canPlay}>
               {t.promote}
             </button>
             <button type="button" onClick={() => moves.pass()} disabled={!canEndTurn}>
@@ -255,6 +276,11 @@ export const Board = ({
               actionLabel={t.playLegendaryCard}
               onAction={() => {
                 if (!canPlayHandCard) return;
+                const vvnzReason = getVvnzPlayBlockedReason(card);
+                if (vvnzReason) {
+                  window.alert(vvnzReason);
+                  return;
+                }
                 const target = card.category === 'LYAP' ? promptLyapTarget() : undefined;
                 if (card.category === 'LYAP' && !target) return;
                 moves.playCard(card.id, [], target);

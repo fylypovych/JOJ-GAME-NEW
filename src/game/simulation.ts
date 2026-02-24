@@ -1,10 +1,13 @@
 import type { CardDefinition, JojGameState, ResourceKey } from './types';
+import { createSimulationState } from './simulationSetup';
 
 export type SimulationReport = {
   input: {
     players: number;
     simulations: number;
     maxTurns: number;
+    useMainDeck: boolean;
+    useLegendaryDeck: boolean;
   };
   generatedAt: string;
   summary: {
@@ -39,6 +42,11 @@ export type SimulationReport = {
     turns: number;
   };
   issues: string[];
+};
+
+export type SimulationOptions = {
+  useMainDeck?: boolean;
+  useLegendaryDeck?: boolean;
 };
 
 type SimulationDeps = {
@@ -195,6 +203,81 @@ const tryPlayLegendaryCards = (
   return playedAny;
 };
 
+const tryPlayOneHandCardSim = (args: {
+  deps: SimulationDeps;
+  G: JojGameState;
+  playerID: string;
+  playerIDs: string[];
+  currentTurn: number;
+  numPlayers: number;
+}): { played: boolean; promotedByPlay: boolean } => {
+  const { deps, G, playerID, playerIDs, currentTurn, numPlayers } = args;
+  const hand = G.hands[playerID];
+  if (!hand || hand.length === 0) return { played: false, promotedByPlay: false };
+
+  for (let i = 0; i < hand.length; i += 1) {
+    const card = hand[i];
+    const allPlayerIDs = playerIDs;
+
+    if (card.category === 'LYAP') {
+      const target = chooseLyapTarget(deps, G, playerID);
+      if (!target) continue;
+      if (!isProtectedFromLyapScandal(G, currentTurn, target)) {
+        deps.applyCardEffectsSoft(G, target, card.effects);
+      }
+      deps.syncPlayerState(G, target);
+    } else if (card.category === 'SCANDAL') {
+      allPlayerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
+        if (!isProtectedFromLyapScandal(G, currentTurn, pid)) {
+          deps.applyCardEffectsSoft(G, pid, card.effects);
+        }
+        deps.syncPlayerState(G, pid);
+      });
+      deps.triggerSukhpayZsuOnScandal(G, { turn: currentTurn }, playerID);
+    } else if (card.category === 'DECISION') {
+      const replacement = deps.planReplacementResources(G.resources[playerID], card.effects);
+      if (replacement === null) continue;
+      try {
+        const ok = deps.applyCardEffects(G, playerID, card.effects, replacement);
+        if (!ok) continue;
+      } catch {
+        continue;
+      }
+      deps.syncPlayerState(G, playerID);
+      allPlayerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
+        deps.applyCardEffectsSoft(G, pid, card.effects);
+        deps.syncPlayerState(G, pid);
+      });
+    } else if (card.category === 'VVNZ' && card.grantRank) {
+      const promoted = deps.promoteToSpecificRank(G, playerID, card.grantRank, numPlayers);
+      if (!promoted.ok) continue;
+      try {
+        const ok = deps.applyCardEffects(G, playerID, card.effects, []);
+        if (!ok) continue;
+      } catch {
+        continue;
+      }
+      deps.syncPlayerState(G, playerID);
+    } else {
+      const replacement = deps.planReplacementResources(G.resources[playerID], card.effects);
+      if (replacement === null) continue;
+      try {
+        const ok = deps.applyCardEffects(G, playerID, card.effects, replacement);
+        if (!ok) continue;
+      } catch {
+        continue;
+      }
+    }
+
+    hand.splice(i, 1);
+    G.discard.push(card);
+    deps.syncPlayerState(G, playerID);
+    return { played: true, promotedByPlay: false };
+  }
+
+  return { played: false, promotedByPlay: false };
+};
+
 const simulateSingleMatch = (
   deps: SimulationDeps,
   numPlayers: number,
@@ -253,17 +336,23 @@ const simulateSingleMatch = (
   let turns = 0;
   let deckDepletionTurn = -1;
   let passes = 0;
+  let deadTurnsAfterDeckEmpty = 0;
   const tryPromoteOnce = (pid: string) => deps.promoteRank(G, pid, numPlayers);
+  const scoreWinner = () => Object.entries(G.resources)
+    .sort(([, a], [, b]) => deps.resourceKeys.reduce((sum, key) => sum + (b[key] - a[key]), 0))
+    .at(0)?.[0] ?? '0';
 
   while (turns < maxTurns) {
     const currentTurn = turns + 1;
     const playerID = playerIDs[currentIdx];
     const hand = G.hands[playerID];
     let stage: 'play' | 'end' = 'play';
+    let progressedThisTurn = false;
 
     if (G.deck.length > 0) {
       const card = G.deck.pop();
       if (card) {
+        progressedThisTurn = true;
         if (card.category === 'LYAP') {
           if (!isProtectedFromLyapScandal(G, currentTurn, playerID)) {
             deps.applyCardEffectsSoft(G, playerID, card.effects);
@@ -292,73 +381,21 @@ const simulateSingleMatch = (
 
     if (stage === 'play') {
       let promotedThisTurn = tryPromoteOnce(playerID);
+      if (promotedThisTurn) progressedThisTurn = true;
       if (tryPlayLegendaryCards(deps, G, playerID, playerIDs, currentTurn) && !promotedThisTurn) {
+        progressedThisTurn = true;
         promotedThisTurn = tryPromoteOnce(playerID);
+        if (promotedThisTurn) progressedThisTurn = true;
       }
       let played = false;
       let handActionsRemaining = 1 + Math.max(0, G.extraHandPlayTokens[playerID] ?? 0);
       let handActionsTaken = 0;
       while (handActionsRemaining > 0) {
-        let playedThisAction = false;
-        for (let i = 0; i < hand.length; i += 1) {
-          const card = hand[i];
-          const allPlayerIDs = playerIDs;
-
-          if (card.category === 'LYAP') {
-            const target = chooseLyapTarget(deps, G, playerID);
-            if (!target) continue;
-            if (!isProtectedFromLyapScandal(G, currentTurn, target)) {
-              deps.applyCardEffectsSoft(G, target, card.effects);
-            }
-            deps.syncPlayerState(G, target);
-          } else if (card.category === 'SCANDAL') {
-            allPlayerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
-              if (!isProtectedFromLyapScandal(G, currentTurn, pid)) {
-                deps.applyCardEffectsSoft(G, pid, card.effects);
-              }
-              deps.syncPlayerState(G, pid);
-            });
-            deps.triggerSukhpayZsuOnScandal(G, { turn: currentTurn }, playerID);
-          } else if (card.category === 'DECISION') {
-            const replacement = deps.planReplacementResources(G.resources[playerID], card.effects);
-            if (replacement === null) continue;
-            try {
-              const ok = deps.applyCardEffects(G, playerID, card.effects, replacement);
-              if (!ok) continue;
-            } catch {
-              continue;
-            }
-            deps.syncPlayerState(G, playerID);
-            allPlayerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
-              deps.applyCardEffectsSoft(G, pid, card.effects);
-              deps.syncPlayerState(G, pid);
-            });
-          } else if (card.category === 'VVNZ' && card.grantRank) {
-            const promoted = deps.promoteToSpecificRank(G, playerID, card.grantRank, numPlayers);
-            if (!promoted.ok) continue;
-            try {
-              const ok = deps.applyCardEffects(G, playerID, card.effects, []);
-              if (!ok) continue;
-            } catch {
-              continue;
-            }
-            deps.syncPlayerState(G, playerID);
-          } else {
-            const replacement = deps.planReplacementResources(G.resources[playerID], card.effects);
-            if (replacement === null) continue;
-            try {
-              const ok = deps.applyCardEffects(G, playerID, card.effects, replacement);
-              if (!ok) continue;
-            } catch {
-              continue;
-            }
-          }
-
-          hand.splice(i, 1);
-          G.discard.push(card);
-          deps.syncPlayerState(G, playerID);
+        const result = tryPlayOneHandCardSim({ deps, G, playerID, playerIDs, currentTurn, numPlayers });
+        if (result.played) {
           if (!promotedThisTurn) {
             promotedThisTurn = tryPromoteOnce(playerID);
+            if (promotedThisTurn) progressedThisTurn = true;
           }
           if (handActionsTaken >= 1) {
             G.extraHandPlayTokens[playerID] = Math.max(0, (G.extraHandPlayTokens[playerID] ?? 0) - 1);
@@ -366,17 +403,49 @@ const simulateSingleMatch = (
           handActionsTaken += 1;
           handActionsRemaining -= 1;
           played = true;
-          playedThisAction = true;
-          break;
+          progressedThisTurn = true;
+          continue;
         }
-        if (!playedThisAction) break;
+        break;
       }
 
       if (!played) {
         passes += 1;
       }
     } else {
-      passes += 1;
+      let acted = false;
+      let promotedThisTurn = tryPromoteOnce(playerID);
+      if (promotedThisTurn) acted = true;
+
+      if (tryPlayLegendaryCards(deps, G, playerID, playerIDs, currentTurn)) {
+        acted = true;
+          if (!promotedThisTurn) {
+            promotedThisTurn = tryPromoteOnce(playerID);
+            if (promotedThisTurn) acted = true;
+          }
+      }
+      if (acted) progressedThisTurn = true;
+
+      // In END stage, only extra-token hand plays are allowed.
+      let handActionsRemaining = Math.max(0, G.extraHandPlayTokens[playerID] ?? 0);
+      while (handActionsRemaining > 0) {
+        const result = tryPlayOneHandCardSim({ deps, G, playerID, playerIDs, currentTurn, numPlayers });
+        if (result.played) {
+          if (!promotedThisTurn) {
+            promotedThisTurn = tryPromoteOnce(playerID);
+            if (promotedThisTurn) acted = true;
+          }
+          // Every END-stage hand play is extra-token based.
+          G.extraHandPlayTokens[playerID] = Math.max(0, (G.extraHandPlayTokens[playerID] ?? 0) - 1);
+          handActionsRemaining -= 1;
+          acted = true;
+          progressedThisTurn = true;
+          continue;
+        }
+        break;
+      }
+
+      if (!acted) passes += 1;
     }
 
     turns += 1;
@@ -396,12 +465,31 @@ const simulateSingleMatch = (
       };
     }
 
+    if (G.deck.length === 0) {
+      deadTurnsAfterDeckEmpty = progressedThisTurn ? 0 : deadTurnsAfterDeckEmpty + 1;
+      if (deadTurnsAfterDeckEmpty >= playerIDs.length) {
+        const fallbackWinner = scoreWinner();
+        return {
+          winner: fallbackWinner,
+          turns,
+          stalled: false,
+          deckDepletionTurn,
+          wonByRank: G.ranks[fallbackWinner] === deps.getTopRankId(),
+          passes,
+          reachedRanks: { ...G.ranks },
+          finalResources: Object.fromEntries(
+            Object.entries(G.resources).map(([pid, row]) => [pid, { ...row }]),
+          ) as Record<string, Record<ResourceKey, number>>,
+        };
+      }
+    } else {
+      deadTurnsAfterDeckEmpty = 0;
+    }
+
     currentIdx = (currentIdx + 1) % playerIDs.length;
   }
 
-  const fallbackWinner = Object.entries(G.resources)
-    .sort(([, a], [, b]) => deps.resourceKeys.reduce((sum, key) => sum + (b[key] - a[key]), 0))
-    .at(0)?.[0] ?? '0';
+  const fallbackWinner = scoreWinner();
 
   return {
     winner: fallbackWinner,
@@ -422,10 +510,13 @@ export const runGameSimulationsWithDeps = (
   players: number,
   simulations: number,
   maxTurns = 600,
+  options: SimulationOptions = {},
 ): SimulationReport => {
   const clampedPlayers = Math.max(2, Math.min(6, Math.floor(players || 2)));
   const clampedSims = Math.max(1, Math.min(5000, Math.floor(simulations || 1)));
   const clampedMaxTurns = Math.max(20, Math.min(4000, Math.floor(maxTurns || 600)));
+  const useMainDeck = options.useMainDeck !== false;
+  const useLegendaryDeck = options.useLegendaryDeck !== false;
   const wins: Record<string, number> = {};
   const rankReached: Record<string, number> = {};
   let totalTurns = 0;
@@ -444,7 +535,12 @@ export const runGameSimulationsWithDeps = (
   };
 
   for (let i = 0; i < clampedSims; i += 1) {
-    const result = simulateSingleMatch(deps, clampedPlayers, clampedMaxTurns);
+    const result = (useMainDeck && useLegendaryDeck)
+      ? simulateSingleMatch(deps, clampedPlayers, clampedMaxTurns)
+      : simulateSingleMatchWithOptions(deps, clampedPlayers, clampedMaxTurns, {
+        useMainDeck,
+        useLegendaryDeck,
+      });
     wins[result.winner] = (wins[result.winner] ?? 0) + 1;
     totalTurns += result.turns;
     passesTotal += result.passes;
@@ -526,6 +622,8 @@ export const runGameSimulationsWithDeps = (
       players: clampedPlayers,
       simulations: clampedSims,
       maxTurns: clampedMaxTurns,
+      useMainDeck,
+      useLegendaryDeck,
     },
     generatedAt: new Date().toISOString(),
     summary: {
@@ -545,5 +643,180 @@ export const runGameSimulationsWithDeps = (
     topReachedRanksByPct,
     lastGame,
     issues,
+  };
+};
+
+const simulateSingleMatchWithOptions = (
+  deps: SimulationDeps,
+  numPlayers: number,
+  maxTurns: number,
+  options: { useMainDeck: boolean; useLegendaryDeck: boolean },
+) => {
+  const playerIDs = Array.from({ length: numPlayers }, (_, i) => String(i));
+  const G = createSimulationState(deps, playerIDs, options);
+
+  return simulateFromPreparedState(deps, G, playerIDs, numPlayers, maxTurns);
+};
+
+const simulateFromPreparedState = (
+  deps: SimulationDeps,
+  G: JojGameState,
+  playerIDs: string[],
+  numPlayers: number,
+  maxTurns: number,
+): {
+  winner: string;
+  turns: number;
+  stalled: boolean;
+  deckDepletionTurn: number;
+  wonByRank: boolean;
+  passes: number;
+  reachedRanks: Record<string, string>;
+  finalResources: Record<string, Record<ResourceKey, number>>;
+} => {
+  let currentIdx = 0;
+  let turns = 0;
+  let deckDepletionTurn = G.deck.length === 0 ? 0 : -1;
+  let passes = 0;
+  let deadTurnsAfterDeckEmpty = 0;
+  const tryPromoteOnce = (pid: string) => deps.promoteRank(G, pid, numPlayers);
+  const scoreWinner = () => Object.entries(G.resources)
+    .sort(([, a], [, b]) => deps.resourceKeys.reduce((sum, key) => sum + (b[key] - a[key]), 0))
+    .at(0)?.[0] ?? '0';
+
+  while (turns < maxTurns) {
+    const currentTurn = turns + 1;
+    const playerID = playerIDs[currentIdx];
+    const hand = G.hands[playerID];
+    let stage: 'play' | 'end' = 'play';
+    let progressedThisTurn = false;
+
+    if (G.deck.length > 0) {
+      const card = G.deck.pop();
+      if (card) {
+        progressedThisTurn = true;
+        if (card.category === 'LYAP') {
+          if (!isProtectedFromLyapScandal(G, currentTurn, playerID)) deps.applyCardEffectsSoft(G, playerID, card.effects);
+          G.discard.push(card);
+          stage = 'end';
+        } else if (card.category === 'SCANDAL') {
+          playerIDs.forEach((pid) => {
+            if (!isProtectedFromLyapScandal(G, currentTurn, pid)) deps.applyCardEffectsSoft(G, pid, card.effects);
+            deps.syncPlayerState(G, pid);
+          });
+          deps.triggerSukhpayZsuOnScandal(G, { turn: currentTurn }, playerID);
+          G.discard.push(card);
+          stage = 'end';
+        } else {
+          hand.push(card);
+          stage = 'play';
+        }
+      }
+      if (G.deck.length === 0 && deckDepletionTurn < 0) deckDepletionTurn = turns + 1;
+    }
+
+    if (stage === 'play') {
+      let promotedThisTurn = tryPromoteOnce(playerID);
+      if (promotedThisTurn) progressedThisTurn = true;
+      if (tryPlayLegendaryCards(deps, G, playerID, playerIDs, currentTurn) && !promotedThisTurn) {
+        progressedThisTurn = true;
+        promotedThisTurn = tryPromoteOnce(playerID);
+        if (promotedThisTurn) progressedThisTurn = true;
+      }
+      let played = false;
+      let handActionsRemaining = 1 + Math.max(0, G.extraHandPlayTokens[playerID] ?? 0);
+      let handActionsTaken = 0;
+      while (handActionsRemaining > 0) {
+        const result = tryPlayOneHandCardSim({ deps, G, playerID, playerIDs, currentTurn, numPlayers });
+        if (!result.played) break;
+        if (!promotedThisTurn) {
+          promotedThisTurn = tryPromoteOnce(playerID);
+          if (promotedThisTurn) progressedThisTurn = true;
+        }
+        if (handActionsTaken >= 1) {
+          G.extraHandPlayTokens[playerID] = Math.max(0, (G.extraHandPlayTokens[playerID] ?? 0) - 1);
+        }
+        handActionsTaken += 1;
+        handActionsRemaining -= 1;
+        played = true;
+        progressedThisTurn = true;
+      }
+      if (!played) passes += 1;
+    } else {
+      let acted = false;
+      let promotedThisTurn = tryPromoteOnce(playerID);
+      if (promotedThisTurn) acted = true;
+      if (tryPlayLegendaryCards(deps, G, playerID, playerIDs, currentTurn)) {
+        acted = true;
+        if (!promotedThisTurn) {
+          promotedThisTurn = tryPromoteOnce(playerID);
+          if (promotedThisTurn) acted = true;
+        }
+      }
+      if (acted) progressedThisTurn = true;
+
+      let handActionsRemaining = Math.max(0, G.extraHandPlayTokens[playerID] ?? 0);
+      while (handActionsRemaining > 0) {
+        const result = tryPlayOneHandCardSim({ deps, G, playerID, playerIDs, currentTurn, numPlayers });
+        if (!result.played) break;
+        if (!promotedThisTurn) {
+          promotedThisTurn = tryPromoteOnce(playerID);
+          if (promotedThisTurn) acted = true;
+        }
+        G.extraHandPlayTokens[playerID] = Math.max(0, (G.extraHandPlayTokens[playerID] ?? 0) - 1);
+        handActionsRemaining -= 1;
+        acted = true;
+        progressedThisTurn = true;
+      }
+      if (!acted) passes += 1;
+    }
+
+    turns += 1;
+    const winner = deps.getWinner(G);
+    if (winner) {
+      return {
+        winner,
+        turns,
+        stalled: false,
+        deckDepletionTurn,
+        wonByRank: G.ranks[winner] === deps.getTopRankId(),
+        passes,
+        reachedRanks: { ...G.ranks },
+        finalResources: Object.fromEntries(Object.entries(G.resources).map(([pid, row]) => [pid, { ...row }])) as Record<string, Record<ResourceKey, number>>,
+      };
+    }
+
+    if (G.deck.length === 0) {
+      deadTurnsAfterDeckEmpty = progressedThisTurn ? 0 : deadTurnsAfterDeckEmpty + 1;
+      if (deadTurnsAfterDeckEmpty >= playerIDs.length) {
+        const fallbackWinner = scoreWinner();
+        return {
+          winner: fallbackWinner,
+          turns,
+          stalled: false,
+          deckDepletionTurn,
+          wonByRank: G.ranks[fallbackWinner] === deps.getTopRankId(),
+          passes,
+          reachedRanks: { ...G.ranks },
+          finalResources: Object.fromEntries(Object.entries(G.resources).map(([pid, row]) => [pid, { ...row }])) as Record<string, Record<ResourceKey, number>>,
+        };
+      }
+    } else {
+      deadTurnsAfterDeckEmpty = 0;
+    }
+
+    currentIdx = (currentIdx + 1) % playerIDs.length;
+  }
+
+  const fallbackWinner = scoreWinner();
+  return {
+    winner: fallbackWinner,
+    turns: maxTurns,
+    stalled: true,
+    deckDepletionTurn,
+    wonByRank: G.ranks[fallbackWinner] === deps.getTopRankId(),
+    passes,
+    reachedRanks: { ...G.ranks },
+    finalResources: Object.fromEntries(Object.entries(G.resources).map(([pid, row]) => [pid, { ...row }])) as Record<string, Record<ResourceKey, number>>,
   };
 };

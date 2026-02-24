@@ -13,9 +13,11 @@ import {
 import { appendChat as appendChatBase, getPlayerLabel, nextSystemMessageSeq } from './chatUtils';
 import { cloneCard } from './cloneUtils';
 import { createEffectsEngine } from './effectsEngine';
+import { createJojMoves, enumerateAiMoves } from './moves';
 import { resourceKeys, resourceLabelsUk } from './resourceMeta';
 import { createRankEngine } from './rankEngine';
-import { runGameSimulationsWithDeps, type SimulationReport } from './simulation';
+import { canPlayHandCardAtStage } from './turnRules';
+import { runGameSimulationsWithDeps, type SimulationOptions, type SimulationReport } from './simulation';
 import { getActiveRanks, getSharedDeckTemplate, getTopRankId, shuffle } from './sharedConfig';
 import type { CardDefinition, JojGameState, ResourceKey } from './types';
 export {
@@ -342,7 +344,14 @@ const buildVvnzRankSystemMessage = (
   const costText = resourceDeltaToText(costToDelta(cost));
   const bonusText = resourceDeltaToText(bonus);
   const totalText = effectSummaryToText(summary);
-  return `🎓 [${seq}] ${playerLabel} розіграв «${card.title}» (ВВНЗ) і отримав звання: ${rankNameById(fromRankId)} → ${rankNameById(toRankId)}. "${flavor}". Вартість: ${costText}. Бонус звання: ${bonusText}. Підсумок: ${totalText}.`;
+  const intros = [
+    'оформив освітній стрибок без черги в деканат',
+    'пройшов ВВНЗ-коридором до нового погона',
+    'увімкнув режим "навчання завершено, дайте звання"',
+    'закрив сесію так, що навіть штаб аплодує',
+  ];
+  const intro = intros[seq % intros.length] ?? intros[0];
+  return `🎓 [${seq}] ${playerLabel} ${intro}: «${card.title}» (ВВНЗ). ${rankNameById(fromRankId)} → ${rankNameById(toRankId)}. "${flavor}". Вартість: ${costText}. Бонус звання: ${bonusText}. Підсумок: ${totalText}.`;
 };
 
 const getWinner = (G: JojGameState): string | undefined => {
@@ -378,6 +387,7 @@ export const runGameSimulations = (
   players: number,
   simulations: number,
   maxTurns = 600,
+  options?: SimulationOptions,
 ): SimulationReport => runGameSimulationsWithDeps({
   resourceKeys,
   shuffle,
@@ -403,7 +413,7 @@ export const runGameSimulations = (
   getWinner,
   startingHandSize: STARTING_HAND_SIZE,
   startingLegendaryHandSize: STARTING_LEGENDARY_HAND_SIZE,
-}, players, simulations, maxTurns);
+}, players, simulations, maxTurns, options);
 
 export const jojGame: Game<JojGameState> = {
   name: 'joj-game',
@@ -477,472 +487,56 @@ export const jojGame: Game<JojGameState> = {
       events?.setActivePlayers({ value });
     },
   },
-  moves: {
-    syncPlayerNames: (args, names: Record<string, string>) => {
-      if (!names || typeof names !== 'object') return INVALID_MOVE;
-      Object.entries(names).forEach(([pid, value]) => {
-        if (!(pid in args.G.players)) return;
-        const trimmed = value.trim();
-        if (!trimmed) return;
-        args.G.playerNames[pid] = trimmed.slice(0, 32);
-      });
-      return undefined;
-    },
-    setPlayerName: (args, name: string) => {
-      const playerID = args.playerID;
-      if (!playerID) return INVALID_MOVE;
-      const trimmed = name.trim();
-      if (!trimmed) return INVALID_MOVE;
-      args.G.playerNames[playerID] = trimmed.slice(0, 32);
-      return undefined;
-    },
-    sendChat: (args, text: string) => {
-      const playerID = args.playerID;
-      if (!playerID) return INVALID_MOVE;
-      const trimmed = text.trim();
-      if (!trimmed) return INVALID_MOVE;
-      appendChat(args.G, {
-        type: 'player',
-        playerID,
-        text: trimmed.slice(0, 280),
-      });
-      return undefined;
-    },
-    drawCard: (args) => {
-      const playerID = args.playerID;
-      if (!playerID || args.ctx.currentPlayer !== playerID) return INVALID_MOVE;
-      if (args.ctx.activePlayers?.[playerID] !== DRAW_STAGE) return INVALID_MOVE;
-
-      const hand = args.G.hands[playerID];
-      let autoPlayed = false;
-      const card = args.G.deck.pop();
-      if (card) {
-        if (card.category === 'LYAP') {
-          // Drawn LYAP auto-triggers on the player who drew it.
-          const summary = isProtectedFromLyapScandal(args.G, args.ctx, playerID)
-            ? { resources: {}, rank: 0 }
-            : applyCardEffectsSoft(args.G, playerID, card.effects);
-          const seq = nextSystemMessageSeq(args.G);
-          appendChat(args.G, {
-            type: 'system',
-            text: isProtectedFromLyapScandal(args.G, args.ctx, playerID)
-              ? `🛡️ [${seq}] ${getPlayerLabel(args.G, playerID)} витягнув «${card.title}», але щит від Грамоти скасував ЛЯП.`
-              : buildLyapSystemMessage(seq, getPlayerLabel(args.G, playerID), card, summary),
-          });
-          args.G.discard.push(card);
-          autoPlayed = true;
-        } else if (card.category === 'SCANDAL') {
-          // Drawn SCANDAL auto-triggers on all players at the table.
-          const targetSummaries: string[] = [];
-          Object.keys(args.G.players).forEach((pid) => {
-            if (isProtectedFromLyapScandal(args.G, args.ctx, pid)) {
-              targetSummaries.push(`${getPlayerLabel(args.G, pid)}: щит від Грамоти (без змін)`);
-            } else {
-              const summary = applyCardEffectsSoft(args.G, pid, card.effects);
-              targetSummaries.push(`${getPlayerLabel(args.G, pid)}: ${effectSummaryToText(summary)}`);
-            }
-            syncPlayerState(args.G, pid);
-          });
-          triggerSukhpayZsuOnScandal(args.G, args.ctx, playerID);
-          const seq = nextSystemMessageSeq(args.G);
-          appendChat(args.G, {
-            type: 'system',
-            text: buildScandalSystemMessage(seq, getPlayerLabel(args.G, playerID), card, targetSummaries),
-          });
-          args.G.discard.push(card);
-          autoPlayed = true;
-        } else {
-          hand.push(card);
-        }
-      }
-      syncPlayerState(args.G, playerID);
-      args.events?.setStage(autoPlayed ? END_STAGE : PLAY_STAGE);
-      return undefined;
-    },
-    playCard: (
-      args,
-      cardId: string,
-      replacementResources: ResourceKey[] = [],
-      targetPlayerID?: string,
-    ) => {
-      const playerID = args.playerID;
-      if (!playerID) return INVALID_MOVE;
-      const usingExtraToken = (args.G.extraHandPlayTokens[playerID] ?? 0) > 0;
-      if (!usingExtraToken) {
-        if (args.ctx.currentPlayer !== playerID) return INVALID_MOVE;
-        if (![PLAY_STAGE, END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return INVALID_MOVE;
-      }
-
-      const hand = args.G.hands[playerID];
-      const idx = hand.findIndex((card) => card.id === cardId);
-      if (idx === -1) return INVALID_MOVE;
-
-      const card = hand[idx];
-      const allPlayerIDs = Object.keys(args.G.players);
-      const applySoftTo = (pid: string) => {
-        const summary = applyCardEffectsSoft(args.G, pid, card.effects);
-        syncPlayerState(args.G, pid);
-        return summary;
-      };
-
-      if (card.category === 'LYAP') {
-        if (!targetPlayerID || targetPlayerID === playerID || !(targetPlayerID in args.G.players)) {
-          return INVALID_MOVE;
-        }
-        const protectedTarget = isProtectedFromLyapScandal(args.G, args.ctx, targetPlayerID);
-        const summary = protectedTarget ? { resources: {}, rank: 0 } : applySoftTo(targetPlayerID);
-        const seq = nextSystemMessageSeq(args.G);
-        appendChat(args.G, {
-          type: 'system',
-          text: protectedTarget
-            ? `🛡️ [${seq}] ${getPlayerLabel(args.G, playerID)} розіграв ЛЯП «${card.title}» на ${getPlayerLabel(args.G, targetPlayerID)}, але щит від Грамоти скасував дію.`
-            : buildPlayedLyapSystemMessage(
-              seq,
-              getPlayerLabel(args.G, playerID),
-              getPlayerLabel(args.G, targetPlayerID),
-              card,
-              summary,
-            ),
-        });
-      } else if (card.category === 'SCANDAL') {
-        const targetSummaries: string[] = [];
-        allPlayerIDs
-          .filter((pid) => pid !== playerID)
-          .forEach((pid) => {
-            if (isProtectedFromLyapScandal(args.G, args.ctx, pid)) {
-              targetSummaries.push(`${getPlayerLabel(args.G, pid)}: щит від Грамоти (без змін)`);
-              return;
-            }
-            const summary = applySoftTo(pid);
-            targetSummaries.push(`${getPlayerLabel(args.G, pid)}: ${effectSummaryToText(summary)}`);
-          });
-        triggerSukhpayZsuOnScandal(args.G, args.ctx, playerID);
-        const seq = nextSystemMessageSeq(args.G);
-        appendChat(args.G, {
-          type: 'system',
-          text: buildPlayedScandalSystemMessage(seq, getPlayerLabel(args.G, playerID), card, targetSummaries),
-        });
-      } else if (card.category === 'SUPPORT') {
-        const beforeResources = { ...args.G.resources[playerID] };
-        const beforeRankId = args.G.ranks[playerID];
-        try {
-          const applied = applyCardEffects(args.G, playerID, card.effects, replacementResources);
-          if (!applied) return INVALID_MOVE;
-        } catch {
-          return INVALID_MOVE;
-        }
-        const summary = summarizeAppliedDiff(
-          beforeResources,
-          args.G.resources[playerID],
-          beforeRankId,
-          args.G.ranks[playerID],
-        );
-        const seq = nextSystemMessageSeq(args.G);
-        appendChat(args.G, {
-          type: 'system',
-          text: buildSupportSystemMessage(seq, getPlayerLabel(args.G, playerID), card, summary),
-        });
-      } else if (card.category === 'DECISION') {
-        const targetSummaries: string[] = [];
-        let invalidDecisionReplacement = false;
-        allPlayerIDs.forEach((pid) => {
-          if (invalidDecisionReplacement) return;
-          if (pid === playerID) {
-            const beforeResources = { ...args.G.resources[playerID] };
-            const beforeRankId = args.G.ranks[playerID];
-            try {
-              const applied = applyCardEffects(args.G, playerID, card.effects, replacementResources);
-              if (!applied) {
-                invalidDecisionReplacement = true;
-                return;
-              }
-            } catch {
-              invalidDecisionReplacement = true;
-              return;
-            }
-            const summary = summarizeAppliedDiff(
-              beforeResources,
-              args.G.resources[playerID],
-              beforeRankId,
-              args.G.ranks[playerID],
-            );
-            targetSummaries.push(`${getPlayerLabel(args.G, pid)}: ${effectSummaryToText(summary)}`);
-            syncPlayerState(args.G, pid);
-            return;
-          }
-          const summary = applySoftTo(pid);
-          targetSummaries.push(`${getPlayerLabel(args.G, pid)}: ${effectSummaryToText(summary)}`);
-        });
-        if (invalidDecisionReplacement) return INVALID_MOVE;
-        const seq = nextSystemMessageSeq(args.G);
-        appendChat(args.G, {
-          type: 'system',
-          text: buildPlayedDecisionSystemMessage(seq, getPlayerLabel(args.G, playerID), card, targetSummaries),
-        });
-      } else if (card.category === 'VVNZ' && card.grantRank) {
-        const beforeResources = { ...args.G.resources[playerID] };
-        const beforeRankId = args.G.ranks[playerID];
-        const playerCount = Object.keys(args.G.players).length || Number(args.ctx.numPlayers ?? 0) || 2;
-        const promoted = promoteToSpecificRank(args.G, playerID, card.grantRank, playerCount);
-        if (!promoted.ok) return INVALID_MOVE;
-        try {
-          const applied = applyCardEffects(args.G, playerID, card.effects, []);
-          if (!applied) return INVALID_MOVE;
-        } catch {
-          return INVALID_MOVE;
-        }
-        const afterRankId = args.G.ranks[playerID];
-        const summary = summarizeAppliedDiff(
-          beforeResources,
-          args.G.resources[playerID],
-          beforeRankId,
-          afterRankId,
-        );
-        const seq = nextSystemMessageSeq(args.G);
-        appendChat(args.G, {
-          type: 'system',
-          text: buildVvnzRankSystemMessage(
-            seq,
-            getPlayerLabel(args.G, playerID),
-            card,
-            beforeRankId,
-            afterRankId,
-            promoted.rank.cost ?? {},
-            promoted.rank.bonus ?? {},
-            summary,
-          ),
-        });
-      } else {
-        try {
-          const applied = applyCardEffects(args.G, playerID, card.effects, replacementResources);
-          if (!applied) return INVALID_MOVE;
-        } catch {
-          return INVALID_MOVE;
-        }
-      }
-
-      hand.splice(idx, 1);
-      args.G.discard.push(card);
-
-      syncPlayerState(args.G, playerID);
-      if (usingExtraToken) {
-        args.G.extraHandPlayTokens[playerID] = Math.max(0, (args.G.extraHandPlayTokens[playerID] ?? 0) - 1);
-      } else {
-        args.events?.setStage(END_STAGE);
-      }
-      return undefined;
-    },
-    playLegendaryCard: (args, cardId: string, targetPlayerID?: string, selectedResource?: ResourceKey) => {
-      const playerID = args.playerID;
-      if (!playerID) return INVALID_MOVE;
-      const hand = args.G.legendaryHands[playerID] ?? [];
-      const idx = hand.findIndex((card) => card.id === cardId);
-      if (idx === -1) return INVALID_MOVE;
-      const card = hand[idx];
-      const playerLabel = getPlayerLabel(args.G, playerID);
-      let specialMessage = '';
-
-      if (card.id === 'legendary-02') {
-        const canceled = cancelLastLyapOrScandalForPlayer(args.G, playerID);
-        if (canceled.canceledCard) {
-          specialMessage = legendaryTexts.budanovCanceled(playerLabel, canceled.canceledCard.title, effectSummaryToText(canceled.summary));
-        } else {
-          specialMessage = legendaryTexts.budanovNoTarget();
-        }
-      } else if (card.id === 'legendary-08') {
-        const canceled = cancelLastScandalForPlayer(args.G, playerID);
-        if (canceled.canceledCard) {
-          specialMessage = legendaryTexts.starlinkCanceled(playerLabel, canceled.canceledCard.title, effectSummaryToText(canceled.summary));
-        } else {
-          specialMessage = legendaryTexts.starlinkNoTarget();
-        }
-      } else if (card.id === 'legendary-05') {
-        const untilTurn = computeShieldUntilNextOwnTurn(args.ctx, playerID);
-        args.G.sukhpayZsuWatchUntilTurn[playerID] = untilTurn;
-        args.G.sukhpayZsuPendingBonus[playerID] = true;
-        specialMessage = legendaryTexts.sukhpayActivated(playerLabel);
-      } else if (card.id === 'legendary-12') {
-        const untilTurn = computeShieldUntilNextOwnTurn(args.ctx, playerID);
-        args.G.lyapScandalShieldUntilTurn[playerID] = untilTurn;
-        specialMessage = legendaryTexts.grammarShield(playerLabel);
-      } else if (card.id === 'legendary-03') {
-        args.G.extraHandPlayTokens[playerID] = (args.G.extraHandPlayTokens[playerID] ?? 0) + 1;
-        specialMessage = legendaryTexts.posmishkaMalyuka(playerLabel);
-      } else if (card.id === 'legendary-06') {
-        if (!selectedResource || !resourceKeys.includes(selectedResource)) return INVALID_MOVE;
-        args.G.resources[playerID][selectedResource] = (args.G.resources[playerID][selectedResource] ?? 0) + 3;
-        Object.keys(args.G.players)
-          .filter((pid) => pid !== playerID)
-          .forEach((pid) => {
-            args.G.resources[pid].documents = (args.G.resources[pid].documents ?? 0) + 1;
-            clampNonNegativeResources(args.G.resources[pid]);
-            syncPlayerState(args.G, pid);
-          });
-        clampNonNegativeResources(args.G.resources[playerID]);
-        syncPlayerState(args.G, playerID);
-        specialMessage = legendaryTexts.statueTor(playerLabel, resourceLabelsUk[selectedResource]);
-      } else if (card.id === 'legendary-07') {
-        args.G.resources[playerID].time = (args.G.resources[playerID].time ?? 0) + 2;
-        args.G.resources[playerID].reputation = (args.G.resources[playerID].reputation ?? 0) + 2;
-        Object.keys(args.G.players)
-          .filter((pid) => pid !== playerID)
-          .forEach((pid) => {
-            args.G.resources[pid].reputation = Math.max(0, (args.G.resources[pid].reputation ?? 0) - 1);
-            clampNonNegativeResources(args.G.resources[pid]);
-            syncPlayerState(args.G, pid);
-          });
-        clampNonNegativeResources(args.G.resources[playerID]);
-        syncPlayerState(args.G, playerID);
-        specialMessage = legendaryTexts.churchLeadership(playerLabel);
-      } else if (card.id === 'legendary-09') {
-        if (!selectedResource || !resourceKeys.includes(selectedResource)) return INVALID_MOVE;
-        const before = args.G.resources[playerID][selectedResource] ?? 0;
-        const after = Math.max(before, 3);
-        args.G.resources[playerID][selectedResource] = after;
-        syncPlayerState(args.G, playerID);
-        specialMessage = legendaryTexts.waterRestore(playerLabel, resourceLabelsUk[selectedResource], before, after);
-      } else if (card.id === 'legendary-13') {
-        const playerCount = Object.keys(args.G.players).length || Number(args.ctx.numPlayers ?? 0) || 2;
-        const granted = grantSpecificRankIgnoringRequirements(args.G, playerID, 'senior_lieutenant', playerCount);
-        if (!granted.ok) return INVALID_MOVE;
-        if (granted.applied) {
-          specialMessage = legendaryTexts.goodPressOfficerGranted(
-            playerLabel,
-            rankNameById('senior_lieutenant'),
-            resourceDeltaToText(granted.rank.bonus ?? {}),
-          );
-        } else {
-          specialMessage = legendaryTexts.goodPressOfficerNoChange(playerLabel, rankNameById(args.G.ranks[playerID]));
-        }
-      } else if (card.id === 'legendary-10') {
-        if (!targetPlayerID || !(targetPlayerID in args.G.players) || targetPlayerID === playerID) return INVALID_MOVE;
-        const playerCount = Object.keys(args.G.players).length || Number(args.ctx.numPlayers ?? 0) || 2;
-        const demoted = demoteByOneRankWithSeatCheck(args.G, targetPlayerID, playerCount);
-        if (!demoted.ok) return INVALID_MOVE;
-        specialMessage = legendaryTexts.droidDemote(
-          getPlayerLabel(args.G, targetPlayerID),
-          rankNameById(demoted.fromRankId),
-          rankNameById(demoted.toRankId),
-        );
-      }
-
-      try {
-        const applied = applyCardEffects(args.G, playerID, card.effects, []);
-        if (!applied) return INVALID_MOVE;
-      } catch {
-        return INVALID_MOVE;
-      }
-
-      hand.splice(idx, 1);
-      args.G.legendaryDiscard.push(card);
-      syncPlayerState(args.G, playerID);
-      const seq = nextSystemMessageSeq(args.G);
-      appendChat(args.G, {
-        type: 'system',
-        text: buildLegendaryPlayedMessageText({
-          seq,
-          playerLabel,
-          cardTitle: card.title,
-          specialMessage,
-        }),
-      });
-      return undefined;
-    },
-    discardFromHand: (args, cardId: string) => {
-      const playerID = args.playerID;
-      if (!playerID || args.ctx.currentPlayer !== playerID) return INVALID_MOVE;
-      const stage = args.ctx.activePlayers?.[playerID];
-      if (![PLAY_STAGE, END_STAGE].includes(stage as string)) return INVALID_MOVE;
-      const hand = args.G.hands[playerID];
-      if (hand.length <= HAND_LIMIT) return INVALID_MOVE;
-      const idx = hand.findIndex((card) => card.id === cardId);
-      if (idx === -1) return INVALID_MOVE;
-      const card = hand[idx];
-      if (card.category === 'LYAP' || card.category === 'SCANDAL') return INVALID_MOVE;
-      hand.splice(idx, 1);
-      args.G.discard.push(card);
-      syncPlayerState(args.G, playerID);
-      const seq = nextSystemMessageSeq(args.G);
-      appendChat(args.G, {
-        type: 'system',
-        text: `🗂️ [${seq}] ${getPlayerLabel(args.G, playerID)} скидає «${card.title}» у скид, щоб вкластися в ліміт руки (${HAND_LIMIT}).`,
-      });
-      // Discarding overflow is a pre-end-turn action; return player to PLAY stage.
-      args.events?.setStage(PLAY_STAGE);
-      return undefined;
-    },
-    promote: (args) => {
-      const playerID = args.playerID;
-      if (!playerID || args.ctx.currentPlayer !== playerID) return INVALID_MOVE;
-      if (args.ctx.activePlayers?.[playerID] !== PLAY_STAGE) return INVALID_MOVE;
-      if (args.G.promotedThisTurn[playerID]) return INVALID_MOVE;
-      const beforeResources = { ...args.G.resources[playerID] };
-      const beforeRankId = args.G.ranks[playerID];
-      const playerCount = Object.keys(args.G.players).length || Number(args.ctx.numPlayers ?? 0) || 2;
-      if (!promoteRank(args.G, playerID, playerCount)) return INVALID_MOVE;
-      args.G.promotedThisTurn[playerID] = true;
-      const afterRankId = args.G.ranks[playerID];
-      const promotedRank = getActiveRanks().find((row) => row.id === afterRankId);
-      const summary = summarizeAppliedDiff(
-        beforeResources,
-        args.G.resources[playerID],
-        beforeRankId,
-        afterRankId,
-      );
-      const seq = nextSystemMessageSeq(args.G);
-      appendChat(args.G, {
-        type: 'system',
-        text: buildPromotionSystemMessage(
-          seq,
-          getPlayerLabel(args.G, playerID),
-          beforeRankId,
-          afterRankId,
-          promotedRank?.cost ?? {},
-          promotedRank?.bonus ?? {},
-          summary,
-        ),
-      });
-      return undefined;
-    },
-    pass: (args) => {
-      const playerID = args.playerID;
-      if (!playerID || args.ctx.currentPlayer !== playerID) return INVALID_MOVE;
-      if (![PLAY_STAGE, END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return INVALID_MOVE;
-      if ((args.G.hands[playerID]?.length ?? 0) > HAND_LIMIT) return INVALID_MOVE;
-      args.events?.endTurn();
-      return undefined;
-    },
-  },
+  moves: createJojMoves({
+    INVALID_MOVE,
+    DRAW_STAGE,
+    PLAY_STAGE,
+    END_STAGE,
+    HAND_LIMIT,
+    resourceKeys,
+    resourceLabelsUk,
+    canPlayHandCardAtStage,
+    appendChat,
+    nextSystemMessageSeq,
+    getPlayerLabel,
+    syncPlayerState,
+    isProtectedFromLyapScandal,
+    triggerSukhpayZsuOnScandal,
+    applyCardEffects,
+    applyCardEffectsSoft,
+    summarizeAppliedDiff,
+    effectSummaryToText,
+    resourceDeltaToText,
+    categoryLabelUk,
+    cardFlavorSnippet,
+    rankNameById,
+    buildLyapSystemMessage,
+    buildScandalSystemMessage,
+    buildSupportSystemMessage,
+    buildPlayedLyapSystemMessage,
+    buildPlayedScandalSystemMessage,
+    buildPlayedDecisionSystemMessage,
+    buildVvnzRankSystemMessage,
+    buildPromotionSystemMessage,
+    buildLegendaryPlayedMessageText,
+    legendaryTexts,
+    clampNonNegativeResources,
+    computeShieldUntilNextOwnTurn,
+    cancelLastLyapOrScandalForPlayer,
+    cancelLastScandalForPlayer,
+    promoteToSpecificRank,
+    grantSpecificRankIgnoringRequirements,
+    demoteByOneRankWithSeatCheck,
+    promoteRank,
+    getActiveRanks,
+  }),
   endIf: ({ G }) => {
     const winner = getWinner(G);
     if (!winner) return undefined;
     return { winner };
   },
   ai: {
-    enumerate: (G, ctx, playerID) => {
-      const currentPlayer = playerID ?? ctx.currentPlayer;
-      const hand = G.hands[currentPlayer] ?? [];
-      const legendaryHand = G.legendaryHands[currentPlayer] ?? [];
-      const stage = ctx.activePlayers?.[currentPlayer];
-      if (stage === DRAW_STAGE) {
-        return [
-          { move: 'drawCard' as const },
-          ...legendaryHand.map((card) => ({ move: 'playLegendaryCard' as const, args: [card.id] })),
-        ];
-      }
-      if (stage === END_STAGE) {
-        return [
-          { move: 'pass' as const },
-          ...legendaryHand.map((card) => ({ move: 'playLegendaryCard' as const, args: [card.id] })),
-        ];
-      }
-      return [
-        ...legendaryHand.map((card) => ({ move: 'playLegendaryCard' as const, args: [card.id] })),
-        ...hand.map((card) => ({ move: 'playCard' as const, args: [card.id] })),
-        { move: 'promote' as const },
-        { move: 'pass' as const },
-      ];
-    },
+    enumerate: enumerateAiMoves({ DRAW_STAGE, END_STAGE }),
   },
   playerView: ({ G, ctx, playerID }) => {
     if (!playerID) return G;

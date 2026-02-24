@@ -9,6 +9,7 @@
     "dev:web": "vite",
     "dev:server": "node --watch --watch-path=server --watch-path=src/game --import tsx server/index.ts",
     "typecheck": "tsc -b",
+    "test:unit": "tsx --test tests/**/*.test.ts",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "start:server": "tsx server/index.ts",
