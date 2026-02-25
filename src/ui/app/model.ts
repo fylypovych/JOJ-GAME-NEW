@@ -7,12 +7,34 @@ export const SESSION_STORAGE_KEY = 'joj-network-session-v1';
 export const ADMIN_TOKEN_STORAGE_KEY = 'joj-admin-token-v1';
 export const RANKS_STORAGE_KEY = 'joj-shared-ranks-v1';
 
-export const DEFAULT_SERVER_URL = `http://${window.location.hostname}:8000`;
+const isLocalHostName = (hostname: string) => ['localhost', '127.0.0.1', '::1'].includes(hostname);
+const isBrowserLocalAddress = () => isLocalHostName(window.location.hostname);
+const isLikelyLocalServerUrl = (value: string) => {
+  try {
+    const parsed = new URL(value);
+    return isLocalHostName(parsed.hostname);
+  } catch {
+    return /localhost|127\.0\.0\.1/.test(value);
+  }
+};
+
+export const DEFAULT_SERVER_URL = window.location.protocol === 'https:'
+  ? window.location.origin
+  : `http://${window.location.hostname}:8000`;
 export const GAME_NAME = 'joj-game';
 export const normalizeServerUrl = (value: string) => value.trim().replace(/\/+$/, '');
 export const getConfiguredServerUrl = () => {
-  const saved = window.localStorage.getItem(SERVER_URL_STORAGE_KEY);
-  return normalizeServerUrl(saved || DEFAULT_SERVER_URL) || DEFAULT_SERVER_URL;
+  const saved = normalizeServerUrl(window.localStorage.getItem(SERVER_URL_STORAGE_KEY) ?? '');
+  if (!saved) return DEFAULT_SERVER_URL;
+
+  // Migrate legacy local dev URLs when the app is opened from a public HTTPS domain.
+  if (window.location.protocol === 'https:' && !isBrowserLocalAddress()) {
+    if (isLikelyLocalServerUrl(saved) || saved.startsWith('http://')) {
+      return DEFAULT_SERVER_URL;
+    }
+  }
+
+  return saved || DEFAULT_SERVER_URL;
 };
 
 export type LobbyPlayer = {
@@ -76,4 +98,3 @@ export const parseSession = (raw: string | null): Session | null => {
   }
   return null;
 };
-
