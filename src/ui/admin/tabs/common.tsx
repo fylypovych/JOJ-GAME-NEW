@@ -25,8 +25,10 @@ export const AdminTabButtons = ({
 
 export const AdminMatchesTab = ({
   t,
+  matchIds,
   matchesCount,
   activeMatchId,
+  onActiveMatchIdChange,
   activeMatchCreatedAt,
   onCreateMatch,
   onResetMatch,
@@ -34,8 +36,10 @@ export const AdminMatchesTab = ({
   canDelete,
 }: {
   t: T;
+  matchIds: string[];
   matchesCount: number;
   activeMatchId: string;
+  onActiveMatchIdChange: (matchID: string) => void;
   activeMatchCreatedAt?: number;
   onCreateMatch: () => void;
   onResetMatch: () => void;
@@ -44,6 +48,15 @@ export const AdminMatchesTab = ({
 }) => (
   <>
     <p>{t.matches}: {matchesCount}</p>
+    <p className="admin-controls">
+      <label>
+        {t.activeMatch}
+        <select value={activeMatchId} onChange={(e) => onActiveMatchIdChange(e.target.value)} disabled={matchIds.length === 0}>
+          {matchIds.length === 0 ? <option value="">{t.notSelected}</option> : null}
+          {matchIds.map((id) => <option key={`admin-match-${id}`} value={id}>{id}</option>)}
+        </select>
+      </label>
+    </p>
     <p>{t.activeMatch}: <code>{activeMatchId || t.notSelected}</code></p>
     <p>{t.createdAt}: {activeMatchCreatedAt ? new Date(activeMatchCreatedAt).toLocaleString() : t.notSelected}</p>
     <p className="admin-controls">
@@ -53,4 +66,3 @@ export const AdminMatchesTab = ({
     </p>
   </>
 );
-

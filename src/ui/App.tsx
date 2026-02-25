@@ -86,6 +86,7 @@ export const App = () => {
   const [playerName, setPlayerName] = useState<string>(() => window.localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ?? '');
   const [roomCapacity, setRoomCapacity] = useState<number>(2);
   const [matches, setMatches] = useState<LobbyMatch[]>([]);
+  const [adminSelectedMatchID, setAdminSelectedMatchID] = useState<string>('');
   const [session, setSession] = useState<Session | null>(() => parseSession(window.localStorage.getItem(SESSION_STORAGE_KEY)));
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -317,7 +318,11 @@ export const App = () => {
     () => matches.find((match) => match.matchID === session?.matchID) ?? null,
     [matches, session?.matchID],
   );
-  const adminMatchID = useMemo(() => session?.matchID ?? matches[0]?.matchID ?? '', [matches, session?.matchID]);
+  const adminMatchID = useMemo(() => {
+    if (session?.matchID) return session.matchID;
+    if (adminSelectedMatchID && matches.some((m) => m.matchID === adminSelectedMatchID)) return adminSelectedMatchID;
+    return matches[0]?.matchID ?? '';
+  }, [adminSelectedMatchID, matches, session?.matchID]);
   const { snapshot, setSnapshot } = useAdminSnapshot({
     isAdminRoute,
     adminAuthorized,
@@ -380,6 +385,15 @@ export const App = () => {
     setSession(null);
     window.localStorage.removeItem(SESSION_STORAGE_KEY);
   }, [sessionBroken]);
+
+  useEffect(() => {
+    if (session?.matchID) {
+      setAdminSelectedMatchID(session.matchID);
+      return;
+    }
+    if (adminSelectedMatchID && matches.some((m) => m.matchID === adminSelectedMatchID)) return;
+    setAdminSelectedMatchID(matches[0]?.matchID ?? '');
+  }, [adminSelectedMatchID, matches, session?.matchID]);
 
   useEffect(() => {
     window.localStorage.setItem('joj-lang', lang);
@@ -503,6 +517,7 @@ export const App = () => {
           onResetServerUrl={resetServerUrl}
           matches={matches.map((m) => ({ id: m.matchID, createdAt: Date.now() }))}
           activeMatchId={adminMatchID}
+          onActiveMatchIdChange={setAdminSelectedMatchID}
           snapshot={snapshot}
           deckStats={{
             deck: sharedDeckStats.deck,

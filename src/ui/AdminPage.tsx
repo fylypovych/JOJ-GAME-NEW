@@ -48,6 +48,7 @@ export const AdminPage = ({
   onResetServerUrl,
   matches,
   activeMatchId,
+  onActiveMatchIdChange,
   snapshot,
   deckStats,
   sharedDeckTemplate,
@@ -794,13 +795,15 @@ export const AdminPage = ({
       {activeTab === 'matches' ? (
         <AdminMatchesTab
           t={t}
+          matchIds={matches.map((m) => m.id)}
           matchesCount={matches.length}
           activeMatchId={activeMatchId}
+          onActiveMatchIdChange={onActiveMatchIdChange}
           activeMatchCreatedAt={activeMatch?.createdAt}
           onCreateMatch={onCreateMatch}
           onResetMatch={onResetMatch}
           onDeleteMatch={onDeleteMatch}
-          canDelete={matches.length > 1}
+          canDelete={matches.length > 0}
         />
       ) : null}
 
@@ -893,6 +896,7 @@ export const AdminPage = ({
           stopGameRunning={stopGameRunning}
           stopGameError={stopGameError}
           stopGameStatus={stopGameStatus}
+          localizedRankName={localizedRankName}
           onStopGame={() => { void stopGame(); }}
         />
       ) : null}

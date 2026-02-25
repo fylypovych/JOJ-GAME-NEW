@@ -46,6 +46,7 @@ export type AdminPageProps = {
   onResetServerUrl: () => void;
   matches: MatchInfo[];
   activeMatchId: string;
+  onActiveMatchIdChange: (matchID: string) => void;
   snapshot: Snapshot | null;
   deckStats: DeckStats;
   sharedDeckTemplate: SharedDeckTemplate;

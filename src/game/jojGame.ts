@@ -453,11 +453,11 @@ export const jojGame: Game<JojGameState> = {
       state.legendaryHands[playerID] = [];
       state.ranks[playerID] = getActiveRanks()[0]?.id ?? 'cadet';
       state.resources[playerID] = {
-        time: 2,
-        reputation: 2,
-        discipline: 2,
-        documents: 2,
-        tech: 2,
+        time: 1,
+        reputation: 1,
+        discipline: 1,
+        documents: 1,
+        tech: 1,
       };
       state.players[playerID] = {
         hand: state.hands[playerID],

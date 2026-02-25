@@ -61,6 +61,7 @@ export const AdminStateTab = ({
   stopGameRunning,
   stopGameError,
   stopGameStatus,
+  localizedRankName,
   onStopGame,
 }: {
   t: T;
@@ -69,6 +70,7 @@ export const AdminStateTab = ({
   stopGameRunning: boolean;
   stopGameError: string;
   stopGameStatus: string;
+  localizedRankName: (rankId: string) => string;
   onStopGame: () => void;
 }) => {
   const raw = snapshot?.G as any;
@@ -130,6 +132,7 @@ export const AdminStateTab = ({
                     const legendaryHandCount = Array.isArray(raw?.legendaryHands?.[pid]) ? raw.legendaryHands[pid].length : 0;
                     const resources = player?.resources ?? raw?.resources?.[pid] ?? {};
                     const rankId = player?.rankId ?? raw?.ranks?.[pid] ?? '-';
+                    const rankName = typeof rankId === 'string' ? localizedRankName(rankId) : String(rankId);
                     const name = raw?.playerNames?.[pid] ?? `P${pid}`;
                     const extraToken = raw?.extraHandPlayTokens?.[pid] ?? 0;
                     const sukhpayPending = Boolean(raw?.sukhpayZsuPendingBonus?.[pid]);
@@ -138,11 +141,11 @@ export const AdminStateTab = ({
                       <li key={`state-player-${pid}`}>
                         <strong>{name}</strong> (ID: {pid}) {activePlayer === pid ? `• ${t.stateActive}` : ''}
                         <br />
-                        {t.stateRank}: <code>{String(rankId)}</code> | {t.stateHand}: {handCount} | {t.stateLegendaryHand}: {legendaryHandCount}
+                        {t.stateRank}: <code>{rankName}</code> (<span>{String(rankId)}</span>) | {t.stateHand}: {handCount} | {t.stateLegendaryHand}: {legendaryHandCount}
                         <br />
-                        {t.stateResources}: T {resources.time ?? 0}, R {resources.reputation ?? 0}, D {resources.discipline ?? 0}, Doc {resources.documents ?? 0}, Tech {resources.tech ?? 0}
+                        {t.stateResources}: {t.resources.time} {resources.time ?? 0}, {t.resources.reputation} {resources.reputation ?? 0}, {t.resources.discipline} {resources.discipline ?? 0}, {t.resources.documents} {resources.documents ?? 0}, {t.resources.tech} {resources.tech ?? 0}
                         <br />
-                        {t.stateTokens}: extra-hand {extraToken} | sukhpay pending {sukhpayPending ? t.yes : t.no} | sukhpay until turn {sukhpayUntil}
+                        {t.stateTokens}: {t.stateTokenExtraHand} {extraToken} | {t.stateTokenSukhpayPending} {sukhpayPending ? t.yes : t.no} | {t.stateTokenSukhpayUntilTurn} {sukhpayUntil}
                       </li>
                     );
                   })}
