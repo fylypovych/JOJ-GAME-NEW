@@ -463,27 +463,42 @@ export const App = () => {
   return (
     <main className="app">
       <h1>{isAdminRoute ? t.adminTitle : t.gameTitle}</h1>
-      <p className="app-top-row">
-        {t.language}:{' '}
-        <button type="button" onClick={() => setLang('uk')} disabled={lang === 'uk'}>
-          {t.langUk}
-        </button>{' '}
-        <button type="button" onClick={() => setLang('en')} disabled={lang === 'en'}>
-          {t.langEn}
-        </button>
-        {!isAdminRoute ? (
-          <>
-            {' | '}
-            {t.gameUiLabel}:{' '}
-            <button type="button" onClick={() => setGameUiVariant('v1')} disabled={gameUiVariant === 'v1'}>
-              {t.gameUiV1}
-            </button>{' '}
-            <button type="button" onClick={() => setGameUiVariant('v2')} disabled={gameUiVariant === 'v2'}>
-              {t.gameUiV2}
-            </button>
-          </>
-        ) : null}
-      </p>
+      {!isAdminRoute ? (
+        <section className="app-top-toolbar">
+          <div className="app-top-toolbar-left">
+            <UserTabs t={t} activeUserTab={activeUserTab} setActiveUserTab={setActiveUserTab} />
+          </div>
+          <div className="app-top-toolbar-right">
+            <p className="app-top-row">
+              {t.language}:{' '}
+              <button type="button" onClick={() => setLang('uk')} disabled={lang === 'uk'}>
+                {t.langUk}
+              </button>{' '}
+              <button type="button" onClick={() => setLang('en')} disabled={lang === 'en'}>
+                {t.langEn}
+              </button>
+              {' | '}
+              {t.gameUiLabel}:{' '}
+              <button type="button" onClick={() => setGameUiVariant('v1')} disabled={gameUiVariant === 'v1'}>
+                {t.gameUiV1}
+              </button>{' '}
+              <button type="button" onClick={() => setGameUiVariant('v2')} disabled={gameUiVariant === 'v2'}>
+                {t.gameUiV2}
+              </button>
+            </p>
+          </div>
+        </section>
+      ) : (
+        <p className="app-top-row">
+          {t.language}:{' '}
+          <button type="button" onClick={() => setLang('uk')} disabled={lang === 'uk'}>
+            {t.langUk}
+          </button>{' '}
+          <button type="button" onClick={() => setLang('en')} disabled={lang === 'en'}>
+            {t.langEn}
+          </button>
+        </p>
+      )}
       <p className="app-link-row">
         {isAdminRoute ? <a href="/">{t.openGame}</a> : <a href="/admin">{t.openAdmin}</a>}
       </p>
@@ -508,10 +523,6 @@ export const App = () => {
           }}
           adminAuthError={adminAuthError}
         />
-      ) : null}
-
-      {!isAdminRoute ? (
-        <UserTabs t={t} activeUserTab={activeUserTab} setActiveUserTab={setActiveUserTab} />
       ) : null}
 
       {!isAdminRoute && activeUserTab === 'games' && !session ? (

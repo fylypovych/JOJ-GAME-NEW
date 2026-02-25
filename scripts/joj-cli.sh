@@ -10,6 +10,7 @@ Usage:
   joj start
   joj stop
   joj restart
+  joj update
   joj status
   joj logs [server|web]
   joj health
@@ -42,6 +43,13 @@ case "$cmd" in
     require_config
     cd "$PROJECT_DIR"
     pm2 restart "$CONFIG_FILE" --update-env
+    ;;
+  update)
+    require_config
+    cd "$PROJECT_DIR"
+    git pull --ff-only
+    npm run build
+    pm2 restart joj-game-server joj-game-web --update-env
     ;;
   status)
     pm2 status

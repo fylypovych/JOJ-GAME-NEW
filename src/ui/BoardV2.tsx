@@ -26,15 +26,6 @@ type PendingConfirm =
   | { kind: 'play-card'; card: CardDefinition; targetId?: string }
   | { kind: 'play-legendary'; card: CardDefinition; targetId?: string; resource?: ResourceKey };
 
-type PinnedCardView = {
-  id: string;
-  title: string;
-  image?: string;
-  categoryText: string;
-  effects?: CardDefinition['effects'];
-  sourceLabel: string;
-};
-
 const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
   stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
 
@@ -127,14 +118,9 @@ export const BoardV2 = ({
     extraHandToken: lang === 'uk' ? 'Додатковий розіграш з руки' : 'Extra hand play',
     sukhpayPending: lang === 'uk' ? 'Сухпай очікує' : 'Sukhpay pending',
     sukhpayUntil: lang === 'uk' ? 'Сухпай активний до ходу' : 'Sukhpay active until turn',
-    threatPanel: lang === 'uk' ? 'Опоненти: загрози / інтел' : 'Opponents: threat / intel',
-    nearPromotion: lang === 'uk' ? 'близько до підвищення' : 'close to promotion',
     discardViewer: lang === 'uk' ? 'Перегляд скиду' : 'Discard viewer',
     normalDiscard: lang === 'uk' ? 'Звичайний скид' : 'Discard pile',
     legendaryDiscard: lang === 'uk' ? 'Легендарний скид' : 'Legendary discard',
-    pinCard: lang === 'uk' ? 'Закріпити' : 'Pin',
-    pinnedCard: lang === 'uk' ? 'Закріплена карта' : 'Pinned card',
-    noPinnedCard: lang === 'uk' ? 'Ще не вибрано карту для закріплення' : 'No pinned card selected yet',
     openChat: lang === 'uk' ? 'Чат' : 'Chat',
     openEvents: lang === 'uk' ? 'Події' : 'Events',
     mobileActions: lang === 'uk' ? 'Швидкі дії (mobile)' : 'Quick actions (mobile)',
@@ -148,9 +134,6 @@ export const BoardV2 = ({
     stageFocusEnd: lang === 'uk' ? 'Фокус етапу: завершіть комбінацію або закрийте хід.' : 'Stage focus: finalize your combo or end the turn.',
     targetableNow: lang === 'uk' ? 'можна цілити зараз' : 'targetable now',
     seatBlocked: lang === 'uk' ? 'місця зайняті' : 'seat blocked',
-    threatHigh: lang === 'uk' ? 'висока загроза' : 'high threat',
-    threatMedium: lang === 'uk' ? 'середня загроза' : 'medium threat',
-    threatLow: lang === 'uk' ? 'низька загроза' : 'low threat',
     handCardsLabel: lang === 'uk' ? 'Карти в руці' : 'Hand cards',
     activeRoom: lang === 'uk' ? 'Активна кімната' : 'Active room',
     joinedAs: lang === 'uk' ? 'Ви в кімнаті як' : 'You are in room as',
@@ -190,7 +173,6 @@ export const BoardV2 = ({
   });
   const [sidePanelTab, setSidePanelTab] = useState<SidePanelTab>('events');
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
-  const [pinnedCard, setPinnedCard] = useState<PinnedCardView | null>(null);
   const syncedNameRef = useRef('');
   const syncedNamesSignatureRef = useRef('');
   const chatLogRef = useRef<HTMLDivElement | null>(null);
@@ -290,17 +272,6 @@ export const BoardV2 = ({
   const playerIds = useMemo(() => Object.keys(G?.players ?? {}), [G?.players]);
   const latestEvents = (G?.chat ?? []).slice(-8).reverse();
 
-  const pinCardFromSource = (card: CardDefinition, sourceLabel: string, categoryText?: string) => {
-    setPinnedCard({
-      id: card.id,
-      title: cardTitle(card.id, card.title, lang),
-      image: normalizeImagePath(card.image) ?? `/cards/${card.id}.png`,
-      categoryText: categoryText ?? categoryLabel(card.category, lang),
-      effects: card.effects,
-      sourceLabel,
-    });
-  };
-
   const handCardsView = useMemo(() => {
     const base = hand.map((card, index) => ({ card, index, playable: false }));
     if (!G || !resources) return base;
@@ -356,8 +327,8 @@ export const BoardV2 = ({
       postNotice('info', `${v2.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
       return;
     }
-    setPendingConfirm({ kind: 'play-card', card });
-    postNotice('info', `${v2.confirmAction}: ${cardTitle(card.id, card.title, lang)}`);
+    moves.playCard(card.id, [], undefined);
+    setNotice(null);
   };
 
   const requestPlayLegendaryCard = (card: CardDefinition) => {
@@ -376,32 +347,28 @@ export const BoardV2 = ({
       postNotice('info', `${v2.pickResource}: ${cardTitle(card.id, card.title, lang)}`);
       return;
     }
-    setPendingConfirm({ kind: 'play-legendary', card });
-    postNotice('info', `${v2.confirmAction}: ${cardTitle(card.id, card.title, lang)}`);
+    moves.playLegendaryCard(card.id, undefined, undefined);
+    setNotice(null);
   };
 
   const confirmPendingSelection = () => {
     if (!pendingSelection) return;
     if (pendingSelection.type === 'hand-lyap') {
       if (!selectedTargetId) return postNotice('error', v2.targetRequired);
-      const card = hand.find((c) => c.id === pendingSelection.cardId);
-      if (!card) return;
-      setPendingConfirm({ kind: 'play-card', card, targetId: selectedTargetId });
+      moves.playCard(pendingSelection.cardId, [], selectedTargetId);
     }
     if (pendingSelection.type === 'legendary-drone') {
       if (!selectedTargetId) return postNotice('error', v2.targetRequired);
-      const card = legendaryHand.find((c) => c.id === pendingSelection.cardId);
-      if (!card) return;
-      setPendingConfirm({ kind: 'play-legendary', card, targetId: selectedTargetId });
+      moves.playLegendaryCard?.(pendingSelection.cardId, selectedTargetId, undefined);
     }
     if (pendingSelection.type === 'legendary-water') {
       if (!selectedResource) return postNotice('error', v2.resourceRequired);
-      const card = legendaryHand.find((c) => c.id === pendingSelection.cardId);
-      if (!card) return;
-      setPendingConfirm({ kind: 'play-legendary', card, resource: selectedResource });
+      moves.playLegendaryCard?.(pendingSelection.cardId, undefined, selectedResource);
     }
     setPendingSelection(null);
-    postNotice('info', v2.confirmAction);
+    setSelectedTargetId(null);
+    setSelectedResource(null);
+    setNotice(null);
   };
 
   const confirmPendingAction = () => {
@@ -453,33 +420,6 @@ export const BoardV2 = ({
     }
     if (pendingResourceKey && pendingResourceKey === key) highlightedResources.add(key);
   }
-
-  const threatRows = playerIds
-    .filter((pid) => pid !== id)
-    .map((pid) => {
-      const pRes = G.resources?.[pid];
-      const meta = getNextRankSeatMeta({ G, playerID: pid, sharedRanks });
-      const reqs = meta.nextRank?.requirement ?? {};
-      let reqTotal = 0;
-      let reqMet = 0;
-      for (const key of RESOURCE_ORDER) {
-        const need = reqs[key] ?? 0;
-        if (!need) continue;
-        reqTotal += need;
-        reqMet += Math.min(pRes?.[key] ?? 0, need);
-      }
-      const ratio = reqTotal > 0 ? reqMet / reqTotal : 0;
-      return {
-        pid,
-        ratio,
-        nextRank: meta.nextRank?.name ?? null,
-        seatBlocked: meta.seatBlocked,
-        shieldUntil: G.lyapScandalShieldUntilTurn?.[pid] ?? 0,
-        extraToken: G.extraHandPlayTokens?.[pid] ?? 0,
-        sukhpayPending: Boolean(G.sukhpayZsuPendingBonus?.[pid]),
-      };
-    })
-    .sort((a, b) => b.ratio - a.ratio);
 
   const currentStageFocus =
     stage === 'draw' ? v2.stageFocusDraw : stage === 'play' ? v2.stageFocusPlay : stage === 'end' ? v2.stageFocusEnd : '';
@@ -546,17 +486,11 @@ export const BoardV2 = ({
                 <button type="button" onClick={() => {
                   if (!canPlay) return postNotice('error', v2.actionUnavailable);
                   if (promoteReason) return postNotice('error', promoteReason);
-                  setPendingConfirm({ kind: 'promote', nextRankName: nextRankMeta?.nextRank?.name ?? null, reason: null });
-                  postNotice('info', `${v2.confirmAction}: ${t.promote}`);
+                  moves.promote();
+                  setNotice(null);
                 }} disabled={!canPlay}>{t.promote}</button>
                 <button type="button" onClick={() => { if (!canEndTurn) return; moves.pass(); setNotice(null); }} disabled={!canEndTurn}>{t.endTurn}</button>
               </div>
-            </div>
-            <div className="game-ui-v2-chip-row" aria-label={v2.whatNow}>
-              <span className={`game-ui-v2-chip${canDraw ? ' is-active' : ''}`}>{t.draw}</span>
-              <span className={`game-ui-v2-chip${canPlayHandCard ? ' is-active' : ''}`}>{t.playLegendaryCard}</span>
-              <span className={`game-ui-v2-chip${canPlay && !promoteReason ? ' is-active' : ''}`}>{t.promote}</span>
-              {mustDiscardOverflow ? <span className="game-ui-v2-chip is-warn">{lang === 'uk' ? `Скинути ${handOverflow}` : `Discard ${handOverflow}`}</span> : null}
             </div>
             <div className="game-ui-v2-resources-grid">
               {RESOURCE_ORDER.map((key) => (
@@ -617,10 +551,6 @@ export const BoardV2 = ({
           </section>
 
           <section className="game-ui-v2-selection-panel">
-            <div>
-              <p className="game-ui-v2-kicker">{v2.stepAssistant}</p>
-              <h3>{v2.previewOutcome}</h3>
-            </div>
             {pendingConfirm ? (
               <div className="game-ui-v2-confirm-card">
                 <p><strong>{v2.confirmAction}:</strong> {pendingConfirm.kind === 'promote' ? t.promote : cardTitle(confirmCard?.id ?? '', confirmCard?.title ?? '', lang)}</p>
@@ -651,7 +581,7 @@ export const BoardV2 = ({
                 </div>
               </div>
             ) : (
-              <p className="game-ui-v2-subtle">{pendingSelection ? (activeSelectionNeedsTarget ? v2.selectableTargetHint : v2.selectableResourceHint) : v2.step1}</p>
+              <p className="game-ui-v2-subtle">{pendingSelection ? (activeSelectionNeedsTarget ? v2.selectableTargetHint : v2.selectableResourceHint) : v2.waitingAction}</p>
             )}
           </section>
 
@@ -741,14 +671,6 @@ export const BoardV2 = ({
                 const active = ctx.currentPlayer === pid;
                 const selectable = activeSelectionNeedsTarget && pid !== id;
                 const pMeta = getNextRankSeatMeta({ G, playerID: pid, sharedRanks });
-                const pThreatRow = threatRows.find((row) => row.pid === pid);
-                const threatBadge = !pThreatRow
-                  ? null
-                  : pThreatRow.ratio >= 0.8
-                    ? v2.threatHigh
-                    : pThreatRow.ratio >= 0.45
-                      ? v2.threatMedium
-                      : v2.threatLow;
                 return (
                   <button
                     key={`player-${pid}`}
@@ -768,7 +690,6 @@ export const BoardV2 = ({
                     </div>
                     <div className="game-ui-v2-player-rank">{pRank}</div>
                     <div className="game-ui-v2-player-badges">
-                      {threatBadge ? <span className="pill pill-badge">{threatBadge}</span> : null}
                       {selectable ? <span className="pill pill-badge">{v2.targetableNow}</span> : null}
                       {pMeta.seatBlocked ? <span className="pill pill-badge">{v2.seatBlocked}</span> : null}
                       {(G.lyapScandalShieldUntilTurn?.[pid] ?? 0) > 0 ? <span className="pill pill-badge">{v2.shieldUntil}: {G.lyapScandalShieldUntilTurn?.[pid] ?? 0}</span> : null}
@@ -781,25 +702,6 @@ export const BoardV2 = ({
                   </button>
                 );
               })}
-            </div>
-          </section>
-
-          <section className="game-ui-v2-events">
-            <h3>{v2.threatPanel}</h3>
-            <div className="game-ui-v2-events-list">
-              {threatRows.map((row) => (
-                <div key={`threat-${row.pid}`} className="game-ui-v2-event-row">
-                  <strong>{playerLabelById(row.pid)} · {Math.round(row.ratio * 100)}% {v2.nearPromotion}</strong>
-                  <span>
-                    {(row.nextRank ?? '—')}
-                    {row.seatBlocked ? ` · ${v2.seatBlocked}` : ''}
-                    {row.shieldUntil ? ` · ${v2.shieldUntil}: ${row.shieldUntil}` : ''}
-                    {row.extraToken ? ` · ${v2.extraHandToken}: ${row.extraToken}` : ''}
-                    {row.sukhpayPending ? ` · ${v2.sukhpayPending}` : ''}
-                  </span>
-                </div>
-              ))}
-              {!threatRows.length ? <p className="game-ui-v2-subtle">{lang === 'uk' ? 'Немає опонентів' : 'No opponents'}</p> : null}
             </div>
           </section>
 
@@ -893,11 +795,6 @@ export const BoardV2 = ({
                       disabled: typeof moves.discardFromHand !== 'function',
                       className: 'game-card-inline-discard',
                     } : undefined}
-                    utilityAction={{
-                      label: v2.pinCard,
-                      onClick: () => pinCardFromSource(card, t.yourHand, categoryLabel(card.category, lang)),
-                      className: 'game-card-inline-pin',
-                    }}
                     effectLabel={effectLabel}
                     badges={badges}
                     helperText={helperText}
@@ -933,11 +830,6 @@ export const BoardV2 = ({
                     actionLabel={lang === 'uk' ? 'Зіграти легендарну' : 'Play legendary'}
                     onAction={() => requestPlayLegendaryCard(card)}
                     actionDisabled={typeof moves.playLegendaryCard !== 'function'}
-                    utilityAction={{
-                      label: v2.pinCard,
-                      onClick: () => pinCardFromSource(card, t.legendaryHand, t.legendaryDeckLabel),
-                      className: 'game-card-inline-pin',
-                    }}
                     effectLabel={effectLabel}
                     badges={badges.length ? badges : undefined}
                   />
@@ -978,34 +870,20 @@ export const BoardV2 = ({
               chat={G.chat ?? []}
               chatInput={chatInput}
               setChatInput={setChatInput}
-              onSend={sendChatMessage}
-              playerLabelById={playerLabelById}
-              t={t}
-              chatLogRef={chatLogRef}
-            />
-          </section>
+            onSend={sendChatMessage}
+            playerLabelById={playerLabelById}
+            t={t}
+            chatLogRef={chatLogRef}
+            includeSystemMessages={false}
+          />
+        </section>
 
-          <section className="game-ui-v2-events">
-            <h3>{v2.pinnedCard}</h3>
-            {pinnedCard ? (
-              <div className="game-ui-v2-pinned">
-                {pinnedCard.image ? <img src={pinnedCard.image} alt={pinnedCard.title} /> : null}
-                <div>
-                  <strong>{pinnedCard.title}</strong>
-                  <p className="game-ui-v2-subtle">{pinnedCard.categoryText} · {pinnedCard.sourceLabel}</p>
-                  {pinnedCard.effects?.length ? (
-                    <p className="game-ui-v2-subtle">{pinnedCard.effects.map((e) => `${effectLabel(e.resource)} ${fmtDelta(e.value)}`).join(', ')}</p>
-                  ) : null}
-                </div>
-              </div>
-            ) : <p className="game-ui-v2-subtle">{v2.noPinnedCard}</p>}
-          </section>
         </aside>
       </div>
 
       <div className="game-ui-v2-mobile-bar" aria-label={v2.mobileActions}>
         <button type="button" onClick={() => canDraw && moves.drawCard()} disabled={!canDraw}>{t.draw}</button>
-        <button type="button" onClick={() => { if (!canPlay || promoteReason) return; setPendingConfirm({ kind: 'promote', nextRankName: nextRankMeta?.nextRank?.name ?? null, reason: null }); }} disabled={!canPlay || Boolean(promoteReason)}>{t.promote}</button>
+        <button type="button" onClick={() => { if (!canPlay || promoteReason) return; moves.promote(); }} disabled={!canPlay || Boolean(promoteReason)}>{t.promote}</button>
         <button type="button" onClick={() => canEndTurn && moves.pass()} disabled={!canEndTurn}>{t.endTurn}</button>
       </div>
     </section>

@@ -190,11 +190,20 @@ Helper commands after install:
 
 ```bash
 joj start
+joj update
 joj restart
 joj status
 joj logs
 joj health
 start joj   # compatibility shortcut
+```
+
+`joj update` runs:
+
+```bash
+git pull --ff-only
+npm run build
+pm2 restart joj-game-server joj-game-web --update-env
 ```
 
 ## Local HTTPS (LAN) with Caddy + hosts file

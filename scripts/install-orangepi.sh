@@ -70,5 +70,5 @@ echo
 echo "Install complete."
 echo "Health check: curl http://127.0.0.1:8000/api/health"
 echo "LAN frontend:  http://<orange-pi-lan-ip>:4173"
-echo "Helper commands: joj start | joj restart | joj status | joj logs | start joj"
+echo "Helper commands: joj start | joj update | joj restart | joj status | joj logs | start joj"
 echo "For HTTPS via Caddy: see DEPLOYMENT_HARDENING.md and README.md"

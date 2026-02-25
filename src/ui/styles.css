@@ -71,11 +71,56 @@ button:disabled {
   margin: 6px 0;
 }
 
+.app-top-toolbar {
+  margin: 6px 0 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  padding: 10px 12px;
+}
+
+.app-top-toolbar-left,
+.app-top-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-top-toolbar .app-top-row {
+  margin: 0;
+  white-space: nowrap;
+}
+
 .user-tabs {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   margin: 8px 0 14px;
+}
+
+.app-top-toolbar .user-tabs {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .app-top-toolbar {
+    align-items: stretch;
+  }
+
+  .app-top-toolbar-left,
+  .app-top-toolbar-right {
+    width: 100%;
+  }
+
+  .app-top-toolbar .app-top-row {
+    white-space: normal;
+  }
 }
 
 .board {
@@ -1366,6 +1411,10 @@ button:disabled {
   gap: 8px;
 }
 
+.game-ui-v2-mobile-tabs {
+  display: none;
+}
+
 .game-ui-v2-side-tab-row button {
   flex: 1;
   border: 1px solid #c8d7ee;
@@ -1532,6 +1581,10 @@ button:disabled {
 
   .game-ui-v2-side-tab-row {
     display: flex;
+  }
+
+  .game-ui-v2-mobile-tabs {
+    display: block;
   }
 
   .game-ui-v2-mobile-hidden {

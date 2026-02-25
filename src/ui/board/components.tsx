@@ -178,6 +178,7 @@ type ChatPanelProps = {
     sendMessage: string;
   };
   chatLogRef: RefObject<HTMLDivElement>;
+  includeSystemMessages?: boolean;
 };
 
 export const BoardChatPanel = ({
@@ -188,11 +189,14 @@ export const BoardChatPanel = ({
   playerLabelById,
   t,
   chatLogRef,
+  includeSystemMessages = true,
 }: ChatPanelProps) => (
   <aside className="board-chat">
     <h3>{t.chatTitle}</h3>
     <div className="chat-log" ref={chatLogRef}>
-      {(chat ?? []).map((row) => {
+      {(chat ?? [])
+        .filter((row) => includeSystemMessages || row.type !== 'system')
+        .map((row) => {
         const author = row.type === 'system' ? t.systemTag : playerLabelById(row.playerID);
         return (
           <p key={row.id} className={row.type === 'system' ? 'chat-system' : 'chat-player'}>
