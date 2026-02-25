@@ -261,6 +261,12 @@ export const BoardV2 = ({
   }, [G, id, sharedRanks, resources]);
 
   const playerIds = useMemo(() => Object.keys(G?.players ?? {}), [G?.players]);
+  const gameoverMeta = (ctx?.gameover ?? null) as { winner?: string; endReason?: string } | null;
+  const winnerPlayerID = gameoverMeta?.winner ? String(gameoverMeta.winner) : '';
+  const winnerRankId = winnerPlayerID ? (G?.ranks?.[winnerPlayerID] ?? '') : '';
+  const winnerRankName = winnerRankId
+    ? (sharedRanks.find((row) => row.id === winnerRankId)?.name ?? rankLabel(winnerRankId, lang))
+    : '';
   const latestEvents = (G?.chat ?? []).slice(-4).reverse();
 
   const handCardsView = useMemo(() => {
@@ -300,6 +306,27 @@ export const BoardV2 = ({
     });
     return filtered;
   }, [G, resources, hand, canPlayHandCard, id, sharedRanks, resourceLabels, lang, handFilter, handSort]);
+  const hasPlayableHandCard = useMemo(
+    () =>
+      hand.some((card) =>
+        isPlayAllowedForCard({
+          card,
+          canPlayHandCard,
+          resources,
+          G,
+          playerID: id,
+          sharedRanks,
+          resourceLabels,
+          lang,
+        }),
+      ),
+    [G, resources, hand, canPlayHandCard, id, sharedRanks, resourceLabels, lang],
+  );
+  const hasPlayableLegendaryCard = canPlay && typeof moves.playLegendaryCard === 'function' && legendaryHand.length > 0;
+  const shouldShowSkipTurnLabel = (G.deck?.length ?? 0) === 0 && !hasPlayableHandCard && !hasPlayableLegendaryCard;
+  const passButtonLabel = shouldShowSkipTurnLabel
+    ? (lang === 'uk' ? 'Пропустити хід' : 'Skip turn')
+    : t.endTurn;
 
   const requestPlayHandCard = (card: CardDefinition) => {
     if (!canPlayHandCard) {
@@ -441,7 +468,7 @@ export const BoardV2 = ({
                   moves.promote();
                   setNotice(null);
                 }} disabled={!canPlay}>{t.promote}</button>
-                <button type="button" onClick={() => { if (!canEndTurn) return; moves.pass(); setNotice(null); }} disabled={!canEndTurn}>{t.endTurn}</button>
+                <button type="button" onClick={() => { if (!canEndTurn) return; moves.pass(); setNotice(null); }} disabled={!canEndTurn}>{passButtonLabel}</button>
               </div>
             </div>
             <div className="game-ui-v2-resources-grid">
@@ -771,7 +798,32 @@ export const BoardV2 = ({
           </section>
 
           {ctx.gameover ? (
-            <p className="gameover">{t.winner}: {playerLabelById(String((ctx.gameover as { winner?: string }).winner ?? ''))}</p>
+            <>
+              <p className="gameover">{t.winner}: {playerLabelById(String((ctx.gameover as { winner?: string }).winner ?? ''))}</p>
+              <div className="game-ui-v2-gameover-modal" role="dialog" aria-label={lang === 'uk' ? 'Статистика гри' : 'Game statistics'}>
+                <div className="game-ui-v2-gameover-card">
+                  <h3>{lang === 'uk' ? 'Статистика гри' : 'Game statistics'}</h3>
+                  <p>
+                    <strong>{lang === 'uk' ? 'Переможець' : 'Winner'}:</strong> {playerLabelById(winnerPlayerID)}
+                    {winnerRankName ? ` (${winnerRankName})` : ''}
+                  </p>
+                  {gameoverMeta?.endReason === 'stalled-no-cards' ? (
+                    <p className="game-ui-v2-subtle">
+                      {lang === 'uk'
+                        ? 'Гру завершено автоматично після повного кола пропусків (карт для розіграшу не лишилось).'
+                        : 'Game auto-ended after a full round of skips (no playable cards left).'}
+                    </p>
+                  ) : null}
+                  <div className="game-ui-v2-token-list">
+                    <div className="game-ui-v2-token-row"><span>{lang === 'uk' ? 'Усього ходів' : 'Total turns'}</span><strong>{G.gameStats?.turnsCompleted ?? 0}</strong></div>
+                    <div className="game-ui-v2-token-row"><span>{lang === 'uk' ? 'Отримано ресурсів (усього)' : 'Resources gained (total)'}</span><strong>{G.gameStats?.resourcesGainedTotal ?? 0}</strong></div>
+                    <div className="game-ui-v2-token-row"><span>{lang === 'uk' ? 'Втрачено ресурсів (усього)' : 'Resources lost (total)'}</span><strong>{G.gameStats?.resourcesLostTotal ?? 0}</strong></div>
+                    <div className="game-ui-v2-token-row"><span>{lang === 'uk' ? 'ЛЯПів зіграно на інших' : 'LYAPs played on others'}</span><strong>{G.gameStats?.lyapsPlayedOnOthers ?? 0}</strong></div>
+                    <div className="game-ui-v2-token-row"><span>{lang === 'uk' ? 'СКАНДАЛів зіграно на інших' : 'SCANDALs played on others'}</span><strong>{G.gameStats?.scandalsPlayedOnOthers ?? 0}</strong></div>
+                  </div>
+                </div>
+              </div>
+            </>
           ) : null}
         </div>
 
@@ -817,7 +869,7 @@ export const BoardV2 = ({
       <div className="game-ui-v2-mobile-bar" aria-label={v2.mobileActions}>
         <button type="button" onClick={() => canDraw && moves.drawCard()} disabled={!canDraw}>{t.draw}</button>
         <button type="button" onClick={() => { if (!canPlay || promoteReason) return; moves.promote(); }} disabled={!canPlay || Boolean(promoteReason)}>{t.promote}</button>
-        <button type="button" onClick={() => canEndTurn && moves.pass()} disabled={!canEndTurn}>{t.endTurn}</button>
+        <button type="button" onClick={() => canEndTurn && moves.pass()} disabled={!canEndTurn}>{passButtonLabel}</button>
       </div>
     </section>
   );

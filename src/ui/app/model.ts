@@ -76,6 +76,7 @@ export const galleryCategories: CardDefinition['category'][] = [
   'DECISION',
   'NEUTRAL',
   'VVNZ',
+  'LEGENDARY',
 ];
 
 export const parseSession = (raw: string | null): Session | null => {

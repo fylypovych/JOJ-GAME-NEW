@@ -103,7 +103,13 @@ export const resetSharedRanks = () => {
 
 const buildCardCatalog = (template: SharedDeckTemplate): CardDefinition[] => {
   const byId = new Map<string, CardDefinition>();
-  [...template.deck, ...template.legendaryDeck, ...template.rankTrack].forEach((card) => {
+  template.deck.forEach((card) => {
+    if (!byId.has(card.id)) byId.set(card.id, cloneCard(card));
+  });
+  template.legendaryDeck.forEach((card) => {
+    if (!byId.has(card.id)) byId.set(card.id, cloneCard({ ...card, category: 'LEGENDARY' }));
+  });
+  template.rankTrack.forEach((card) => {
     if (!byId.has(card.id)) byId.set(card.id, cloneCard(card));
   });
   return [...byId.values()];
@@ -290,4 +296,3 @@ export const updateCardAtInSharedDeckTemplate = (target: DeckTarget, index: numb
   sharedDeckTemplate = { ...sharedDeckTemplate, [target]: sharedDeckTemplate[target].map((item, i) => (i === index ? cloneCard(card) : item)) };
   return true;
 };
-

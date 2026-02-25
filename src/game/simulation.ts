@@ -313,6 +313,16 @@ const simulateSingleMatch = (
     extraHandPlayTokens: {},
     sukhpayZsuWatchUntilTurn: {},
     sukhpayZsuPendingBonus: {},
+    gameStats: {
+      turnsCompleted: 0,
+      resourcesGainedTotal: 0,
+      resourcesLostTotal: 0,
+      resourcesGainedByType: { time: 0, reputation: 0, discipline: 0, documents: 0, tech: 0 },
+      resourcesLostByType: { time: 0, reputation: 0, discipline: 0, documents: 0, tech: 0 },
+      lyapsPlayedOnOthers: 0,
+      scandalsPlayedOnOthers: 0,
+    },
+    noPlayablePassStreak: 0,
   };
 
   playerIDs.forEach((pid, index) => {

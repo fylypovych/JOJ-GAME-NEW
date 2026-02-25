@@ -143,6 +143,22 @@ export const Board = ({
       lang,
     });
   };
+  const hasPlayableHandCard = hand.some((card) => {
+    if (!canPlayHandCard) return false;
+    if (card.category !== 'VVNZ') return true;
+    return !getVvnzPlayBlockedReason(card);
+  });
+  const hasPlayableLegendaryCard = canPlay && typeof moves.playLegendaryCard === 'function' && legendaryHand.length > 0;
+  const shouldShowSkipTurnLabel = (G.deck?.length ?? 0) === 0 && !hasPlayableHandCard && !hasPlayableLegendaryCard;
+  const passButtonLabel = shouldShowSkipTurnLabel
+    ? (lang === 'uk' ? 'Пропустити хід' : 'Skip turn')
+    : t.endTurn;
+  const gameoverMeta = (ctx?.gameover ?? null) as { winner?: string; endReason?: string } | null;
+  const winnerPlayerID = gameoverMeta?.winner ? String(gameoverMeta.winner) : '';
+  const winnerRankId = winnerPlayerID ? (G?.ranks?.[winnerPlayerID] ?? '') : '';
+  const winnerRankName = winnerRankId
+    ? (sharedRanks.find((row) => row.id === winnerRankId)?.name ?? rankLabel(winnerRankId, lang))
+    : '';
 
   if (!G || !ctx || !resources) {
     return (
@@ -203,7 +219,7 @@ export const Board = ({
               {t.promote}
             </button>
             <button type="button" onClick={() => moves.pass()} disabled={!canEndTurn}>
-              {t.endTurn}
+              {passButtonLabel}
             </button>
           </div>
         </div>
@@ -332,7 +348,34 @@ export const Board = ({
         {lastLegendaryDiscard ? ` | ${t.lastPlayedCard}: ${cardTitle(lastLegendaryDiscard.id, lastLegendaryDiscard.title, lang)}` : ''}
       </p>
 
-      {ctx.gameover ? <p className="gameover">{t.winner}: {playerLabelById(String(ctx.gameover.winner ?? ''))}</p> : null}
+      {ctx.gameover ? (
+        <>
+          <p className="gameover">{t.winner}: {playerLabelById(String(ctx.gameover.winner ?? ''))}</p>
+          <div className="gameover-modal" role="dialog" aria-label={lang === 'uk' ? 'Статистика гри' : 'Game statistics'}>
+            <div className="gameover-modal-card">
+              <h3>{lang === 'uk' ? 'Статистика гри' : 'Game statistics'}</h3>
+              <p>
+                <strong>{lang === 'uk' ? 'Переможець' : 'Winner'}:</strong> {playerLabelById(winnerPlayerID)}
+                {winnerRankName ? ` (${winnerRankName})` : ''}
+              </p>
+              {gameoverMeta?.endReason === 'stalled-no-cards' ? (
+                <p className="legendary-hint">
+                  {lang === 'uk'
+                    ? 'Гру завершено автоматично після повного кола пропусків (карт для розіграшу не лишилось).'
+                    : 'Game auto-ended after a full round of skips (no playable cards left).'}
+                </p>
+              ) : null}
+              <ul className="gameover-stats-list">
+                <li>{lang === 'uk' ? 'Усього ходів' : 'Total turns'}: <strong>{G.gameStats?.turnsCompleted ?? 0}</strong></li>
+                <li>{lang === 'uk' ? 'Отримано ресурсів (усього)' : 'Resources gained (total)'}: <strong>{G.gameStats?.resourcesGainedTotal ?? 0}</strong></li>
+                <li>{lang === 'uk' ? 'Втрачено ресурсів (усього)' : 'Resources lost (total)'}: <strong>{G.gameStats?.resourcesLostTotal ?? 0}</strong></li>
+                <li>{lang === 'uk' ? 'ЛЯПів зіграно на інших' : 'LYAPs played on others'}: <strong>{G.gameStats?.lyapsPlayedOnOthers ?? 0}</strong></li>
+                <li>{lang === 'uk' ? 'СКАНДАЛів зіграно на інших' : 'SCANDALs played on others'}: <strong>{G.gameStats?.scandalsPlayedOnOthers ?? 0}</strong></li>
+              </ul>
+            </div>
+          </div>
+        </>
+      ) : null}
       </div>
       <BoardChatPanel
         chat={G.chat ?? []}

@@ -380,6 +380,56 @@ const getWinner = (G: JojGameState): string | undefined => {
   return undefined;
 };
 
+const getResourceLeader = (G: JojGameState): string | undefined =>
+  Object.entries(G.resources)
+    .sort(([, a], [, b]) =>
+      resourceKeys.reduce((sum, key) => sum + (b[key] - a[key]), 0),
+    )
+    .at(0)?.[0];
+
+const snapshotResourceTotals = (G: JojGameState): Record<string, Record<ResourceKey, number>> => {
+  const snapshot: Record<string, Record<ResourceKey, number>> = {};
+  Object.keys(G.resources ?? {}).forEach((pid) => {
+    snapshot[pid] = { ...G.resources[pid] };
+  });
+  return snapshot;
+};
+
+const recordResourceFlowStats = (
+  G: JojGameState,
+  before: Record<string, Record<ResourceKey, number>>,
+) => {
+  Object.keys(G.resources ?? {}).forEach((pid) => {
+    const prev = before[pid];
+    const next = G.resources[pid];
+    if (!prev || !next) return;
+    resourceKeys.forEach((key) => {
+      const delta = (next[key] ?? 0) - (prev[key] ?? 0);
+      if (delta > 0) {
+        G.gameStats.resourcesGainedTotal += delta;
+        G.gameStats.resourcesGainedByType[key] = (G.gameStats.resourcesGainedByType[key] ?? 0) + delta;
+      } else if (delta < 0) {
+        const abs = Math.abs(delta);
+        G.gameStats.resourcesLostTotal += abs;
+        G.gameStats.resourcesLostByType[key] = (G.gameStats.resourcesLostByType[key] ?? 0) + abs;
+      }
+    });
+  });
+};
+
+const resetNoPlayablePassStreak = (G: JojGameState) => {
+  G.noPlayablePassStreak = 0;
+};
+
+const hasPlayableCardsByInventory = (G: JojGameState, playerID: string): boolean =>
+  (G.hands[playerID]?.length ?? 0) > 0 || (G.legendaryHands[playerID]?.length ?? 0) > 0;
+
+const shouldCountNoPlayablePass = (G: JojGameState, playerID: string): boolean =>
+  (G.deck?.length ?? 0) === 0 && !hasPlayableCardsByInventory(G, playerID);
+
+const allPlayersOutOfPlayableCardsByInventory = (G: JojGameState): boolean =>
+  Object.keys(G.players ?? {}).every((pid) => !hasPlayableCardsByInventory(G, pid));
+
 const buildReplacementPlan = (
   resources: Record<ResourceKey, number>,
   effects: CardDefinition['effects'],
@@ -446,6 +496,28 @@ export const jojGame: Game<JojGameState> = {
       extraHandPlayTokens: {},
       sukhpayZsuWatchUntilTurn: {},
       sukhpayZsuPendingBonus: {},
+      gameStats: {
+        turnsCompleted: 0,
+        resourcesGainedTotal: 0,
+        resourcesLostTotal: 0,
+        resourcesGainedByType: {
+          time: 0,
+          reputation: 0,
+          discipline: 0,
+          documents: 0,
+          tech: 0,
+        },
+        resourcesLostByType: {
+          time: 0,
+          reputation: 0,
+          discipline: 0,
+          documents: 0,
+          tech: 0,
+        },
+        lyapsPlayedOnOthers: 0,
+        scandalsPlayedOnOthers: 0,
+      },
+      noPlayablePassStreak: 0,
     };
 
     players.forEach((playerID) => {
@@ -524,6 +596,22 @@ export const jojGame: Game<JojGameState> = {
     buildLegendaryPlayedMessageText,
     legendaryTexts,
     clampNonNegativeResources,
+    snapshotResourcesForStats: snapshotResourceTotals,
+    recordResourceFlowStats,
+    resetNoPlayablePassStreak,
+    shouldCountNoPlayablePass,
+    incrementNoPlayablePassStreak: (G) => {
+      G.noPlayablePassStreak = (G.noPlayablePassStreak ?? 0) + 1;
+    },
+    incrementTurnsCompleted: (G) => {
+      G.gameStats.turnsCompleted = (G.gameStats.turnsCompleted ?? 0) + 1;
+    },
+    incrementLyapPlayedOnOthers: (G) => {
+      G.gameStats.lyapsPlayedOnOthers = (G.gameStats.lyapsPlayedOnOthers ?? 0) + 1;
+    },
+    incrementScandalPlayedOnOthers: (G) => {
+      G.gameStats.scandalsPlayedOnOthers = (G.gameStats.scandalsPlayedOnOthers ?? 0) + 1;
+    },
     computeShieldUntilNextOwnTurn,
     cancelLastLyapOrScandalForPlayer,
     cancelLastScandalForPlayer,
@@ -535,8 +623,21 @@ export const jojGame: Game<JojGameState> = {
   }),
   endIf: ({ G }) => {
     const winner = getWinner(G);
-    if (!winner) return undefined;
-    return { winner };
+    if (winner) {
+      return { winner, endReason: 'winner', stats: G.gameStats };
+    }
+    const playerCount = Object.keys(G.players ?? {}).length;
+    if (
+      playerCount > 0
+      && (G.deck?.length ?? 0) === 0
+      && allPlayersOutOfPlayableCardsByInventory(G)
+      && (G.noPlayablePassStreak ?? 0) >= playerCount
+    ) {
+      const fallbackWinner = getResourceLeader(G);
+      if (!fallbackWinner) return { endReason: 'stalled-no-cards', stats: G.gameStats };
+      return { winner: fallbackWinner, endReason: 'stalled-no-cards', stats: G.gameStats };
+    }
+    return undefined;
   },
   ai: {
     enumerate: enumerateAiMoves({ DRAW_STAGE, END_STAGE }),

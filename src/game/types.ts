@@ -66,6 +66,16 @@ export interface JOJState {
   extraHandPlayTokens: Record<string, number>;
   sukhpayZsuWatchUntilTurn: Record<string, number>;
   sukhpayZsuPendingBonus: Record<string, boolean>;
+  gameStats: {
+    turnsCompleted: number;
+    resourcesGainedTotal: number;
+    resourcesLostTotal: number;
+    resourcesGainedByType: Record<ResourceKey, number>;
+    resourcesLostByType: Record<ResourceKey, number>;
+    lyapsPlayedOnOthers: number;
+    scandalsPlayedOnOthers: number;
+  };
+  noPlayablePassStreak: number;
 }
 
 // Backward-compatible aliases for existing code.

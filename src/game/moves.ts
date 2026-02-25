@@ -78,6 +78,14 @@ type JojMovesDeps = {
   }) => string;
   legendaryTexts: Record<string, (...args: any[]) => string>;
   clampNonNegativeResources: (resources: Record<ResourceKey, number>) => void;
+  snapshotResourcesForStats: (G: JojGameState) => Record<string, Record<ResourceKey, number>>;
+  recordResourceFlowStats: (G: JojGameState, before: Record<string, Record<ResourceKey, number>>) => void;
+  resetNoPlayablePassStreak: (G: JojGameState) => void;
+  shouldCountNoPlayablePass: (G: JojGameState, playerID: string) => boolean;
+  incrementNoPlayablePassStreak: (G: JojGameState) => void;
+  incrementTurnsCompleted: (G: JojGameState) => void;
+  incrementLyapPlayedOnOthers: (G: JojGameState) => void;
+  incrementScandalPlayedOnOthers: (G: JojGameState) => void;
   computeShieldUntilNextOwnTurn: (ctx: Pick<MoveCtx, 'currentPlayer' | 'playOrder' | 'turn'>, playerID: string) => number;
   cancelLastLyapOrScandalForPlayer: (
     G: JojGameState,
@@ -142,6 +150,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
     if (args.ctx.activePlayers?.[playerID] !== d.DRAW_STAGE) return d.INVALID_MOVE;
 
+    const beforeResources = d.snapshotResourcesForStats(args.G);
     const hand = args.G.hands[playerID];
     let autoPlayed = false;
     const card = args.G.deck.pop();
@@ -182,6 +191,8 @@ export const createJojMoves = (d: JojMovesDeps) => ({
       }
     }
     d.syncPlayerState(args.G, playerID);
+    d.recordResourceFlowStats(args.G, beforeResources);
+    d.resetNoPlayablePassStreak(args.G);
     args.events?.setStage?.(autoPlayed ? d.END_STAGE : d.PLAY_STAGE);
     return undefined;
   },
@@ -205,6 +216,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     const hand = args.G.hands[playerID];
     const idx = hand.findIndex((card: CardDefinition) => card.id === cardId);
     if (idx === -1) return d.INVALID_MOVE;
+    const beforeResources = d.snapshotResourcesForStats(args.G);
 
     const card = hand[idx];
     const allPlayerIDs = Object.keys(args.G.players);
@@ -216,6 +228,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
 
     if (card.category === 'LYAP') {
       if (!targetPlayerID || targetPlayerID === playerID || !(targetPlayerID in args.G.players)) return d.INVALID_MOVE;
+      d.incrementLyapPlayedOnOthers(args.G);
       const protectedTarget = d.isProtectedFromLyapScandal(args.G, args.ctx, targetPlayerID);
       const summary = protectedTarget ? { resources: {}, rank: 0 } : applySoftTo(targetPlayerID);
       const seq = d.nextSystemMessageSeq(args.G);
@@ -226,6 +239,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
           : d.buildPlayedLyapSystemMessage(seq, d.getPlayerLabel(args.G, playerID), d.getPlayerLabel(args.G, targetPlayerID), card, summary),
       });
     } else if (card.category === 'SCANDAL') {
+      d.incrementScandalPlayedOnOthers(args.G);
       const targetSummaries: string[] = [];
       allPlayerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
         if (d.isProtectedFromLyapScandal(args.G, args.ctx, pid)) {
@@ -328,6 +342,8 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     hand.splice(idx, 1);
     args.G.discard.push(card);
     d.syncPlayerState(args.G, playerID);
+    d.recordResourceFlowStats(args.G, beforeResources);
+    d.resetNoPlayablePassStreak(args.G);
     if (usingExtraToken) {
       args.G.extraHandPlayTokens[playerID] = Math.max(0, (args.G.extraHandPlayTokens[playerID] ?? 0) - 1);
     } else {
@@ -341,6 +357,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     const hand = args.G.legendaryHands[playerID] ?? [];
     const idx = hand.findIndex((card: CardDefinition) => card.id === cardId);
     if (idx === -1) return d.INVALID_MOVE;
+    const beforeResources = d.snapshotResourcesForStats(args.G);
     const card = hand[idx];
     const playerLabel = d.getPlayerLabel(args.G, playerID);
     let specialMessage = '';
@@ -421,6 +438,8 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     hand.splice(idx, 1);
     args.G.legendaryDiscard.push(card);
     d.syncPlayerState(args.G, playerID);
+    d.recordResourceFlowStats(args.G, beforeResources);
+    d.resetNoPlayablePassStreak(args.G);
     const seq = d.nextSystemMessageSeq(args.G);
     d.appendChat(args.G, {
       type: 'system',
@@ -442,6 +461,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     hand.splice(idx, 1);
     args.G.discard.push(card);
     d.syncPlayerState(args.G, playerID);
+    d.resetNoPlayablePassStreak(args.G);
     const seq = d.nextSystemMessageSeq(args.G);
     d.appendChat(args.G, {
       type: 'system',
@@ -456,6 +476,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     if (![d.PLAY_STAGE, d.END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return d.INVALID_MOVE;
     if (args.G.promotedThisTurn[playerID]) return d.INVALID_MOVE;
     const beforeResources = { ...args.G.resources[playerID] };
+    const beforeResourcesGlobal = d.snapshotResourcesForStats(args.G);
     const beforeRankId = args.G.ranks[playerID];
     const playerCount = Object.keys(args.G.players).length || Number(args.ctx.numPlayers ?? 0) || 2;
     if (!d.promoteRank(args.G, playerID, playerCount)) return d.INVALID_MOVE;
@@ -476,6 +497,8 @@ export const createJojMoves = (d: JojMovesDeps) => ({
         summary,
       ),
     });
+    d.recordResourceFlowStats(args.G, beforeResourcesGlobal);
+    d.resetNoPlayablePassStreak(args.G);
     return undefined;
   },
   pass: (args: MoveArgs) => {
@@ -483,6 +506,9 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
     if (![d.PLAY_STAGE, d.END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return d.INVALID_MOVE;
     if ((args.G.hands[playerID]?.length ?? 0) > d.HAND_LIMIT) return d.INVALID_MOVE;
+    d.incrementTurnsCompleted(args.G);
+    if (d.shouldCountNoPlayablePass(args.G, playerID)) d.incrementNoPlayablePassStreak(args.G);
+    else d.resetNoPlayablePassStreak(args.G);
     args.events?.endTurn?.();
     return undefined;
   },

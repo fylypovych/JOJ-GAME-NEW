@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition } from '../../game/types';
 import type { Language } from '../i18n';
@@ -207,11 +208,15 @@ export const GallerySection = ({
   galleryCards,
   galleryCategories,
   effectLabel,
-}: GallerySectionProps) => (
-  <section className="board">
-    <h2>{t.galleryTitle}</h2>
-    <p>{t.galleryDescription}</p>
-    <p className="gallery-category-tabs">
+}: GallerySectionProps) => {
+  const [openPreviewKey, setOpenPreviewKey] = useState<string | null>(null);
+  const togglePreview = (key: string) => setOpenPreviewKey((prev) => (prev === key ? null : key));
+
+  return (
+    <section className="board">
+      <h2>{t.galleryTitle}</h2>
+      <p>{t.galleryDescription}</p>
+      <p className="gallery-category-tabs">
       <button
         type="button"
         onClick={() => setGalleryCategoryFilter('ALL')}
@@ -229,12 +234,29 @@ export const GallerySection = ({
           {categoryLabel(cat, lang)}
         </button>
       ))}
-    </p>
-    {galleryCards.length === 0 ? <p>{t.noCardsYet}</p> : null}
-    <div className="gallery-grid">
-      {galleryCards.map((card) => (
-        <article key={card.id} className="gallery-card">
-          <div className="gallery-card-image">
+      </p>
+      {galleryCards.length === 0 ? <p>{t.noCardsYet}</p> : null}
+      <div className="gallery-grid">
+        {galleryCards.map((card) => {
+          const previewKey = `gallery-${card.id}`;
+          const isOpen = openPreviewKey === previewKey;
+          return (
+            <article key={card.id} className="gallery-card">
+              <div
+                className={`gallery-card-image${isOpen ? ' is-open' : ''}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => togglePreview(previewKey)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    togglePreview(previewKey);
+                  }
+                  if (e.key === 'Escape') {
+                    setOpenPreviewKey(null);
+                  }
+                }}
+              >
             <img
               src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
               alt={cardTitle(card.id, card.title, lang)}
@@ -242,29 +264,38 @@ export const GallerySection = ({
                 (e.currentTarget as HTMLImageElement).style.display = 'none';
               }}
             />
-            <div className="gallery-card-popover" aria-hidden="true">
+                <div
+                  className={`gallery-card-popover${isOpen ? ' is-open' : ''}`}
+                  aria-hidden={!isOpen}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenPreviewKey(null);
+                  }}
+                >
               <img
                 src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
                 alt={cardTitle(card.id, card.title, lang)}
               />
-            </div>
-          </div>
-          <h3>{cardTitle(card.id, card.title, lang)}</h3>
-          <p>{card.flavor ?? ''}</p>
-          <div className="gallery-effects">
-            {(card.effects ?? []).length === 0 ? (
-              <span className="pill pill-cost">0</span>
-            ) : (card.effects ?? []).map((effect, idx) => (
-              <span key={`${card.id}-effect-${idx}`} className="pill pill-effect">
-                {effectLabel(effect.resource)}: {effect.value > 0 ? `+${effect.value}` : effect.value}
-              </span>
-            ))}
-          </div>
-        </article>
-      ))}
-    </div>
-  </section>
-);
+                </div>
+              </div>
+              <h3>{cardTitle(card.id, card.title, lang)}</h3>
+              <p>{card.flavor ?? ''}</p>
+              <div className="gallery-effects">
+                {(card.effects ?? []).length === 0 ? (
+                  <span className="pill pill-cost">0</span>
+                ) : (card.effects ?? []).map((effect, idx) => (
+                  <span key={`${card.id}-effect-${idx}`} className="pill pill-effect">
+                    {effectLabel(effect.resource)}: {effect.value > 0 ? `+${effect.value}` : effect.value}
+                  </span>
+                ))}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
 
 export const RulesSection = ({ t, rules }: { t: T; rules: readonly string[] }) => (
   <section className="board">
