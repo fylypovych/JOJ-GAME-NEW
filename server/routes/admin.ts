@@ -382,14 +382,21 @@ export const registerAdminRoutes = ({
       steps.push({ step: 'git pull --ff-only', output: 'Already up to date' });
     }
 
-    const installRes = await runShellCommand('npm install', 30 * 60_000);
+    let installRes = await runShellCommand('npm ci --include=dev', 30 * 60_000);
     if (!installRes.ok) {
-      ctx.status = 500;
-      ctx.body = { ok: false, error: 'npm install failed', details: installRes.error, steps };
-      await logLine('ERROR', `deploy npm install failed: ${installRes.error}`);
-      return;
+      await logLine('WARN', `deploy npm ci --include=dev failed, falling back to npm install --include=dev: ${installRes.error}`);
+      steps.push({ step: 'npm ci --include=dev', output: `FAILED (fallback to npm install --include=dev): ${installRes.error}` });
+      installRes = await runShellCommand('npm install --include=dev', 30 * 60_000);
+      if (!installRes.ok) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: 'npm install failed', details: installRes.error, steps };
+        await logLine('ERROR', `deploy npm install --include=dev failed: ${installRes.error}`);
+        return;
+      }
+      steps.push({ step: 'npm install --include=dev', output: installRes.stdout.trim() || '(ok)' });
+    } else {
+      steps.push({ step: 'npm ci --include=dev', output: installRes.stdout.trim() || '(ok)' });
     }
-    steps.push({ step: 'npm install', output: installRes.stdout.trim() || '(ok)' });
 
     const tscRes = await runShellCommand('npm run typecheck', 20 * 60_000);
     if (!tscRes.ok) {
