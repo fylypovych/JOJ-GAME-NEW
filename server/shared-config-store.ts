@@ -3,6 +3,14 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 
 type StorageMode = 'file' | 'postgres';
+type DbConnDraft = {
+  host: string;
+  port: string;
+  database: string;
+  user: string;
+  password?: string;
+  sslMode?: 'disable' | 'require';
+};
 
 type SharedConfigStoreDeps = {
   templatePath: string;
@@ -26,6 +34,16 @@ type DeckTemplateShape = {
 const sqlString = (value: string) => `'${value.replace(/'/g, "''")}'`;
 const sqlNullableString = (value?: string | null) => (value ? sqlString(value) : 'NULL');
 const sqlJson = (value: unknown) => `${sqlString(JSON.stringify(value))}::jsonb`;
+const buildDatabaseUrlFromDraft = (draft: DbConnDraft) => {
+  const protocol = 'postgresql://';
+  const user = encodeURIComponent(draft.user.trim());
+  const password = draft.password ? `:${encodeURIComponent(draft.password)}` : '';
+  const host = draft.host.trim();
+  const port = draft.port.trim();
+  const database = encodeURIComponent(draft.database.trim());
+  const sslMode = draft.sslMode === 'require' ? 'require' : 'disable';
+  return `${protocol}${user}${password}@${host}:${port}/${database}?sslmode=${sslMode}`;
+};
 
 const runPsql = async (databaseUrl: string, sql: string): Promise<{ ok: true; stdout: string } | { ok: false; error: string }> => {
   return new Promise((resolve) => {
@@ -99,7 +117,11 @@ export const createSharedConfigStore = ({
   };
 
   const saveTemplateToPostgres = async () => {
-    if (!databaseUrl) throw new Error('DATABASE_URL is required for STORAGE_MODE=postgres');
+    return saveTemplateToPostgresWithUrl(databaseUrl);
+  };
+
+  const saveTemplateToPostgresWithUrl = async (targetDatabaseUrl: string) => {
+    if (!targetDatabaseUrl) throw new Error('DATABASE_URL is required for postgres sync');
     const parsed = JSON.parse(exportSharedDeckTemplateJson()) as Partial<DeckTemplateShape>;
     const deck = ensureArray(parsed.deck);
     const legendaryDeck = ensureArray(parsed.legendaryDeck);
@@ -146,12 +168,16 @@ INSERT INTO deck_template_entries (deck_template_id, deck_target, card_id, sort_
 VALUES ${rows.join(',\n')};` : ''}
 COMMIT;`;
 
-    const result = await runPsql(databaseUrl, sql);
+    const result = await runPsql(targetDatabaseUrl, sql);
     if (!result.ok) throw new Error(result.error);
   };
 
   const saveRanksToPostgres = async () => {
-    if (!databaseUrl) throw new Error('DATABASE_URL is required for STORAGE_MODE=postgres');
+    return saveRanksToPostgresWithUrl(databaseUrl);
+  };
+
+  const saveRanksToPostgresWithUrl = async (targetDatabaseUrl: string) => {
+    if (!targetDatabaseUrl) throw new Error('DATABASE_URL is required for postgres sync');
     const ranksRaw = getSharedRanks();
     const ranks = Array.isArray(ranksRaw) ? ranksRaw : [];
     const rows: string[] = [];
@@ -196,7 +222,7 @@ INSERT INTO rank_definitions (
 VALUES ${rows.join(',\n')};` : ''}
 COMMIT;`;
 
-    const result = await runPsql(databaseUrl, sql);
+    const result = await runPsql(targetDatabaseUrl, sql);
     if (!result.ok) throw new Error(result.error);
   };
 
@@ -271,7 +297,7 @@ LIMIT 1;`;
         // eslint-disable-next-line no-console
         console.warn(`[template] postgres load failed, fallback to disk: ${String(error)}`);
         await loadTemplateFromDisk();
-        await saveTemplateToPostgres().catch(() => undefined);
+        await saveTemplateToPostgresWithUrl(databaseUrl).catch(() => undefined);
       }
     }
     : loadTemplateFromDisk;
@@ -284,7 +310,7 @@ LIMIT 1;`;
         // eslint-disable-next-line no-console
         console.warn(`[ranks] postgres load failed, fallback to disk: ${String(error)}`);
         await loadRanksFromDisk();
-        await saveRanksToPostgres().catch(() => undefined);
+        await saveRanksToPostgresWithUrl(databaseUrl).catch(() => undefined);
       }
     }
     : loadRanksFromDisk;
@@ -294,12 +320,13 @@ LIMIT 1;`;
     saveRanksToDisk: saveRanks,
     loadTemplateFromDisk: loadTemplate,
     loadRanksFromDisk: loadRanks,
-    syncCurrentJsonToPostgres: async () => {
-      if (storageMode !== 'postgres') {
-        throw new Error('Shared config storage mode is not postgres');
+    syncCurrentJsonToPostgres: async (draft?: DbConnDraft) => {
+      const targetUrl = draft ? buildDatabaseUrlFromDraft(draft) : databaseUrl;
+      if (!targetUrl) {
+        throw new Error('PostgreSQL connection is not configured');
       }
-      await saveTemplateToPostgres();
-      await saveRanksToPostgres();
+      await saveTemplateToPostgresWithUrl(targetUrl);
+      await saveRanksToPostgresWithUrl(targetUrl);
     },
   };
 };

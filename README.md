@@ -1,6 +1,6 @@
 # Журнал Журналів (Web)
 
-`boardgame.io`-based web version of the game with multiplayer rooms, admin panel, deck/ranks editor, and simulation tools.
+`boardgame.io`-based web version of the game with multiplayer rooms, admin panel, deck/ranks editor, simulation tools, and PostgreSQL-ready admin DB tooling.
 
 ## Run (Local)
 
@@ -39,6 +39,10 @@ set FRONTEND_ORIGIN=http://192.168.0.25:5173 && npm run dev:server
 - Admin UI: `/admin`
 - Admin API supports token auth via `ADMIN_TOKEN` (see `.env.example`)
 - `/admin` now has a token login form and stores token locally in browser storage
+- Admin has dedicated tabs for:
+  - matches / state / deck / ranks / simulation
+  - `База Даних` (DB connection test, schema import/export, backup export/restore)
+  - `Налаштування` (server URL, GitHub update/build/restart, system actions)
 
 ### `.env` (Server Runtime Config)
 
@@ -50,6 +54,8 @@ Available keys:
 - `WEB_PORT` (default `4173`, Vite preview port)
 - `VITE_PREVIEW_ALLOWED_HOSTS` (comma-separated host allowlist for `vite preview`)
 - `ADMIN_TOKEN` (empty = auth disabled; set this for LAN/public testing)
+- `STORAGE_MODE` (`file` or `postgres`; `db` alias is also accepted by server)
+- `DATABASE_URL` (required when `STORAGE_MODE=postgres`)
 
 To enable admin protection (recommended):
 
@@ -64,6 +70,67 @@ copy .env.example .env
 - Shared ranks: `database/shared-ranks.json`
 - Match storage (boardgame.io FlatFile DB): `database/matches/`
 - Server logs: `logs/server.log`
+
+### PostgreSQL (Current Scope)
+
+Implemented:
+- Shared deck template (`deck`, `legendaryDeck`, `rankTrack`, `deckBackImage`)
+- Shared ranks
+- Admin DB tools in `/admin` -> `База Даних`
+
+Still file-based (for now):
+- `boardgame.io` match storage (`database/matches`)
+
+When `STORAGE_MODE=postgres`, shared config is stored in PostgreSQL and also mirrored to local JSON files for compatibility/backup.
+
+## PostgreSQL Setup (Shared Config Storage)
+
+1. Install / run PostgreSQL and create database/user.
+2. Set server env:
+
+```env
+STORAGE_MODE=postgres
+DATABASE_URL=postgresql://joj_user:password@127.0.0.1:5432/joj_game
+```
+
+3. Import schema (`db.sql`) once:
+
+Option A (Admin UI):
+- `/admin` -> `База Даних` -> `Імпортувати db.sql`
+
+Option B (CLI):
+
+```bash
+psql "$DATABASE_URL" -f db.sql
+```
+
+4. Restart services with env refresh:
+
+```bash
+pm2 restart joj-game-server joj-game-web --update-env
+```
+
+5. Seed current JSON config into DB (one-click):
+- `/admin` -> `База Даних` -> `Імпортувати дані JSON в БД`
+
+This imports current server-side JSON deck/ranks into PostgreSQL tables:
+- `deck_templates`
+- `deck_template_entries`
+- `rank_sets`
+- `rank_definitions`
+
+## DB Admin Operations (`/admin` -> `База Даних`)
+
+- DB connection test (`psql SELECT 1`)
+- Import schema (`db.sql`) into target PostgreSQL
+- Export schema (`db.sql`) download
+- Export SQL backup (`pg_dump`)
+- Restore SQL backup (upload `.sql` and apply via `psql`)
+- Import current JSON deck/ranks into DB (forced sync)
+
+Notes:
+- DB connection form values are stored locally in browser storage (UI convenience).
+- Server-side shared config import/sync uses server `.env` (`DATABASE_URL`), not browser draft values.
 
 ## Ops / Deployment Helpers
 
@@ -81,9 +148,23 @@ pm2 status
 
 Notes:
 - Set `FRONTEND_ORIGIN` / `WEB_PORT` / `VITE_PREVIEW_ALLOWED_HOSTS` in `.env` (preferred) before LAN/public testing.
+- After changing `.env` (for example `STORAGE_MODE` / `DATABASE_URL`), restart with:
+  - `pm2 restart joj-game-server joj-game-web --update-env`
 - `joj-game-web` uses `vite preview` on `:4173` (place behind reverse proxy).
 - `joj-game-server` runs on `:8000` (keep private; proxy through `80/443`).
 - Avoid editing `ecosystem.config.cjs` or `vite.config.ts` directly on the server; use `.env` instead to keep Git working tree clean.
+
+## Admin Deploy (GitHub -> Build -> Restart)
+
+`/admin` -> `Налаштування` -> `Оновити + зібрати + рестарт` performs:
+
+- `git pull --ff-only`
+- `npm ci --include=dev` (fallback: `npm install --include=dev`)
+- `npm run typecheck`
+- `npm run build`
+- `pm2 restart ecosystem.config.cjs --update-env`
+
+The admin UI includes delayed/retry status refresh after restart to avoid false "update check failed" messages during process restart.
 
 ## Orange Pi / Armbian Quick Install
 

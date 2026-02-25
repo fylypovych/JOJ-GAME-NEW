@@ -46,7 +46,14 @@ type AdminRoutesDeps = {
   isAdminAuthEnabled: boolean;
   devRestartTouchPath: string;
   dbSchemaPath: string;
-  importJsonConfigToDb: () => Promise<void>;
+  importJsonConfigToDb: (draft?: {
+    host: string;
+    port: string;
+    database: string;
+    user: string;
+    password?: string;
+    sslMode?: 'disable' | 'require';
+  }) => Promise<void>;
 };
 
 export const registerAdminRoutes = ({
@@ -231,7 +238,25 @@ export const registerAdminRoutes = ({
     if (!(await requireAdminAuth(ctx, '/api/admin/db/import-json-config'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-db-import-json-config', 5, 60_000))) return;
     try {
-      await importJsonConfigToDb();
+      const body = await readJsonBodySafe({
+        ctx,
+        routeLabel: '/api/admin/db/import-json-config',
+        maxBytes: JSON_BODY_LIMIT,
+        logLine,
+      });
+      if (!body) return;
+      const host = typeof body.host === 'string' ? body.host.trim() : '';
+      const port = typeof body.port === 'string' ? body.port.trim() : '';
+      const database = typeof body.database === 'string' ? body.database.trim() : '';
+      const user = typeof body.user === 'string' ? body.user.trim() : '';
+      const password = typeof body.password === 'string' ? body.password : '';
+      const sslMode = body.sslMode === 'require' ? 'require' : 'disable';
+      if (!host || !port || !database || !user) {
+        ctx.status = 400;
+        ctx.body = { ok: false, error: 'Missing required DB connection fields' };
+        return;
+      }
+      await importJsonConfigToDb({ host, port, database, user, password, sslMode });
       await logLine('INFO', 'admin imported shared JSON config into postgres');
       ctx.body = { ok: true, message: 'Shared JSON config imported into database' };
     } catch (error) {

@@ -559,7 +559,11 @@ export const App = () => {
     setDbImportJsonConfigError('');
     setDbImportJsonConfigRunning(true);
     try {
-      const response = await adminFetch(ADMIN_DB_IMPORT_JSON_CONFIG_API, { method: 'POST' });
+      const response = await adminFetch(ADMIN_DB_IMPORT_JSON_CONFIG_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(adminDbConfigDraft),
+      });
       const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
       if (!response.ok || !payload.ok) {
         setDbImportJsonConfigError(payload.details ?? payload.error ?? (lang === 'uk' ? 'Не вдалося імпортувати JSON-дані в БД.' : 'Failed to import JSON data into DB.'));
