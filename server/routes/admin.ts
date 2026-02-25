@@ -20,9 +20,13 @@ type GitUpdateStatusOk = {
   ignoredRuntimeDirtyFiles?: string[];
 };
 type GitUpdateStatusResult = GitUpdateStatusOk | { ok: false; error: string };
-type MatchDbFetchResult = { state?: { G?: unknown; ctx?: unknown } | null; metadata?: { updatedAt?: number } | null } | null;
+type MatchDbStateLike = { G?: unknown; ctx?: Record<string, unknown> | null } & Record<string, unknown>;
+type MatchDbMetadataLike = { updatedAt?: number; gameover?: unknown } & Record<string, unknown>;
+type MatchDbFetchResult = { state?: MatchDbStateLike | null; metadata?: MatchDbMetadataLike | null } | null;
 type MatchDbLike = {
   fetch: (matchID: string, opts: { state?: boolean; metadata?: boolean }) => Promise<MatchDbFetchResult>;
+  setState?: (matchID: string, state: unknown, deltalog?: unknown[]) => Promise<unknown>;
+  setMetadata?: (matchID: string, metadata: unknown) => Promise<void>;
 };
 
 type AdminRoutesDeps = {
@@ -102,6 +106,68 @@ export const registerAdminRoutes = ({
         G: state.G,
         ctx: state.ctx,
         updatedAt: metadata?.updatedAt ?? Date.now(),
+      },
+    };
+  });
+
+  router.post('/api/admin/match-stop', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/match-stop'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-match-stop', 10, 60_000))) return;
+    const matchID = typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
+    if (!matchID) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing matchID' };
+      return;
+    }
+
+    const dbCandidate = ctx?.db ?? ctx?.app?.context?.db;
+    const dbFetch = (dbCandidate as { fetch?: unknown } | undefined)?.fetch;
+    const dbSetState = (dbCandidate as { setState?: unknown } | undefined)?.setState;
+    const dbSetMetadata = (dbCandidate as { setMetadata?: unknown } | undefined)?.setMetadata;
+    if (!dbCandidate || typeof dbFetch !== 'function' || typeof dbSetState !== 'function' || typeof dbSetMetadata !== 'function') {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: 'Database stop controls are unavailable' };
+      return;
+    }
+    const db = dbCandidate as MatchDbLike;
+
+    const fetched = await db.fetch(matchID, { state: true, metadata: true });
+    const state = fetched?.state;
+    if (!state) {
+      ctx.status = 404;
+      ctx.body = { ok: false, error: 'Match not found' };
+      return;
+    }
+
+    const now = Date.now();
+    const nextState: MatchDbStateLike = {
+      ...state,
+      ctx: {
+        ...(state.ctx ?? {}),
+        gameover: {
+          forcedStop: true,
+          stoppedAt: now,
+        },
+      },
+    };
+    const nextMetadata: MatchDbMetadataLike = {
+      ...(fetched?.metadata ?? {}),
+      updatedAt: now,
+      gameover: { forcedStop: true, stoppedAt: now },
+    };
+
+    await db.setState?.(matchID, nextState);
+    await db.setMetadata?.(matchID, nextMetadata);
+    await logLine('WARN', `admin stopped match matchID=${matchID}`);
+
+    ctx.body = {
+      ok: true,
+      matchID,
+      stopped: true,
+      snapshot: {
+        G: nextState.G,
+        ctx: nextState.ctx,
+        updatedAt: now,
       },
     };
   });

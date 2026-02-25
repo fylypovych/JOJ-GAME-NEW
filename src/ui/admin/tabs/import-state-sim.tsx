@@ -54,7 +54,23 @@ export const AdminImportTab = ({
   </>
 );
 
-export const AdminStateTab = ({ t, snapshot }: { t: T; snapshot: Snapshot | null }) => {
+export const AdminStateTab = ({
+  t,
+  snapshot,
+  activeMatchId,
+  stopGameRunning,
+  stopGameError,
+  stopGameStatus,
+  onStopGame,
+}: {
+  t: T;
+  snapshot: Snapshot | null;
+  activeMatchId: string;
+  stopGameRunning: boolean;
+  stopGameError: string;
+  stopGameStatus: string;
+  onStopGame: () => void;
+}) => {
   const raw = snapshot?.G as any;
   const ctx = snapshot?.ctx as any;
   const players = raw?.players && typeof raw.players === 'object' ? Object.entries(raw.players as Record<string, any>) : [];
@@ -67,22 +83,35 @@ export const AdminStateTab = ({ t, snapshot }: { t: T; snapshot: Snapshot | null
   const activePlayer = typeof ctx?.currentPlayer === 'string' ? ctx.currentPlayer : null;
   const turn = ctx?.turn ?? '-';
   const phase = ctx?.phase ?? '-';
+  const playerTag = (msg: any) => (
+    msg.type === 'system'
+      ? t.systemTag
+      : (raw?.playerNames?.[msg.playerID] ?? msg.playerID ?? t.genericPlayer)
+  );
 
   return (
     <>
       <h3>{t.stateSnapshot}</h3>
       <p>{t.updatedAt}: {snapshot ? new Date(snapshot.updatedAt).toLocaleString() : t.notSelected}</p>
+      <p className="admin-controls">
+        <button type="button" onClick={onStopGame} disabled={!activeMatchId || stopGameRunning}>
+          {stopGameRunning ? t.stateStopGameRunning : t.stateStopGame}
+        </button>
+        {activeMatchId ? <span>{t.activeMatch}: <code>{activeMatchId}</code></span> : null}
+      </p>
+      {stopGameStatus ? <p className="admin-success">{stopGameStatus}</p> : null}
+      {stopGameError ? <p className="admin-error">{stopGameError}</p> : null}
       {!snapshot ? <p>{t.noStateYet}</p> : (
         <>
           <div className="admin-inline-editor">
-            <h4>Короткий стан</h4>
-            <p>Хід: <strong>{String(turn)}</strong> | Фаза: <strong>{String(phase)}</strong> | Активний гравець: <strong>{activePlayer ?? '-'}</strong></p>
-            <p>Колода: <strong>{deckCount}</strong> | Скид: <strong>{discardCount}</strong> | Легендарна: <strong>{legendaryDeckCount}</strong> | Легендарний скид: <strong>{legendaryDiscardCount}</strong></p>
+            <h4>{t.stateSummaryTitle}</h4>
+            <p>{t.stateTurn}: <strong>{String(turn)}</strong> | {t.statePhase}: <strong>{String(phase)}</strong> | {t.stateActivePlayer}: <strong>{activePlayer ?? '-'}</strong></p>
+            <p>{t.stateDeck}: <strong>{deckCount}</strong> | {t.stateDiscard}: <strong>{discardCount}</strong> | {t.stateLegendaryDeck}: <strong>{legendaryDeckCount}</strong> | {t.stateLegendaryDiscard}: <strong>{legendaryDiscardCount}</strong></p>
           </div>
 
           <div className="admin-inline-editor">
-            <h4>Гравці</h4>
-            {players.length === 0 ? <p>Немає даних</p> : (
+            <h4>{t.statePlayersTitle}</h4>
+            {players.length === 0 ? <p>{t.stateNoData}</p> : (
               <div className="admin-deck-list">
                 <ul>
                   {players.map(([pid, player]) => {
@@ -96,13 +125,13 @@ export const AdminStateTab = ({ t, snapshot }: { t: T; snapshot: Snapshot | null
                     const sukhpayUntil = raw?.sukhpayZsuWatchUntilTurn?.[pid] ?? 0;
                     return (
                       <li key={`state-player-${pid}`}>
-                        <strong>{name}</strong> (ID: {pid}) {activePlayer === pid ? '• Активний' : ''}
+                        <strong>{name}</strong> (ID: {pid}) {activePlayer === pid ? `• ${t.stateActive}` : ''}
                         <br />
-                        Звання: <code>{String(rankId)}</code> | Рука: {handCount} | Легендарні: {legendaryHandCount}
+                        {t.stateRank}: <code>{String(rankId)}</code> | {t.stateHand}: {handCount} | {t.stateLegendaryHand}: {legendaryHandCount}
                         <br />
-                        Ресурси: T {resources.time ?? 0}, R {resources.reputation ?? 0}, D {resources.discipline ?? 0}, Doc {resources.documents ?? 0}, Tech {resources.tech ?? 0}
+                        {t.stateResources}: T {resources.time ?? 0}, R {resources.reputation ?? 0}, D {resources.discipline ?? 0}, Doc {resources.documents ?? 0}, Tech {resources.tech ?? 0}
                         <br />
-                        Токени: extra-hand {extraToken} | sukhpay pending {sukhpayPending ? 'yes' : 'no'} | sukhpay until turn {sukhpayUntil}
+                        {t.stateTokens}: extra-hand {extraToken} | sukhpay pending {sukhpayPending ? t.yes : t.no} | sukhpay until turn {sukhpayUntil}
                       </li>
                     );
                   })}
@@ -112,13 +141,13 @@ export const AdminStateTab = ({ t, snapshot }: { t: T; snapshot: Snapshot | null
           </div>
 
           <div className="admin-inline-editor">
-            <h4>Останні події</h4>
-            {lastChat.length === 0 ? <p>Немає повідомлень</p> : (
+            <h4>{t.stateRecentEventsTitle}</h4>
+            {lastChat.length === 0 ? <p>{t.stateNoMessages}</p> : (
               <div className="admin-deck-list">
                 <ul>
                   {lastChat.map((msg: any) => (
                     <li key={String(msg.id ?? `${msg.createdAt}-${msg.text}`)}>
-                      <strong>{msg.type === 'system' ? 'SYSTEM' : (raw?.playerNames?.[msg.playerID] ?? msg.playerID ?? 'PLAYER')}</strong>: {String(msg.text ?? '')}
+                      <strong>{playerTag(msg)}</strong>: {String(msg.text ?? '')}
                     </li>
                   ))}
                 </ul>
@@ -127,7 +156,7 @@ export const AdminStateTab = ({ t, snapshot }: { t: T; snapshot: Snapshot | null
           </div>
 
           <details>
-            <summary>Raw JSON (debug)</summary>
+            <summary>{t.stateRawJsonDebug}</summary>
             <pre className="admin-json">{JSON.stringify({ G: snapshot.G, ctx: snapshot.ctx }, null, 2)}</pre>
           </details>
         </>

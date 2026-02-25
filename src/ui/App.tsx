@@ -73,6 +73,7 @@ const TEMPLATE_API = `${SERVER_URL}/api/shared-deck-template`;
 const RANKS_API = `${SERVER_URL}/api/shared-ranks`;
 const ADMIN_RESTART_API = `${SERVER_URL}/api/admin/restart`;
 const ADMIN_MATCH_STATE_API = `${SERVER_URL}/api/admin/match-state`;
+const ADMIN_MATCH_STOP_API = `${SERVER_URL}/api/admin/match-stop`;
 
 export const App = () => {
   const isAdminRoute = window.location.pathname.startsWith('/admin');
@@ -315,7 +316,7 @@ export const App = () => {
     [matches, session?.matchID],
   );
   const adminMatchID = useMemo(() => session?.matchID ?? matches[0]?.matchID ?? '', [matches, session?.matchID]);
-  const { snapshot } = useAdminSnapshot({
+  const { snapshot, setSnapshot } = useAdminSnapshot({
     isAdminRoute,
     adminAuthorized,
     adminMatchID,
@@ -580,6 +581,34 @@ export const App = () => {
             setSharedRanksState(normalized);
             window.localStorage.setItem(RANKS_STORAGE_KEY, JSON.stringify(normalized));
             void adminFetch(`${RANKS_API}/reset`, { method: 'POST' });
+          }}
+          onStopGame={async (matchID: string) => {
+            try {
+              const response = await adminFetch(`${ADMIN_MATCH_STOP_API}?matchID=${encodeURIComponent(matchID)}`, { method: 'POST' });
+              if (!response.ok) {
+                let error = 'Failed to stop game';
+                try {
+                  const payload = (await response.json()) as { error?: string };
+                  if (typeof payload.error === 'string' && payload.error.trim()) error = payload.error;
+                } catch {
+                  // ignore json parse failure
+                }
+                return { ok: false, error };
+              }
+              const payload = (await response.json()) as {
+                snapshot?: { G: unknown; ctx: unknown; updatedAt?: number };
+              };
+              if (payload.snapshot) {
+                setSnapshot({
+                  G: payload.snapshot.G,
+                  ctx: payload.snapshot.ctx,
+                  updatedAt: payload.snapshot.updatedAt ?? Date.now(),
+                });
+              }
+              return { ok: true };
+            } catch {
+              return { ok: false, error: 'Failed to stop game' };
+            }
           }}
           onRunSimulations={(players: number, simulations: number, options) =>
             runGameSimulations(players, simulations, 600, options)

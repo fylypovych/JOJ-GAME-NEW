@@ -70,6 +70,7 @@ export const AdminPage = ({
   onImportTemplate,
   onUpdateRanks,
   onResetRanks,
+  onStopGame,
   onRunSimulations,
 }: AdminPageProps) => {
   const t = text(lang);
@@ -124,6 +125,9 @@ export const AdminPage = ({
   const [restartingServer, setRestartingServer] = useState<boolean>(false);
   const [adminActionError, setAdminActionError] = useState<string>('');
   const [imageRegenRunning, setImageRegenRunning] = useState<boolean>(false);
+  const [stopGameRunning, setStopGameRunning] = useState<boolean>(false);
+  const [stopGameError, setStopGameError] = useState<string>('');
+  const [stopGameStatus, setStopGameStatus] = useState<string>('');
   const [activeTab, setActiveTab] = useState<AdminTab>('matches');
   const [deckBackImageInput, setDeckBackImageInput] = useState<string>(sharedDeckTemplate.deckBackImage ?? '');
   const {
@@ -176,6 +180,30 @@ export const AdminPage = ({
   useEffect(() => {
     setDeckBackImageInput(sharedDeckTemplate.deckBackImage ?? '');
   }, [sharedDeckTemplate.deckBackImage]);
+
+  useEffect(() => {
+    setStopGameError('');
+    setStopGameStatus('');
+  }, [activeMatchId]);
+
+  const stopGame = async () => {
+    if (!activeMatchId || stopGameRunning) return;
+    setStopGameError('');
+    setStopGameStatus('');
+    setStopGameRunning(true);
+    try {
+      const result = await onStopGame(activeMatchId);
+      if (!result.ok) {
+        setStopGameError(result.error ?? t.stateStopGameFailed);
+        return;
+      }
+      setStopGameStatus(t.stateStopGameSuccess);
+    } catch {
+      setStopGameError(t.stateStopGameFailed);
+    } finally {
+      setStopGameRunning(false);
+    }
+  };
 
   const beginEdit = (nextTarget: DeckTarget, index: number, card: CardDefinition) => {
     setEditTarget(nextTarget);
@@ -858,7 +886,15 @@ export const AdminPage = ({
       ) : null}
 
       {activeTab === 'state' ? (
-        <AdminStateTab t={t} snapshot={snapshot} />
+        <AdminStateTab
+          t={t}
+          snapshot={snapshot}
+          activeMatchId={activeMatchId}
+          stopGameRunning={stopGameRunning}
+          stopGameError={stopGameError}
+          stopGameStatus={stopGameStatus}
+          onStopGame={() => { void stopGame(); }}
+        />
       ) : null}
       {activeTab === 'ranks' ? (
         <AdminRanksTab

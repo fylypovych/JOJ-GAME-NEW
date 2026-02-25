@@ -68,6 +68,7 @@ export type AdminPageProps = {
   onImportTemplate: (json: string) => string | null;
   onUpdateRanks: (nextRanks: RankDefinition[]) => boolean;
   onResetRanks: () => void;
+  onStopGame: (matchID: string) => Promise<{ ok: boolean; error?: string }>;
   onRunSimulations: (
     players: number,
     simulations: number,
