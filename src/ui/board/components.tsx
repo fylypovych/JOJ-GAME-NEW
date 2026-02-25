@@ -56,6 +56,8 @@ type GameCardTileProps = {
     className?: string;
   };
   effectLabel: (resource: ResourceKey | 'rank') => string;
+  badges?: string[];
+  helperText?: string;
 };
 
 export const GameCardTile = ({
@@ -71,6 +73,8 @@ export const GameCardTile = ({
   actionDisabled,
   extraAction,
   effectLabel,
+  badges,
+  helperText,
 }: GameCardTileProps) => {
   const imageSrc = normalizeImagePath(card.image) ?? `/cards/${card.id}.png`;
   const title = cardTitle(card.id, card.title, lang);
@@ -124,6 +128,13 @@ export const GameCardTile = ({
       <div className="game-card-body">
         <strong>{title}</strong>
         <small>{categoryText || categoryLabel(card.category, lang)}</small>
+        {badges?.length ? (
+          <div className="game-card-row">
+            {badges.map((badge, index) => (
+              <span key={`badge-${card.id}-${index}`} className="pill pill-badge">{badge}</span>
+            ))}
+          </div>
+        ) : null}
         {effectEntries.length ? (
           <div className="game-card-row">
             {effectEntries.map((effect, index) => (
@@ -133,6 +144,7 @@ export const GameCardTile = ({
             ))}
           </div>
         ) : null}
+        {helperText ? <small className="game-card-helper">{helperText}</small> : null}
       </div>
     </div>
   );
