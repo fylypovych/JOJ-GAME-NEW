@@ -44,6 +44,9 @@ loadEnvFile(envPath);
 const adminToken = (process.env.ADMIN_TOKEN ?? '').trim();
 const disableAdminAuth = /^(1|true|yes)$/i.test((process.env.DISABLE_ADMIN_AUTH ?? '').trim());
 const isAdminAuthEnabled = !disableAdminAuth && adminToken.length > 0;
+const storageModeEnv = (process.env.STORAGE_MODE ?? 'file').trim().toLowerCase();
+const sharedConfigStorageMode = (storageModeEnv === 'postgres' || storageModeEnv === 'db') ? 'postgres' : 'file';
+const databaseUrl = (process.env.DATABASE_URL ?? '').trim();
 
 const logLine = createFileLogger(logsPath);
 
@@ -58,6 +61,7 @@ const ranksPath = path.resolve(appRootDir, 'database', 'shared-ranks.json');
 const uploadsDir = path.resolve(appRootDir, 'public', 'cards');
 const repoDir = appRootDir;
 const devRestartTouchPath = path.resolve(appRootDir, 'server', '.restart-touch');
+const dbSchemaPath = path.resolve(appRootDir, 'db.sql');
 
 const requireAdminAuth = createRequireAdminAuth({ isAdminAuthEnabled, adminToken, logLine });
 const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });
@@ -70,6 +74,8 @@ const { saveTemplateToDisk, saveRanksToDisk, loadTemplateFromDisk, loadRanksFrom
   getSharedRanks,
   setSharedRanks,
   resetSharedRanks,
+  storageMode: sharedConfigStorageMode,
+  databaseUrl,
 });
 
 if (router) {
@@ -77,7 +83,9 @@ if (router) {
     router,
     requireAdminAuth,
     enforceRateLimit,
+    readJsonBodySafe,
     logLine,
+    JSON_BODY_LIMIT,
     getGitUpdateStatus,
     autoStashRuntimeNoise,
     runGit,
@@ -85,6 +93,7 @@ if (router) {
     spawnDetachedShell,
     isAdminAuthEnabled,
     devRestartTouchPath,
+    dbSchemaPath,
   });
   registerSharedRoutes({
     router,
@@ -125,6 +134,7 @@ void (async () => {
     isAdminAuthEnabled ? 'INFO' : 'WARN',
     isAdminAuthEnabled ? 'admin auth enabled (ADMIN_TOKEN set)' : 'admin auth disabled (ADMIN_TOKEN is empty)',
   );
+  await logLine('INFO', `shared config storage mode=${sharedConfigStorageMode}`);
   server.run(port, () => {
     void logLine('INFO', `boardgame.io server running at http://localhost:${port}`);
   });

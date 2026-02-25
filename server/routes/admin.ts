@@ -1,6 +1,7 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { EnforceRateLimit, LogLine, RequireAdminAuth, RouterLike, RouteCtx } from './types';
+import { spawn } from 'node:child_process';
+import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from './types';
 
 type CmdResult = { ok: true; stdout: string; stderr: string } | { ok: false; error: string };
 type RunGit = (args: string[]) => Promise<CmdResult>;
@@ -34,7 +35,9 @@ type AdminRoutesDeps = {
   router: RouterLike;
   requireAdminAuth: RequireAdminAuth;
   enforceRateLimit: EnforceRateLimit;
+  readJsonBodySafe: ReadJsonBodySafe;
   logLine: LogLine;
+  JSON_BODY_LIMIT: number;
   getGitUpdateStatus: (runGit: RunGit) => Promise<GitUpdateStatusResult>;
   autoStashRuntimeNoise: (args: { status: { ignoredRuntimeDirtyFiles?: string[] }; runGit: RunGit; logLine: LogLine }) => Promise<{ ok: boolean; error?: string }>;
   runGit: RunGit;
@@ -42,13 +45,16 @@ type AdminRoutesDeps = {
   spawnDetachedShell: SpawnDetachedShell;
   isAdminAuthEnabled: boolean;
   devRestartTouchPath: string;
+  dbSchemaPath: string;
 };
 
 export const registerAdminRoutes = ({
   router,
   requireAdminAuth,
   enforceRateLimit,
+  readJsonBodySafe,
   logLine,
+  JSON_BODY_LIMIT,
   getGitUpdateStatus,
   autoStashRuntimeNoise,
   runGit,
@@ -56,7 +62,9 @@ export const registerAdminRoutes = ({
   spawnDetachedShell,
   isAdminAuthEnabled,
   devRestartTouchPath,
+  dbSchemaPath,
 }: AdminRoutesDeps) => {
+  const ADMIN_DB_SQL_BODY_LIMIT = Math.max(JSON_BODY_LIMIT, 32 * 1024 * 1024);
   router.get('/api/health', (ctx: RouteCtx) => {
     ctx.body = {
       ok: true,
@@ -71,6 +79,305 @@ export const registerAdminRoutes = ({
   router.get('/api/admin/verify', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/verify'))) return;
     ctx.body = { ok: true, adminAuthEnabled: isAdminAuthEnabled };
+  });
+
+  router.post('/api/admin/db/test-connection', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/db/test-connection'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-db-test-connection', 20, 60_000))) return;
+    const body = await readJsonBodySafe({
+      ctx,
+      routeLabel: '/api/admin/db/test-connection',
+      maxBytes: JSON_BODY_LIMIT,
+      logLine,
+    });
+    if (!body) return;
+
+    const host = typeof body.host === 'string' ? body.host.trim() : '';
+    const port = typeof body.port === 'string' ? body.port.trim() : '';
+    const database = typeof body.database === 'string' ? body.database.trim() : '';
+    const user = typeof body.user === 'string' ? body.user.trim() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
+    const sslMode = body.sslMode === 'require' ? 'require' : 'disable';
+
+    if (!host || !port || !database || !user) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing required DB connection fields' };
+      return;
+    }
+
+    const result = await new Promise<{ ok: boolean; stdout: string; stderr: string; error?: string }>((resolve) => {
+      const child = spawn(
+        'psql',
+        ['-h', host, '-p', port, '-U', user, '-d', database, '-tA', '-c', 'SELECT 1;'],
+        {
+          env: {
+            ...process.env,
+            PGPASSWORD: password,
+            PGSSLMODE: sslMode,
+          },
+          stdio: ['ignore', 'pipe', 'pipe'],
+        },
+      );
+      let stdout = '';
+      let stderr = '';
+      const timeout = setTimeout(() => {
+        try { child.kill('SIGKILL'); } catch { /* noop */ }
+      }, 8_000);
+      child.stdout.on('data', (chunk) => { stdout += String(chunk); });
+      child.stderr.on('data', (chunk) => { stderr += String(chunk); });
+      child.on('error', (error) => {
+        clearTimeout(timeout);
+        resolve({ ok: false, stdout, stderr, error: String(error) });
+      });
+      child.on('close', (code) => {
+        clearTimeout(timeout);
+        resolve({ ok: code === 0 && stdout.trim() === '1', stdout, stderr });
+      });
+    });
+
+    if (!result.ok) {
+      ctx.status = 400;
+      ctx.body = {
+        ok: false,
+        error: 'Failed to connect to PostgreSQL',
+        details: (result.stderr || result.error || result.stdout || '').trim(),
+      };
+      return;
+    }
+    ctx.body = { ok: true, message: 'PostgreSQL connection successful' };
+  });
+
+  router.get('/api/admin/db/schema', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/db/schema'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-db-schema', 20, 60_000))) return;
+    try {
+      const content = await readFile(dbSchemaPath, 'utf8');
+      ctx.body = { ok: true, filename: 'db.sql', content };
+    } catch (error) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: 'Failed to read db.sql', details: String(error) };
+    }
+  });
+
+  router.post('/api/admin/db/import-schema', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/db/import-schema'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-db-import-schema', 5, 60_000))) return;
+    const body = await readJsonBodySafe({
+      ctx,
+      routeLabel: '/api/admin/db/import-schema',
+      maxBytes: JSON_BODY_LIMIT,
+      logLine,
+    });
+    if (!body) return;
+
+    const host = typeof body.host === 'string' ? body.host.trim() : '';
+    const port = typeof body.port === 'string' ? body.port.trim() : '';
+    const database = typeof body.database === 'string' ? body.database.trim() : '';
+    const user = typeof body.user === 'string' ? body.user.trim() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
+    const sslMode = body.sslMode === 'require' ? 'require' : 'disable';
+
+    if (!host || !port || !database || !user) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing required DB connection fields' };
+      return;
+    }
+
+    const result = await new Promise<{ ok: boolean; stdout: string; stderr: string; error?: string }>((resolve) => {
+      const child = spawn(
+        'psql',
+        ['-h', host, '-p', port, '-U', user, '-d', database, '-v', 'ON_ERROR_STOP=1', '-f', dbSchemaPath],
+        {
+          env: {
+            ...process.env,
+            PGPASSWORD: password,
+            PGSSLMODE: sslMode,
+          },
+          stdio: ['ignore', 'pipe', 'pipe'],
+        },
+      );
+      let stdout = '';
+      let stderr = '';
+      const timeout = setTimeout(() => {
+        try { child.kill('SIGKILL'); } catch { /* noop */ }
+      }, 60_000);
+      child.stdout.on('data', (chunk) => { stdout += String(chunk); });
+      child.stderr.on('data', (chunk) => { stderr += String(chunk); });
+      child.on('error', (error) => {
+        clearTimeout(timeout);
+        resolve({ ok: false, stdout, stderr, error: String(error) });
+      });
+      child.on('close', (code) => {
+        clearTimeout(timeout);
+        resolve({ ok: code === 0, stdout, stderr });
+      });
+    });
+
+    if (!result.ok) {
+      ctx.status = 400;
+      ctx.body = {
+        ok: false,
+        error: 'Failed to import db.sql',
+        details: (result.stderr || result.error || result.stdout || '').trim(),
+      };
+      return;
+    }
+    ctx.body = { ok: true, message: 'db.sql imported successfully' };
+  });
+
+  router.post('/api/admin/db/export-backup', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/db/export-backup'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-db-export-backup', 5, 60_000))) return;
+    const body = await readJsonBodySafe({
+      ctx,
+      routeLabel: '/api/admin/db/export-backup',
+      maxBytes: JSON_BODY_LIMIT,
+      logLine,
+    });
+    if (!body) return;
+
+    const host = typeof body.host === 'string' ? body.host.trim() : '';
+    const port = typeof body.port === 'string' ? body.port.trim() : '';
+    const database = typeof body.database === 'string' ? body.database.trim() : '';
+    const user = typeof body.user === 'string' ? body.user.trim() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
+    const sslMode = body.sslMode === 'require' ? 'require' : 'disable';
+
+    if (!host || !port || !database || !user) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing required DB connection fields' };
+      return;
+    }
+
+    const result = await new Promise<{ ok: boolean; stdout: string; stderr: string; error?: string }>((resolve) => {
+      const child = spawn(
+        'pg_dump',
+        ['-h', host, '-p', port, '-U', user, '-d', database, '--no-owner', '--no-privileges'],
+        {
+          env: {
+            ...process.env,
+            PGPASSWORD: password,
+            PGSSLMODE: sslMode,
+          },
+          stdio: ['ignore', 'pipe', 'pipe'],
+        },
+      );
+      let stdout = '';
+      let stderr = '';
+      const timeout = setTimeout(() => {
+        try { child.kill('SIGKILL'); } catch { /* noop */ }
+      }, 30_000);
+      child.stdout.on('data', (chunk) => { stdout += String(chunk); });
+      child.stderr.on('data', (chunk) => { stderr += String(chunk); });
+      child.on('error', (error) => {
+        clearTimeout(timeout);
+        resolve({ ok: false, stdout, stderr, error: String(error) });
+      });
+      child.on('close', (code) => {
+        clearTimeout(timeout);
+        resolve({ ok: code === 0 && stdout.trim().length > 0, stdout, stderr });
+      });
+    });
+
+    if (!result.ok) {
+      ctx.status = 400;
+      ctx.body = {
+        ok: false,
+        error: 'Failed to export PostgreSQL backup',
+        details: (result.stderr || result.error || result.stdout || '').trim(),
+      };
+      return;
+    }
+
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    ctx.body = {
+      ok: true,
+      filename: `joj-backup-${database}-${stamp}.sql`,
+      content: result.stdout,
+    };
+  });
+
+  router.post('/api/admin/db/restore-backup', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/db/restore-backup'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-db-restore-backup', 3, 60_000))) return;
+    const body = await readJsonBodySafe({
+      ctx,
+      routeLabel: '/api/admin/db/restore-backup',
+      maxBytes: ADMIN_DB_SQL_BODY_LIMIT,
+      logLine,
+    });
+    if (!body) return;
+
+    const host = typeof body.host === 'string' ? body.host.trim() : '';
+    const port = typeof body.port === 'string' ? body.port.trim() : '';
+    const database = typeof body.database === 'string' ? body.database.trim() : '';
+    const user = typeof body.user === 'string' ? body.user.trim() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
+    const sslMode = body.sslMode === 'require' ? 'require' : 'disable';
+    const sql = typeof body.sql === 'string' ? body.sql : '';
+    const filename = typeof body.filename === 'string' ? body.filename.trim() : '';
+
+    if (!host || !port || !database || !user) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing required DB connection fields' };
+      return;
+    }
+    if (!sql.trim()) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing SQL content for restore' };
+      return;
+    }
+
+    const result = await new Promise<{ ok: boolean; stdout: string; stderr: string; error?: string }>((resolve) => {
+      const child = spawn(
+        'psql',
+        ['-h', host, '-p', port, '-U', user, '-d', database, '-v', 'ON_ERROR_STOP=1'],
+        {
+          env: {
+            ...process.env,
+            PGPASSWORD: password,
+            PGSSLMODE: sslMode,
+          },
+          stdio: ['pipe', 'pipe', 'pipe'],
+        },
+      );
+      let stdout = '';
+      let stderr = '';
+      const timeout = setTimeout(() => {
+        try { child.kill('SIGKILL'); } catch { /* noop */ }
+      }, 180_000);
+      child.stdout.on('data', (chunk) => { stdout += String(chunk); });
+      child.stderr.on('data', (chunk) => { stderr += String(chunk); });
+      child.on('error', (error) => {
+        clearTimeout(timeout);
+        resolve({ ok: false, stdout, stderr, error: String(error) });
+      });
+      child.stdin.on('error', () => {
+        // process may exit before stdin flush; handled by close/error events above
+      });
+      child.stdin.write(sql, 'utf8', () => {
+        try { child.stdin.end(); } catch { /* noop */ }
+      });
+      child.on('close', (code) => {
+        clearTimeout(timeout);
+        resolve({ ok: code === 0, stdout, stderr });
+      });
+    });
+
+    if (!result.ok) {
+      ctx.status = 400;
+      ctx.body = {
+        ok: false,
+        error: 'Failed to restore PostgreSQL backup',
+        details: (result.stderr || result.error || result.stdout || '').trim(),
+      };
+      return;
+    }
+
+    ctx.body = {
+      ok: true,
+      message: `Backup restored successfully${filename ? ` (${filename})` : ''}`,
+    };
   });
 
   router.get('/api/admin/match-state', async (ctx: RouteCtx) => {

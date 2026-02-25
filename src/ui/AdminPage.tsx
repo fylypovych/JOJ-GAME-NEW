@@ -31,6 +31,7 @@ import type {
 import {
   AdminImportTab,
   AdminDeckTab,
+  AdminDatabaseTab,
   AdminMatchesTab,
   AdminRanksTab,
   AdminSettingsTab,
@@ -51,6 +52,28 @@ export const AdminPage = ({
   onStorageModeChange,
   dbConfigDraft,
   onDbConfigDraftChange,
+  onSaveDbConfigDraft,
+  onTestDbConnection,
+  dbConfigSaveStatus,
+  dbConnectionTestStatus,
+  dbConnectionTestError,
+  dbConnectionTestRunning,
+  onExportDbSchema,
+  onImportDbSchema,
+  onExportDbBackup,
+  onRestoreDbBackup,
+  dbExportSchemaStatus,
+  dbExportSchemaError,
+  dbExportSchemaRunning,
+  dbImportSchemaStatus,
+  dbImportSchemaError,
+  dbImportSchemaRunning,
+  dbExportBackupStatus,
+  dbExportBackupError,
+  dbExportBackupRunning,
+  dbRestoreBackupStatus,
+  dbRestoreBackupError,
+  dbRestoreBackupRunning,
   matches,
   activeMatchId,
   onActiveMatchIdChange,
@@ -820,10 +843,6 @@ export const AdminPage = ({
           onServerUrlDraftChange={onServerUrlDraftChange}
           onSaveServerUrl={onSaveServerUrl}
           onResetServerUrl={onResetServerUrl}
-          storageMode={storageMode as AdminStorageMode}
-          onStorageModeChange={onStorageModeChange}
-          dbConfigDraft={dbConfigDraft}
-          onDbConfigDraftChange={onDbConfigDraftChange}
           serverUrl={serverUrl}
           checkGitUpdates={checkGitUpdates}
           applyGitUpdate={applyGitUpdate}
@@ -842,6 +861,37 @@ export const AdminPage = ({
           setRestartingServer={setRestartingServer}
           onRestartServer={onRestartServer}
           adminActionError={adminActionError}
+        />
+      ) : null}
+      {activeTab === 'database' ? (
+        <AdminDatabaseTab
+          t={t}
+          storageMode={storageMode as AdminStorageMode}
+          onStorageModeChange={onStorageModeChange}
+          dbConfigDraft={dbConfigDraft}
+          onDbConfigDraftChange={onDbConfigDraftChange}
+          onSaveDbConfigDraft={onSaveDbConfigDraft}
+          onTestDbConnection={onTestDbConnection}
+          dbConfigSaveStatus={dbConfigSaveStatus}
+          dbConnectionTestStatus={dbConnectionTestStatus}
+          dbConnectionTestError={dbConnectionTestError}
+          dbConnectionTestRunning={dbConnectionTestRunning}
+          onExportDbSchema={onExportDbSchema}
+          onImportDbSchema={onImportDbSchema}
+          onExportDbBackup={onExportDbBackup}
+          onRestoreDbBackup={onRestoreDbBackup}
+          dbExportSchemaStatus={dbExportSchemaStatus}
+          dbExportSchemaError={dbExportSchemaError}
+          dbExportSchemaRunning={dbExportSchemaRunning}
+          dbImportSchemaStatus={dbImportSchemaStatus}
+          dbImportSchemaError={dbImportSchemaError}
+          dbImportSchemaRunning={dbImportSchemaRunning}
+          dbExportBackupStatus={dbExportBackupStatus}
+          dbExportBackupError={dbExportBackupError}
+          dbExportBackupRunning={dbExportBackupRunning}
+          dbRestoreBackupStatus={dbRestoreBackupStatus}
+          dbRestoreBackupError={dbRestoreBackupError}
+          dbRestoreBackupRunning={dbRestoreBackupRunning}
         />
       ) : null}
 

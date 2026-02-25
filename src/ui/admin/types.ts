@@ -31,6 +31,13 @@ export type GitUpdateStatus = {
   note?: string;
 };
 
+export type AdminDbActionResult = {
+  ok: boolean;
+  message?: string;
+  error?: string;
+  details?: string;
+};
+
 export type DeckStats = {
   deck: number;
   discard: number;
@@ -57,6 +64,28 @@ export type AdminPageProps = {
   onStorageModeChange: (mode: AdminStorageMode) => void;
   dbConfigDraft: AdminDbConfigDraft;
   onDbConfigDraftChange: (next: AdminDbConfigDraft) => void;
+  onSaveDbConfigDraft: () => void;
+  onTestDbConnection: () => Promise<void>;
+  onExportDbSchema: () => Promise<void>;
+  onImportDbSchema: () => Promise<void>;
+  onExportDbBackup: () => Promise<void>;
+  onRestoreDbBackup: (file: File | null) => Promise<void>;
+  dbConfigSaveStatus: string;
+  dbConnectionTestStatus: string;
+  dbConnectionTestError: string;
+  dbConnectionTestRunning: boolean;
+  dbExportSchemaStatus: string;
+  dbExportSchemaError: string;
+  dbExportSchemaRunning: boolean;
+  dbImportSchemaStatus: string;
+  dbImportSchemaError: string;
+  dbImportSchemaRunning: boolean;
+  dbExportBackupStatus: string;
+  dbExportBackupError: string;
+  dbExportBackupRunning: boolean;
+  dbRestoreBackupStatus: string;
+  dbRestoreBackupError: string;
+  dbRestoreBackupRunning: boolean;
   matches: MatchInfo[];
   activeMatchId: string;
   onActiveMatchIdChange: (matchID: string) => void;
@@ -92,7 +121,7 @@ export type AdminPageProps = {
 
 export type ImportCategoryMode = CardCategory | 'AS_IS';
 export type CategoryFilter = CardCategory | 'ALL';
-export type AdminTab = 'matches' | 'deck' | 'import' | 'state' | 'ranks' | 'settings' | 'simulation';
+export type AdminTab = 'matches' | 'deck' | 'import' | 'state' | 'ranks' | 'database' | 'settings' | 'simulation';
 
 export type CropDraft = {
   filename: string;
