@@ -54,8 +54,11 @@ export const defaultCardTitlesEnById: Record<string, string> = {
   'legendary-05': 'System Architect',
 };
 
+// Verified English overrides for cards whose current in-game names no longer match legacy base placeholders.
+// Keep this list curated; do not auto-spread default placeholders here.
 export const cardTitlesEnById: Record<string, string> = {
-  ...defaultCardTitlesEnById,
+  'legendary-02': "Budanov's Laugh",
+  'legendary-05': 'ZSU Ration Pack',
 };
 
 

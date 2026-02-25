@@ -2,7 +2,7 @@ import type { ReactNode, RefObject } from 'react';
 import { normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition, JojGameState, ResourceKey } from '../../game/types';
 import type { Language } from '../i18n';
-import { cardTitle, categoryLabel, localizeSystemMessageText } from '../i18n';
+import { cardFlavor, cardTitleWithOverride, categoryLabel, localizeSystemMessageText } from '../i18n';
 
 type PilePreviewProps = {
   imageSrc?: string;
@@ -83,7 +83,8 @@ export const GameCardTile = ({
   helperText,
 }: GameCardTileProps) => {
   const imageSrc = normalizeImagePath(card.image) ?? `/cards/${card.id}.png`;
-  const title = cardTitle(card.id, card.title, lang);
+  const title = cardTitleWithOverride(card.id, card.title, lang, card.titleEn);
+  const flavorText = cardFlavor(card.flavor, lang, card.flavorEn);
   const effectEntries = card.effects ?? [];
   return (
     <div className="game-card">
@@ -160,6 +161,7 @@ export const GameCardTile = ({
           </div>
         ) : null}
         {helperText ? <small className="game-card-helper">{helperText}</small> : null}
+        {flavorText ? <small className="game-card-helper">{flavorText}</small> : null}
       </div>
     </div>
   );

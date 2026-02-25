@@ -932,7 +932,7 @@ button:disabled {
 
 .game-ui-v2-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.85fr);
+  grid-template-columns: minmax(0, 1.95fr) minmax(196px, 0.6fr);
   gap: 12px;
 }
 

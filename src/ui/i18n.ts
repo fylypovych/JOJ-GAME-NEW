@@ -21,7 +21,16 @@ export const categoryLabel = (category: string, lang: Language): string =>
   categories[category as keyof typeof categories]?.[lang] ?? category;
 
 export const cardTitle = (cardId: string, fallback: string, lang: Language): string => {
-  if (lang === 'en') return cardTitlesEnById[cardId] ?? fallback;
+  return cardTitleWithOverride(cardId, fallback, lang);
+};
+
+export const cardTitleWithOverride = (
+  cardId: string,
+  fallback: string,
+  lang: Language,
+  englishOverride?: string,
+): string => {
+  if (lang === 'en') return englishOverride?.trim() || cardTitlesEnById[cardId] || fallback;
   const defaultEn = defaultCardTitlesEnById[cardId];
   if (defaultEn && fallback === defaultEn) {
     return cardTitlesUk[cardId] ?? fallback;
@@ -29,11 +38,19 @@ export const cardTitle = (cardId: string, fallback: string, lang: Language): str
   return fallback;
 };
 
-const ukTitleToId = Object.fromEntries(
-  Object.entries(cardTitlesUk).map(([id, uk]) => [uk, id]),
-) as Record<string, string>;
+export const cardFlavor = (
+  fallback: string | undefined,
+  lang: Language,
+  englishOverride?: string,
+): string => {
+  if (!fallback) return '';
+  if (lang === 'en') return englishOverride?.trim() || fallback;
+  return fallback;
+};
 
 const systemMessageEnReplacements: Array<[RegExp, string]> = [
+  [/\bSystem Architect\b/g, 'ZSU Ration Pack'],
+  [/\bArchive Ghost\b/g, "Budanov's Laugh"],
   [/\bЗвання\b/g, 'Rank'],
   [/\bВартість\b/g, 'Cost'],
   [/\bБонус\b/g, 'Bonus'],
@@ -63,11 +80,8 @@ export const localizeSystemMessageText = (value: string, lang: Language): string
   if (lang !== 'en' || !value) return value;
   let next = value;
 
-  next = next.replace(/«([^»]+)»/g, (full, ukTitle) => {
-    const id = ukTitleToId[ukTitle];
-    const en = id ? cardTitlesEnById[id] : undefined;
-    return en ? `“${en}”` : full;
-  });
+  // Card titles are not force-translated by dictionary here because stale ID maps can produce incorrect names.
+  // Accurate card title translation should come from card data (titleEn) rendered in UI, not regex replacement.
 
   for (const [pattern, replacement] of systemMessageEnReplacements) {
     next = next.replace(pattern, replacement);

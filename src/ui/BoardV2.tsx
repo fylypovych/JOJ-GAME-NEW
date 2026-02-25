@@ -151,7 +151,6 @@ export const BoardV2 = ({
   const mustDiscardOverflow = isCurrentPlayer && handOverflow > 0 && (stage === 'play' || stage === 'end');
   const deckBackImage = G?.deckBackImage ? normalizeImagePath(G.deckBackImage) : undefined;
   const lastDiscard = G?.discard?.length ? G.discard[G.discard.length - 1] : null;
-  const lastLegendaryDiscard = G?.legendaryDiscard?.length ? G.legendaryDiscard[G.legendaryDiscard.length - 1] : null;
   const [chatInput, setChatInput] = useState('');
   const [openPreviewKey, setOpenPreviewKey] = useState<string | null>(null);
   const [pendingSelection, setPendingSelection] = useState<PendingSelection | null>(null);
@@ -635,7 +634,6 @@ export const BoardV2 = ({
                 <p>{lastDiscard ? cardTitle(lastDiscard.id, lastDiscard.title, lang) : t.noCardsInDiscard}</p>
               </div>
             </div>
-            <p className="game-ui-v2-subtle">{t.legendaryDiscardPile}: {G.legendaryDiscard?.length ?? 0}{lastLegendaryDiscard ? ` · ${cardTitle(lastLegendaryDiscard.id, lastLegendaryDiscard.title, lang)}` : ''}</p>
           </section>
 
           <section className="game-ui-v2-players">

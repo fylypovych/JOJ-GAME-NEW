@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition } from '../../game/types';
 import type { Language } from '../i18n';
-import { cardTitle, categoryLabel, text } from '../i18n';
+import { cardFlavor, cardTitleWithOverride, categoryLabel, text } from '../i18n';
 import type { GalleryCategoryFilter, LobbyMatch, UserTab } from './model';
 
 type T = ReturnType<typeof text>;
@@ -259,7 +259,7 @@ export const GallerySection = ({
               >
             <img
               src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
-              alt={cardTitle(card.id, card.title, lang)}
+              alt={cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.display = 'none';
               }}
@@ -274,12 +274,12 @@ export const GallerySection = ({
                 >
               <img
                 src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
-                alt={cardTitle(card.id, card.title, lang)}
+                  alt={cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}
               />
                 </div>
               </div>
-              <h3>{cardTitle(card.id, card.title, lang)}</h3>
-              <p>{card.flavor ?? ''}</p>
+              <h3>{cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}</h3>
+              <p>{cardFlavor(card.flavor, lang, card.flavorEn)}</p>
               <div className="gallery-effects">
                 {(card.effects ?? []).length === 0 ? (
                   <span className="pill pill-cost">0</span>

@@ -154,6 +154,7 @@ const parseCard = (value: unknown): CardDefinition | null => {
   if (!value || typeof value !== 'object') return null;
   const raw = value as Record<string, unknown>;
   if (typeof raw.id !== 'string' || typeof raw.title !== 'string') return null;
+  if (raw.titleEn !== undefined && typeof raw.titleEn !== 'string') return null;
   if (!validCategories.has(raw.category as CardDefinition['category'])) return null;
   const normalizedCategory = (raw.category === 'LEGENDARY' ? 'NEUTRAL' : raw.category) as CardDefinition['category'];
   const image = normalizeImagePath(typeof raw.image === 'string' ? raw.image : undefined);
@@ -171,8 +172,10 @@ const parseCard = (value: unknown): CardDefinition | null => {
     effects = parsedEffects;
   }
   const flavor = typeof raw.flavor === 'string' ? raw.flavor : undefined;
+  const titleEn = typeof raw.titleEn === 'string' ? raw.titleEn : undefined;
+  const flavorEn = typeof raw.flavorEn === 'string' ? raw.flavorEn : undefined;
   const grantRank = typeof raw.grantRank === 'string' && raw.grantRank.trim() ? raw.grantRank.trim() : undefined;
-  return { id: raw.id, title: raw.title, category: normalizedCategory, image, grantRank, effects, flavor };
+  return { id: raw.id, title: raw.title, titleEn, category: normalizedCategory, image, grantRank, effects, flavor, flavorEn };
 };
 
 export const importSharedDeckTemplateJson = (text: string): { ok: true } | { ok: false; error: string } => {

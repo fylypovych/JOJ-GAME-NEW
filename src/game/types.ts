@@ -19,6 +19,7 @@ export interface PlayerState {
 export interface Card {
   id: string;
   title: string;
+  titleEn?: string;
   category: CardCategory;
   cost?: Partial<Record<ResourceKey, number>>;
   image?: string;
@@ -28,6 +29,7 @@ export interface Card {
     value: number;
   }>;
   flavor?: string;
+  flavorEn?: string;
 }
 
 export interface Rank {
