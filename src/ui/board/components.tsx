@@ -55,6 +55,11 @@ type GameCardTileProps = {
     disabled: boolean;
     className?: string;
   };
+  utilityAction?: {
+    label: string;
+    onClick: () => void;
+    className?: string;
+  };
   effectLabel: (resource: ResourceKey | 'rank') => string;
   badges?: string[];
   helperText?: string;
@@ -72,6 +77,7 @@ export const GameCardTile = ({
   onAction,
   actionDisabled,
   extraAction,
+  utilityAction,
   effectLabel,
   badges,
   helperText,
@@ -97,6 +103,15 @@ export const GameCardTile = ({
           disabled={extraAction.disabled}
         >
           {extraAction.label}
+        </button>
+      ) : null}
+      {utilityAction ? (
+        <button
+          type="button"
+          className={`game-card-inline-action ${utilityAction.className ?? ''}`.trim()}
+          onClick={utilityAction.onClick}
+        >
+          {utilityAction.label}
         </button>
       ) : null}
       <div className="game-card-media">

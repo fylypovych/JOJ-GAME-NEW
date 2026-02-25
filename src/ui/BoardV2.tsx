@@ -19,9 +19,26 @@ type Notice = { type: NoticeKind; text: string } | null;
 
 type HandFilter = 'all' | 'playable' | CardDefinition['category'];
 type HandSort = 'default' | 'playable' | 'category' | 'title';
+type SidePanelTab = 'events' | 'chat';
+
+type PendingConfirm =
+  | { kind: 'promote'; nextRankName?: string | null; reason?: string | null }
+  | { kind: 'play-card'; card: CardDefinition; targetId?: string }
+  | { kind: 'play-legendary'; card: CardDefinition; targetId?: string; resource?: ResourceKey };
+
+type PinnedCardView = {
+  id: string;
+  title: string;
+  image?: string;
+  categoryText: string;
+  effects?: CardDefinition['effects'];
+  sourceLabel: string;
+};
 
 const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
   stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
+
+const fmtDelta = (value: number) => (value > 0 ? `+${value}` : String(value));
 
 const isPlayAllowedForCard = (args: {
   card: CardDefinition;
@@ -93,6 +110,46 @@ export const BoardV2 = ({
     requiresTarget: lang === 'uk' ? 'потрібна ціль' : 'needs target',
     requiresResource: lang === 'uk' ? 'потрібен ресурс' : 'needs resource',
     keyboardHint: lang === 'uk' ? 'D — добір, E — завершити хід, Esc — скасувати вибір' : 'D — draw, E — end turn, Esc — cancel selection',
+    stepAssistant: lang === 'uk' ? 'Помічник ходу' : 'Turn assistant',
+    step1: lang === 'uk' ? '1. Оберіть дію' : '1. Choose action',
+    step2: lang === 'uk' ? '2. Оберіть параметри' : '2. Choose parameters',
+    step3: lang === 'uk' ? '3. Підтвердіть' : '3. Confirm',
+    confirmAction: lang === 'uk' ? 'Підтвердити дію' : 'Confirm action',
+    previewOutcome: lang === 'uk' ? 'Попередній результат' : 'Outcome preview',
+    cost: lang === 'uk' ? 'Вартість' : 'Cost',
+    effects: lang === 'uk' ? 'Ефекти' : 'Effects',
+    target: lang === 'uk' ? 'Ціль' : 'Target',
+    selectedResource: lang === 'uk' ? 'Ресурс' : 'Resource',
+    tokens: lang === 'uk' ? 'Токени і стани' : 'Tokens & statuses',
+    shieldUntil: lang === 'uk' ? 'Щит до ходу' : 'Shield until turn',
+    extraHandToken: lang === 'uk' ? 'Додатковий розіграш з руки' : 'Extra hand play',
+    sukhpayPending: lang === 'uk' ? 'Сухпай очікує' : 'Sukhpay pending',
+    sukhpayUntil: lang === 'uk' ? 'Сухпай активний до ходу' : 'Sukhpay active until turn',
+    threatPanel: lang === 'uk' ? 'Опоненти: загрози / інтел' : 'Opponents: threat / intel',
+    nearPromotion: lang === 'uk' ? 'близько до підвищення' : 'close to promotion',
+    discardViewer: lang === 'uk' ? 'Перегляд скиду' : 'Discard viewer',
+    normalDiscard: lang === 'uk' ? 'Звичайний скид' : 'Discard pile',
+    legendaryDiscard: lang === 'uk' ? 'Легендарний скид' : 'Legendary discard',
+    pinCard: lang === 'uk' ? 'Закріпити' : 'Pin',
+    pinnedCard: lang === 'uk' ? 'Закріплена карта' : 'Pinned card',
+    noPinnedCard: lang === 'uk' ? 'Ще не вибрано карту для закріплення' : 'No pinned card selected yet',
+    openChat: lang === 'uk' ? 'Чат' : 'Chat',
+    openEvents: lang === 'uk' ? 'Події' : 'Events',
+    mobileActions: lang === 'uk' ? 'Швидкі дії (mobile)' : 'Quick actions (mobile)',
+    deficit: lang === 'uk' ? 'Не вистачає' : 'Missing',
+    actionLane: lang === 'uk' ? 'Смуга дії' : 'Action lane',
+    selectedCard: lang === 'uk' ? 'Обрана карта' : 'Selected card',
+    selectedAction: lang === 'uk' ? 'Обрана дія' : 'Selected action',
+    waitingAction: lang === 'uk' ? 'Оберіть карту або дію для продовження ходу.' : 'Choose a card or action to continue your turn.',
+    stageFocusDraw: lang === 'uk' ? 'Фокус етапу: доберіть карту, щоб відкрити варіанти розіграшу.' : 'Stage focus: draw a card to unlock play options.',
+    stageFocusPlay: lang === 'uk' ? 'Фокус етапу: розігруйте карти, оцінюйте наслідки, плануйте підвищення.' : 'Stage focus: play cards, review outcomes, plan promotion.',
+    stageFocusEnd: lang === 'uk' ? 'Фокус етапу: завершіть комбінацію або закрийте хід.' : 'Stage focus: finalize your combo or end the turn.',
+    targetableNow: lang === 'uk' ? 'можна цілити зараз' : 'targetable now',
+    seatBlocked: lang === 'uk' ? 'місця зайняті' : 'seat blocked',
+    threatHigh: lang === 'uk' ? 'висока загроза' : 'high threat',
+    threatMedium: lang === 'uk' ? 'середня загроза' : 'medium threat',
+    threatLow: lang === 'uk' ? 'низька загроза' : 'low threat',
+    handCardsLabel: lang === 'uk' ? 'Карти в руці' : 'Hand cards',
   };
 
   const id = playerID ?? '0';
@@ -126,6 +183,9 @@ export const BoardV2 = ({
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem('joj-ui-v2-compact') === '1';
   });
+  const [sidePanelTab, setSidePanelTab] = useState<SidePanelTab>('events');
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
+  const [pinnedCard, setPinnedCard] = useState<PinnedCardView | null>(null);
   const syncedNameRef = useRef('');
   const syncedNamesSignatureRef = useRef('');
   const chatLogRef = useRef<HTMLDivElement | null>(null);
@@ -197,6 +257,7 @@ export const BoardV2 = ({
 
   useEffect(() => {
     setPendingSelection(null);
+    setPendingConfirm(null);
     setSelectedTargetId(null);
     setSelectedResource(null);
   }, [ctx?.turn, stage, id]);
@@ -223,6 +284,27 @@ export const BoardV2 = ({
 
   const playerIds = useMemo(() => Object.keys(G?.players ?? {}), [G?.players]);
   const latestEvents = (G?.chat ?? []).slice(-8).reverse();
+  const recentDiscardCards = (G?.discard ?? []).slice(-8).reverse();
+  const recentLegendaryDiscardCards = (G?.legendaryDiscard ?? []).slice(-8).reverse();
+
+  const pinCardFromSource = (card: CardDefinition, sourceLabel: string, categoryText?: string) => {
+    setPinnedCard({
+      id: card.id,
+      title: cardTitle(card.id, card.title, lang),
+      image: normalizeImagePath(card.image) ?? `/cards/${card.id}.png`,
+      categoryText: categoryText ?? categoryLabel(card.category, lang),
+      effects: card.effects,
+      sourceLabel,
+    });
+  };
+
+  const pendingActionSteps = {
+    step1Done: Boolean(pendingSelection || pendingConfirm),
+    step2Done:
+      !pendingSelection ||
+      (pendingSelection.type === 'legendary-water' ? Boolean(selectedResource) : Boolean(selectedTargetId)),
+    step3Done: false,
+  };
 
   const handCardsView = useMemo(() => {
     const base = hand.map((card, index) => ({ card, index, playable: false }));
@@ -274,47 +356,73 @@ export const BoardV2 = ({
     }
     if (card.category === 'LYAP') {
       setPendingSelection({ type: 'hand-lyap', cardId: card.id });
+      setPendingConfirm(null);
       setSelectedTargetId(null);
       postNotice('info', `${v2.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
       return;
     }
-    moves.playCard(card.id, [], undefined);
-    setNotice(null);
+    setPendingConfirm({ kind: 'play-card', card });
+    postNotice('info', `${v2.confirmAction}: ${cardTitle(card.id, card.title, lang)}`);
   };
 
   const requestPlayLegendaryCard = (card: CardDefinition) => {
     if (typeof moves.playLegendaryCard !== 'function') return;
     if (card.id === 'legendary-10') {
       setPendingSelection({ type: 'legendary-drone', cardId: card.id });
+      setPendingConfirm(null);
       setSelectedTargetId(null);
       postNotice('info', `${v2.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
       return;
     }
     if (card.id === 'legendary-09' || card.id === 'legendary-06') {
       setPendingSelection({ type: 'legendary-water', cardId: card.id });
+      setPendingConfirm(null);
       setSelectedResource(null);
       postNotice('info', `${v2.pickResource}: ${cardTitle(card.id, card.title, lang)}`);
       return;
     }
-    moves.playLegendaryCard(card.id, undefined, undefined);
-    setNotice(null);
+    setPendingConfirm({ kind: 'play-legendary', card });
+    postNotice('info', `${v2.confirmAction}: ${cardTitle(card.id, card.title, lang)}`);
   };
 
   const confirmPendingSelection = () => {
     if (!pendingSelection) return;
     if (pendingSelection.type === 'hand-lyap') {
       if (!selectedTargetId) return postNotice('error', v2.targetRequired);
-      moves.playCard(pendingSelection.cardId, [], selectedTargetId);
+      const card = hand.find((c) => c.id === pendingSelection.cardId);
+      if (!card) return;
+      setPendingConfirm({ kind: 'play-card', card, targetId: selectedTargetId });
     }
     if (pendingSelection.type === 'legendary-drone') {
       if (!selectedTargetId) return postNotice('error', v2.targetRequired);
-      moves.playLegendaryCard?.(pendingSelection.cardId, selectedTargetId, undefined);
+      const card = legendaryHand.find((c) => c.id === pendingSelection.cardId);
+      if (!card) return;
+      setPendingConfirm({ kind: 'play-legendary', card, targetId: selectedTargetId });
     }
     if (pendingSelection.type === 'legendary-water') {
       if (!selectedResource) return postNotice('error', v2.resourceRequired);
-      moves.playLegendaryCard?.(pendingSelection.cardId, undefined, selectedResource);
+      const card = legendaryHand.find((c) => c.id === pendingSelection.cardId);
+      if (!card) return;
+      setPendingConfirm({ kind: 'play-legendary', card, resource: selectedResource });
     }
     setPendingSelection(null);
+    postNotice('info', v2.confirmAction);
+  };
+
+  const confirmPendingAction = () => {
+    if (!pendingConfirm) return;
+    if (pendingConfirm.kind === 'promote') {
+      if (!canPlay) return postNotice('error', v2.actionUnavailable);
+      const reason = getPromoteBlockedReason();
+      if (reason) return postNotice('error', reason);
+      moves.promote();
+    } else if (pendingConfirm.kind === 'play-card') {
+      if (!canPlayHandCard) return postNotice('error', v2.actionUnavailable);
+      moves.playCard(pendingConfirm.card.id, [], pendingConfirm.targetId);
+    } else if (pendingConfirm.kind === 'play-legendary') {
+      moves.playLegendaryCard?.(pendingConfirm.card.id, pendingConfirm.targetId, pendingConfirm.resource);
+    }
+    setPendingConfirm(null);
     setSelectedTargetId(null);
     setSelectedResource(null);
     setNotice(null);
@@ -331,14 +439,80 @@ export const BoardV2 = ({
   const promoteReason = getPromoteBlockedReason();
   const activeSelectionNeedsTarget = pendingSelection?.type === 'hand-lyap' || pendingSelection?.type === 'legendary-drone';
   const activeSelectionNeedsResource = pendingSelection?.type === 'legendary-water';
+  const confirmCard = pendingConfirm?.kind === 'play-card' || pendingConfirm?.kind === 'play-legendary' ? pendingConfirm.card : null;
+  const pendingTargetLabel =
+    pendingConfirm && pendingConfirm.kind !== 'promote' && pendingConfirm.targetId
+      ? playerLabelById(pendingConfirm.targetId)
+      : null;
+  const pendingResourceKey = pendingConfirm?.kind === 'play-legendary' ? pendingConfirm.resource : undefined;
+  const pendingCost = pendingConfirm?.kind === 'promote' ? (nextRankMeta?.nextRank?.cost ?? {}) : (confirmCard?.cost ?? {});
+  const pendingEffects = pendingConfirm?.kind === 'promote' ? (nextRankMeta?.nextRank?.bonus ?? {}) : null;
+  const highlightedResources = new Set<ResourceKey>();
+  const deficitByResource: Partial<Record<ResourceKey, number>> = {};
+  for (const key of RESOURCE_ORDER) {
+    const need = pendingCost?.[key] ?? 0;
+    if (need > 0) {
+      highlightedResources.add(key);
+      const have = resources[key] ?? 0;
+      if (have < need) deficitByResource[key] = need - have;
+    }
+    if (pendingResourceKey && pendingResourceKey === key) highlightedResources.add(key);
+  }
+
+  const threatRows = playerIds
+    .filter((pid) => pid !== id)
+    .map((pid) => {
+      const pRes = G.resources?.[pid];
+      const meta = getNextRankSeatMeta({ G, playerID: pid, sharedRanks });
+      const reqs = meta.nextRank?.requirement ?? {};
+      let reqTotal = 0;
+      let reqMet = 0;
+      for (const key of RESOURCE_ORDER) {
+        const need = reqs[key] ?? 0;
+        if (!need) continue;
+        reqTotal += need;
+        reqMet += Math.min(pRes?.[key] ?? 0, need);
+      }
+      const ratio = reqTotal > 0 ? reqMet / reqTotal : 0;
+      return {
+        pid,
+        ratio,
+        nextRank: meta.nextRank?.name ?? null,
+        seatBlocked: meta.seatBlocked,
+        shieldUntil: G.lyapScandalShieldUntilTurn?.[pid] ?? 0,
+        extraToken: G.extraHandPlayTokens?.[pid] ?? 0,
+        sukhpayPending: Boolean(G.sukhpayZsuPendingBonus?.[pid]),
+      };
+    })
+    .sort((a, b) => b.ratio - a.ratio);
+
+  const currentStageFocus =
+    stage === 'draw' ? v2.stageFocusDraw : stage === 'play' ? v2.stageFocusPlay : stage === 'end' ? v2.stageFocusEnd : '';
+  const stageClass = stage ? `is-stage-${stage}` : 'is-stage-waiting';
+  const actionLaneCard = currentPendingCard ?? confirmCard ?? null;
+  const actionLaneActionLabel = pendingConfirm
+    ? pendingConfirm.kind === 'promote'
+      ? t.promote
+      : cardTitle(pendingConfirm.card.id, pendingConfirm.card.title, lang)
+    : pendingSelection
+      ? cardTitle(currentPendingCard?.id ?? '', currentPendingCard?.title ?? '', lang)
+      : null;
+  const resourcePreviewAfter = Object.fromEntries(
+    RESOURCE_ORDER.map((key) => {
+      const deltaCost = pendingCost?.[key] ?? 0;
+      const deltaBonus = pendingEffects?.[key] ?? 0;
+      return [key, (resources[key] ?? 0) - deltaCost + deltaBonus];
+    }),
+  ) as Record<ResourceKey, number>;
 
   return (
-    <section className={`game-ui-v2-shell${compactMode ? ' is-compact' : ''}`}>
+    <section className={`game-ui-v2-shell ${stageClass}${compactMode ? ' is-compact' : ''}`}>
       <header className="game-ui-v2-header">
         <div>
           <p className="game-ui-v2-kicker">JOJ V2</p>
           <h2>{isCurrentPlayer ? (lang === 'uk' ? 'Ваш хід' : 'Your turn') : (lang === 'uk' ? 'Стіл гри' : 'Game table')}</h2>
           <p className="game-ui-v2-subtle">{v2.keyboardHint}</p>
+          {currentStageFocus ? <p className="game-ui-v2-subtle game-ui-v2-stage-focus">{currentStageFocus}</p> : null}
         </div>
         <div className="game-ui-v2-header-actions">
           <span className="game-ui-v2-badge">{stageLabel(stage, t)}</span>
@@ -367,8 +541,8 @@ export const BoardV2 = ({
                 <button type="button" onClick={() => {
                   if (!canPlay) return postNotice('error', v2.actionUnavailable);
                   if (promoteReason) return postNotice('error', promoteReason);
-                  moves.promote();
-                  setNotice(null);
+                  setPendingConfirm({ kind: 'promote', nextRankName: nextRankMeta?.nextRank?.name ?? null, reason: null });
+                  postNotice('info', `${v2.confirmAction}: ${t.promote}`);
                 }} disabled={!canPlay}>{t.promote}</button>
                 <button type="button" onClick={() => { if (!canEndTurn) return; moves.pass(); setNotice(null); }} disabled={!canEndTurn}>{t.endTurn}</button>
               </div>
@@ -381,13 +555,109 @@ export const BoardV2 = ({
             </div>
             <div className="game-ui-v2-resources-grid">
               {RESOURCE_ORDER.map((key) => (
-                <div key={key} className="game-ui-v2-resource-card">
+                <div
+                  key={key}
+                  className={`game-ui-v2-resource-card${highlightedResources.has(key) ? ' is-highlighted' : ''}${deficitByResource[key] ? ' is-deficit' : ''}`}
+                >
                   <span className="game-ui-v2-resource-name">{resourceLabels[key]}</span>
                   <strong>{resources[key] ?? 0}</strong>
+                  {deficitByResource[key] ? <small>{v2.deficit}: {deficitByResource[key]}</small> : null}
                 </div>
               ))}
             </div>
             {notice ? <p className={`game-ui-v2-notice is-${notice.type}`}>{notice.text}</p> : null}
+          </section>
+
+          <section className="game-ui-v2-action-lane">
+            <div className="game-ui-v2-action-lane-head">
+              <div>
+                <p className="game-ui-v2-kicker">{v2.actionLane}</p>
+                <h3>{v2.previewOutcome}</h3>
+              </div>
+              <div className="game-ui-v2-steps">
+                <span className={pendingActionSteps.step1Done ? 'is-done' : ''}>{v2.step1}</span>
+                <span className={pendingActionSteps.step2Done ? 'is-done' : ''}>{v2.step2}</span>
+                <span className={pendingConfirm ? 'is-done' : ''}>{v2.step3}</span>
+              </div>
+            </div>
+            <div className="game-ui-v2-action-lane-grid">
+              <div className="game-ui-v2-action-slot">
+                <strong>{v2.selectedAction}</strong>
+                <p className="game-ui-v2-subtle">
+                  {actionLaneActionLabel ?? (pendingConfirm?.kind === 'promote' ? t.promote : v2.waitingAction)}
+                </p>
+                {pendingTargetLabel ? <p className="game-ui-v2-subtle">{v2.target}: {pendingTargetLabel}</p> : null}
+                {pendingResourceKey ? <p className="game-ui-v2-subtle">{v2.selectedResource}: {resourceLabels[pendingResourceKey]}</p> : null}
+              </div>
+              <div className="game-ui-v2-action-slot">
+                <strong>{v2.selectedCard}</strong>
+                {actionLaneCard ? (
+                  <div className="game-ui-v2-lane-card-mini">
+                    <img src={normalizeImagePath(actionLaneCard.image) ?? `/cards/${actionLaneCard.id}.png`} alt={cardTitle(actionLaneCard.id, actionLaneCard.title, lang)} />
+                    <div>
+                      <div>{cardTitle(actionLaneCard.id, actionLaneCard.title, lang)}</div>
+                      <small>{categoryLabel(actionLaneCard.category, lang)}</small>
+                    </div>
+                  </div>
+                ) : <p className="game-ui-v2-subtle">{v2.waitingAction}</p>}
+              </div>
+              <div className="game-ui-v2-action-slot">
+                <strong>{lang === 'uk' ? 'Після підтвердження' : 'After confirm'}</strong>
+                {pendingConfirm ? (
+                  <div className="game-ui-v2-lane-resource-preview">
+                    {RESOURCE_ORDER.map((key) => (
+                      <span key={`after-${key}`} className={highlightedResources.has(key) ? 'is-highlighted' : ''}>
+                        {resourceLabels[key]}: {resources[key]} → {resourcePreviewAfter[key]}
+                      </span>
+                    ))}
+                  </div>
+                ) : <p className="game-ui-v2-subtle">{v2.step3}</p>}
+              </div>
+            </div>
+          </section>
+
+          <section className="game-ui-v2-selection-panel">
+            <div>
+              <p className="game-ui-v2-kicker">{v2.stepAssistant}</p>
+              <h3>{v2.previewOutcome}</h3>
+              <div className="game-ui-v2-steps">
+                <span className={pendingActionSteps.step1Done ? 'is-done' : ''}>{v2.step1}</span>
+                <span className={pendingActionSteps.step2Done ? 'is-done' : ''}>{v2.step2}</span>
+                <span>{v2.step3}</span>
+              </div>
+            </div>
+            {pendingConfirm ? (
+              <div className="game-ui-v2-confirm-card">
+                <p><strong>{v2.confirmAction}:</strong> {pendingConfirm.kind === 'promote' ? t.promote : cardTitle(confirmCard?.id ?? '', confirmCard?.title ?? '', lang)}</p>
+                {pendingConfirm.kind === 'promote' && pendingConfirm.nextRankName ? <p className="game-ui-v2-subtle">{t.yourRank} → {pendingConfirm.nextRankName}</p> : null}
+                {pendingTargetLabel ? <p className="game-ui-v2-subtle">{v2.target}: {pendingTargetLabel}</p> : null}
+                {pendingResourceKey ? <p className="game-ui-v2-subtle">{v2.selectedResource}: {resourceLabels[pendingResourceKey]}</p> : null}
+                {Object.keys(pendingCost ?? {}).length ? (
+                  <p className="game-ui-v2-subtle">
+                    <strong>{v2.cost}:</strong>{' '}
+                    {RESOURCE_ORDER.filter((k) => (pendingCost?.[k] ?? 0) > 0).map((k) => `${resourceLabels[k]} ${fmtDelta(-(pendingCost?.[k] ?? 0))}`).join(', ')}
+                  </p>
+                ) : null}
+                {pendingEffects && Object.keys(pendingEffects).length ? (
+                  <p className="game-ui-v2-subtle">
+                    <strong>{v2.effects}:</strong>{' '}
+                    {RESOURCE_ORDER.filter((k) => (pendingEffects?.[k] ?? 0) !== 0).map((k) => `${resourceLabels[k]} ${fmtDelta(pendingEffects?.[k] ?? 0)}`).join(', ')}
+                  </p>
+                ) : null}
+                {confirmCard?.effects?.length ? (
+                  <p className="game-ui-v2-subtle">
+                    <strong>{v2.effects}:</strong>{' '}
+                    {confirmCard.effects.map((e) => `${effectLabel(e.resource)} ${fmtDelta(e.value)}`).join(', ')}
+                  </p>
+                ) : null}
+                <div className="game-ui-v2-selection-actions">
+                  <button type="button" onClick={confirmPendingAction}>{lang === 'uk' ? 'Підтвердити' : 'Confirm'}</button>
+                  <button type="button" className="ghost" onClick={() => setPendingConfirm(null)}>{v2.cancel}</button>
+                </div>
+              </div>
+            ) : (
+              <p className="game-ui-v2-subtle">{pendingSelection ? (activeSelectionNeedsTarget ? v2.selectableTargetHint : v2.selectableResourceHint) : v2.step1}</p>
+            )}
           </section>
 
           <section className="game-ui-v2-piles">
@@ -397,7 +667,7 @@ export const BoardV2 = ({
                 <p>{lang === 'uk' ? 'Швидкі дії' : 'Quick actions'}</p>
                 <div className="board-actions">
                   <button type="button" onClick={() => canDraw && moves.drawCard()} disabled={!canDraw}>{t.draw}</button>
-                  <button type="button" onClick={() => { if (!canPlay || promoteReason) return; moves.promote(); }} disabled={!canPlay || Boolean(promoteReason)}>{t.promote}</button>
+                  <button type="button" onClick={() => { if (!canPlay || promoteReason) return; setPendingConfirm({ kind: 'promote', nextRankName: nextRankMeta?.nextRank?.name ?? null, reason: null }); }} disabled={!canPlay || Boolean(promoteReason)}>{t.promote}</button>
                   <button type="button" onClick={() => canEndTurn && moves.pass()} disabled={!canEndTurn}>{t.endTurn}</button>
                 </div>
               </div>
@@ -433,6 +703,16 @@ export const BoardV2 = ({
               </div>
             </div>
             <p className="game-ui-v2-subtle">{t.legendaryDiscardPile}: {G.legendaryDiscard?.length ?? 0}{lastLegendaryDiscard ? ` · ${cardTitle(lastLegendaryDiscard.id, lastLegendaryDiscard.title, lang)}` : ''}</p>
+          </section>
+
+          <section className="game-ui-v2-players">
+            <h3>{v2.tokens}</h3>
+            <div className="game-ui-v2-token-list">
+              <div className="game-ui-v2-token-row"><span>{v2.extraHandToken}</span><strong>{G.extraHandPlayTokens?.[id] ?? 0}</strong></div>
+              <div className="game-ui-v2-token-row"><span>{v2.sukhpayPending}</span><strong>{G.sukhpayZsuPendingBonus?.[id] ? t.yes : t.no}</strong></div>
+              <div className="game-ui-v2-token-row"><span>{v2.sukhpayUntil}</span><strong>{G.sukhpayZsuWatchUntilTurn?.[id] ?? 0}</strong></div>
+              <div className="game-ui-v2-token-row"><span>{v2.shieldUntil}</span><strong>{G.lyapScandalShieldUntilTurn?.[id] ?? 0}</strong></div>
+            </div>
           </section>
 
           <section className="game-ui-v2-rank-panel">
@@ -473,6 +753,15 @@ export const BoardV2 = ({
                 const pRank = sharedRanks.find((r) => r.id === pRankId)?.name ?? rankLabel(pRankId, lang);
                 const active = ctx.currentPlayer === pid;
                 const selectable = activeSelectionNeedsTarget && pid !== id;
+                const pMeta = getNextRankSeatMeta({ G, playerID: pid, sharedRanks });
+                const pThreatRow = threatRows.find((row) => row.pid === pid);
+                const threatBadge = !pThreatRow
+                  ? null
+                  : pThreatRow.ratio >= 0.8
+                    ? v2.threatHigh
+                    : pThreatRow.ratio >= 0.45
+                      ? v2.threatMedium
+                      : v2.threatLow;
                 return (
                   <button
                     key={`player-${pid}`}
@@ -491,6 +780,12 @@ export const BoardV2 = ({
                       <span>#{pid}{pid === id ? ` · ${v2.you}` : ''}</span>
                     </div>
                     <div className="game-ui-v2-player-rank">{pRank}</div>
+                    <div className="game-ui-v2-player-badges">
+                      {threatBadge ? <span className="pill pill-badge">{threatBadge}</span> : null}
+                      {selectable ? <span className="pill pill-badge">{v2.targetableNow}</span> : null}
+                      {pMeta.seatBlocked ? <span className="pill pill-badge">{v2.seatBlocked}</span> : null}
+                      {(G.lyapScandalShieldUntilTurn?.[pid] ?? 0) > 0 ? <span className="pill pill-badge">{v2.shieldUntil}: {G.lyapScandalShieldUntilTurn?.[pid] ?? 0}</span> : null}
+                    </div>
                     <div className="game-ui-v2-player-resources">
                       {RESOURCE_ORDER.map((key) => (
                         <span key={`${pid}-${key}`}>{resourceLabels[key]}: {pResources?.[key] ?? 0}</span>
@@ -499,6 +794,25 @@ export const BoardV2 = ({
                   </button>
                 );
               })}
+            </div>
+          </section>
+
+          <section className="game-ui-v2-events">
+            <h3>{v2.threatPanel}</h3>
+            <div className="game-ui-v2-events-list">
+              {threatRows.map((row) => (
+                <div key={`threat-${row.pid}`} className="game-ui-v2-event-row">
+                  <strong>{playerLabelById(row.pid)} · {Math.round(row.ratio * 100)}% {v2.nearPromotion}</strong>
+                  <span>
+                    {(row.nextRank ?? '—')}
+                    {row.seatBlocked ? ` · ${v2.seatBlocked}` : ''}
+                    {row.shieldUntil ? ` · ${v2.shieldUntil}: ${row.shieldUntil}` : ''}
+                    {row.extraToken ? ` · ${v2.extraHandToken}: ${row.extraToken}` : ''}
+                    {row.sukhpayPending ? ` · ${v2.sukhpayPending}` : ''}
+                  </span>
+                </div>
+              ))}
+              {!threatRows.length ? <p className="game-ui-v2-subtle">{lang === 'uk' ? 'Немає опонентів' : 'No opponents'}</p> : null}
             </div>
           </section>
 
@@ -592,6 +906,11 @@ export const BoardV2 = ({
                       disabled: typeof moves.discardFromHand !== 'function',
                       className: 'game-card-inline-discard',
                     } : undefined}
+                    utilityAction={{
+                      label: v2.pinCard,
+                      onClick: () => pinCardFromSource(card, t.yourHand, categoryLabel(card.category, lang)),
+                      className: 'game-card-inline-pin',
+                    }}
                     effectLabel={effectLabel}
                     badges={badges}
                     helperText={helperText}
@@ -627,6 +946,11 @@ export const BoardV2 = ({
                     actionLabel={lang === 'uk' ? 'Зіграти легендарну' : 'Play legendary'}
                     onAction={() => requestPlayLegendaryCard(card)}
                     actionDisabled={typeof moves.playLegendaryCard !== 'function'}
+                    utilityAction={{
+                      label: v2.pinCard,
+                      onClick: () => pinCardFromSource(card, t.legendaryHand, t.legendaryDeckLabel),
+                      className: 'game-card-inline-pin',
+                    }}
                     effectLabel={effectLabel}
                     badges={badges.length ? badges : undefined}
                   />
@@ -641,7 +965,13 @@ export const BoardV2 = ({
         </div>
 
         <aside className="game-ui-v2-side">
-          <section className="game-ui-v2-events">
+          <section className="game-ui-v2-events game-ui-v2-mobile-tabs">
+            <div className="game-ui-v2-side-tab-row">
+              <button type="button" className={sidePanelTab === 'events' ? 'is-active' : ''} onClick={() => setSidePanelTab('events')}>{v2.openEvents}</button>
+              <button type="button" className={sidePanelTab === 'chat' ? 'is-active' : ''} onClick={() => setSidePanelTab('chat')}>{v2.openChat}</button>
+            </div>
+          </section>
+          <section className={`game-ui-v2-events${sidePanelTab !== 'events' ? ' game-ui-v2-mobile-hidden' : ''}`}>
             <h3>{v2.recentEvents}</h3>
             <div className="game-ui-v2-events-list">
               {latestEvents.map((row) => {
@@ -656,16 +986,90 @@ export const BoardV2 = ({
               {!latestEvents.length ? <p className="game-ui-v2-subtle">{lang === 'uk' ? 'Подій ще немає' : 'No events yet'}</p> : null}
             </div>
           </section>
-          <BoardChatPanel
-            chat={G.chat ?? []}
-            chatInput={chatInput}
-            setChatInput={setChatInput}
-            onSend={sendChatMessage}
-            playerLabelById={playerLabelById}
-            t={t}
-            chatLogRef={chatLogRef}
-          />
+          <section className={sidePanelTab !== 'chat' ? 'game-ui-v2-mobile-hidden' : ''}>
+            <BoardChatPanel
+              chat={G.chat ?? []}
+              chatInput={chatInput}
+              setChatInput={setChatInput}
+              onSend={sendChatMessage}
+              playerLabelById={playerLabelById}
+              t={t}
+              chatLogRef={chatLogRef}
+            />
+          </section>
+
+          <section className="game-ui-v2-events">
+            <h3>{v2.discardViewer}</h3>
+            <div className="game-ui-v2-discard-columns">
+              <div>
+                <p className="game-ui-v2-subtle">{v2.normalDiscard}</p>
+                <div className="game-ui-v2-mini-list">
+                  <div className="game-ui-v2-thumb-grid">
+                    {recentDiscardCards.map((card) => (
+                      <button
+                        key={`mini-discard-thumb-${card.id}`}
+                        type="button"
+                        className="game-ui-v2-card-thumb"
+                        onClick={() => pinCardFromSource(card, v2.normalDiscard)}
+                        title={cardTitle(card.id, card.title, lang)}
+                      >
+                        <img src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`} alt={cardTitle(card.id, card.title, lang)} />
+                      </button>
+                    ))}
+                  </div>
+                  {recentDiscardCards.map((card) => (
+                    <button key={`mini-discard-${card.id}`} type="button" onClick={() => pinCardFromSource(card, v2.normalDiscard)}>{cardTitle(card.id, card.title, lang)}</button>
+                  ))}
+                  {!recentDiscardCards.length ? <span className="game-ui-v2-subtle">{t.noCardsInDiscard}</span> : null}
+                </div>
+              </div>
+              <div>
+                <p className="game-ui-v2-subtle">{v2.legendaryDiscard}</p>
+                <div className="game-ui-v2-mini-list">
+                  <div className="game-ui-v2-thumb-grid">
+                    {recentLegendaryDiscardCards.map((card) => (
+                      <button
+                        key={`mini-ldiscard-thumb-${card.id}`}
+                        type="button"
+                        className="game-ui-v2-card-thumb"
+                        onClick={() => pinCardFromSource(card, v2.legendaryDiscard, t.legendaryDeckLabel)}
+                        title={cardTitle(card.id, card.title, lang)}
+                      >
+                        <img src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`} alt={cardTitle(card.id, card.title, lang)} />
+                      </button>
+                    ))}
+                  </div>
+                  {recentLegendaryDiscardCards.map((card) => (
+                    <button key={`mini-ldiscard-${card.id}`} type="button" onClick={() => pinCardFromSource(card, v2.legendaryDiscard, t.legendaryDeckLabel)}>{cardTitle(card.id, card.title, lang)}</button>
+                  ))}
+                  {!recentLegendaryDiscardCards.length ? <span className="game-ui-v2-subtle">{t.noCardsInDiscard}</span> : null}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="game-ui-v2-events">
+            <h3>{v2.pinnedCard}</h3>
+            {pinnedCard ? (
+              <div className="game-ui-v2-pinned">
+                {pinnedCard.image ? <img src={pinnedCard.image} alt={pinnedCard.title} /> : null}
+                <div>
+                  <strong>{pinnedCard.title}</strong>
+                  <p className="game-ui-v2-subtle">{pinnedCard.categoryText} · {pinnedCard.sourceLabel}</p>
+                  {pinnedCard.effects?.length ? (
+                    <p className="game-ui-v2-subtle">{pinnedCard.effects.map((e) => `${effectLabel(e.resource)} ${fmtDelta(e.value)}`).join(', ')}</p>
+                  ) : null}
+                </div>
+              </div>
+            ) : <p className="game-ui-v2-subtle">{v2.noPinnedCard}</p>}
+          </section>
         </aside>
+      </div>
+
+      <div className="game-ui-v2-mobile-bar" aria-label={v2.mobileActions}>
+        <button type="button" onClick={() => canDraw && moves.drawCard()} disabled={!canDraw}>{t.draw}</button>
+        <button type="button" onClick={() => { if (!canPlay || promoteReason) return; setPendingConfirm({ kind: 'promote', nextRankName: nextRankMeta?.nextRank?.name ?? null, reason: null }); }} disabled={!canPlay || Boolean(promoteReason)}>{t.promote}</button>
+        <button type="button" onClick={() => canEndTurn && moves.pass()} disabled={!canEndTurn}>{t.endTurn}</button>
       </div>
     </section>
   );
