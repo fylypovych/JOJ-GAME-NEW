@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Language } from '../i18n';
 import type { GitUpdateStatus } from './types';
 
@@ -21,18 +21,36 @@ export const useAdminGitActions = ({
   const [gitDeployRunning, setGitDeployRunning] = useState<boolean>(false);
   const [gitActionMessage, setGitActionMessage] = useState<string>('');
   const [gitActionLog, setGitActionLog] = useState<string>('');
+  const deployRecoveryTimersRef = useRef<number[]>([]);
+  const deployRecoveryActiveRef = useRef<boolean>(false);
 
-  const checkGitUpdates = async () => {
+  useEffect(() => () => {
+    deployRecoveryTimersRef.current.forEach((id) => window.clearTimeout(id));
+    deployRecoveryTimersRef.current = [];
+  }, []);
+
+  const clearDeployRecoveryTimers = () => {
+    deployRecoveryTimersRef.current.forEach((id) => window.clearTimeout(id));
+    deployRecoveryTimersRef.current = [];
+  };
+
+  const checkGitUpdates = async (opts?: { silentDuringExpectedRestart?: boolean; preserveMessages?: boolean }) => {
+    const silentDuringExpectedRestart = Boolean(opts?.silentDuringExpectedRestart);
+    const preserveMessages = Boolean(opts?.preserveMessages);
     setGitStatusLoading(true);
     setAdminActionError('');
-    setGitActionMessage('');
-    setGitActionLog('');
+    if (!preserveMessages) {
+      setGitActionMessage('');
+      setGitActionLog('');
+    }
     try {
       const response = await fetch(`${serverUrl}/api/admin/git/status`, { headers: adminHeaders() });
       const payload = (await response.json()) as ({ ok?: boolean; error?: string; details?: string } & Partial<GitUpdateStatus>);
       if (!response.ok || !payload.ok) {
-        setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates'));
-        setGitActionLog(payload.details ?? payload.error ?? '');
+        if (!silentDuringExpectedRestart) {
+          setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates'));
+          setGitActionLog(payload.details ?? payload.error ?? '');
+        }
         return;
       }
       setGitStatus({
@@ -47,9 +65,16 @@ export const useAdminGitActions = ({
         note: payload.note,
       });
       setGitActionMessage(lang === 'uk' ? 'Стан репозиторію оновлено' : 'Repository status updated');
+      if (deployRecoveryActiveRef.current) {
+        deployRecoveryActiveRef.current = false;
+        clearDeployRecoveryTimers();
+        setGitActionMessage(lang === 'uk' ? 'Сервер перезапущено, статус оновлено' : 'Server restarted, status updated');
+      }
     } catch {
-      setAdminActionError(lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates');
-      setGitActionLog('');
+      if (!silentDuringExpectedRestart) {
+        setAdminActionError(lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates');
+        setGitActionLog('');
+      }
     } finally {
       setGitStatusLoading(false);
     }
@@ -133,9 +158,19 @@ export const useAdminGitActions = ({
             ? 'Оновлення, збірка і рестарт запущені'
             : 'Update, build and restart started'),
       );
-      setTimeout(() => {
-        void checkGitUpdates();
-      }, 3000);
+      deployRecoveryActiveRef.current = true;
+      setGitActionMessage(
+        lang === 'uk'
+          ? 'Оновлення, збірка і рестарт запущені. Сервер перезапускається, оновіть сторінку через 5-10 секунд.'
+          : 'Update, build and restart started. Server is restarting; refresh the page in 5-10 seconds.',
+      );
+      clearDeployRecoveryTimers();
+      [5000, 10000, 20000].forEach((delayMs) => {
+        const timerId = window.setTimeout(() => {
+          void checkGitUpdates({ silentDuringExpectedRestart: true, preserveMessages: true });
+        }, delayMs);
+        deployRecoveryTimersRef.current.push(timerId);
+      });
     } catch {
       setAdminActionError(lang === 'uk' ? 'Не вдалося оновити/зібрати проект' : 'Failed to update/build project');
       setGitActionLog('');
