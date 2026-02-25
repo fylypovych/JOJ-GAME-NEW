@@ -138,7 +138,7 @@ export const AdminStateTab = ({ t, snapshot }: { t: T; snapshot: Snapshot | null
 
 export const AdminSimulationTab = ({
   t, lang, simulationPlayers, setSimulationPlayers, simulationCount, setSimulationCount,
-  simulationRunning, runSimulation, simulationReport, localizedRankName,
+  simulationRunning, runSimulation, simulationReport, simulationError, simulationBlockedReason, localizedRankName,
   simulationUseMainDeck, setSimulationUseMainDeck,
   simulationUseLegendaryDeck, setSimulationUseLegendaryDeck,
 }: {
@@ -151,6 +151,8 @@ export const AdminSimulationTab = ({
   simulationRunning: boolean;
   runSimulation: () => void;
   simulationReport: any;
+  simulationError?: string;
+  simulationBlockedReason?: string;
   localizedRankName: (rankId: string) => string;
   simulationUseMainDeck: boolean;
   setSimulationUseMainDeck: (value: boolean) => void;
@@ -186,8 +188,10 @@ export const AdminSimulationTab = ({
         />{' '}
         {lang === 'uk' ? 'Легендарна колода' : 'Legendary deck'}
       </label>
-      <button type="button" disabled={simulationRunning} onClick={runSimulation}>{simulationRunning ? t.simulationRunning : t.simulationRun}</button>
+      <button type="button" disabled={simulationRunning || Boolean(simulationBlockedReason)} onClick={runSimulation}>{simulationRunning ? t.simulationRunning : t.simulationRun}</button>
     </p>
+    {simulationBlockedReason ? <p className="admin-info">{simulationBlockedReason}</p> : null}
+    {simulationError ? <p className="admin-error">{simulationError}</p> : null}
     <h4>{t.simulationReport}</h4>
     {!simulationReport ? <p>{t.simulationNoReport}</p> : (
       <div>

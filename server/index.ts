@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { loadEnvFile } from './env';
 import { createFileLogger } from './file-logger';
 import { autoStashRuntimeNoise, createCommandRunners, getGitUpdateStatus } from './git-utils';
@@ -27,9 +28,12 @@ const { Server, FlatFile } = require('boardgame.io/server') as {
   };
 };
 
-const logsPath = path.resolve(process.cwd(), 'logs', 'server.log');
-const matchesDbDir = path.resolve(process.cwd(), 'database', 'matches');
-const envPath = path.resolve(process.cwd(), '.env');
+const serverDir = path.dirname(fileURLToPath(import.meta.url));
+const appRootDir = path.resolve(serverDir, '..');
+
+const logsPath = path.resolve(appRootDir, 'logs', 'server.log');
+const matchesDbDir = path.resolve(appRootDir, 'database', 'matches');
+const envPath = path.resolve(appRootDir, '.env');
 const rateLimitState = new Map<string, { count: number; resetAt: number }>();
 
 const JSON_BODY_LIMIT = 2 * 1024 * 1024;
@@ -49,11 +53,11 @@ const server = Server({
   db: new FlatFile({ dir: matchesDbDir, logging: false }),
 });
 const router = (server as { router?: any }).router;
-const templatePath = path.resolve(process.cwd(), 'database', 'shared-deck-template.json');
-const ranksPath = path.resolve(process.cwd(), 'database', 'shared-ranks.json');
-const uploadsDir = path.resolve(process.cwd(), 'public', 'cards');
-const repoDir = process.cwd();
-const devRestartTouchPath = path.resolve(process.cwd(), 'server', '.restart-touch');
+const templatePath = path.resolve(appRootDir, 'database', 'shared-deck-template.json');
+const ranksPath = path.resolve(appRootDir, 'database', 'shared-ranks.json');
+const uploadsDir = path.resolve(appRootDir, 'public', 'cards');
+const repoDir = appRootDir;
+const devRestartTouchPath = path.resolve(appRootDir, 'server', '.restart-touch');
 
 const requireAdminAuth = createRequireAdminAuth({ isAdminAuthEnabled, adminToken, logLine });
 const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });

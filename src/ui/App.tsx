@@ -92,6 +92,7 @@ export const App = () => {
   const [sharedDeckTemplate, setSharedDeckTemplate] = useState<SharedDeckTemplate>(getSharedDeckTemplate);
   const [cardCatalog, setCardCatalog] = useState<CardDefinition[]>(getCardCatalog);
   const [sharedRanks, setSharedRanksState] = useState<RankDefinition[]>(getSharedRanks);
+  const [sharedConfigLoaded, setSharedConfigLoaded] = useState<boolean>(false);
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
   const [serverUrlDraft, setServerUrlDraft] = useState<string>(() => window.localStorage.getItem(SERVER_URL_STORAGE_KEY) ?? SERVER_URL);
@@ -359,6 +360,7 @@ export const App = () => {
           }
         }
       }
+      setSharedConfigLoaded(true);
     })();
   }, []);
 
@@ -507,6 +509,8 @@ export const App = () => {
           }}
           sharedDeckTemplate={sharedDeckTemplate}
           cardCatalog={cardCatalog}
+          sharedRanks={sharedRanks}
+          sharedConfigLoaded={sharedConfigLoaded}
           onCreateMatch={createRoom}
           onResetMatch={() => {}}
           onDeleteMatch={() => {}}
@@ -561,7 +565,6 @@ export const App = () => {
             refreshSharedDeckTemplate();
             return null;
           }}
-          sharedRanks={sharedRanks}
           onUpdateRanks={(nextRanks: RankDefinition[]) => {
             const ok = setSharedRanks(nextRanks);
             if (!ok) return false;

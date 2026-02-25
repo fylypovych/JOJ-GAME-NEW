@@ -51,6 +51,7 @@ export type AdminPageProps = {
   sharedDeckTemplate: SharedDeckTemplate;
   cardCatalog: CardDefinition[];
   sharedRanks: RankDefinition[];
+  sharedConfigLoaded: boolean;
   onCreateMatch: () => void;
   onResetMatch: () => void;
   onDeleteMatch: () => void;

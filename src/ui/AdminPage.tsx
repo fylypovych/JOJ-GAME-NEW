@@ -53,6 +53,7 @@ export const AdminPage = ({
   sharedDeckTemplate,
   cardCatalog,
   sharedRanks,
+  sharedConfigLoaded,
   onCreateMatch,
   onResetMatch,
   onDeleteMatch,
@@ -136,8 +137,23 @@ export const AdminPage = ({
     setSimulationUseLegendaryDeck,
     simulationReport,
     simulationRunning,
+    simulationError,
+    simulationBlockedReason,
     runSimulation,
-  } = useAdminSimulation({ onRunSimulations });
+  } = useAdminSimulation({
+    onRunSimulations,
+    configSignature: JSON.stringify({
+      loaded: sharedConfigLoaded,
+      deck: sharedDeckTemplate.deck.length,
+      legendaryDeck: sharedDeckTemplate.legendaryDeck.length,
+      ranks: sharedRanks.length,
+    }),
+    blockedReason: sharedConfigLoaded
+      ? ''
+      : (lang === 'uk'
+        ? 'Симуляція буде доступна після завантаження шаблону колоди та звань.'
+        : 'Simulation will be available after deck template and ranks are loaded.'),
+  });
   const {
     gitStatus,
     gitStatusLoading,
@@ -885,6 +901,8 @@ export const AdminPage = ({
           simulationRunning={simulationRunning}
           runSimulation={runSimulation}
           simulationReport={simulationReport}
+          simulationError={simulationError}
+          simulationBlockedReason={simulationBlockedReason}
           localizedRankName={localizedRankName}
         />
       ) : null}
