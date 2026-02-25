@@ -1,6 +1,15 @@
 import type { DeckTarget, SimulationReport } from '../../game/jojGame';
 import type { CardCategory, CardDefinition, RankDefinition } from '../../game/types';
 import type { Language } from '../i18n';
+export type AdminStorageMode = 'file' | 'db';
+export type AdminDbConfigDraft = {
+  host: string;
+  port: string;
+  database: string;
+  user: string;
+  password: string;
+  sslMode: 'disable' | 'require';
+};
 
 export type MatchInfo = { id: string; createdAt: number };
 
@@ -44,6 +53,10 @@ export type AdminPageProps = {
   onServerUrlDraftChange: (value: string) => void;
   onSaveServerUrl: (value: string) => void;
   onResetServerUrl: () => void;
+  storageMode: AdminStorageMode;
+  onStorageModeChange: (mode: AdminStorageMode) => void;
+  dbConfigDraft: AdminDbConfigDraft;
+  onDbConfigDraftChange: (next: AdminDbConfigDraft) => void;
   matches: MatchInfo[];
   activeMatchId: string;
   onActiveMatchIdChange: (matchID: string) => void;

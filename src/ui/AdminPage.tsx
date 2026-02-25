@@ -21,6 +21,7 @@ import {
   zeroEffectValues,
 } from './admin/helpers';
 import type {
+  AdminStorageMode,
   AdminPageProps,
   AdminTab,
   CategoryFilter,
@@ -46,6 +47,10 @@ export const AdminPage = ({
   onServerUrlDraftChange,
   onSaveServerUrl,
   onResetServerUrl,
+  storageMode,
+  onStorageModeChange,
+  dbConfigDraft,
+  onDbConfigDraftChange,
   matches,
   activeMatchId,
   onActiveMatchIdChange,
@@ -815,6 +820,10 @@ export const AdminPage = ({
           onServerUrlDraftChange={onServerUrlDraftChange}
           onSaveServerUrl={onSaveServerUrl}
           onResetServerUrl={onResetServerUrl}
+          storageMode={storageMode as AdminStorageMode}
+          onStorageModeChange={onStorageModeChange}
+          dbConfigDraft={dbConfigDraft}
+          onDbConfigDraftChange={onDbConfigDraftChange}
           serverUrl={serverUrl}
           checkGitUpdates={checkGitUpdates}
           applyGitUpdate={applyGitUpdate}

@@ -24,6 +24,7 @@ import {
   updateCardAtInSharedDeckTemplate,
 } from '../game/jojGame';
 import { AdminPage } from './AdminPage';
+import type { AdminDbConfigDraft, AdminStorageMode } from './admin/types';
 import { Board } from './Board';
 import type { Language } from './i18n';
 import { defaultLanguage, text } from './i18n';
@@ -76,6 +77,8 @@ const ADMIN_MATCH_STATE_API = `${SERVER_URL}/api/admin/match-state`;
 const ADMIN_MATCH_STOP_API = `${SERVER_URL}/api/admin/match-stop`;
 const ADMIN_MATCH_RESET_API = `${SERVER_URL}/api/admin/match-reset`;
 const ADMIN_MATCH_DELETE_API = `${SERVER_URL}/api/admin/match-delete`;
+const ADMIN_STORAGE_MODE_STORAGE_KEY = 'joj-admin-storage-mode-v1';
+const ADMIN_DB_CONFIG_STORAGE_KEY = 'joj-admin-db-config-v1';
 
 export const App = () => {
   const isAdminRoute = window.location.pathname.startsWith('/admin');
@@ -100,6 +103,29 @@ export const App = () => {
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
   const [serverUrlDraft, setServerUrlDraft] = useState<string>(() => window.localStorage.getItem(SERVER_URL_STORAGE_KEY) ?? SERVER_URL);
+  const [adminStorageMode, setAdminStorageMode] = useState<AdminStorageMode>(() => {
+    const raw = window.localStorage.getItem(ADMIN_STORAGE_MODE_STORAGE_KEY);
+    return raw === 'db' ? 'db' : 'file';
+  });
+  const [adminDbConfigDraft, setAdminDbConfigDraft] = useState<AdminDbConfigDraft>(() => {
+    try {
+      const raw = window.localStorage.getItem(ADMIN_DB_CONFIG_STORAGE_KEY);
+      if (!raw) {
+        return { host: '127.0.0.1', port: '5432', database: 'joj_game', user: 'joj_user', password: '', sslMode: 'disable' };
+      }
+      const parsed = JSON.parse(raw) as Partial<AdminDbConfigDraft>;
+      return {
+        host: typeof parsed.host === 'string' ? parsed.host : '127.0.0.1',
+        port: typeof parsed.port === 'string' ? parsed.port : '5432',
+        database: typeof parsed.database === 'string' ? parsed.database : 'joj_game',
+        user: typeof parsed.user === 'string' ? parsed.user : 'joj_user',
+        password: typeof parsed.password === 'string' ? parsed.password : '',
+        sslMode: parsed.sslMode === 'require' ? 'require' : 'disable',
+      };
+    } catch {
+      return { host: '127.0.0.1', port: '5432', database: 'joj_game', user: 'joj_user', password: '', sslMode: 'disable' };
+    }
+  });
 
   const t = text(lang);
   const {
@@ -402,6 +428,14 @@ export const App = () => {
   }, [isAdminRoute, lang, t.adminTitle, t.gameTitle]);
 
   useEffect(() => {
+    window.localStorage.setItem(ADMIN_STORAGE_MODE_STORAGE_KEY, adminStorageMode);
+  }, [adminStorageMode]);
+
+  useEffect(() => {
+    window.localStorage.setItem(ADMIN_DB_CONFIG_STORAGE_KEY, JSON.stringify(adminDbConfigDraft));
+  }, [adminDbConfigDraft]);
+
+  useEffect(() => {
     window.localStorage.setItem(PLAYER_NAME_STORAGE_KEY, playerName);
   }, [playerName]);
 
@@ -515,6 +549,10 @@ export const App = () => {
           onServerUrlDraftChange={setServerUrlDraft}
           onSaveServerUrl={saveServerUrl}
           onResetServerUrl={resetServerUrl}
+          storageMode={adminStorageMode}
+          onStorageModeChange={setAdminStorageMode}
+          dbConfigDraft={adminDbConfigDraft}
+          onDbConfigDraftChange={setAdminDbConfigDraft}
           matches={matches.map((m) => ({ id: m.matchID, createdAt: Date.now() }))}
           activeMatchId={adminMatchID}
           onActiveMatchIdChange={setAdminSelectedMatchID}

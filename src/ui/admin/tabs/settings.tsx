@@ -1,5 +1,5 @@
 import { text } from '../../i18n';
-import type { GitUpdateStatus } from '../types';
+import type { AdminDbConfigDraft, AdminStorageMode, GitUpdateStatus } from '../types';
 
 type T = ReturnType<typeof text>;
 
@@ -10,6 +10,10 @@ export const AdminSettingsTab = ({
   onServerUrlDraftChange,
   onSaveServerUrl,
   onResetServerUrl,
+  storageMode,
+  onStorageModeChange,
+  dbConfigDraft,
+  onDbConfigDraftChange,
   serverUrl,
   checkGitUpdates,
   applyGitUpdate,
@@ -35,6 +39,10 @@ export const AdminSettingsTab = ({
   onServerUrlDraftChange: (v: string) => void;
   onSaveServerUrl: (v: string) => void;
   onResetServerUrl: () => void;
+  storageMode: AdminStorageMode;
+  onStorageModeChange: (mode: AdminStorageMode) => void;
+  dbConfigDraft: AdminDbConfigDraft;
+  onDbConfigDraftChange: (next: AdminDbConfigDraft) => void;
   serverUrl: string;
   checkGitUpdates: () => Promise<void> | void;
   applyGitUpdate: () => Promise<void> | void;
@@ -58,7 +66,53 @@ export const AdminSettingsTab = ({
     <h3>{t.settingsTitle}</h3>
     <p>{t.settingsHint}</p>
     <p>{t.adminPath}: <code>/admin</code></p>
-    <p>{t.adminMode}: {t.adminModeLocal}</p>
+    <p>{t.adminMode}: {storageMode === 'db' ? t.storageModeDb : t.storageModeFiles}</p>
+    <h4>{t.storageModeTitle}</h4>
+    <p className="admin-controls">
+      <label>
+        {t.storageModeLabel}
+        <select value={storageMode} onChange={(e) => onStorageModeChange((e.target.value as AdminStorageMode) || 'file')}>
+          <option value="file">{t.storageModeFiles}</option>
+          <option value="db">{t.storageModeDb}</option>
+        </select>
+      </label>
+    </p>
+    <p>{t.storageModeHint}</p>
+    {storageMode === 'db' ? (
+      <>
+        <h4>{t.dbConnectionTitle}</h4>
+        <div className="admin-inline-editor">
+          <div className="admin-editor-grid">
+            <label>{t.dbHostLabel}
+              <input value={dbConfigDraft.host} onChange={(e) => onDbConfigDraftChange({ ...dbConfigDraft, host: e.target.value })} placeholder="127.0.0.1" />
+            </label>
+            <label>{t.dbPortLabel}
+              <input value={dbConfigDraft.port} onChange={(e) => onDbConfigDraftChange({ ...dbConfigDraft, port: e.target.value })} placeholder="5432" />
+            </label>
+            <label>{t.dbNameLabel}
+              <input value={dbConfigDraft.database} onChange={(e) => onDbConfigDraftChange({ ...dbConfigDraft, database: e.target.value })} placeholder="joj_game" />
+            </label>
+            <label>{t.dbUserLabel}
+              <input value={dbConfigDraft.user} onChange={(e) => onDbConfigDraftChange({ ...dbConfigDraft, user: e.target.value })} placeholder="joj_user" />
+            </label>
+            <label>{t.dbPasswordLabel}
+              <input type="password" value={dbConfigDraft.password} onChange={(e) => onDbConfigDraftChange({ ...dbConfigDraft, password: e.target.value })} placeholder="********" />
+            </label>
+            <label>{t.dbSslModeLabel}
+              <select
+                value={dbConfigDraft.sslMode}
+                onChange={(e) => onDbConfigDraftChange({ ...dbConfigDraft, sslMode: (e.target.value as AdminDbConfigDraft['sslMode']) || 'disable' })}
+              >
+                <option value="disable">{t.dbSslModeDisable}</option>
+                <option value="require">{t.dbSslModeRequire}</option>
+              </select>
+            </label>
+          </div>
+          <p>{t.dbConnectionHint}</p>
+          <p>{t.dbConnectionPreview}: <code>{`postgresql://${dbConfigDraft.user || 'user'}:${dbConfigDraft.password ? '***' : ''}@${dbConfigDraft.host || '127.0.0.1'}:${dbConfigDraft.port || '5432'}/${dbConfigDraft.database || 'database'}?sslmode=${dbConfigDraft.sslMode}`}</code></p>
+        </div>
+      </>
+    ) : null}
     <h4>{t.serverSettingsTitle}</h4>
     <p className="admin-controls">
       <label>
@@ -125,4 +179,3 @@ export const AdminSettingsTab = ({
     {adminActionError ? <p className="admin-error">{adminActionError}</p> : null}
   </>
 );
-
