@@ -8,7 +8,7 @@ import { createRateLimiter, createRequireAdminAuth, readJsonBodySafe } from './r
 import { registerAdminRoutes } from './routes/admin';
 import { registerSharedRoutes } from './routes/shared';
 import { registerUploadRoutes } from './routes/uploads';
-import { createSharedConfigStore } from './shared-config-store';
+import { createSharedConfigStore } from './storage/shared-config';
 import {
   exportSharedDeckTemplateJson,
   getSharedRanks,
@@ -61,12 +61,18 @@ const ranksPath = path.resolve(appRootDir, 'database', 'shared-ranks.json');
 const uploadsDir = path.resolve(appRootDir, 'public', 'cards');
 const repoDir = appRootDir;
 const devRestartTouchPath = path.resolve(appRootDir, 'server', '.restart-touch');
-const dbSchemaPath = path.resolve(appRootDir, 'db.sql');
+const dbSchemaPath = path.resolve(appRootDir, 'db', 'schema', 'db.sql');
 
 const requireAdminAuth = createRequireAdminAuth({ isAdminAuthEnabled, adminToken, logLine });
 const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });
 const { runGit, runShellCommand, spawnDetachedShell } = createCommandRunners(repoDir);
-const { saveTemplateToDisk, saveRanksToDisk, loadTemplateFromDisk, loadRanksFromDisk, syncCurrentJsonToPostgres } = createSharedConfigStore({
+const {
+  saveTemplate,
+  saveRanks,
+  loadTemplate,
+  loadRanks,
+  syncCurrentJsonToPostgres,
+} = createSharedConfigStore({
   templatePath,
   ranksPath,
   exportSharedDeckTemplateJson,
@@ -111,8 +117,8 @@ if (router) {
     resetSharedRanks,
     importSharedDeckTemplateJson,
     resetSharedDeckTemplate,
-    saveRanksToDisk,
-    saveTemplateToDisk,
+    saveRanksToDisk: saveRanks,
+    saveTemplateToDisk: saveTemplate,
   });
   registerUploadRoutes({
     router,
@@ -129,8 +135,8 @@ if (router) {
 const port = Number(process.env.PORT ?? 8000);
 
 void (async () => {
-  await loadTemplateFromDisk();
-  await loadRanksFromDisk();
+  await loadTemplate();
+  await loadRanks();
   await logLine(
     isAdminAuthEnabled ? 'INFO' : 'WARN',
     isAdminAuthEnabled ? 'admin auth enabled (ADMIN_TOKEN set)' : 'admin auth disabled (ADMIN_TOKEN is empty)',

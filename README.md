@@ -93,7 +93,7 @@ STORAGE_MODE=postgres
 DATABASE_URL=postgresql://joj_user:password@127.0.0.1:5432/joj_game
 ```
 
-3. Import schema (`db.sql`) once:
+3. Import schema (`db/schema/db.sql`) once:
 
 Option A (Admin UI):
 - `/admin` -> `База Даних` -> `Імпортувати db.sql`
@@ -101,7 +101,7 @@ Option A (Admin UI):
 Option B (CLI):
 
 ```bash
-psql "$DATABASE_URL" -f db.sql
+psql "$DATABASE_URL" -f db/schema/db.sql
 ```
 
 4. Restart services with env refresh:
@@ -130,12 +130,15 @@ This imports current server-side JSON deck/ranks into PostgreSQL tables:
 
 Notes:
 - DB connection form values are stored locally in browser storage (UI convenience).
-- Server-side shared config import/sync uses server `.env` (`DATABASE_URL`), not browser draft values.
+- Schema import / backup restore / backup export use DB connection form values.
+- JSON -> DB config import also uses DB connection form values (does not require server to already run in `postgres` mode).
 
 ## Ops / Deployment Helpers
 
 - PM2 process config: `ecosystem.config.cjs`
-- Firewall / port hardening notes: `DEPLOYMENT_HARDENING.md`
+- DB setup / migration notes: `docs/DB.md`
+- Firewall / port hardening notes: `docs/ops/deployment-hardening.md`
+- Release checklist: `docs/ops/release-checklist.md`
 
 ### PM2 (Example)
 
@@ -226,4 +229,19 @@ Requirements:
 
 ## Open Test Checklist
 
-See `OPEN_TEST_CHECKLIST.md`.
+See `docs/ops/open-test-checklist.md`.
+
+## Project Structure (High-level)
+
+Source code:
+- `src/` - frontend UI + game client logic
+- `server/` - backend routes/services/storage adapters
+- `server/db/` - DB command helpers (`psql` wrappers)
+- `server/storage/shared-config/` - shared config persistence (`file` / `postgres`)
+- `db/schema/` - tracked SQL schema
+- `docs/` - operational + development docs
+
+Runtime data (server-generated / mutable):
+- `database/` - JSON shared config mirrors + boardgame.io match FlatFile data
+- `public/cards/` - uploaded/generated card assets
+- `logs/` - server logs
