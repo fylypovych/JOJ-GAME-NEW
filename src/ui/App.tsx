@@ -468,6 +468,9 @@ export const App = () => {
           <div className="app-top-toolbar-left">
             <UserTabs t={t} activeUserTab={activeUserTab} setActiveUserTab={setActiveUserTab} />
           </div>
+          <div className="app-top-toolbar-center">
+            <a className="app-toolbar-link-button" href="/admin">{t.openAdmin}</a>
+          </div>
           <div className="app-top-toolbar-right">
             <p className="app-top-row">
               {t.language}:{' '}
@@ -500,7 +503,7 @@ export const App = () => {
         </p>
       )}
       <p className="app-link-row">
-        {isAdminRoute ? <a href="/">{t.openGame}</a> : <a href="/admin">{t.openAdmin}</a>}
+        {isAdminRoute ? <a href="/">{t.openGame}</a> : null}
       </p>
 
       {isAdminRoute ? (

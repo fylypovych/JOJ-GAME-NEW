@@ -21,15 +21,8 @@ type HandFilter = 'all' | 'playable' | CardDefinition['category'];
 type HandSort = 'default' | 'playable' | 'category' | 'title';
 type SidePanelTab = 'events' | 'chat';
 
-type PendingConfirm =
-  | { kind: 'promote'; nextRankName?: string | null; reason?: string | null }
-  | { kind: 'play-card'; card: CardDefinition; targetId?: string }
-  | { kind: 'play-legendary'; card: CardDefinition; targetId?: string; resource?: ResourceKey };
-
 const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
   stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
-
-const fmtDelta = (value: number) => (value > 0 ? `+${value}` : String(value));
 
 const isPlayAllowedForCard = (args: {
   card: CardDefinition;
@@ -172,7 +165,6 @@ export const BoardV2 = ({
     return window.localStorage.getItem('joj-ui-v2-compact') === '1';
   });
   const [sidePanelTab, setSidePanelTab] = useState<SidePanelTab>('events');
-  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
   const syncedNameRef = useRef('');
   const syncedNamesSignatureRef = useRef('');
   const chatLogRef = useRef<HTMLDivElement | null>(null);
@@ -244,7 +236,6 @@ export const BoardV2 = ({
 
   useEffect(() => {
     setPendingSelection(null);
-    setPendingConfirm(null);
     setSelectedTargetId(null);
     setSelectedResource(null);
   }, [ctx?.turn, stage, id]);
@@ -322,7 +313,6 @@ export const BoardV2 = ({
     }
     if (card.category === 'LYAP') {
       setPendingSelection({ type: 'hand-lyap', cardId: card.id });
-      setPendingConfirm(null);
       setSelectedTargetId(null);
       postNotice('info', `${v2.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
       return;
@@ -335,14 +325,12 @@ export const BoardV2 = ({
     if (typeof moves.playLegendaryCard !== 'function') return;
     if (card.id === 'legendary-10') {
       setPendingSelection({ type: 'legendary-drone', cardId: card.id });
-      setPendingConfirm(null);
       setSelectedTargetId(null);
       postNotice('info', `${v2.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
       return;
     }
     if (card.id === 'legendary-09' || card.id === 'legendary-06') {
       setPendingSelection({ type: 'legendary-water', cardId: card.id });
-      setPendingConfirm(null);
       setSelectedResource(null);
       postNotice('info', `${v2.pickResource}: ${cardTitle(card.id, card.title, lang)}`);
       return;
@@ -371,25 +359,6 @@ export const BoardV2 = ({
     setNotice(null);
   };
 
-  const confirmPendingAction = () => {
-    if (!pendingConfirm) return;
-    if (pendingConfirm.kind === 'promote') {
-      if (!canPlay) return postNotice('error', v2.actionUnavailable);
-      const reason = getPromoteBlockedReason();
-      if (reason) return postNotice('error', reason);
-      moves.promote();
-    } else if (pendingConfirm.kind === 'play-card') {
-      if (!canPlayHandCard) return postNotice('error', v2.actionUnavailable);
-      moves.playCard(pendingConfirm.card.id, [], pendingConfirm.targetId);
-    } else if (pendingConfirm.kind === 'play-legendary') {
-      moves.playLegendaryCard?.(pendingConfirm.card.id, pendingConfirm.targetId, pendingConfirm.resource);
-    }
-    setPendingConfirm(null);
-    setSelectedTargetId(null);
-    setSelectedResource(null);
-    setNotice(null);
-  };
-
   const currentPendingCard = pendingSelection
     ? [...hand, ...legendaryHand].find((c) => c.id === pendingSelection.cardId)
     : null;
@@ -401,14 +370,9 @@ export const BoardV2 = ({
   const promoteReason = getPromoteBlockedReason();
   const activeSelectionNeedsTarget = pendingSelection?.type === 'hand-lyap' || pendingSelection?.type === 'legendary-drone';
   const activeSelectionNeedsResource = pendingSelection?.type === 'legendary-water';
-  const confirmCard = pendingConfirm?.kind === 'play-card' || pendingConfirm?.kind === 'play-legendary' ? pendingConfirm.card : null;
-  const pendingTargetLabel =
-    pendingConfirm && pendingConfirm.kind !== 'promote' && pendingConfirm.targetId
-      ? playerLabelById(pendingConfirm.targetId)
-      : null;
-  const pendingResourceKey = pendingConfirm?.kind === 'play-legendary' ? pendingConfirm.resource : undefined;
-  const pendingCost = pendingConfirm?.kind === 'promote' ? (nextRankMeta?.nextRank?.cost ?? {}) : (confirmCard?.cost ?? {});
-  const pendingEffects = pendingConfirm?.kind === 'promote' ? (nextRankMeta?.nextRank?.bonus ?? {}) : null;
+  const pendingTargetLabel = selectedTargetId ? playerLabelById(selectedTargetId) : null;
+  const pendingResourceKey = selectedResource ?? undefined;
+  const pendingCost: Partial<Record<ResourceKey, number>> = {};
   const highlightedResources = new Set<ResourceKey>();
   const deficitByResource: Partial<Record<ResourceKey, number>> = {};
   for (const key of RESOURCE_ORDER) {
@@ -424,22 +388,10 @@ export const BoardV2 = ({
   const currentStageFocus =
     stage === 'draw' ? v2.stageFocusDraw : stage === 'play' ? v2.stageFocusPlay : stage === 'end' ? v2.stageFocusEnd : '';
   const stageClass = stage ? `is-stage-${stage}` : 'is-stage-waiting';
-  const actionLaneCard = currentPendingCard ?? confirmCard ?? null;
-  const actionLaneActionLabel = pendingConfirm
-    ? pendingConfirm.kind === 'promote'
-      ? t.promote
-      : cardTitle(pendingConfirm.card.id, pendingConfirm.card.title, lang)
-    : pendingSelection
-      ? cardTitle(currentPendingCard?.id ?? '', currentPendingCard?.title ?? '', lang)
-      : null;
-  const resourcePreviewAfter = Object.fromEntries(
-    RESOURCE_ORDER.map((key) => {
-      const deltaCost = pendingCost?.[key] ?? 0;
-      const deltaBonus = pendingEffects?.[key] ?? 0;
-      return [key, (resources[key] ?? 0) - deltaCost + deltaBonus];
-    }),
-  ) as Record<ResourceKey, number>;
-
+  const actionLaneCard = currentPendingCard ?? null;
+  const actionLaneActionLabel = pendingSelection
+    ? cardTitle(currentPendingCard?.id ?? '', currentPendingCard?.title ?? '', lang)
+    : null;
   return (
     <section className={`game-ui-v2-shell ${stageClass}${compactMode ? ' is-compact' : ''}`}>
       <header className="game-ui-v2-header">
@@ -504,6 +456,42 @@ export const BoardV2 = ({
                 </div>
               ))}
             </div>
+            <div className="game-ui-v2-command-rank-progress">
+              <h4>{v2.nextRankProgress}</h4>
+              {nextRankMeta?.nextRank ? (
+                <>
+                  <div className="game-ui-v2-rank-head">
+                    <strong>{nextRankMeta.nextRank.name}</strong>
+                    <span className={`game-ui-v2-chip${nextRankMeta.seatBlocked ? ' is-warn' : ' is-active'}`}>
+                      {v2.occupiedSeats}: {nextRankMeta.occupied}/{nextRankMeta.seatLimit}
+                    </span>
+                  </div>
+                  <div className="game-ui-v2-progress-list">
+                    {RESOURCE_ORDER.map((key) => {
+                      const need = nextRankMeta.nextRank?.requirement?.[key] ?? 0;
+                      if (!need) return null;
+                      const have = resources[key] ?? 0;
+                      const pct = Math.max(0, Math.min(100, Math.round((have / need) * 100)));
+                      return (
+                        <div key={`req-inline-${key}`} className="game-ui-v2-progress-row">
+                          <div className="game-ui-v2-progress-label"><span>{resourceLabels[key]}</span><span>{have}/{need}</span></div>
+                          <div className="game-ui-v2-progress-bar"><i style={{ width: `${pct}%` }} /></div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {promoteReason ? (
+                    <p className="game-ui-v2-subtle"><strong>{v2.blockedReason}:</strong> {promoteReason}</p>
+                  ) : (
+                    <p className="game-ui-v2-subtle">
+                      {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="game-ui-v2-subtle">{v2.noNextRank}</p>
+              )}
+            </div>
             {notice ? <p className={`game-ui-v2-notice is-${notice.type}`}>{notice.text}</p> : null}
           </section>
 
@@ -518,7 +506,7 @@ export const BoardV2 = ({
               <div className="game-ui-v2-action-slot">
                 <strong>{v2.selectedAction}</strong>
                 <p className="game-ui-v2-subtle">
-                  {actionLaneActionLabel ?? (pendingConfirm?.kind === 'promote' ? t.promote : v2.waitingAction)}
+                  {actionLaneActionLabel ?? v2.waitingAction}
                 </p>
                 {pendingTargetLabel ? <p className="game-ui-v2-subtle">{v2.target}: {pendingTargetLabel}</p> : null}
                 {pendingResourceKey ? <p className="game-ui-v2-subtle">{v2.selectedResource}: {resourceLabels[pendingResourceKey]}</p> : null}
@@ -537,53 +525,16 @@ export const BoardV2 = ({
               </div>
               <div className="game-ui-v2-action-slot">
                 <strong>{lang === 'uk' ? 'Після підтвердження' : 'After confirm'}</strong>
-                {pendingConfirm ? (
-                  <div className="game-ui-v2-lane-resource-preview">
-                    {RESOURCE_ORDER.map((key) => (
-                      <span key={`after-${key}`} className={highlightedResources.has(key) ? 'is-highlighted' : ''}>
-                        {resourceLabels[key]}: {resources[key]} → {resourcePreviewAfter[key]}
-                      </span>
-                    ))}
-                  </div>
-                ) : <p className="game-ui-v2-subtle">{v2.step3}</p>}
+                <p className="game-ui-v2-subtle">{pendingSelection ? (activeSelectionNeedsTarget ? v2.selectableTargetHint : v2.selectableResourceHint) : v2.waitingAction}</p>
               </div>
             </div>
           </section>
 
+          {pendingSelection ? (
           <section className="game-ui-v2-selection-panel">
-            {pendingConfirm ? (
-              <div className="game-ui-v2-confirm-card">
-                <p><strong>{v2.confirmAction}:</strong> {pendingConfirm.kind === 'promote' ? t.promote : cardTitle(confirmCard?.id ?? '', confirmCard?.title ?? '', lang)}</p>
-                {pendingConfirm.kind === 'promote' && pendingConfirm.nextRankName ? <p className="game-ui-v2-subtle">{t.yourRank} → {pendingConfirm.nextRankName}</p> : null}
-                {pendingTargetLabel ? <p className="game-ui-v2-subtle">{v2.target}: {pendingTargetLabel}</p> : null}
-                {pendingResourceKey ? <p className="game-ui-v2-subtle">{v2.selectedResource}: {resourceLabels[pendingResourceKey]}</p> : null}
-                {Object.keys(pendingCost ?? {}).length ? (
-                  <p className="game-ui-v2-subtle">
-                    <strong>{v2.cost}:</strong>{' '}
-                    {RESOURCE_ORDER.filter((k) => (pendingCost?.[k] ?? 0) > 0).map((k) => `${resourceLabels[k]} ${fmtDelta(-(pendingCost?.[k] ?? 0))}`).join(', ')}
-                  </p>
-                ) : null}
-                {pendingEffects && Object.keys(pendingEffects).length ? (
-                  <p className="game-ui-v2-subtle">
-                    <strong>{v2.effects}:</strong>{' '}
-                    {RESOURCE_ORDER.filter((k) => (pendingEffects?.[k] ?? 0) !== 0).map((k) => `${resourceLabels[k]} ${fmtDelta(pendingEffects?.[k] ?? 0)}`).join(', ')}
-                  </p>
-                ) : null}
-                {confirmCard?.effects?.length ? (
-                  <p className="game-ui-v2-subtle">
-                    <strong>{v2.effects}:</strong>{' '}
-                    {confirmCard.effects.map((e) => `${effectLabel(e.resource)} ${fmtDelta(e.value)}`).join(', ')}
-                  </p>
-                ) : null}
-                <div className="game-ui-v2-selection-actions">
-                  <button type="button" onClick={confirmPendingAction}>{lang === 'uk' ? 'Підтвердити' : 'Confirm'}</button>
-                  <button type="button" className="ghost" onClick={() => setPendingConfirm(null)}>{v2.cancel}</button>
-                </div>
-              </div>
-            ) : (
-              <p className="game-ui-v2-subtle">{pendingSelection ? (activeSelectionNeedsTarget ? v2.selectableTargetHint : v2.selectableResourceHint) : v2.waitingAction}</p>
-            )}
+            <p className="game-ui-v2-subtle">{activeSelectionNeedsTarget ? v2.selectableTargetHint : v2.selectableResourceHint}</p>
           </section>
+          ) : null}
 
           <section className="game-ui-v2-piles">
             <h3>{v2.tableState}</h3>
@@ -630,35 +581,6 @@ export const BoardV2 = ({
               <div className="game-ui-v2-token-row"><span>{v2.sukhpayUntil}</span><strong>{G.sukhpayZsuWatchUntilTurn?.[id] ?? 0}</strong></div>
               <div className="game-ui-v2-token-row"><span>{v2.shieldUntil}</span><strong>{G.lyapScandalShieldUntilTurn?.[id] ?? 0}</strong></div>
             </div>
-          </section>
-
-          <section className="game-ui-v2-rank-panel">
-            <h3>{v2.nextRankProgress}</h3>
-            {nextRankMeta?.nextRank ? (
-              <>
-                <div className="game-ui-v2-rank-head">
-                  <strong>{nextRankMeta.nextRank.name}</strong>
-                  <span className={`game-ui-v2-chip${nextRankMeta.seatBlocked ? ' is-warn' : ' is-active'}`}>
-                    {v2.occupiedSeats}: {nextRankMeta.occupied}/{nextRankMeta.seatLimit}
-                  </span>
-                </div>
-                <div className="game-ui-v2-progress-list">
-                  {RESOURCE_ORDER.map((key) => {
-                    const need = nextRankMeta.nextRank?.requirement?.[key] ?? 0;
-                    if (!need) return null;
-                    const have = resources[key] ?? 0;
-                    const pct = Math.max(0, Math.min(100, Math.round((have / need) * 100)));
-                    return (
-                      <div key={`req-${key}`} className="game-ui-v2-progress-row">
-                        <div className="game-ui-v2-progress-label"><span>{resourceLabels[key]}</span><span>{have}/{need}</span></div>
-                        <div className="game-ui-v2-progress-bar"><i style={{ width: `${pct}%` }} /></div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {promoteReason ? <p className="game-ui-v2-subtle"><strong>{v2.blockedReason}:</strong> {promoteReason}</p> : <p className="game-ui-v2-subtle">{buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}</p>}
-              </>
-            ) : <p className="game-ui-v2-subtle">{v2.noNextRank}</p>}
           </section>
 
           <section className="game-ui-v2-players">
