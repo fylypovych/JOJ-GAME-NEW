@@ -23,11 +23,11 @@ export type EnforceRateLimit = (
   windowMs: number,
 ) => Promise<boolean>;
 
-export type ReadJsonBodySafe = <T = Record<string, unknown>>(args: {
+export type ReadJsonBodySafe = (args: {
   ctx: RouteCtx;
   routeLabel: string;
   maxBytes: number;
   logLine: FileLogLine;
-}) => Promise<T | null>;
+}) => Promise<Record<string, unknown> | null>;
 
 export type LogLine = FileLogLine;

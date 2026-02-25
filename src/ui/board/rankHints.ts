@@ -13,7 +13,7 @@ export const buildNextRankHint = (args: {
   promoteLabel: string;
   lang: Lang;
 }): string | null => {
-  const { G, playerID, sharedRanks, resources, resourceLabels, promoteLabel, lang } = args;
+  const { G, playerID, sharedRanks, resourceLabels, promoteLabel, lang } = args;
   const nextRank = findNextRank(sharedRanks, G.ranks[playerID]);
   if (!nextRank) return null;
   const reason = getPromoteBlockedReason({ G, playerID, ranks: sharedRanks, resourceLabels, lang });

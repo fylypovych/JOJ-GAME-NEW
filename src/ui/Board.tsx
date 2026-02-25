@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ResourceKey } from '../game/types';
+import type { CardDefinition, ResourceKey } from '../game/types';
 import { normalizeImagePath } from '../game/imagePaths';
 import { canPlayHandCardAtStage } from '../game/turnRules';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
@@ -121,7 +121,7 @@ export const Board = ({
   const togglePreview = (key: string) => {
     setOpenPreviewKey((prev) => (prev === key ? null : key));
   };
-  const getVvnzPlayBlockedReason = (card: { category?: string; grantRank?: string }) => {
+  const getVvnzPlayBlockedReason = (card: Pick<CardDefinition, 'category' | 'grantRank'>) => {
     if (!resources || !G) return null;
     return getBoardVvnzBlockedReason({
       card,

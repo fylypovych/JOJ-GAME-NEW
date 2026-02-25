@@ -78,7 +78,10 @@ const isProtectedFromLyapScandal = (G: JojGameState, ctx: Ctx | { turn?: number 
   return untilTurn > 0 && currentTurn < untilTurn;
 };
 
-const computeShieldUntilNextOwnTurn = (ctx: Ctx, playerID: string): number => {
+const computeShieldUntilNextOwnTurn = (
+  ctx: { currentPlayer: string; playOrder?: string[]; turn?: number },
+  playerID: string,
+): number => {
   const playOrder = ctx.playOrder ?? [];
   const currentTurn = Number(ctx.turn ?? 0);
   if (playOrder.length === 0) return currentTurn + 1;

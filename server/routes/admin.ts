@@ -20,6 +20,10 @@ type GitUpdateStatusOk = {
   ignoredRuntimeDirtyFiles?: string[];
 };
 type GitUpdateStatusResult = GitUpdateStatusOk | { ok: false; error: string };
+type MatchDbFetchResult = { state?: { G?: unknown; ctx?: unknown } | null; metadata?: { updatedAt?: number } | null } | null;
+type MatchDbLike = {
+  fetch: (matchID: string, opts: { state?: boolean; metadata?: boolean }) => Promise<MatchDbFetchResult>;
+};
 
 type AdminRoutesDeps = {
   router: RouterLike;
@@ -74,12 +78,14 @@ export const registerAdminRoutes = ({
       return;
     }
 
-    const db = ctx?.db ?? ctx?.app?.context?.db;
-    if (!db || typeof db.fetch !== 'function') {
+    const dbCandidate = ctx?.db ?? ctx?.app?.context?.db;
+    const dbFetch = (dbCandidate as { fetch?: unknown } | undefined)?.fetch;
+    if (!dbCandidate || typeof dbFetch !== 'function') {
       ctx.status = 500;
       ctx.body = { ok: false, error: 'Database is unavailable' };
       return;
     }
+    const db = dbCandidate as MatchDbLike;
 
     const fetched = await db.fetch(matchID, { state: true, metadata: true });
     const state = fetched?.state;

@@ -1,9 +1,12 @@
+import type { Ctx } from 'boardgame.io';
 import type { CardDefinition, JojGameState, ResourceKey } from './types';
 
 type MoveCtx = {
   currentPlayer: string;
-  activePlayers?: Record<string, string>;
+  activePlayers?: Record<string, string> | null;
   numPlayers?: number;
+  playOrder?: string[];
+  turn?: number;
 };
 
 type MoveEvents = {
@@ -59,23 +62,23 @@ type JojMovesDeps = {
   categoryLabelUk: (category: CardDefinition['category']) => string;
   cardFlavorSnippet: (card: CardDefinition) => string;
   rankNameById: (rankId: string) => string;
-  buildLyapSystemMessage: (...args: unknown[]) => string;
-  buildScandalSystemMessage: (...args: unknown[]) => string;
-  buildSupportSystemMessage: (...args: unknown[]) => string;
-  buildPlayedLyapSystemMessage: (...args: unknown[]) => string;
-  buildPlayedScandalSystemMessage: (...args: unknown[]) => string;
-  buildPlayedDecisionSystemMessage: (...args: unknown[]) => string;
-  buildVvnzRankSystemMessage: (...args: unknown[]) => string;
-  buildPromotionSystemMessage: (...args: unknown[]) => string;
+  buildLyapSystemMessage: (...args: any[]) => string;
+  buildScandalSystemMessage: (...args: any[]) => string;
+  buildSupportSystemMessage: (...args: any[]) => string;
+  buildPlayedLyapSystemMessage: (...args: any[]) => string;
+  buildPlayedScandalSystemMessage: (...args: any[]) => string;
+  buildPlayedDecisionSystemMessage: (...args: any[]) => string;
+  buildVvnzRankSystemMessage: (...args: any[]) => string;
+  buildPromotionSystemMessage: (...args: any[]) => string;
   buildLegendaryPlayedMessageText: (args: {
     seq: number;
     playerLabel: string;
     cardTitle: string;
     specialMessage: string;
   }) => string;
-  legendaryTexts: Record<string, (...args: unknown[]) => string>;
+  legendaryTexts: Record<string, (...args: any[]) => string>;
   clampNonNegativeResources: (resources: Record<ResourceKey, number>) => void;
-  computeShieldUntilNextOwnTurn: (ctx: MoveCtx & { playOrder?: string[]; turn?: number }, playerID: string) => number;
+  computeShieldUntilNextOwnTurn: (ctx: Pick<MoveCtx, 'currentPlayer' | 'playOrder' | 'turn'>, playerID: string) => number;
   cancelLastLyapOrScandalForPlayer: (
     G: JojGameState,
     playerID: string,
@@ -95,12 +98,14 @@ type JojMovesDeps = {
     playerID: string,
     rankId: string,
     playerCount: number,
-  ) => { ok: boolean; applied?: boolean; rank: { bonus?: Partial<Record<ResourceKey, number>> } };
+  ) => { ok: true; applied: boolean; rank: { bonus?: Partial<Record<ResourceKey, number>> } }
+    | { ok: false; reason: string };
   demoteByOneRankWithSeatCheck: (
     G: JojGameState,
     playerID: string,
     playerCount: number,
-  ) => { ok: boolean; fromRankId: string; toRankId: string };
+  ) => { ok: true; fromRankId: string; toRankId: string }
+    | { ok: false; reason: string };
   promoteRank: (G: JojGameState, playerID: string, playerCount: number) => boolean;
   getActiveRanks: () => Array<{ id: string; cost?: Partial<Record<ResourceKey, number>>; bonus?: Partial<Record<ResourceKey, number>> }>;
 };
@@ -177,7 +182,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
       }
     }
     d.syncPlayerState(args.G, playerID);
-    args.events?.setStage(autoPlayed ? d.END_STAGE : d.PLAY_STAGE);
+    args.events?.setStage?.(autoPlayed ? d.END_STAGE : d.PLAY_STAGE);
     return undefined;
   },
   playCard: (
@@ -326,7 +331,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     if (usingExtraToken) {
       args.G.extraHandPlayTokens[playerID] = Math.max(0, (args.G.extraHandPlayTokens[playerID] ?? 0) - 1);
     } else {
-      args.events?.setStage(d.END_STAGE);
+      args.events?.setStage?.(d.END_STAGE);
     }
     return undefined;
   },
@@ -442,7 +447,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
       type: 'system',
       text: `🗂️ [${seq}] ${d.getPlayerLabel(args.G, playerID)} скидає «${card.title}» у скид, щоб вкластися в ліміт руки (${d.HAND_LIMIT}).`,
     });
-    args.events?.setStage(d.PLAY_STAGE);
+    args.events?.setStage?.(d.PLAY_STAGE);
     return undefined;
   },
   promote: (args: MoveArgs) => {
@@ -478,7 +483,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
     if (![d.PLAY_STAGE, d.END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return d.INVALID_MOVE;
     if ((args.G.hands[playerID]?.length ?? 0) > d.HAND_LIMIT) return d.INVALID_MOVE;
-    args.events?.endTurn();
+    args.events?.endTurn?.();
     return undefined;
   },
 });
@@ -486,7 +491,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
 export const enumerateAiMoves = (deps: {
   DRAW_STAGE: string;
   END_STAGE: string;
-}) => (G: JojGameState, ctx: MoveCtx, playerID?: string) => {
+}) => (G: JojGameState, ctx: Ctx, playerID?: string) => {
   const currentPlayer = playerID ?? ctx.currentPlayer;
   const hand = G.hands[currentPlayer] ?? [];
   const legendaryHand = G.legendaryHands[currentPlayer] ?? [];

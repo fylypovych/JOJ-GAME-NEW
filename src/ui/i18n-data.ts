@@ -1,4 +1,5 @@
 import { ui } from './i18n-data-ui';
+export { ui };
 
 export const ranksById = {
   cadet: { uk: 'Кадет', en: 'Cadet' },
