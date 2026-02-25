@@ -83,6 +83,7 @@ export const AdminStateTab = ({
   const activePlayer = typeof ctx?.currentPlayer === 'string' ? ctx.currentPlayer : null;
   const turn = ctx?.turn ?? '-';
   const phase = ctx?.phase ?? '-';
+  const forcedStopped = Boolean(ctx?.gameover && typeof ctx.gameover === 'object' && (ctx.gameover as any).forcedStop);
   const playerTag = (msg: any) => (
     msg.type === 'system'
       ? t.systemTag
@@ -103,12 +104,22 @@ export const AdminStateTab = ({
       {stopGameError ? <p className="admin-error">{stopGameError}</p> : null}
       {!snapshot ? <p>{t.noStateYet}</p> : (
         <>
+          {forcedStopped ? (
+            <div className="admin-inline-editor">
+              <h4>{t.stateStoppedTitle}</h4>
+              <p>{t.stateStoppedHint}</p>
+              <p>{t.stateTurn}: <strong>{String(turn)}</strong> | {t.statePhase}: <strong>{String(phase)}</strong></p>
+            </div>
+          ) : null}
+          {!forcedStopped ? (
           <div className="admin-inline-editor">
             <h4>{t.stateSummaryTitle}</h4>
             <p>{t.stateTurn}: <strong>{String(turn)}</strong> | {t.statePhase}: <strong>{String(phase)}</strong> | {t.stateActivePlayer}: <strong>{activePlayer ?? '-'}</strong></p>
             <p>{t.stateDeck}: <strong>{deckCount}</strong> | {t.stateDiscard}: <strong>{discardCount}</strong> | {t.stateLegendaryDeck}: <strong>{legendaryDeckCount}</strong> | {t.stateLegendaryDiscard}: <strong>{legendaryDiscardCount}</strong></p>
           </div>
+          ) : null}
 
+          {!forcedStopped ? (
           <div className="admin-inline-editor">
             <h4>{t.statePlayersTitle}</h4>
             {players.length === 0 ? <p>{t.stateNoData}</p> : (
@@ -139,7 +150,9 @@ export const AdminStateTab = ({
               </div>
             )}
           </div>
+          ) : null}
 
+          {!forcedStopped ? (
           <div className="admin-inline-editor">
             <h4>{t.stateRecentEventsTitle}</h4>
             {lastChat.length === 0 ? <p>{t.stateNoMessages}</p> : (
@@ -154,6 +167,7 @@ export const AdminStateTab = ({
               </div>
             )}
           </div>
+          ) : null}
 
           <details>
             <summary>{t.stateRawJsonDebug}</summary>

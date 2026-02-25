@@ -24,9 +24,10 @@ type MatchDbStateLike = { G?: unknown; ctx?: Record<string, unknown> | null } & 
 type MatchDbMetadataLike = { updatedAt?: number; gameover?: unknown } & Record<string, unknown>;
 type MatchDbFetchResult = { state?: MatchDbStateLike | null; metadata?: MatchDbMetadataLike | null } | null;
 type MatchDbLike = {
-  fetch: (matchID: string, opts: { state?: boolean; metadata?: boolean }) => Promise<MatchDbFetchResult>;
+  fetch: (matchID: string, opts: { state?: boolean; metadata?: boolean; initialState?: boolean }) => Promise<MatchDbFetchResult & { initialState?: MatchDbStateLike | null }>;
   setState?: (matchID: string, state: unknown, deltalog?: unknown[]) => Promise<unknown>;
   setMetadata?: (matchID: string, metadata: unknown) => Promise<void>;
+  wipe?: (matchID: string) => Promise<void>;
 };
 
 type AdminRoutesDeps = {
@@ -170,6 +171,83 @@ export const registerAdminRoutes = ({
         updatedAt: now,
       },
     };
+  });
+
+  router.post('/api/admin/match-reset', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/match-reset'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-match-reset', 10, 60_000))) return;
+    const matchID = typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
+    if (!matchID) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing matchID' };
+      return;
+    }
+
+    const dbCandidate = ctx?.db ?? ctx?.app?.context?.db;
+    const dbFetch = (dbCandidate as { fetch?: unknown } | undefined)?.fetch;
+    const dbSetState = (dbCandidate as { setState?: unknown } | undefined)?.setState;
+    const dbSetMetadata = (dbCandidate as { setMetadata?: unknown } | undefined)?.setMetadata;
+    if (!dbCandidate || typeof dbFetch !== 'function' || typeof dbSetState !== 'function' || typeof dbSetMetadata !== 'function') {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: 'Database reset controls are unavailable' };
+      return;
+    }
+    const db = dbCandidate as MatchDbLike;
+
+    const fetched = await db.fetch(matchID, { state: true, metadata: true, initialState: true });
+    const state = fetched?.state;
+    const initialState = fetched?.initialState;
+    if (!state || !initialState) {
+      ctx.status = 404;
+      ctx.body = { ok: false, error: 'Match or initial state not found' };
+      return;
+    }
+
+    const now = Date.now();
+    const nextMetadata: MatchDbMetadataLike = {
+      ...(fetched?.metadata ?? {}),
+      updatedAt: now,
+    };
+    delete nextMetadata.gameover;
+
+    await db.setState?.(matchID, initialState, []);
+    await db.setMetadata?.(matchID, nextMetadata);
+    await logLine('WARN', `admin reset match matchID=${matchID}`);
+
+    ctx.body = {
+      ok: true,
+      matchID,
+      reset: true,
+      snapshot: {
+        G: initialState.G,
+        ctx: initialState.ctx,
+        updatedAt: now,
+      },
+    };
+  });
+
+  router.post('/api/admin/match-delete', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/match-delete'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-match-delete', 10, 60_000))) return;
+    const matchID = typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
+    if (!matchID) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing matchID' };
+      return;
+    }
+
+    const dbCandidate = ctx?.db ?? ctx?.app?.context?.db;
+    const dbWipe = (dbCandidate as { wipe?: unknown } | undefined)?.wipe;
+    if (!dbCandidate || typeof dbWipe !== 'function') {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: 'Database delete controls are unavailable' };
+      return;
+    }
+    const db = dbCandidate as MatchDbLike;
+
+    await db.wipe?.(matchID);
+    await logLine('WARN', `admin deleted match matchID=${matchID}`);
+    ctx.body = { ok: true, matchID, deleted: true };
   });
 
   router.get('/api/admin/git/status', async (ctx: RouteCtx) => {

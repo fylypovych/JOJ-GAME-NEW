@@ -74,6 +74,8 @@ const RANKS_API = `${SERVER_URL}/api/shared-ranks`;
 const ADMIN_RESTART_API = `${SERVER_URL}/api/admin/restart`;
 const ADMIN_MATCH_STATE_API = `${SERVER_URL}/api/admin/match-state`;
 const ADMIN_MATCH_STOP_API = `${SERVER_URL}/api/admin/match-stop`;
+const ADMIN_MATCH_RESET_API = `${SERVER_URL}/api/admin/match-reset`;
+const ADMIN_MATCH_DELETE_API = `${SERVER_URL}/api/admin/match-delete`;
 
 export const App = () => {
   const isAdminRoute = window.location.pathname.startsWith('/admin');
@@ -513,8 +515,41 @@ export const App = () => {
           sharedRanks={sharedRanks}
           sharedConfigLoaded={sharedConfigLoaded}
           onCreateMatch={createRoom}
-          onResetMatch={() => {}}
-          onDeleteMatch={() => {}}
+          onResetMatch={() => {
+            if (!adminMatchID) return;
+            void (async () => {
+              try {
+                const response = await adminFetch(`${ADMIN_MATCH_RESET_API}?matchID=${encodeURIComponent(adminMatchID)}`, { method: 'POST' });
+                if (!response.ok) return;
+                const payload = (await response.json()) as {
+                  snapshot?: { G: unknown; ctx: unknown; updatedAt?: number };
+                };
+                if (payload.snapshot) {
+                  setSnapshot({
+                    G: payload.snapshot.G,
+                    ctx: payload.snapshot.ctx,
+                    updatedAt: payload.snapshot.updatedAt ?? Date.now(),
+                  });
+                }
+                await refreshMatches();
+              } catch {
+                // ignore UI toast for now
+              }
+            })();
+          }}
+          onDeleteMatch={() => {
+            if (!adminMatchID) return;
+            void (async () => {
+              try {
+                const response = await adminFetch(`${ADMIN_MATCH_DELETE_API}?matchID=${encodeURIComponent(adminMatchID)}`, { method: 'POST' });
+                if (!response.ok) return;
+                setSnapshot(null);
+                await refreshMatches();
+              } catch {
+                // ignore UI toast for now
+              }
+            })();
+          }}
           onResetAll={() => {
             window.localStorage.removeItem(SESSION_STORAGE_KEY);
             window.localStorage.removeItem(PLAYER_NAME_STORAGE_KEY);
