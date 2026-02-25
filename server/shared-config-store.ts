@@ -294,5 +294,12 @@ LIMIT 1;`;
     saveRanksToDisk: saveRanks,
     loadTemplateFromDisk: loadTemplate,
     loadRanksFromDisk: loadRanks,
+    syncCurrentJsonToPostgres: async () => {
+      if (storageMode !== 'postgres') {
+        throw new Error('Shared config storage mode is not postgres');
+      }
+      await saveTemplateToPostgres();
+      await saveRanksToPostgres();
+    },
   };
 };

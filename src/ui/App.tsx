@@ -82,6 +82,7 @@ const ADMIN_DB_CONFIG_STORAGE_KEY = 'joj-admin-db-config-v1';
 const ADMIN_DB_TEST_CONNECTION_API = `${SERVER_URL}/api/admin/db/test-connection`;
 const ADMIN_DB_SCHEMA_API = `${SERVER_URL}/api/admin/db/schema`;
 const ADMIN_DB_IMPORT_SCHEMA_API = `${SERVER_URL}/api/admin/db/import-schema`;
+const ADMIN_DB_IMPORT_JSON_CONFIG_API = `${SERVER_URL}/api/admin/db/import-json-config`;
 const ADMIN_DB_EXPORT_BACKUP_API = `${SERVER_URL}/api/admin/db/export-backup`;
 const ADMIN_DB_RESTORE_BACKUP_API = `${SERVER_URL}/api/admin/db/restore-backup`;
 
@@ -141,6 +142,9 @@ export const App = () => {
   const [dbImportSchemaStatus, setDbImportSchemaStatus] = useState<string>('');
   const [dbImportSchemaError, setDbImportSchemaError] = useState<string>('');
   const [dbImportSchemaRunning, setDbImportSchemaRunning] = useState<boolean>(false);
+  const [dbImportJsonConfigStatus, setDbImportJsonConfigStatus] = useState<string>('');
+  const [dbImportJsonConfigError, setDbImportJsonConfigError] = useState<string>('');
+  const [dbImportJsonConfigRunning, setDbImportJsonConfigRunning] = useState<boolean>(false);
   const [dbExportBackupStatus, setDbExportBackupStatus] = useState<string>('');
   const [dbExportBackupError, setDbExportBackupError] = useState<string>('');
   const [dbExportBackupRunning, setDbExportBackupRunning] = useState<boolean>(false);
@@ -522,6 +526,8 @@ export const App = () => {
   };
 
   const importDbSchema = async () => {
+    setDbImportJsonConfigStatus('');
+    setDbImportJsonConfigError('');
     setDbExportSchemaStatus('');
     setDbExportSchemaError('');
     setDbImportSchemaStatus('');
@@ -543,6 +549,27 @@ export const App = () => {
       setDbImportSchemaError(lang === 'uk' ? 'Не вдалося імпортувати db.sql.' : 'Failed to import db.sql.');
     } finally {
       setDbImportSchemaRunning(false);
+    }
+  };
+
+  const importJsonConfigToDb = async () => {
+    setDbImportSchemaStatus('');
+    setDbImportSchemaError('');
+    setDbImportJsonConfigStatus('');
+    setDbImportJsonConfigError('');
+    setDbImportJsonConfigRunning(true);
+    try {
+      const response = await adminFetch(ADMIN_DB_IMPORT_JSON_CONFIG_API, { method: 'POST' });
+      const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
+      if (!response.ok || !payload.ok) {
+        setDbImportJsonConfigError(payload.details ?? payload.error ?? (lang === 'uk' ? 'Не вдалося імпортувати JSON-дані в БД.' : 'Failed to import JSON data into DB.'));
+        return;
+      }
+      setDbImportJsonConfigStatus(payload.message ?? (lang === 'uk' ? 'JSON-дані імпортовано в БД.' : 'JSON data imported into DB.'));
+    } catch {
+      setDbImportJsonConfigError(lang === 'uk' ? 'Не вдалося імпортувати JSON-дані в БД.' : 'Failed to import JSON data into DB.');
+    } finally {
+      setDbImportJsonConfigRunning(false);
     }
   };
 
@@ -724,6 +751,7 @@ export const App = () => {
           onTestDbConnection={testDbConnection}
           onExportDbSchema={exportDbSchema}
           onImportDbSchema={importDbSchema}
+          onImportJsonConfigToDb={importJsonConfigToDb}
           onExportDbBackup={exportDbBackup}
           onRestoreDbBackup={restoreDbBackup}
           dbConfigSaveStatus={dbConfigSaveStatus}
@@ -736,6 +764,9 @@ export const App = () => {
           dbImportSchemaStatus={dbImportSchemaStatus}
           dbImportSchemaError={dbImportSchemaError}
           dbImportSchemaRunning={dbImportSchemaRunning}
+          dbImportJsonConfigStatus={dbImportJsonConfigStatus}
+          dbImportJsonConfigError={dbImportJsonConfigError}
+          dbImportJsonConfigRunning={dbImportJsonConfigRunning}
           dbExportBackupStatus={dbExportBackupStatus}
           dbExportBackupError={dbExportBackupError}
           dbExportBackupRunning={dbExportBackupRunning}

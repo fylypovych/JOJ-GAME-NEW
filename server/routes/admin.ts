@@ -46,6 +46,7 @@ type AdminRoutesDeps = {
   isAdminAuthEnabled: boolean;
   devRestartTouchPath: string;
   dbSchemaPath: string;
+  importJsonConfigToDb: () => Promise<void>;
 };
 
 export const registerAdminRoutes = ({
@@ -63,6 +64,7 @@ export const registerAdminRoutes = ({
   isAdminAuthEnabled,
   devRestartTouchPath,
   dbSchemaPath,
+  importJsonConfigToDb,
 }: AdminRoutesDeps) => {
   const ADMIN_DB_SQL_BODY_LIMIT = Math.max(JSON_BODY_LIMIT, 32 * 1024 * 1024);
   router.get('/api/health', (ctx: RouteCtx) => {
@@ -223,6 +225,19 @@ export const registerAdminRoutes = ({
       return;
     }
     ctx.body = { ok: true, message: 'db.sql imported successfully' };
+  });
+
+  router.post('/api/admin/db/import-json-config', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/db/import-json-config'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-db-import-json-config', 5, 60_000))) return;
+    try {
+      await importJsonConfigToDb();
+      await logLine('INFO', 'admin imported shared JSON config into postgres');
+      ctx.body = { ok: true, message: 'Shared JSON config imported into database' };
+    } catch (error) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Failed to import shared JSON config into database', details: String(error) };
+    }
   });
 
   router.post('/api/admin/db/export-backup', async (ctx: RouteCtx) => {

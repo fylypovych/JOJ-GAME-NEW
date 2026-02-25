@@ -66,7 +66,7 @@ const dbSchemaPath = path.resolve(appRootDir, 'db.sql');
 const requireAdminAuth = createRequireAdminAuth({ isAdminAuthEnabled, adminToken, logLine });
 const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });
 const { runGit, runShellCommand, spawnDetachedShell } = createCommandRunners(repoDir);
-const { saveTemplateToDisk, saveRanksToDisk, loadTemplateFromDisk, loadRanksFromDisk } = createSharedConfigStore({
+const { saveTemplateToDisk, saveRanksToDisk, loadTemplateFromDisk, loadRanksFromDisk, syncCurrentJsonToPostgres } = createSharedConfigStore({
   templatePath,
   ranksPath,
   exportSharedDeckTemplateJson,
@@ -94,6 +94,7 @@ if (router) {
     isAdminAuthEnabled,
     devRestartTouchPath,
     dbSchemaPath,
+    importJsonConfigToDb: syncCurrentJsonToPostgres,
   });
   registerSharedRoutes({
     router,

@@ -18,6 +18,7 @@ export const AdminDatabaseTab = ({
   dbConnectionTestRunning,
   onExportDbSchema,
   onImportDbSchema,
+  onImportJsonConfigToDb,
   onExportDbBackup,
   onRestoreDbBackup,
   dbExportSchemaStatus,
@@ -26,6 +27,9 @@ export const AdminDatabaseTab = ({
   dbImportSchemaStatus,
   dbImportSchemaError,
   dbImportSchemaRunning,
+  dbImportJsonConfigStatus,
+  dbImportJsonConfigError,
+  dbImportJsonConfigRunning,
   dbExportBackupStatus,
   dbExportBackupError,
   dbExportBackupRunning,
@@ -46,6 +50,7 @@ export const AdminDatabaseTab = ({
   dbConnectionTestRunning: boolean;
   onExportDbSchema: () => Promise<void> | void;
   onImportDbSchema: () => Promise<void> | void;
+  onImportJsonConfigToDb: () => Promise<void> | void;
   onExportDbBackup: () => Promise<void> | void;
   onRestoreDbBackup: (file: File | null) => Promise<void> | void;
   dbExportSchemaStatus: string;
@@ -54,6 +59,9 @@ export const AdminDatabaseTab = ({
   dbImportSchemaStatus: string;
   dbImportSchemaError: string;
   dbImportSchemaRunning: boolean;
+  dbImportJsonConfigStatus: string;
+  dbImportJsonConfigError: string;
+  dbImportJsonConfigRunning: boolean;
   dbExportBackupStatus: string;
   dbExportBackupError: string;
   dbExportBackupRunning: boolean;
@@ -124,6 +132,9 @@ export const AdminDatabaseTab = ({
         <h4>{t.dbSchemaTitle}</h4>
         <p>{t.dbSchemaHint}</p>
         <p className="admin-controls">
+          <button type="button" onClick={() => void onImportJsonConfigToDb()} disabled={dbImportJsonConfigRunning}>
+            {dbImportJsonConfigRunning ? t.dbImportJsonConfigRunning : t.dbImportJsonConfig}
+          </button>
           <button type="button" onClick={() => void onImportDbSchema()} disabled={dbImportSchemaRunning}>
             {dbImportSchemaRunning ? t.dbImportSchemaRunning : t.dbImportSchema}
           </button>
@@ -131,6 +142,8 @@ export const AdminDatabaseTab = ({
             {dbExportSchemaRunning ? t.dbExportSchemaRunning : t.dbExportSchema}
           </button>
         </p>
+        {dbImportJsonConfigStatus ? <p className="admin-success">{dbImportJsonConfigStatus}</p> : null}
+        {dbImportJsonConfigError ? <p className="admin-error">{dbImportJsonConfigError}</p> : null}
         {dbImportSchemaStatus ? <p className="admin-success">{dbImportSchemaStatus}</p> : null}
         {dbImportSchemaError ? <p className="admin-error">{dbImportSchemaError}</p> : null}
         {dbExportSchemaStatus ? <p className="admin-success">{dbExportSchemaStatus}</p> : null}
