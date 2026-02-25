@@ -456,33 +456,6 @@ export const BoardV2 = ({
                 </div>
               ))}
             </div>
-            {pendingSelection ? (
-              <div className="game-ui-v2-selection-panel game-ui-v2-selection-panel-inline">
-                <div>
-                  <p className="game-ui-v2-kicker">{activeSelectionNeedsTarget ? v2.pickTarget : v2.pickResource}</p>
-                  <h3>{currentPendingCard ? cardTitle(currentPendingCard.id, currentPendingCard.title, lang) : pendingSelection.cardId}</h3>
-                  <p className="game-ui-v2-subtle">{activeSelectionNeedsTarget ? v2.selectableTargetHint : v2.selectableResourceHint}</p>
-                </div>
-                {activeSelectionNeedsResource ? (
-                  <div className="game-ui-v2-chip-row">
-                    {RESOURCE_ORDER.map((key) => (
-                      <button
-                        key={`pick-resource-${key}`}
-                        type="button"
-                        className={`game-ui-v2-pick-chip${selectedResource === key ? ' is-selected' : ''}`}
-                        onClick={() => setSelectedResource(key)}
-                      >
-                        {resourceLabels[key]} ({resources[key] ?? 0})
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                <div className="game-ui-v2-selection-actions">
-                  <button type="button" onClick={confirmPendingSelection}>{lang === 'uk' ? 'Підтвердити' : 'Confirm'}</button>
-                  <button type="button" className="ghost" onClick={() => { setPendingSelection(null); setSelectedTargetId(null); setSelectedResource(null); setNotice(null); }}>{v2.cancel}</button>
-                </div>
-              </div>
-            ) : null}
             <div className="game-ui-v2-command-rank-progress">
               <h4>{v2.nextRankProgress}</h4>
               {nextRankMeta?.nextRank ? (
@@ -520,6 +493,50 @@ export const BoardV2 = ({
               )}
             </div>
             {notice ? <p className={`game-ui-v2-notice is-${notice.type}`}>{notice.text}</p> : null}
+            {pendingSelection ? (
+              <div className="game-ui-v2-selection-panel game-ui-v2-selection-panel-inline">
+                <div>
+                  <p className="game-ui-v2-kicker">{activeSelectionNeedsTarget ? v2.pickTarget : v2.pickResource}</p>
+                  <h3>{currentPendingCard ? cardTitle(currentPendingCard.id, currentPendingCard.title, lang) : pendingSelection.cardId}</h3>
+                  <p className="game-ui-v2-subtle">{activeSelectionNeedsTarget ? v2.selectableTargetHint : v2.selectableResourceHint}</p>
+                </div>
+                {activeSelectionNeedsTarget ? (
+                  <div className="game-ui-v2-chip-row">
+                    {playerIds.filter((pid) => pid !== id).map((pid) => (
+                      <button
+                        key={`pick-target-${pid}`}
+                        type="button"
+                        className={`game-ui-v2-pick-chip${selectedTargetId === pid ? ' is-selected' : ''}`}
+                        onClick={() => {
+                          setSelectedTargetId(pid);
+                          postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`);
+                        }}
+                      >
+                        {playerLabelById(pid)}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                {activeSelectionNeedsResource ? (
+                  <div className="game-ui-v2-chip-row">
+                    {RESOURCE_ORDER.map((key) => (
+                      <button
+                        key={`pick-resource-${key}`}
+                        type="button"
+                        className={`game-ui-v2-pick-chip${selectedResource === key ? ' is-selected' : ''}`}
+                        onClick={() => setSelectedResource(key)}
+                      >
+                        {resourceLabels[key]} ({resources[key] ?? 0})
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="game-ui-v2-selection-actions">
+                  <button type="button" onClick={confirmPendingSelection}>{lang === 'uk' ? 'Підтвердити' : 'Confirm'}</button>
+                  <button type="button" className="ghost" onClick={() => { setPendingSelection(null); setSelectedTargetId(null); setSelectedResource(null); setNotice(null); }}>{v2.cancel}</button>
+                </div>
+              </div>
+            ) : null}
           </section>
 
           <section className="game-ui-v2-action-lane">
