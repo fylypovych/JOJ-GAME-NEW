@@ -530,7 +530,7 @@ export const App = () => {
         />
       ) : null}
 
-      {!isAdminRoute && activeUserTab === 'games' && session ? (
+      {!isAdminRoute && activeUserTab === 'games' && session && gameUiVariant !== 'v2' ? (
         <ActiveSessionSection
           t={t}
           session={session}
@@ -553,6 +553,8 @@ export const App = () => {
             playerName={playerName}
             knownPlayerNames={roomPlayerNames}
             sharedRanks={sharedRanks}
+            roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
+            onLeaveRoom={() => { void leaveRoom(); }}
           /> : <NetworkClientV1
             key={`${session.matchID}:${session.playerID}`}
             matchID={session.matchID}

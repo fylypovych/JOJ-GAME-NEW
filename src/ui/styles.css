@@ -824,6 +824,24 @@ button:disabled {
   gap: 10px;
 }
 
+.game-ui-v2-room-meta {
+  margin-top: 4px;
+}
+
+.game-ui-v2-room-meta .game-ui-v2-subtle {
+  margin: 2px 0 0;
+}
+
+.game-ui-v2-header-leave {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f3f8ff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .game-ui-v2-stage-focus {
   margin-top: 6px;
   max-width: 560px;

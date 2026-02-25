@@ -7,9 +7,13 @@ export type LocalizedBoardProps = BoardProps<JojGameState> & {
   playerName?: string;
   knownPlayerNames?: Record<string, string>;
   sharedRanks?: RankDefinition[];
+  roomMeta?: {
+    matchID: string;
+    playerID: string;
+  };
+  onLeaveRoom?: () => void;
   onStateChange?: (payload: {
     G: JojGameState;
     ctx: unknown;
   }) => void;
 };
-

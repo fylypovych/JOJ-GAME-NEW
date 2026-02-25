@@ -72,6 +72,8 @@ export const BoardV2 = ({
   playerName = '',
   knownPlayerNames = {},
   sharedRanks = [],
+  roomMeta,
+  onLeaveRoom,
   onStateChange,
 }: LocalizedBoardProps) => {
   const t = text(lang);
@@ -150,6 +152,9 @@ export const BoardV2 = ({
     threatMedium: lang === 'uk' ? 'середня загроза' : 'medium threat',
     threatLow: lang === 'uk' ? 'низька загроза' : 'low threat',
     handCardsLabel: lang === 'uk' ? 'Карти в руці' : 'Hand cards',
+    activeRoom: lang === 'uk' ? 'Активна кімната' : 'Active room',
+    joinedAs: lang === 'uk' ? 'Ви в кімнаті як' : 'You are in room as',
+    leaveRoom: lang === 'uk' ? 'Вийти з кімнати' : 'Leave room',
   };
 
   const id = playerID ?? '0';
@@ -284,8 +289,6 @@ export const BoardV2 = ({
 
   const playerIds = useMemo(() => Object.keys(G?.players ?? {}), [G?.players]);
   const latestEvents = (G?.chat ?? []).slice(-8).reverse();
-  const recentDiscardCards = (G?.discard ?? []).slice(-8).reverse();
-  const recentLegendaryDiscardCards = (G?.legendaryDiscard ?? []).slice(-8).reverse();
 
   const pinCardFromSource = (card: CardDefinition, sourceLabel: string, categoryText?: string) => {
     setPinnedCard({
@@ -296,14 +299,6 @@ export const BoardV2 = ({
       effects: card.effects,
       sourceLabel,
     });
-  };
-
-  const pendingActionSteps = {
-    step1Done: Boolean(pendingSelection || pendingConfirm),
-    step2Done:
-      !pendingSelection ||
-      (pendingSelection.type === 'legendary-water' ? Boolean(selectedResource) : Boolean(selectedTargetId)),
-    step3Done: false,
   };
 
   const handCardsView = useMemo(() => {
@@ -511,11 +506,21 @@ export const BoardV2 = ({
         <div>
           <p className="game-ui-v2-kicker">JOJ V2</p>
           <h2>{isCurrentPlayer ? (lang === 'uk' ? 'Ваш хід' : 'Your turn') : (lang === 'uk' ? 'Стіл гри' : 'Game table')}</h2>
-          <p className="game-ui-v2-subtle">{v2.keyboardHint}</p>
+          {roomMeta ? (
+            <div className="game-ui-v2-room-meta">
+              <p className="game-ui-v2-subtle">{v2.activeRoom}: <strong>{roomMeta.matchID}</strong></p>
+              <p className="game-ui-v2-subtle">{v2.joinedAs}: {playerName || '-'} (#{roomMeta.playerID})</p>
+            </div>
+          ) : null}
           {currentStageFocus ? <p className="game-ui-v2-subtle game-ui-v2-stage-focus">{currentStageFocus}</p> : null}
         </div>
         <div className="game-ui-v2-header-actions">
           <span className="game-ui-v2-badge">{stageLabel(stage, t)}</span>
+          {onLeaveRoom ? (
+            <button type="button" className="game-ui-v2-header-leave" onClick={onLeaveRoom}>
+              {v2.leaveRoom}
+            </button>
+          ) : null}
           <label className="game-ui-v2-toggle">
             <input type="checkbox" checked={compactMode} onChange={(e) => setCompactMode(e.target.checked)} />
             <span>{v2.compact}</span>
@@ -574,11 +579,6 @@ export const BoardV2 = ({
                 <p className="game-ui-v2-kicker">{v2.actionLane}</p>
                 <h3>{v2.previewOutcome}</h3>
               </div>
-              <div className="game-ui-v2-steps">
-                <span className={pendingActionSteps.step1Done ? 'is-done' : ''}>{v2.step1}</span>
-                <span className={pendingActionSteps.step2Done ? 'is-done' : ''}>{v2.step2}</span>
-                <span className={pendingConfirm ? 'is-done' : ''}>{v2.step3}</span>
-              </div>
             </div>
             <div className="game-ui-v2-action-lane-grid">
               <div className="game-ui-v2-action-slot">
@@ -620,11 +620,6 @@ export const BoardV2 = ({
             <div>
               <p className="game-ui-v2-kicker">{v2.stepAssistant}</p>
               <h3>{v2.previewOutcome}</h3>
-              <div className="game-ui-v2-steps">
-                <span className={pendingActionSteps.step1Done ? 'is-done' : ''}>{v2.step1}</span>
-                <span className={pendingActionSteps.step2Done ? 'is-done' : ''}>{v2.step2}</span>
-                <span>{v2.step3}</span>
-              </div>
             </div>
             {pendingConfirm ? (
               <div className="game-ui-v2-confirm-card">
@@ -663,14 +658,6 @@ export const BoardV2 = ({
           <section className="game-ui-v2-piles">
             <h3>{v2.tableState}</h3>
             <div className="play-area">
-              <div className="pile pile-actions">
-                <p>{lang === 'uk' ? 'Швидкі дії' : 'Quick actions'}</p>
-                <div className="board-actions">
-                  <button type="button" onClick={() => canDraw && moves.drawCard()} disabled={!canDraw}>{t.draw}</button>
-                  <button type="button" onClick={() => { if (!canPlay || promoteReason) return; setPendingConfirm({ kind: 'promote', nextRankName: nextRankMeta?.nextRank?.name ?? null, reason: null }); }} disabled={!canPlay || Boolean(promoteReason)}>{t.promote}</button>
-                  <button type="button" onClick={() => canEndTurn && moves.pass()} disabled={!canEndTurn}>{t.endTurn}</button>
-                </div>
-              </div>
               <div className="pile">
                 <p>{t.drawPile} ({G.deck?.length ?? 0})</p>
                 <div className="pile-card">
@@ -996,56 +983,6 @@ export const BoardV2 = ({
               t={t}
               chatLogRef={chatLogRef}
             />
-          </section>
-
-          <section className="game-ui-v2-events">
-            <h3>{v2.discardViewer}</h3>
-            <div className="game-ui-v2-discard-columns">
-              <div>
-                <p className="game-ui-v2-subtle">{v2.normalDiscard}</p>
-                <div className="game-ui-v2-mini-list">
-                  <div className="game-ui-v2-thumb-grid">
-                    {recentDiscardCards.map((card) => (
-                      <button
-                        key={`mini-discard-thumb-${card.id}`}
-                        type="button"
-                        className="game-ui-v2-card-thumb"
-                        onClick={() => pinCardFromSource(card, v2.normalDiscard)}
-                        title={cardTitle(card.id, card.title, lang)}
-                      >
-                        <img src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`} alt={cardTitle(card.id, card.title, lang)} />
-                      </button>
-                    ))}
-                  </div>
-                  {recentDiscardCards.map((card) => (
-                    <button key={`mini-discard-${card.id}`} type="button" onClick={() => pinCardFromSource(card, v2.normalDiscard)}>{cardTitle(card.id, card.title, lang)}</button>
-                  ))}
-                  {!recentDiscardCards.length ? <span className="game-ui-v2-subtle">{t.noCardsInDiscard}</span> : null}
-                </div>
-              </div>
-              <div>
-                <p className="game-ui-v2-subtle">{v2.legendaryDiscard}</p>
-                <div className="game-ui-v2-mini-list">
-                  <div className="game-ui-v2-thumb-grid">
-                    {recentLegendaryDiscardCards.map((card) => (
-                      <button
-                        key={`mini-ldiscard-thumb-${card.id}`}
-                        type="button"
-                        className="game-ui-v2-card-thumb"
-                        onClick={() => pinCardFromSource(card, v2.legendaryDiscard, t.legendaryDeckLabel)}
-                        title={cardTitle(card.id, card.title, lang)}
-                      >
-                        <img src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`} alt={cardTitle(card.id, card.title, lang)} />
-                      </button>
-                    ))}
-                  </div>
-                  {recentLegendaryDiscardCards.map((card) => (
-                    <button key={`mini-ldiscard-${card.id}`} type="button" onClick={() => pinCardFromSource(card, v2.legendaryDiscard, t.legendaryDeckLabel)}>{cardTitle(card.id, card.title, lang)}</button>
-                  ))}
-                  {!recentLegendaryDiscardCards.length ? <span className="game-ui-v2-subtle">{t.noCardsInDiscard}</span> : null}
-                </div>
-              </div>
-            </div>
           </section>
 
           <section className="game-ui-v2-events">
