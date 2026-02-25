@@ -26,6 +26,7 @@ import {
 import { AdminPage } from './AdminPage';
 import { useDbAdminTools } from './admin/useDbAdminTools';
 import { Board } from './Board';
+import { BoardV2 } from './BoardV2';
 import type { Language } from './i18n';
 import { defaultLanguage, text } from './i18n';
 import {
@@ -59,10 +60,19 @@ import { useAdminAuth } from './app/useAdminAuth';
 import { useAdminSnapshot } from './app/useAdminSnapshot';
 
 const SERVER_URL = getConfiguredServerUrl();
+const GAME_UI_VARIANT_STORAGE_KEY = 'joj-game-ui-variant-v1';
 
-const NetworkClient = Client({
+const NetworkClientV1 = Client({
   game: jojGame,
   board: Board,
+  debug: false,
+  numPlayers: 6,
+  multiplayer: SocketIO({ server: SERVER_URL }),
+});
+
+const NetworkClientV2 = Client({
+  game: jojGame,
+  board: BoardV2,
   debug: false,
   numPlayers: 6,
   multiplayer: SocketIO({ server: SERVER_URL }),
@@ -99,6 +109,10 @@ export const App = () => {
   const [sharedRanks, setSharedRanksState] = useState<RankDefinition[]>(getSharedRanks);
   const [sharedConfigLoaded, setSharedConfigLoaded] = useState<boolean>(false);
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
+  const [gameUiVariant, setGameUiVariant] = useState<'v1' | 'v2'>(() => {
+    const raw = window.localStorage.getItem(GAME_UI_VARIANT_STORAGE_KEY);
+    return raw === 'v2' ? 'v2' : 'v1';
+  });
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
   const [serverUrlDraft, setServerUrlDraft] = useState<string>(() => window.localStorage.getItem(SERVER_URL_STORAGE_KEY) ?? SERVER_URL);
   const t = text(lang);
@@ -442,6 +456,10 @@ export const App = () => {
     window.localStorage.setItem(PLAYER_NAME_STORAGE_KEY, playerName);
   }, [playerName]);
 
+  useEffect(() => {
+    window.localStorage.setItem(GAME_UI_VARIANT_STORAGE_KEY, gameUiVariant);
+  }, [gameUiVariant]);
+
   return (
     <main className="app">
       <h1>{isAdminRoute ? t.adminTitle : t.gameTitle}</h1>
@@ -453,6 +471,18 @@ export const App = () => {
         <button type="button" onClick={() => setLang('en')} disabled={lang === 'en'}>
           {t.langEn}
         </button>
+        {!isAdminRoute ? (
+          <>
+            {' | '}
+            {t.gameUiLabel}:{' '}
+            <button type="button" onClick={() => setGameUiVariant('v1')} disabled={gameUiVariant === 'v1'}>
+              {t.gameUiV1}
+            </button>{' '}
+            <button type="button" onClick={() => setGameUiVariant('v2')} disabled={gameUiVariant === 'v2'}>
+              {t.gameUiV2}
+            </button>
+          </>
+        ) : null}
       </p>
       <p className="app-link-row">
         {isAdminRoute ? <a href="/">{t.openGame}</a> : <a href="/admin">{t.openAdmin}</a>}
@@ -514,7 +544,16 @@ export const App = () => {
 
       <div style={{ display: !isAdminRoute && activeUserTab === 'games' && session && canStart ? 'block' : 'none' }}>
         {session ? (
-          <NetworkClient
+          (gameUiVariant === 'v2' ? <NetworkClientV2
+            key={`${session.matchID}:${session.playerID}:v2`}
+            matchID={session.matchID}
+            playerID={session.playerID}
+            credentials={session.credentials}
+            lang={lang}
+            playerName={playerName}
+            knownPlayerNames={roomPlayerNames}
+            sharedRanks={sharedRanks}
+          /> : <NetworkClientV1
             key={`${session.matchID}:${session.playerID}`}
             matchID={session.matchID}
             playerID={session.playerID}
@@ -523,7 +562,7 @@ export const App = () => {
             playerName={playerName}
             knownPlayerNames={roomPlayerNames}
             sharedRanks={sharedRanks}
-          />
+          />)
         ) : null}
       </div>
 
