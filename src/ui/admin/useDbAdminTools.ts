@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { AdminDbConfigDraft, AdminStorageMode } from './types';
 import type { Language } from '../i18n';
 
@@ -14,6 +14,7 @@ type Args = {
 };
 
 export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
+  const ADMIN_DB_UI_CONFIG_API = `${serverUrl}/api/admin/db/ui-config`;
   const ADMIN_DB_TEST_CONNECTION_API = `${serverUrl}/api/admin/db/test-connection`;
   const ADMIN_DB_SCHEMA_API = `${serverUrl}/api/admin/db/schema`;
   const ADMIN_DB_IMPORT_SCHEMA_API = `${serverUrl}/api/admin/db/import-schema`;
@@ -82,6 +83,78 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
     setDbConfigSaveStatus(lang === 'uk' ? 'Налаштування БД збережено локально у браузері.' : 'DB settings saved locally in the browser.');
     setDbConnectionTestStatus('');
     setDbConnectionTestError('');
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadServerDbUiConfig = async () => {
+      try {
+        const response = await adminFetch(ADMIN_DB_UI_CONFIG_API);
+        const payload = (await response.json()) as {
+          ok?: boolean;
+          storageMode?: 'file' | 'db';
+          dbConfig?: Partial<AdminDbConfigDraft> | null;
+        };
+        if (!response.ok || !payload.ok || cancelled) return;
+        if (payload.storageMode === 'db' || payload.storageMode === 'file') {
+          setAdminStorageMode(payload.storageMode);
+        }
+        if (payload.dbConfig) {
+          setAdminDbConfigDraft((prev) => ({
+            host: typeof payload.dbConfig?.host === 'string' ? payload.dbConfig.host : prev.host,
+            port: typeof payload.dbConfig?.port === 'string' ? payload.dbConfig.port : prev.port,
+            database: typeof payload.dbConfig?.database === 'string' ? payload.dbConfig.database : prev.database,
+            user: typeof payload.dbConfig?.user === 'string' ? payload.dbConfig.user : prev.user,
+            password: typeof payload.dbConfig?.password === 'string' ? payload.dbConfig.password : prev.password,
+            sslMode: payload.dbConfig?.sslMode === 'require' ? 'require' : prev.sslMode,
+          }));
+        }
+      } catch {
+        // localStorage fallback is enough
+      }
+    };
+    void loadServerDbUiConfig();
+    return () => {
+      cancelled = true;
+    };
+  }, [ADMIN_DB_UI_CONFIG_API, adminFetch]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        await adminFetch(ADMIN_DB_UI_CONFIG_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            storageMode: adminStorageMode,
+            dbConfig: adminDbConfigDraft,
+          }),
+        });
+      } catch {
+        // localStorage still preserves mode on same browser
+      }
+    })();
+  }, [ADMIN_DB_UI_CONFIG_API, adminFetch, adminStorageMode]);
+
+  const saveDbConfigDraftAndServer = () => {
+    saveDbConfigDraft();
+    void (async () => {
+      try {
+        await adminFetch(ADMIN_DB_UI_CONFIG_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            storageMode: adminStorageMode,
+            dbConfig: adminDbConfigDraft,
+          }),
+        });
+        setDbConfigSaveStatus(lang === 'uk'
+          ? 'Налаштування БД збережено (браузер + сервер).'
+          : 'DB settings saved (browser + server).');
+      } catch {
+        // keep local success message if server save failed
+      }
+    })();
   };
 
   const testDbConnection = async () => {
@@ -262,7 +335,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
     dbRestoreBackupStatus,
     dbRestoreBackupError,
     dbRestoreBackupRunning,
-    saveDbConfigDraft,
+    saveDbConfigDraft: saveDbConfigDraftAndServer,
     testDbConnection,
     exportDbSchema,
     importDbSchema,
@@ -272,4 +345,3 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
     ADMIN_STORAGE_MODE_STORAGE_KEY,
   };
 };
-

@@ -62,6 +62,7 @@ const uploadsDir = path.resolve(appRootDir, 'public', 'cards');
 const repoDir = appRootDir;
 const devRestartTouchPath = path.resolve(appRootDir, 'server', '.restart-touch');
 const dbSchemaPath = path.resolve(appRootDir, 'db', 'schema', 'db.sql');
+const adminDbUiConfigPath = path.resolve(appRootDir, 'database', 'admin-db-ui-config.json');
 
 const requireAdminAuth = createRequireAdminAuth({ isAdminAuthEnabled, adminToken, logLine });
 const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });
@@ -100,6 +101,7 @@ if (router) {
     isAdminAuthEnabled,
     devRestartTouchPath,
     dbSchemaPath,
+    adminDbUiConfigPath,
     importJsonConfigToDb: syncCurrentJsonToPostgres,
   });
   registerSharedRoutes({

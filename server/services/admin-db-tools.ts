@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from '../routes/types';
 
@@ -19,6 +19,7 @@ type AdminDbToolsDeps = {
   logLine: LogLine;
   JSON_BODY_LIMIT: number;
   dbSchemaPath: string;
+  adminDbUiConfigPath: string;
   importJsonConfigToDb: (draft?: DbConnInput) => Promise<void>;
 };
 
@@ -90,6 +91,7 @@ export const registerAdminDbToolRoutes = ({
   logLine,
   JSON_BODY_LIMIT,
   dbSchemaPath,
+  adminDbUiConfigPath,
   importJsonConfigToDb,
 }: AdminDbToolsDeps) => {
   const ADMIN_DB_SQL_BODY_LIMIT = Math.max(JSON_BODY_LIMIT, 32 * 1024 * 1024);
@@ -112,6 +114,57 @@ export const registerAdminDbToolRoutes = ({
       return fail(ctx, 400, 'Failed to connect to PostgreSQL', (result.stderr || result.error || result.stdout || '').trim());
     }
     ctx.body = { ok: true, message: 'PostgreSQL connection successful' };
+  });
+
+  router.get('/api/admin/db/ui-config', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/db/ui-config'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-db-ui-config-get', 30, 60_000))) return;
+    try {
+      const raw = await readFile(adminDbUiConfigPath, 'utf8');
+      const parsed = JSON.parse(raw) as {
+        storageMode?: 'file' | 'db';
+        dbConfig?: Partial<DbConnInput>;
+      };
+      ctx.body = {
+        ok: true,
+        storageMode: parsed.storageMode === 'db' ? 'db' : 'file',
+        dbConfig: parsed.dbConfig ?? null,
+      };
+    } catch {
+      ctx.body = { ok: true, storageMode: 'file', dbConfig: null };
+    }
+  });
+
+  router.post('/api/admin/db/ui-config', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/db/ui-config'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-db-ui-config-post', 20, 60_000))) return;
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/ui-config', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const storageMode = body.storageMode === 'db' ? 'db' : 'file';
+    const rawDbConfig = (body.dbConfig && typeof body.dbConfig === 'object') ? (body.dbConfig as Record<string, unknown>) : {};
+    const normalizedDbConfig = {
+      host: typeof rawDbConfig.host === 'string' ? rawDbConfig.host : '127.0.0.1',
+      port: typeof rawDbConfig.port === 'string' ? rawDbConfig.port : '5432',
+      database: typeof rawDbConfig.database === 'string' ? rawDbConfig.database : 'joj_game',
+      user: typeof rawDbConfig.user === 'string' ? rawDbConfig.user : 'joj_user',
+      password: typeof rawDbConfig.password === 'string' ? rawDbConfig.password : '',
+      sslMode: rawDbConfig.sslMode === 'require' ? 'require' : 'disable',
+    } satisfies DbConnInput;
+    try {
+      await mkdir(new URL('.', `file://${adminDbUiConfigPath.replace(/\\/g, '/')}`).pathname, { recursive: true }).catch(() => {});
+    } catch { /* noop */ }
+    try {
+      const dir = adminDbUiConfigPath.replace(/[\\/][^\\/]+$/, '');
+      await mkdir(dir, { recursive: true });
+      await writeFile(
+        adminDbUiConfigPath,
+        JSON.stringify({ storageMode, dbConfig: normalizedDbConfig, updatedAt: Date.now() }, null, 2),
+        'utf8',
+      );
+      ctx.body = { ok: true, message: 'Admin DB UI config saved' };
+    } catch (error) {
+      fail(ctx, 500, 'Failed to save admin DB UI config', String(error));
+    }
   });
 
   router.get('/api/admin/db/schema', async (ctx: RouteCtx) => {

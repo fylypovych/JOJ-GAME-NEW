@@ -46,6 +46,7 @@ type AdminRoutesDeps = {
   isAdminAuthEnabled: boolean;
   devRestartTouchPath: string;
   dbSchemaPath: string;
+  adminDbUiConfigPath: string;
   importJsonConfigToDb: (draft?: {
     host: string;
     port: string;
@@ -71,6 +72,7 @@ export const registerAdminRoutes = ({
   isAdminAuthEnabled,
   devRestartTouchPath,
   dbSchemaPath,
+  adminDbUiConfigPath,
   importJsonConfigToDb,
 }: AdminRoutesDeps) => {
   router.get('/api/health', (ctx: RouteCtx) => {
@@ -96,6 +98,7 @@ export const registerAdminRoutes = ({
     logLine,
     JSON_BODY_LIMIT,
     dbSchemaPath,
+    adminDbUiConfigPath,
     importJsonConfigToDb,
   });
 
