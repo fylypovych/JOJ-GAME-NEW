@@ -54,4 +54,8 @@ export const defaultCardTitlesEnById: Record<string, string> = {
   'legendary-05': 'System Architect',
 };
 
+export const cardTitlesEnById: Record<string, string> = {
+  ...defaultCardTitlesEnById,
+};
+
 

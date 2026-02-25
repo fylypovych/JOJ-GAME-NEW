@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from '../game/types';
 import { normalizeImagePath } from '../game/imagePaths';
 import { canPlayHandCardAtStage } from '../game/turnRules';
-import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
+import { cardTitle, categoryLabel, localizeSystemMessageText, rankLabel, text } from './i18n';
 import { BoardChatPanel, GameCardTile, PilePreview } from './board/components';
 import { buildNextRankHint, getBoardPromoteBlockedReason, getBoardVvnzBlockedReason, getNextRankSeatMeta } from './board/rankHints';
 import type { LocalizedBoardProps } from './board/types';
@@ -261,7 +261,7 @@ export const BoardV2 = ({
   }, [G, id, sharedRanks, resources]);
 
   const playerIds = useMemo(() => Object.keys(G?.players ?? {}), [G?.players]);
-  const latestEvents = (G?.chat ?? []).slice(-8).reverse();
+  const latestEvents = (G?.chat ?? []).slice(-4).reverse();
 
   const handCardsView = useMemo(() => {
     const base = hand.map((card, index) => ({ card, index, playable: false }));
@@ -456,6 +456,33 @@ export const BoardV2 = ({
                 </div>
               ))}
             </div>
+            {pendingSelection ? (
+              <div className="game-ui-v2-selection-panel game-ui-v2-selection-panel-inline">
+                <div>
+                  <p className="game-ui-v2-kicker">{activeSelectionNeedsTarget ? v2.pickTarget : v2.pickResource}</p>
+                  <h3>{currentPendingCard ? cardTitle(currentPendingCard.id, currentPendingCard.title, lang) : pendingSelection.cardId}</h3>
+                  <p className="game-ui-v2-subtle">{activeSelectionNeedsTarget ? v2.selectableTargetHint : v2.selectableResourceHint}</p>
+                </div>
+                {activeSelectionNeedsResource ? (
+                  <div className="game-ui-v2-chip-row">
+                    {RESOURCE_ORDER.map((key) => (
+                      <button
+                        key={`pick-resource-${key}`}
+                        type="button"
+                        className={`game-ui-v2-pick-chip${selectedResource === key ? ' is-selected' : ''}`}
+                        onClick={() => setSelectedResource(key)}
+                      >
+                        {resourceLabels[key]} ({resources[key] ?? 0})
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="game-ui-v2-selection-actions">
+                  <button type="button" onClick={confirmPendingSelection}>{lang === 'uk' ? 'Підтвердити' : 'Confirm'}</button>
+                  <button type="button" className="ghost" onClick={() => { setPendingSelection(null); setSelectedTargetId(null); setSelectedResource(null); setNotice(null); }}>{v2.cancel}</button>
+                </div>
+              </div>
+            ) : null}
             <div className="game-ui-v2-command-rank-progress">
               <h4>{v2.nextRankProgress}</h4>
               {nextRankMeta?.nextRank ? (
@@ -529,12 +556,6 @@ export const BoardV2 = ({
               </div>
             </div>
           </section>
-
-          {pendingSelection ? (
-          <section className="game-ui-v2-selection-panel">
-            <p className="game-ui-v2-subtle">{activeSelectionNeedsTarget ? v2.selectableTargetHint : v2.selectableResourceHint}</p>
-          </section>
-          ) : null}
 
           <section className="game-ui-v2-piles">
             <h3>{v2.tableState}</h3>
@@ -626,34 +647,6 @@ export const BoardV2 = ({
               })}
             </div>
           </section>
-
-          {pendingSelection ? (
-            <section className="game-ui-v2-selection-panel">
-              <div>
-                <p className="game-ui-v2-kicker">{activeSelectionNeedsTarget ? v2.pickTarget : v2.pickResource}</p>
-                <h3>{currentPendingCard ? cardTitle(currentPendingCard.id, currentPendingCard.title, lang) : pendingSelection.cardId}</h3>
-                <p className="game-ui-v2-subtle">{activeSelectionNeedsTarget ? v2.selectableTargetHint : v2.selectableResourceHint}</p>
-              </div>
-              {activeSelectionNeedsResource ? (
-                <div className="game-ui-v2-chip-row">
-                  {RESOURCE_ORDER.map((key) => (
-                    <button
-                      key={`pick-resource-${key}`}
-                      type="button"
-                      className={`game-ui-v2-pick-chip${selectedResource === key ? ' is-selected' : ''}`}
-                      onClick={() => setSelectedResource(key)}
-                    >
-                      {resourceLabels[key]} ({resources[key] ?? 0})
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-              <div className="game-ui-v2-selection-actions">
-                <button type="button" onClick={confirmPendingSelection}>{lang === 'uk' ? 'Підтвердити' : 'Confirm'}</button>
-                <button type="button" className="ghost" onClick={() => { setPendingSelection(null); setSelectedTargetId(null); setSelectedResource(null); setNotice(null); }}>{v2.cancel}</button>
-              </div>
-            </section>
-          ) : null}
 
           <section className="game-ui-v2-hand-section">
             <div className="game-ui-v2-hand-head">
@@ -780,7 +773,7 @@ export const BoardV2 = ({
                 return (
                   <div key={`v2-evt-${row.id}`} className={`game-ui-v2-event-row ${row.type === 'system' ? 'is-system' : ''}`}>
                     <strong>{author}</strong>
-                    <span>{row.text}</span>
+                    <span>{row.type === 'system' ? localizeSystemMessageText(row.text, lang) : row.text}</span>
                   </div>
                 );
               })}
@@ -797,6 +790,7 @@ export const BoardV2 = ({
             t={t}
             chatLogRef={chatLogRef}
             includeSystemMessages={false}
+            lang={lang}
           />
         </section>
 

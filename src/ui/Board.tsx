@@ -342,6 +342,7 @@ export const Board = ({
         playerLabelById={playerLabelById}
         t={t}
         chatLogRef={chatLogRef}
+        lang={lang}
       />
     </section>
   );

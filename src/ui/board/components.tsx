@@ -2,7 +2,7 @@ import type { ReactNode, RefObject } from 'react';
 import { normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition, JojGameState, ResourceKey } from '../../game/types';
 import type { Language } from '../i18n';
-import { cardTitle, categoryLabel } from '../i18n';
+import { cardTitle, categoryLabel, localizeSystemMessageText } from '../i18n';
 
 type PilePreviewProps = {
   imageSrc?: string;
@@ -179,6 +179,7 @@ type ChatPanelProps = {
   };
   chatLogRef: RefObject<HTMLDivElement>;
   includeSystemMessages?: boolean;
+  lang?: Language;
 };
 
 export const BoardChatPanel = ({
@@ -190,6 +191,7 @@ export const BoardChatPanel = ({
   t,
   chatLogRef,
   includeSystemMessages = true,
+  lang = 'uk',
 }: ChatPanelProps) => (
   <aside className="board-chat">
     <h3>{t.chatTitle}</h3>
@@ -200,7 +202,7 @@ export const BoardChatPanel = ({
         const author = row.type === 'system' ? t.systemTag : playerLabelById(row.playerID);
         return (
           <p key={row.id} className={row.type === 'system' ? 'chat-system' : 'chat-player'}>
-            <strong>{author}:</strong> {row.text}
+            <strong>{author}:</strong> {row.type === 'system' ? localizeSystemMessageText(row.text, lang) : row.text}
           </p>
         );
       })}
