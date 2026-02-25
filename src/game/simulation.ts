@@ -323,6 +323,11 @@ const simulateSingleMatch = (
       scandalsPlayedOnOthers: 0,
     },
     noPlayablePassStreak: 0,
+    endGameVote: {
+      active: false,
+      requestedBy: null,
+      votes: {},
+    },
   };
 
   playerIDs.forEach((pid, index) => {

@@ -86,6 +86,7 @@ type JojMovesDeps = {
   incrementTurnsCompleted: (G: JojGameState) => void;
   incrementLyapPlayedOnOthers: (G: JojGameState) => void;
   incrementScandalPlayedOnOthers: (G: JojGameState) => void;
+  resetEndGameVote: (G: JojGameState) => void;
   computeShieldUntilNextOwnTurn: (ctx: Pick<MoveCtx, 'currentPlayer' | 'playOrder' | 'turn'>, playerID: string) => number;
   cancelLastLyapOrScandalForPlayer: (
     G: JojGameState,
@@ -135,6 +136,30 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     const trimmed = name.trim();
     if (!trimmed) return d.INVALID_MOVE;
     args.G.playerNames[playerID] = trimmed.slice(0, 32);
+    return undefined;
+  },
+  requestEndGameVote: (args: MoveArgs) => {
+    const playerID = args.playerID;
+    if (!playerID || !(playerID in args.G.players)) return d.INVALID_MOVE;
+    if (args.G.endGameVote?.active) return d.INVALID_MOVE;
+    args.G.endGameVote = {
+      active: true,
+      requestedBy: playerID,
+      votes: {
+        [playerID]: true,
+      },
+    };
+    return undefined;
+  },
+  respondEndGameVote: (args: MoveArgs, agree: boolean) => {
+    const playerID = args.playerID;
+    if (!playerID || !(playerID in args.G.players)) return d.INVALID_MOVE;
+    if (!args.G.endGameVote?.active) return d.INVALID_MOVE;
+    if (!agree) {
+      d.resetEndGameVote(args.G);
+      return undefined;
+    }
+    args.G.endGameVote.votes[playerID] = true;
     return undefined;
   },
   sendChat: (args: MoveArgs, text: string) => {
@@ -193,6 +218,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     d.syncPlayerState(args.G, playerID);
     d.recordResourceFlowStats(args.G, beforeResources);
     d.resetNoPlayablePassStreak(args.G);
+    d.resetEndGameVote(args.G);
     args.events?.setStage?.(autoPlayed ? d.END_STAGE : d.PLAY_STAGE);
     return undefined;
   },
@@ -344,6 +370,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     d.syncPlayerState(args.G, playerID);
     d.recordResourceFlowStats(args.G, beforeResources);
     d.resetNoPlayablePassStreak(args.G);
+    d.resetEndGameVote(args.G);
     if (usingExtraToken) {
       args.G.extraHandPlayTokens[playerID] = Math.max(0, (args.G.extraHandPlayTokens[playerID] ?? 0) - 1);
     } else {
@@ -440,6 +467,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     d.syncPlayerState(args.G, playerID);
     d.recordResourceFlowStats(args.G, beforeResources);
     d.resetNoPlayablePassStreak(args.G);
+    d.resetEndGameVote(args.G);
     const seq = d.nextSystemMessageSeq(args.G);
     d.appendChat(args.G, {
       type: 'system',
@@ -462,6 +490,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     args.G.discard.push(card);
     d.syncPlayerState(args.G, playerID);
     d.resetNoPlayablePassStreak(args.G);
+    d.resetEndGameVote(args.G);
     const seq = d.nextSystemMessageSeq(args.G);
     d.appendChat(args.G, {
       type: 'system',
@@ -499,6 +528,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     });
     d.recordResourceFlowStats(args.G, beforeResourcesGlobal);
     d.resetNoPlayablePassStreak(args.G);
+    d.resetEndGameVote(args.G);
     return undefined;
   },
   pass: (args: MoveArgs) => {

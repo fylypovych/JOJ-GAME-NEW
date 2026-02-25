@@ -387,6 +387,20 @@ const getResourceLeader = (G: JojGameState): string | undefined =>
     )
     .at(0)?.[0];
 
+const getRankThenResourceLeader = (G: JojGameState): string | undefined => {
+  const rankIndexById = new Map(getActiveRanks().map((rank, index) => [rank.id, index]));
+  return Object.keys(G.players ?? {})
+    .sort((a, b) => {
+      const rankA = rankIndexById.get(G.ranks[a]) ?? -1;
+      const rankB = rankIndexById.get(G.ranks[b]) ?? -1;
+      if (rankA !== rankB) return rankB - rankA;
+      const scoreA = resourceKeys.reduce((sum, key) => sum + (G.resources[a]?.[key] ?? 0), 0);
+      const scoreB = resourceKeys.reduce((sum, key) => sum + (G.resources[b]?.[key] ?? 0), 0);
+      return scoreB - scoreA;
+    })
+    .at(0);
+};
+
 const snapshotResourceTotals = (G: JojGameState): Record<string, Record<ResourceKey, number>> => {
   const snapshot: Record<string, Record<ResourceKey, number>> = {};
   Object.keys(G.resources ?? {}).forEach((pid) => {
@@ -564,6 +578,11 @@ export const jojGame: Game<JojGameState> = {
         scandalsPlayedOnOthers: 0,
       },
       noPlayablePassStreak: 0,
+      endGameVote: {
+        active: false,
+        requestedBy: null,
+        votes: {},
+      },
     };
 
     players.forEach((playerID) => {
@@ -658,6 +677,9 @@ export const jojGame: Game<JojGameState> = {
     incrementScandalPlayedOnOthers: (G) => {
       G.gameStats.scandalsPlayedOnOthers = (G.gameStats.scandalsPlayedOnOthers ?? 0) + 1;
     },
+    resetEndGameVote: (G) => {
+      G.endGameVote = { active: false, requestedBy: null, votes: {} };
+    },
     computeShieldUntilNextOwnTurn,
     cancelLastLyapOrScandalForPlayer,
     cancelLastScandalForPlayer,
@@ -668,6 +690,14 @@ export const jojGame: Game<JojGameState> = {
     getActiveRanks,
   }),
   endIf: ({ G }) => {
+    if (G.endGameVote?.active) {
+      const playerIDs = Object.keys(G.players ?? {});
+      const allAgreed = playerIDs.length > 0 && playerIDs.every((pid) => G.endGameVote.votes?.[pid] === true);
+      if (allAgreed) {
+        const winner = getWinner(G) ?? getRankThenResourceLeader(G) ?? getResourceLeader(G);
+        return { winner, endReason: 'agreed-end', stats: G.gameStats };
+      }
+    }
     const winner = getWinner(G);
     if (winner) {
       return { winner, endReason: 'winner', stats: G.gameStats };

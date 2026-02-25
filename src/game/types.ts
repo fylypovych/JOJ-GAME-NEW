@@ -78,6 +78,11 @@ export interface JOJState {
     scandalsPlayedOnOthers: number;
   };
   noPlayablePassStreak: number;
+  endGameVote: {
+    active: boolean;
+    requestedBy: string | null;
+    votes: Record<string, boolean>;
+  };
 }
 
 // Backward-compatible aliases for existing code.

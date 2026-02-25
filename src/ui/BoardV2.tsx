@@ -87,6 +87,12 @@ export const BoardV2 = ({
     occupiedSeats: lang === 'uk' ? 'Зайняті місця' : 'Occupied seats',
     blockedReason: lang === 'uk' ? 'Причина блокування' : 'Blocked because',
     compact: lang === 'uk' ? 'Компактний режим' : 'Compact mode',
+    requestEndGame: lang === 'uk' ? 'Завершити гру' : 'End game',
+    endVoteTitle: lang === 'uk' ? 'Пропозиція завершити гру' : 'Proposal to end the game',
+    agreeEndGame: lang === 'uk' ? 'Погоджуюсь' : 'Agree',
+    declineEndGame: lang === 'uk' ? 'Не погоджуюсь' : 'Disagree',
+    endVoteWaiting: lang === 'uk' ? 'Очікуємо відповіді інших гравців...' : 'Waiting for other players...',
+    endVoteDeclinedInfo: lang === 'uk' ? 'Гру буде продовжено, якщо хтось не погодиться.' : 'The game will continue if someone disagrees.',
     selectableTargetHint: lang === 'uk' ? 'Клікніть по гравцю нижче' : 'Click a player below',
     selectableResourceHint: lang === 'uk' ? 'Клікніть по ресурсу нижче' : 'Click a resource below',
     you: lang === 'uk' ? 'Ви' : 'You',
@@ -159,10 +165,7 @@ export const BoardV2 = ({
   const [notice, setNotice] = useState<Notice>(null);
   const [handFilter, setHandFilter] = useState<HandFilter>('all');
   const [handSort, setHandSort] = useState<HandSort>('playable');
-  const [compactMode, setCompactMode] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem('joj-ui-v2-compact') === '1';
-  });
+  const compactMode = false;
   const [sidePanelTab, setSidePanelTab] = useState<SidePanelTab>('events');
   const syncedNameRef = useRef('');
   const syncedNamesSignatureRef = useRef('');
@@ -173,11 +176,6 @@ export const BoardV2 = ({
     const name = G?.playerNames?.[idValue]?.trim() || knownPlayerNames[idValue]?.trim();
     return name || t.genericPlayer;
   };
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem('joj-ui-v2-compact', compactMode ? '1' : '0');
-  }, [compactMode]);
 
   useEffect(() => {
     if (!G || !ctx) return;
@@ -267,6 +265,10 @@ export const BoardV2 = ({
     ? (sharedRanks.find((row) => row.id === winnerRankId)?.name ?? rankLabel(winnerRankId, lang))
     : '';
   const latestEvents = (G?.chat ?? []).slice(-4).reverse();
+  const endGameVote = G?.endGameVote;
+  const endGameVoteActive = Boolean(endGameVote?.active) && !ctx?.gameover;
+  const requestedByLabel = endGameVote?.requestedBy ? playerLabelById(endGameVote.requestedBy) : '';
+  const hasVotedAgree = Boolean(endGameVote?.votes?.[id]);
 
   const handCardsView = useMemo(() => {
     const base = hand.map((card, index) => ({ card, index, playable: false }));
@@ -439,12 +441,41 @@ export const BoardV2 = ({
               {v2.leaveRoom}
             </button>
           ) : null}
-          <label className="game-ui-v2-toggle">
-            <input type="checkbox" checked={compactMode} onChange={(e) => setCompactMode(e.target.checked)} />
-            <span>{v2.compact}</span>
-          </label>
+          <button
+            type="button"
+            className="game-ui-v2-header-leave"
+            onClick={() => {
+              if (typeof (moves as any).requestEndGameVote !== 'function') return;
+              (moves as any).requestEndGameVote();
+            }}
+            disabled={endGameVoteActive || Boolean(ctx?.gameover)}
+          >
+            {v2.requestEndGame}
+          </button>
         </div>
       </header>
+
+      {endGameVoteActive ? (
+        <section className="game-ui-v2-vote-popup" role="dialog" aria-label={v2.endVoteTitle}>
+          <div className="game-ui-v2-vote-popup-card">
+            <h3>{v2.endVoteTitle}</h3>
+            <p className="game-ui-v2-subtle">
+              {lang === 'uk'
+                ? `${requestedByLabel} пропонує завершити гру і перейти до фінальної статистики.`
+                : `${requestedByLabel} proposes to end the game and show final statistics.`}
+            </p>
+            {!hasVotedAgree ? (
+              <div className="game-ui-v2-selection-actions">
+                <button type="button" onClick={() => (moves as any).respondEndGameVote?.(true)}>{v2.agreeEndGame}</button>
+                <button type="button" className="ghost" onClick={() => (moves as any).respondEndGameVote?.(false)}>{v2.declineEndGame}</button>
+              </div>
+            ) : (
+              <p className="game-ui-v2-subtle">{v2.endVoteWaiting}</p>
+            )}
+            <p className="game-ui-v2-subtle">{v2.endVoteDeclinedInfo}</p>
+          </div>
+        </section>
+      ) : null}
 
       <div className="game-ui-v2-grid">
         <div className="game-ui-v2-main">
@@ -810,6 +841,13 @@ export const BoardV2 = ({
                       {lang === 'uk'
                         ? 'Гру завершено автоматично після повного кола пропусків (карт для розіграшу не лишилось).'
                         : 'Game auto-ended after a full round of skips (no playable cards left).'}
+                    </p>
+                  ) : null}
+                  {gameoverMeta?.endReason === 'agreed-end' ? (
+                    <p className="game-ui-v2-subtle">
+                      {lang === 'uk'
+                        ? 'Гру завершено за спільною згодою всіх гравців.'
+                        : 'Game ended by unanimous agreement of all players.'}
                     </p>
                   ) : null}
                   <div className="game-ui-v2-token-list">

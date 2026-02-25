@@ -1706,3 +1706,17 @@ button:disabled {
   margin: 8px 0 0;
   padding-left: 18px;
 }
+
+.game-ui-v2-vote-popup {
+  position: sticky;
+  top: 8px;
+  z-index: 8;
+}
+
+.game-ui-v2-vote-popup-card {
+  border: 1px solid #c7d6ee;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff, #f5f9ff);
+  box-shadow: 0 10px 24px rgba(21, 38, 68, 0.08);
+  padding: 12px;
+}
