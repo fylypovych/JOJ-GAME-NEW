@@ -15,7 +15,7 @@ import { cloneCard } from './cloneUtils';
 import { createEffectsEngine } from './effectsEngine';
 import { createJojMoves, enumerateAiMoves } from './moves';
 import { resourceKeys, resourceLabelsUk } from './resourceMeta';
-import { createRankEngine } from './rankEngine';
+import { createRankEngine, rankSeatLimitForPlayerCount } from './rankEngine';
 import { canPlayHandCardAtStage } from './turnRules';
 import { runGameSimulationsWithDeps, type SimulationOptions, type SimulationReport } from './simulation';
 import { getActiveRanks, getSharedDeckTemplate, getTopRankId, shuffle } from './sharedConfig';
@@ -421,8 +421,54 @@ const resetNoPlayablePassStreak = (G: JojGameState) => {
   G.noPlayablePassStreak = 0;
 };
 
-const hasPlayableCardsByInventory = (G: JojGameState, playerID: string): boolean =>
-  (G.hands[playerID]?.length ?? 0) > 0 || (G.legendaryHands[playerID]?.length ?? 0) > 0;
+const canPromoteToSpecificRankWithoutMutation = (
+  G: JojGameState,
+  playerID: string,
+  targetRankId: string,
+): boolean => {
+  const ranks = getActiveRanks();
+  const playerCount = Object.keys(G.players ?? {}).length || 2;
+  const currentRankId = G.ranks[playerID];
+  const currentRankIdx = Math.max(0, ranks.findIndex((r) => r.id === currentRankId));
+  const targetRankIdx = ranks.findIndex((r) => r.id === targetRankId);
+  if (targetRankIdx <= currentRankIdx) return false;
+  const targetRank = ranks[targetRankIdx];
+  if (!targetRank) return false;
+  const occupied = Object.entries(G.ranks)
+    .filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id)
+    .length;
+  if (occupied >= rankSeatLimitForPlayerCount(playerCount)) return false;
+  const playerResources = G.resources[playerID];
+  return hasResources(playerResources, targetRank.requirement) && hasResources(playerResources, targetRank.cost);
+};
+
+const canPromoteNormallyWithoutMutation = (G: JojGameState, playerID: string): boolean => {
+  if (G.promotedThisTurn[playerID]) return false;
+  const ranks = getActiveRanks();
+  const currentRankId = G.ranks[playerID];
+  const currentRankIdx = Math.max(0, ranks.findIndex((r) => r.id === currentRankId));
+  const nextRank = ranks[currentRankIdx + 1];
+  if (!nextRank) return false;
+  const playerCount = Object.keys(G.players ?? {}).length || 2;
+  const occupied = Object.entries(G.ranks)
+    .filter(([pid, rankId]) => pid !== playerID && rankId === nextRank.id)
+    .length;
+  if (occupied >= rankSeatLimitForPlayerCount(playerCount)) return false;
+  const playerResources = G.resources[playerID];
+  return hasResources(playerResources, nextRank.requirement) && hasResources(playerResources, nextRank.cost);
+};
+
+const hasPlayableCardsByInventory = (G: JojGameState, playerID: string): boolean => {
+  if ((G.legendaryHands[playerID]?.length ?? 0) > 0) return true;
+  const hand = G.hands[playerID] ?? [];
+  for (const card of hand) {
+    if (card.category !== 'VVNZ') return true;
+    if (!card.grantRank) return true;
+    if (canPromoteToSpecificRankWithoutMutation(G, playerID, card.grantRank)) return true;
+  }
+  if (canPromoteNormallyWithoutMutation(G, playerID)) return true;
+  return false;
+};
 
 const shouldCountNoPlayablePass = (G: JojGameState, playerID: string): boolean =>
   (G.deck?.length ?? 0) === 0 && !hasPlayableCardsByInventory(G, playerID);
