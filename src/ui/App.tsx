@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { LobbyClient } from 'boardgame.io/client';
 import { Client } from 'boardgame.io/react';
 import { SocketIO } from 'boardgame.io/multiplayer';
-import type { CardDefinition, RankDefinition } from '../game/types';
+import type { CardDefinition, GameMode, RankDefinition } from '../game/types';
 import {
   addCustomCardToSharedDeckTemplate,
   addCardToSharedDeckTemplate,
@@ -96,6 +96,7 @@ export const App = () => {
   });
   const [playerName, setPlayerName] = useState<string>(() => window.localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ?? '');
   const [roomCapacity, setRoomCapacity] = useState<number>(2);
+  const [gameMode, setGameMode] = useState<GameMode>('standard');
   const [matches, setMatches] = useState<LobbyMatch[]>([]);
   const [adminSelectedMatchID, setAdminSelectedMatchID] = useState<string>('');
   const [session, setSession] = useState<Session | null>(() => parseSession(window.localStorage.getItem(SESSION_STORAGE_KEY)));
@@ -286,6 +287,7 @@ export const App = () => {
     try {
       const result = await lobbyClient.createMatch(GAME_NAME, {
         numPlayers: Math.max(2, Math.min(6, roomCapacity)),
+        setupData: { gameMode },
       });
       const matchID = result.matchID;
       const joined = await lobbyClient.joinMatch(GAME_NAME, matchID, {
@@ -460,13 +462,15 @@ export const App = () => {
     window.localStorage.setItem(GAME_UI_VARIANT_STORAGE_KEY, gameUiVariant);
   }, [gameUiVariant]);
 
+  const isV2Ui = !isAdminRoute && gameUiVariant === 'v2';
+
   return (
-    <main className="app">
+    <main className={`app${isV2Ui ? ' app-v2' : ''}`}>
       <h1>{isAdminRoute ? t.adminTitle : t.gameTitle}</h1>
       {!isAdminRoute ? (
-        <section className="app-top-toolbar">
+        <section className={`app-top-toolbar${isV2Ui ? ' app-top-toolbar-v2' : ''}`}>
           <div className="app-top-toolbar-left">
-            <UserTabs t={t} activeUserTab={activeUserTab} setActiveUserTab={setActiveUserTab} />
+            <UserTabs t={t} activeUserTab={activeUserTab} setActiveUserTab={setActiveUserTab} uiVariant={gameUiVariant} />
           </div>
           <div className="app-top-toolbar-center">
             <a className="app-toolbar-link-button" href="/admin">{t.openAdmin}</a>
@@ -535,12 +539,15 @@ export const App = () => {
           setPlayerName={setPlayerName}
           roomCapacity={roomCapacity}
           setRoomCapacity={setRoomCapacity}
+          gameMode={gameMode}
+          setGameMode={setGameMode}
           createRoom={() => { void createRoom(); }}
           refreshMatches={() => { void refreshMatches(); }}
           loading={loading}
           error={error}
           matches={matches}
           joinRoom={(match) => { void joinRoom(match); }}
+          uiVariant={gameUiVariant}
         />
       ) : null}
 
@@ -553,6 +560,7 @@ export const App = () => {
           canStart={canStart}
           leaveRoom={() => { void leaveRoom(); }}
           loading={loading}
+          uiVariant={gameUiVariant}
         />
       ) : null}
 
@@ -591,11 +599,12 @@ export const App = () => {
           galleryCards={galleryCards}
           galleryCategories={galleryCategories}
           effectLabel={effectLabel}
+          uiVariant={gameUiVariant}
         />
       ) : null}
 
       {!isAdminRoute && activeUserTab === 'rules' ? (
-        <RulesSection t={t} rules={rules} />
+        <RulesSection t={t} rules={rules} uiVariant={gameUiVariant} />
       ) : null}
 
       {isAdminRoute && adminAuthorized ? (

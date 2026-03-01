@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import type { CardDefinition, ResourceKey } from '../game/types';
 import { normalizeImagePath } from '../game/imagePaths';
 import { canPlayHandCardAtStage } from '../game/turnRules';
@@ -22,16 +22,21 @@ export const Board = ({
   const t = text(lang);
   const resourceLabels: Record<ResourceKey, string> = t.resources;
   const id = playerID ?? '0';
+  const isSimplifiedMode = G?.gameMode === 'simplified';
   const hand = G?.hands?.[id] ?? [];
-  const legendaryHand = G?.legendaryHands?.[id] ?? [];
+  const legendaryHand = isSimplifiedMode ? [] : (G?.legendaryHands?.[id] ?? []);
+  const legendaryDraftPool = G?.legendaryDeck ?? [];
+  const draftPending = G?.gameMode === 'standard_plus'
+    && Object.keys(G?.players ?? {}).some((pid) => G?.legendaryDraftCompleted?.[pid] !== true);
+  const myDraftDone = G?.legendaryDraftCompleted?.[id] === true;
   const resources = G?.resources?.[id];
   const rankId = G?.ranks?.[id];
   const rankName = sharedRanks.find((row) => row.id === (rankId ?? ''))?.name ?? rankLabel(rankId ?? '', lang);
   const isCurrentPlayer = ctx?.currentPlayer === id;
   const stage = ctx?.activePlayers?.[id];
-  const canDraw = isCurrentPlayer && stage === 'draw';
-  const canPlay = isCurrentPlayer && (stage === 'play' || stage === 'end');
-  const canEndTurn = isCurrentPlayer && (stage === 'play' || stage === 'end');
+  const canDraw = isCurrentPlayer && !draftPending && stage === 'draw';
+  const canPlay = isCurrentPlayer && !draftPending && (stage === 'play' || stage === 'end');
+  const canEndTurn = isCurrentPlayer && !draftPending && (stage === 'play' || stage === 'end');
   const extraHandPlayTokens = G?.extraHandPlayTokens?.[id] ?? 0;
   const canPlayHandCard = canPlayHandCardAtStage({ isCurrentPlayer, stage, extraHandPlayTokens });
   const handOverflow = Math.max(0, hand.length - 8);
@@ -43,6 +48,8 @@ export const Board = ({
     resource === 'rank' ? t.rankResource : resourceLabels[resource];
   const [chatInput, setChatInput] = useState<string>('');
   const [openPreviewKey, setOpenPreviewKey] = useState<string | null>(null);
+  const [draftSelection, setDraftSelection] = useState<string[]>([]);
+  const [gameoverModalClosed, setGameoverModalClosed] = useState<boolean>(false);
   const syncedNameRef = useRef<string>('');
   const syncedNamesSignatureRef = useRef<string>('');
   const chatLogRef = useRef<HTMLDivElement | null>(null);
@@ -100,6 +107,14 @@ export const Board = ({
     };
   }, []);
 
+  useEffect(() => {
+    setDraftSelection([]);
+  }, [id, ctx?.turn]);
+
+  useEffect(() => {
+    setGameoverModalClosed(false);
+  }, [ctx?.gameover]);
+
   const sendChatMessage = () => {
     const text = chatInput.trim();
     if (!text) return;
@@ -151,7 +166,7 @@ export const Board = ({
   const hasPlayableLegendaryCard = canPlay && typeof moves.playLegendaryCard === 'function' && legendaryHand.length > 0;
   const shouldShowSkipTurnLabel = (G.deck?.length ?? 0) === 0 && !hasPlayableHandCard && !hasPlayableLegendaryCard;
   const passButtonLabel = shouldShowSkipTurnLabel
-    ? (lang === 'uk' ? 'Пропустити хід' : 'Skip turn')
+    ? (lang === 'uk' ? 'РџСЂРѕРїСѓСЃС‚РёС‚Рё С…С–Рґ' : 'Skip turn')
     : t.endTurn;
   const gameoverMeta = (ctx?.gameover ?? null) as { winner?: string; endReason?: string } | null;
   const winnerPlayerID = gameoverMeta?.winner ? String(gameoverMeta.winner) : '';
@@ -200,6 +215,48 @@ export const Board = ({
       </div>
 
       <h2>{t.boardArea}</h2>
+      {draftPending && !myDraftDone ? (
+        <div className="board-status">
+          <h3>{lang === 'uk' ? 'Вибір легендарних карт (5)' : 'Legendary selection (5)'}</h3>
+          <div className="hand">
+            {legendaryDraftPool.map((card) => {
+              const selected = draftSelection.includes(card.id);
+              return (
+                <GameCardTile
+                  key={`draft-${card.id}`}
+                  card={card}
+                  lang={lang}
+                  categoryText={t.legendaryDeckLabel}
+                  openPreviewKey={openPreviewKey}
+                  previewKey={`draft-${card.id}`}
+                  onTogglePreview={togglePreview}
+                  onClosePreview={() => setOpenPreviewKey(null)}
+                  actionLabel={selected ? (lang === 'uk' ? 'Прибрати' : 'Remove') : (lang === 'uk' ? 'Обрати' : 'Select')}
+                  onAction={() => {
+                    setDraftSelection((prev) => {
+                      if (prev.includes(card.id)) return prev.filter((idValue) => idValue !== card.id);
+                      if (prev.length >= 5) return prev;
+                      return [...prev, card.id];
+                    });
+                  }}
+                  actionDisabled={false}
+                  effectLabel={effectLabel}
+                />
+              );
+            })}
+          </div>
+          <p>{lang === 'uk' ? 'Обрано' : 'Selected'}: {draftSelection.length}/5</p>
+          <button
+            type="button"
+            disabled={draftSelection.length !== 5 || typeof (moves as any).selectLegendaryLoadout !== 'function'}
+            onClick={() => {
+              (moves as any).selectLegendaryLoadout?.(draftSelection);
+            }}
+          >
+            {lang === 'uk' ? 'Підтвердити вибір' : 'Confirm selection'}
+          </button>
+        </div>
+      ) : null}
       <div className="play-area">
         <div className="pile pile-actions">
           <p>{lang === 'uk' ? 'Дії' : 'Actions'}</p>
@@ -272,7 +329,7 @@ export const Board = ({
       {mustDiscardOverflow ? (
         <p className="legendary-hint">
           {lang === 'uk'
-            ? `Наприкінці ходу потрібно скинути ${handOverflow} карт(и) до ліміту 8. ЛЯП/СКАНДАЛ скидати кнопкою не можна.`
+            ? `РќР°РїСЂРёРєС–РЅС†С– С…РѕРґСѓ РїРѕС‚СЂС–Р±РЅРѕ СЃРєРёРЅСѓС‚Рё ${handOverflow} РєР°СЂС‚(Рё) РґРѕ Р»С–РјС–С‚Сѓ 8. Р›РЇРџ/РЎРљРђРќР”РђР› СЃРєРёРґР°С‚Рё РєРЅРѕРїРєРѕСЋ РЅРµ РјРѕР¶РЅР°.`
             : `Before ending the turn, discard ${handOverflow} card(s) to return to the hand limit of 8. LYAP/SCANDAL cannot be discarded with this button.`}
         </p>
       ) : null}
@@ -303,7 +360,7 @@ export const Board = ({
               }}
               actionDisabled={!canPlayHandCard}
               extraAction={canDiscardThisCard ? {
-                label: lang === 'uk' ? 'СКИНУТИ В СКИД' : 'DISCARD TO PILE',
+                label: lang === 'uk' ? 'РЎРљРРќРЈРўР Р’ РЎРљРР”' : 'DISCARD TO PILE',
                 onClick: () => moves.discardFromHand(card.id),
                 disabled: typeof moves.discardFromHand !== 'function',
                 className: 'game-card-inline-discard',
@@ -314,66 +371,75 @@ export const Board = ({
         })}
       </div>
 
-      <h2>{t.legendaryHand} ({legendaryHand.length})</h2>
-      <p className="legendary-hint">{t.legendaryHandHint}</p>
-      <div className="hand">
-        {legendaryHand.map((card) => {
-          return (
-            <GameCardTile
-              key={`legendary-${card.id}`}
-              card={card}
-              lang={lang}
-              categoryText={t.legendaryDeckLabel}
-              openPreviewKey={openPreviewKey}
-              previewKey={`legendary-${card.id}`}
-              onTogglePreview={togglePreview}
-              onClosePreview={() => setOpenPreviewKey(null)}
-              actionLabel={t.playLegendaryCard}
-              onAction={() => {
-                const target = card.id === 'legendary-10' ? promptDroneTarget() : undefined;
-                if (card.id === 'legendary-10' && !target) return;
-                const needsResourceChoice = card.id === 'legendary-09' || card.id === 'legendary-06';
-                const selectedResource = needsResourceChoice ? promptWaterResource() : undefined;
-                if (needsResourceChoice && !selectedResource) return;
-                moves.playLegendaryCard(card.id, target, selectedResource ?? undefined);
-              }}
-              actionDisabled={typeof moves.playLegendaryCard !== 'function'}
-              effectLabel={effectLabel}
-            />
-          );
-        })}
-      </div>
-      <p>
-        {t.legendaryDiscardPile}: {G.legendaryDiscard?.length ?? 0}
-        {lastLegendaryDiscard ? ` | ${t.lastPlayedCard}: ${cardTitle(lastLegendaryDiscard.id, lastLegendaryDiscard.title, lang)}` : ''}
-      </p>
+      {!isSimplifiedMode ? (
+        <>
+          <h2>{t.legendaryHand} ({legendaryHand.length})</h2>
+          <p className="legendary-hint">{t.legendaryHandHint}</p>
+          <div className="hand">
+            {legendaryHand.map((card) => {
+              return (
+                <GameCardTile
+                  key={`legendary-${card.id}`}
+                  card={card}
+                  lang={lang}
+                  categoryText={t.legendaryDeckLabel}
+                  openPreviewKey={openPreviewKey}
+                  previewKey={`legendary-${card.id}`}
+                  onTogglePreview={togglePreview}
+                  onClosePreview={() => setOpenPreviewKey(null)}
+                  actionLabel={t.playLegendaryCard}
+                  onAction={() => {
+                    const target = card.id === 'legendary-10' ? promptDroneTarget() : undefined;
+                    if (card.id === 'legendary-10' && !target) return;
+                    const needsResourceChoice = card.id === 'legendary-09' || card.id === 'legendary-06';
+                    const selectedResource = needsResourceChoice ? promptWaterResource() : undefined;
+                    if (needsResourceChoice && !selectedResource) return;
+                    moves.playLegendaryCard(card.id, target, selectedResource ?? undefined);
+                  }}
+                  actionDisabled={typeof moves.playLegendaryCard !== 'function'}
+                  effectLabel={effectLabel}
+                />
+              );
+            })}
+          </div>
+          <p>
+            {t.legendaryDiscardPile}: {G.legendaryDiscard?.length ?? 0}
+            {lastLegendaryDiscard ? ` | ${t.lastPlayedCard}: ${cardTitle(lastLegendaryDiscard.id, lastLegendaryDiscard.title, lang)}` : ''}
+          </p>
+        </>
+      ) : null}
 
       {ctx.gameover ? (
         <>
           <p className="gameover">{t.winner}: {playerLabelById(String(ctx.gameover.winner ?? ''))}</p>
-          <div className="gameover-modal" role="dialog" aria-label={lang === 'uk' ? 'Статистика гри' : 'Game statistics'}>
+          {!gameoverModalClosed ? (
+          <div className="gameover-modal" role="dialog" aria-label={lang === 'uk' ? 'РЎС‚Р°С‚РёСЃС‚РёРєР° РіСЂРё' : 'Game statistics'}>
             <div className="gameover-modal-card">
-              <h3>{lang === 'uk' ? 'Статистика гри' : 'Game statistics'}</h3>
+              <h3>{lang === 'uk' ? 'РЎС‚Р°С‚РёСЃС‚РёРєР° РіСЂРё' : 'Game statistics'}</h3>
               <p>
-                <strong>{lang === 'uk' ? 'Переможець' : 'Winner'}:</strong> {playerLabelById(winnerPlayerID)}
+                <strong>{lang === 'uk' ? 'РџРµСЂРµРјРѕР¶РµС†СЊ' : 'Winner'}:</strong> {playerLabelById(winnerPlayerID)}
                 {winnerRankName ? ` (${winnerRankName})` : ''}
               </p>
               {gameoverMeta?.endReason === 'stalled-no-cards' ? (
                 <p className="legendary-hint">
                   {lang === 'uk'
-                    ? 'Гру завершено автоматично після повного кола пропусків (карт для розіграшу не лишилось).'
+                    ? 'Р“СЂСѓ Р·Р°РІРµСЂС€РµРЅРѕ Р°РІС‚РѕРјР°С‚РёС‡РЅРѕ РїС–СЃР»СЏ РїРѕРІРЅРѕРіРѕ РєРѕР»Р° РїСЂРѕРїСѓСЃРєС–РІ (РєР°СЂС‚ РґР»СЏ СЂРѕР·С–РіСЂР°С€Сѓ РЅРµ Р»РёС€РёР»РѕСЃСЊ).'
                     : 'Game auto-ended after a full round of skips (no playable cards left).'}
                 </p>
               ) : null}
               <ul className="gameover-stats-list">
-                <li>{lang === 'uk' ? 'Усього ходів' : 'Total turns'}: <strong>{G.gameStats?.turnsCompleted ?? 0}</strong></li>
-                <li>{lang === 'uk' ? 'Отримано ресурсів (усього)' : 'Resources gained (total)'}: <strong>{G.gameStats?.resourcesGainedTotal ?? 0}</strong></li>
-                <li>{lang === 'uk' ? 'Втрачено ресурсів (усього)' : 'Resources lost (total)'}: <strong>{G.gameStats?.resourcesLostTotal ?? 0}</strong></li>
-                <li>{lang === 'uk' ? 'ЛЯПів зіграно на інших' : 'LYAPs played on others'}: <strong>{G.gameStats?.lyapsPlayedOnOthers ?? 0}</strong></li>
-                <li>{lang === 'uk' ? 'СКАНДАЛів зіграно на інших' : 'SCANDALs played on others'}: <strong>{G.gameStats?.scandalsPlayedOnOthers ?? 0}</strong></li>
+                <li>{lang === 'uk' ? 'РЈСЃСЊРѕРіРѕ С…РѕРґС–РІ' : 'Total turns'}: <strong>{G.gameStats?.turnsCompleted ?? 0}</strong></li>
+                <li>{lang === 'uk' ? 'РћС‚СЂРёРјР°РЅРѕ СЂРµСЃСѓСЂСЃС–РІ (СѓСЃСЊРѕРіРѕ)' : 'Resources gained (total)'}: <strong>{G.gameStats?.resourcesGainedTotal ?? 0}</strong></li>
+                <li>{lang === 'uk' ? 'Р’С‚СЂР°С‡РµРЅРѕ СЂРµСЃСѓСЂСЃС–РІ (СѓСЃСЊРѕРіРѕ)' : 'Resources lost (total)'}: <strong>{G.gameStats?.resourcesLostTotal ?? 0}</strong></li>
+                <li>{lang === 'uk' ? 'Р›РЇРџС–РІ Р·С–РіСЂР°РЅРѕ РЅР° С–РЅС€РёС…' : 'LYAPs played on others'}: <strong>{G.gameStats?.lyapsPlayedOnOthers ?? 0}</strong></li>
+                <li>{lang === 'uk' ? 'РЎРљРђРќР”РђР›С–РІ Р·С–РіСЂР°РЅРѕ РЅР° С–РЅС€РёС…' : 'SCANDALs played on others'}: <strong>{G.gameStats?.scandalsPlayedOnOthers ?? 0}</strong></li>
               </ul>
+              <button type="button" onClick={() => setGameoverModalClosed(true)}>
+                {t.close}
+              </button>
             </div>
           </div>
+          ) : null}
         </>
       ) : null}
       </div>
@@ -390,3 +456,5 @@ export const Board = ({
     </section>
   );
 };
+
+

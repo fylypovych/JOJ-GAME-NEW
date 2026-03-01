@@ -295,10 +295,12 @@ const simulateSingleMatch = (
   const playerIDs = Array.from({ length: numPlayers }, (_, i) => String(i));
   const sharedDeckTemplate = deps.getSharedDeckTemplate();
   const G: JojGameState = {
+    gameMode: 'standard',
     deck: deps.shuffle(sharedDeckTemplate.deck.map(deps.cloneCard)),
     discard: [],
     legendaryDeck: deps.shuffle(sharedDeckTemplate.legendaryDeck.map(deps.cloneCard)),
     legendaryDiscard: [],
+    legendaryDraftCompleted: {},
     deckBackImage: sharedDeckTemplate.deckBackImage,
     systemMessageSeq: 0,
     playerNames: {},
@@ -342,6 +344,7 @@ const simulateSingleMatch = (
     G.extraHandPlayTokens[pid] = 0;
     G.sukhpayZsuWatchUntilTurn[pid] = 0;
     G.sukhpayZsuPendingBonus[pid] = false;
+    G.legendaryDraftCompleted[pid] = true;
     deps.drawCards(G, pid, deps.startingHandSize);
     deps.drawLegendaryCards(G, pid, deps.startingLegendaryHandSize);
     deps.syncPlayerState(G, pid);

@@ -23,10 +23,12 @@ export const createSimulationState = (
 ): JojGameState => {
   const sharedDeckTemplate = deps.getSharedDeckTemplate();
   const G: JojGameState = {
+    gameMode: 'standard',
     deck: options.useMainDeck ? deps.shuffle(sharedDeckTemplate.deck.map(deps.cloneCard)) : [],
     discard: [],
     legendaryDeck: options.useLegendaryDeck ? deps.shuffle(sharedDeckTemplate.legendaryDeck.map(deps.cloneCard)) : [],
     legendaryDiscard: [],
+    legendaryDraftCompleted: {},
     deckBackImage: sharedDeckTemplate.deckBackImage,
     systemMessageSeq: 0,
     playerNames: {},
@@ -70,6 +72,7 @@ export const createSimulationState = (
     G.extraHandPlayTokens[pid] = 0;
     G.sukhpayZsuWatchUntilTurn[pid] = 0;
     G.sukhpayZsuPendingBonus[pid] = false;
+    G.legendaryDraftCompleted[pid] = true;
     if (options.useMainDeck) deps.drawCards(G, pid, deps.startingHandSize);
     if (options.useLegendaryDeck) deps.drawLegendaryCards(G, pid, deps.startingLegendaryHandSize);
     deps.syncPlayerState(G, pid);

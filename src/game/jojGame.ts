@@ -19,7 +19,7 @@ import { createRankEngine, rankSeatLimitForPlayerCount } from './rankEngine';
 import { canPlayHandCardAtStage } from './turnRules';
 import { runGameSimulationsWithDeps, type SimulationOptions, type SimulationReport } from './simulation';
 import { getActiveRanks, getSharedDeckTemplate, getTopRankId, shuffle } from './sharedConfig';
-import type { CardDefinition, JojGameState, ResourceKey } from './types';
+import type { CardDefinition, GameMode, JojGameState, ResourceKey } from './types';
 export {
   addCardToSharedDeckTemplate,
   addCustomCardToSharedDeckTemplate,
@@ -43,11 +43,22 @@ const INVALID_MOVE = 'INVALID_MOVE' as const;
 const STARTING_HAND_SIZE = 5;
 const STARTING_LEGENDARY_HAND_SIZE = 5;
 const HAND_LIMIT = 8;
+const GAME_MODE_STANDARD: GameMode = 'standard';
+const GAME_MODE_STANDARD_PLUS: GameMode = 'standard_plus';
+const GAME_MODE_SIMPLIFIED: GameMode = 'simplified';
 const DRAW_STAGE = 'draw';
 const PLAY_STAGE = 'play';
 const END_STAGE = 'end';
 const IDLE_STAGE = 'idle';
 const CHAT_LIMIT = 200;
+
+const resolveGameMode = (setupData: unknown): GameMode => {
+  if (!setupData || typeof setupData !== 'object') return GAME_MODE_STANDARD;
+  const rawMode = (setupData as { gameMode?: unknown }).gameMode;
+  if (rawMode === GAME_MODE_STANDARD_PLUS) return GAME_MODE_STANDARD_PLUS;
+  if (rawMode === GAME_MODE_SIMPLIFIED) return GAME_MODE_SIMPLIFIED;
+  return GAME_MODE_STANDARD;
+};
 
 
 const appendChat = (
@@ -532,16 +543,26 @@ export const jojGame: Game<JojGameState> = {
   name: 'joj-game',
   minPlayers: 2,
   maxPlayers: 6,
-  setup: ({ ctx }) => {
+  setup: ({ ctx }, setupData) => {
     const players = [...ctx.playOrder];
     const template = getSharedDeckTemplate();
-    const deck = shuffle(template.deck.map(cloneCard));
+    const gameMode = resolveGameMode(setupData);
+    const mergedDeckSource = gameMode === GAME_MODE_SIMPLIFIED
+      ? [...template.deck, ...template.legendaryDeck]
+      : template.deck;
+    const deck = shuffle(mergedDeckSource.map(cloneCard));
 
     const state: JojGameState = {
+      gameMode,
       deck,
       discard: [],
-      legendaryDeck: shuffle(template.legendaryDeck.map(cloneCard)),
+      legendaryDeck: gameMode === GAME_MODE_SIMPLIFIED
+        ? []
+        : gameMode === GAME_MODE_STANDARD_PLUS
+          ? template.legendaryDeck.map(cloneCard)
+          : shuffle(template.legendaryDeck.map(cloneCard)),
       legendaryDiscard: [],
+      legendaryDraftCompleted: {},
       deckBackImage: template.deckBackImage,
       systemMessageSeq: 0,
       playerNames: {},
@@ -606,9 +627,12 @@ export const jojGame: Game<JojGameState> = {
       state.extraHandPlayTokens[playerID] = 0;
       state.sukhpayZsuWatchUntilTurn[playerID] = 0;
       state.sukhpayZsuPendingBonus[playerID] = false;
+      state.legendaryDraftCompleted[playerID] = gameMode === GAME_MODE_STANDARD;
       state.playerNames[playerID] = '';
       drawCards(state, playerID, STARTING_HAND_SIZE);
-      drawLegendaryCards(state, playerID, STARTING_LEGENDARY_HAND_SIZE);
+      if (gameMode === GAME_MODE_STANDARD) {
+        drawLegendaryCards(state, playerID, STARTING_LEGENDARY_HAND_SIZE);
+      }
     });
 
     return state;

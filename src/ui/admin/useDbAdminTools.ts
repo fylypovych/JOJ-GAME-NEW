@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AdminDbConfigDraft, AdminStorageMode } from './types';
 import type { Language } from '../i18n';
 
@@ -65,6 +65,11 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
   const [dbRestoreBackupStatus, setDbRestoreBackupStatus] = useState<string>('');
   const [dbRestoreBackupError, setDbRestoreBackupError] = useState<string>('');
   const [dbRestoreBackupRunning, setDbRestoreBackupRunning] = useState<boolean>(false);
+  const adminFetchRef = useRef(adminFetch);
+
+  useEffect(() => {
+    adminFetchRef.current = adminFetch;
+  }, [adminFetch]);
 
   const downloadTextFile = (filename: string, content: string, mime = 'text/plain;charset=utf-8') => {
     const blob = new Blob([content], { type: mime });
@@ -89,7 +94,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
     let cancelled = false;
     const loadServerDbUiConfig = async () => {
       try {
-        const response = await adminFetch(ADMIN_DB_UI_CONFIG_API);
+        const response = await adminFetchRef.current(ADMIN_DB_UI_CONFIG_API);
         const payload = (await response.json()) as {
           ok?: boolean;
           storageMode?: 'file' | 'db';
@@ -117,12 +122,12 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
     return () => {
       cancelled = true;
     };
-  }, [ADMIN_DB_UI_CONFIG_API, adminFetch]);
+  }, [ADMIN_DB_UI_CONFIG_API]);
 
   useEffect(() => {
     void (async () => {
       try {
-        await adminFetch(ADMIN_DB_UI_CONFIG_API, {
+        await adminFetchRef.current(ADMIN_DB_UI_CONFIG_API, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -134,7 +139,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
         // localStorage still preserves mode on same browser
       }
     })();
-  }, [ADMIN_DB_UI_CONFIG_API, adminFetch, adminStorageMode]);
+  }, [ADMIN_DB_UI_CONFIG_API, adminStorageMode]);
 
   const saveDbConfigDraftAndServer = () => {
     saveDbConfigDraft();

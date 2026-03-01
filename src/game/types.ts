@@ -10,6 +10,8 @@ export type CardCategory =
   | 'VVNZ'
   | 'LEGENDARY';
 
+export type GameMode = 'standard' | 'standard_plus' | 'simplified';
+
 export interface PlayerState {
   hand: Card[];
   rankId: string;
@@ -44,10 +46,12 @@ export interface Rank {
 }
 
 export interface JOJState {
+  gameMode: GameMode;
   deck: Card[];
   discard: Card[];
   legendaryDeck: Card[];
   legendaryDiscard: Card[];
+  legendaryDraftCompleted: Record<string, boolean>;
   deckBackImage?: string;
   systemMessageSeq: number;
   playerNames: Record<string, string>;

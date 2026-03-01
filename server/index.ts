@@ -60,7 +60,7 @@ const templatePath = path.resolve(appRootDir, 'database', 'shared-deck-template.
 const ranksPath = path.resolve(appRootDir, 'database', 'shared-ranks.json');
 const uploadsDir = path.resolve(appRootDir, 'public', 'cards');
 const repoDir = appRootDir;
-const devRestartTouchPath = path.resolve(appRootDir, 'server', '.restart-touch');
+const devRestartTouchPath = path.resolve(appRootDir, 'server', 'restart.touch');
 const dbSchemaPath = path.resolve(appRootDir, 'db', 'schema', 'db.sql');
 const adminDbUiConfigPath = path.resolve(appRootDir, 'database', 'admin-db-ui-config.json');
 

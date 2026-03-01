@@ -301,21 +301,21 @@ export const registerAdminRoutes = ({
       process.env.name === 'joj-game-server';
     await logLine('WARN', `admin requested server restart (pm2Managed=${isPm2Managed ? 'yes' : 'no'})`);
     if (!isPm2Managed) {
-      try {
-        await mkdir(path.dirname(devRestartTouchPath), { recursive: true });
-        await writeFile(devRestartTouchPath, `${Date.now()}\n`, 'utf8');
-        ctx.body = { ok: true, message: 'Dev server restart triggered (file watch)' };
-      } catch (error) {
-        ctx.status = 500;
-        ctx.body = { ok: false, error: 'Failed to trigger watch-mode restart' };
-        await logLine('ERROR', `dev restart trigger failed: ${String(error)}`);
-      }
+      ctx.body = { ok: true, message: 'Dev server restart scheduled (file watch)' };
+      setTimeout(async () => {
+        try {
+          await mkdir(path.dirname(devRestartTouchPath), { recursive: true });
+          await writeFile(devRestartTouchPath, `${Date.now()}\n`, 'utf8');
+        } catch (error) {
+          await logLine('ERROR', `dev restart trigger failed: ${String(error)}`);
+        }
+      }, 250);
       return;
     }
     ctx.body = { ok: true, message: 'Server restart scheduled' };
     setTimeout(() => {
       process.exit(0);
-    }, 150);
+    }, 400);
   });
 
   router.post('/api/admin/git/update', async (ctx: RouteCtx) => {

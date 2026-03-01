@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition } from '../../game/types';
+import type { GameMode } from '../../game/types';
 import type { Language } from '../i18n';
 import { cardFlavor, cardTitleWithOverride, categoryLabel, text } from '../i18n';
 import type { GalleryCategoryFilter, LobbyMatch, UserTab } from './model';
@@ -61,10 +62,11 @@ type UserTabsProps = {
   t: T;
   activeUserTab: UserTab;
   setActiveUserTab: (tab: UserTab) => void;
+  uiVariant?: 'v1' | 'v2';
 };
 
-export const UserTabs = ({ t, activeUserTab, setActiveUserTab }: UserTabsProps) => (
-  <p className="user-tabs">
+export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v1' }: UserTabsProps) => (
+  <p className={`user-tabs${uiVariant === 'v2' ? ' user-tabs-v2' : ''}`}>
     <button type="button" onClick={() => setActiveUserTab('games')} disabled={activeUserTab === 'games'}>
       {t.userTabGames}
     </button>
@@ -83,12 +85,15 @@ type LobbySectionProps = {
   setPlayerName: (value: string) => void;
   roomCapacity: number;
   setRoomCapacity: (value: number) => void;
+  gameMode: GameMode;
+  setGameMode: (value: GameMode) => void;
   createRoom: () => void;
   refreshMatches: () => void;
   loading: boolean;
   error: string;
   matches: LobbyMatch[];
   joinRoom: (match: LobbyMatch) => void;
+  uiVariant?: 'v1' | 'v2';
 };
 
 export const LobbySection = ({
@@ -97,14 +102,17 @@ export const LobbySection = ({
   setPlayerName,
   roomCapacity,
   setRoomCapacity,
+  gameMode,
+  setGameMode,
   createRoom,
   refreshMatches,
   loading,
   error,
   matches,
   joinRoom,
+  uiVariant = 'v1',
 }: LobbySectionProps) => (
-  <section className="board">
+  <section className={`board${uiVariant === 'v2' ? ' board-v2-panel' : ''}`}>
     <h2>{t.lobbyTitle}</h2>
     <p>
       {t.playerName}:{' '}
@@ -122,6 +130,12 @@ export const LobbySection = ({
         <option value={4}>4</option>
         <option value={5}>5</option>
         <option value={6}>6</option>
+      </select>{' '}
+      {t.gameModeLabel}:{' '}
+      <select value={gameMode} onChange={(e) => setGameMode(e.target.value as GameMode)}>
+        <option value="standard">{t.gameModeStandard}</option>
+        <option value="standard_plus">{t.gameModeStandardPlus}</option>
+        <option value="simplified">{t.gameModeSimplified}</option>
       </select>{' '}
       <button type="button" onClick={createRoom} disabled={!playerName.trim() || loading}>
         {t.createRoom}
@@ -164,6 +178,7 @@ type ActiveSessionSectionProps = {
   canStart: boolean;
   leaveRoom: () => void;
   loading: boolean;
+  uiVariant?: 'v1' | 'v2';
 };
 
 export const ActiveSessionSection = ({
@@ -174,8 +189,9 @@ export const ActiveSessionSection = ({
   canStart,
   leaveRoom,
   loading,
+  uiVariant = 'v1',
 }: ActiveSessionSectionProps) => (
-  <section className="board">
+  <section className={`board${uiVariant === 'v2' ? ' board-v2-panel' : ''}`}>
     <h2>
       {t.activeRoom}: {session.matchID}
     </h2>
@@ -198,6 +214,7 @@ type GallerySectionProps = {
   galleryCards: CardDefinition[];
   galleryCategories: CardDefinition['category'][];
   effectLabel: (resource: 'time' | 'reputation' | 'discipline' | 'documents' | 'tech' | 'rank') => string;
+  uiVariant?: 'v1' | 'v2';
 };
 
 export const GallerySection = ({
@@ -208,15 +225,16 @@ export const GallerySection = ({
   galleryCards,
   galleryCategories,
   effectLabel,
+  uiVariant = 'v1',
 }: GallerySectionProps) => {
   const [openPreviewKey, setOpenPreviewKey] = useState<string | null>(null);
   const togglePreview = (key: string) => setOpenPreviewKey((prev) => (prev === key ? null : key));
 
   return (
-    <section className="board">
+    <section className={`board${uiVariant === 'v2' ? ' board-v2-panel board-v2-gallery' : ''}`}>
       <h2>{t.galleryTitle}</h2>
       <p>{t.galleryDescription}</p>
-      <p className="gallery-category-tabs">
+      <p className={`gallery-category-tabs${uiVariant === 'v2' ? ' gallery-category-tabs-v2' : ''}`}>
       <button
         type="button"
         onClick={() => setGalleryCategoryFilter('ALL')}
@@ -236,7 +254,7 @@ export const GallerySection = ({
       ))}
       </p>
       {galleryCards.length === 0 ? <p>{t.noCardsYet}</p> : null}
-      <div className="gallery-grid">
+      <div className={`gallery-grid${uiVariant === 'v2' ? ' gallery-grid-v2' : ''}`}>
         {galleryCards.map((card) => {
           const previewKey = `gallery-${card.id}`;
           const isOpen = openPreviewKey === previewKey;
@@ -297,10 +315,14 @@ export const GallerySection = ({
   );
 };
 
-export const RulesSection = ({ t, rules }: { t: T; rules: readonly string[] }) => (
-  <section className="board">
+export const RulesSection = ({
+  t,
+  rules,
+  uiVariant = 'v1',
+}: { t: T; rules: readonly string[]; uiVariant?: 'v1' | 'v2' }) => (
+  <section className={`board${uiVariant === 'v2' ? ' board-v2-panel board-v2-rules' : ''}`}>
     <h2>{t.rulesTitle}</h2>
-    <ol className="rules-list">
+    <ol className={`rules-list${uiVariant === 'v2' ? ' rules-list-v2' : ''}`}>
       {rules.map((rule, index) => (
         <li key={`rule-${index}`}>{rule}</li>
       ))}

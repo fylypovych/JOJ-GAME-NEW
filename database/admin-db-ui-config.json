@@ -1,0 +1,12 @@
+{
+  "storageMode": "file",
+  "dbConfig": {
+    "host": "127.0.0.1",
+    "port": "5432",
+    "database": "joj_game",
+    "user": "joj_user",
+    "password": "",
+    "sslMode": "disable"
+  },
+  "updatedAt": 1772382896896
+}
