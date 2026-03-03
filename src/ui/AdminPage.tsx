@@ -970,7 +970,6 @@ export const AdminPage = ({
       {activeTab === 'ranks' ? (
         <AdminRanksTab
           t={t}
-          lang={lang}
           exportRanksToFile={exportRanksToFile}
           importRanks={importRanks}
           importRanksFromFile={importRanksFromFile}

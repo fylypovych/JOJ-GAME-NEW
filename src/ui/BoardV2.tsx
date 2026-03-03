@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from '../game/types';
 import { normalizeImagePath } from '../game/imagePaths';
 import { canPlayHandCardAtStage } from '../game/turnRules';
@@ -61,83 +61,7 @@ export const BoardV2 = ({
   onStateChange,
 }: LocalizedBoardProps) => {
   const t = text(lang);
-  const v2 = {
-    commandCenter: lang === 'uk' ? 'РџСѓР»СЊС‚ С…РѕРґСѓ' : 'Command center',
-    whatNow: lang === 'uk' ? 'Р©Рѕ РјРѕР¶РЅР° Р·СЂРѕР±РёС‚Рё Р·Р°СЂР°Р·' : 'Available actions now',
-    handFilter: lang === 'uk' ? 'Р¤С–Р»СЊС‚СЂ СЂСѓРєРё' : 'Hand filter',
-    handSort: lang === 'uk' ? 'РЎРѕСЂС‚СѓРІР°РЅРЅСЏ' : 'Sort',
-    filterAll: lang === 'uk' ? 'РЈСЃС–' : 'All',
-    filterPlayable: lang === 'uk' ? 'РњРѕР¶РЅР° Р·С–РіСЂР°С‚Рё' : 'Playable',
-    sortDefault: lang === 'uk' ? 'РЇРє Сѓ СЂСѓС†С–' : 'Default',
-    sortPlayable: lang === 'uk' ? 'РЎРїРѕС‡Р°С‚РєСѓ playable' : 'Playable first',
-    sortCategory: lang === 'uk' ? 'Р—Р° РєР°С‚РµРіРѕСЂС–С”СЋ' : 'By category',
-    sortTitle: lang === 'uk' ? 'Р—Р° РЅР°Р·РІРѕСЋ' : 'By title',
-    pickTarget: lang === 'uk' ? 'РћР±РµСЂС–С‚СЊ С†С–Р»СЊ' : 'Choose target',
-    pickResource: lang === 'uk' ? 'РћР±РµСЂС–С‚СЊ СЂРµСЃСѓСЂСЃ' : 'Choose resource',
-    cancel: lang === 'uk' ? 'РЎРєР°СЃСѓРІР°С‚Рё' : 'Cancel',
-    confirmDrawFirst: lang === 'uk' ? 'РЎРїРѕС‡Р°С‚РєСѓ РґРѕР±РµСЂС–С‚СЊ РєР°СЂС‚Сѓ РЅР° РµС‚Р°РїС– РґРѕР±РѕСЂСѓ.' : 'Draw first during the draw stage.',
-    actionUnavailable: lang === 'uk' ? 'Р—Р°СЂР°Р· С†СЏ РґС–СЏ РЅРµРґРѕСЃС‚СѓРїРЅР°.' : 'This action is unavailable now.',
-    targetRequired: lang === 'uk' ? 'РЎРїРµСЂС€Сѓ РѕР±РµСЂС–С‚СЊ С†С–Р»СЊ РЅРёР¶С‡Рµ.' : 'Choose a target below first.',
-    resourceRequired: lang === 'uk' ? 'РЎРїРµСЂС€Сѓ РѕР±РµСЂС–С‚СЊ СЂРµСЃСѓСЂСЃ РЅРёР¶С‡Рµ.' : 'Choose a resource below first.',
-    recentEvents: lang === 'uk' ? 'РћСЃС‚Р°РЅРЅС– РїРѕРґС–С—' : 'Recent events',
-    tableState: lang === 'uk' ? 'РЎС‚С–Р»' : 'Table',
-    playersOverview: lang === 'uk' ? 'Р“СЂР°РІС†С–' : 'Players',
-    nextRankProgress: lang === 'uk' ? 'РџСЂРѕРіСЂРµСЃ РґРѕ РЅР°СЃС‚СѓРїРЅРѕРіРѕ Р·РІР°РЅРЅСЏ' : 'Next rank progress',
-    noNextRank: lang === 'uk' ? 'РќР°СЃС‚СѓРїРЅРѕРіРѕ Р·РІР°РЅРЅСЏ РЅРµРјР°С”' : 'No next rank',
-    occupiedSeats: lang === 'uk' ? 'Р—Р°Р№РЅСЏС‚С– РјС–СЃС†СЏ' : 'Occupied seats',
-    blockedReason: lang === 'uk' ? 'РџСЂРёС‡РёРЅР° Р±Р»РѕРєСѓРІР°РЅРЅСЏ' : 'Blocked because',
-    compact: lang === 'uk' ? 'РљРѕРјРїР°РєС‚РЅРёР№ СЂРµР¶РёРј' : 'Compact mode',
-    requestEndGame: lang === 'uk' ? 'Р—Р°РІРµСЂС€РёС‚Рё РіСЂСѓ' : 'End game',
-    endVoteTitle: lang === 'uk' ? 'РџСЂРѕРїРѕР·РёС†С–СЏ Р·Р°РІРµСЂС€РёС‚Рё РіСЂСѓ' : 'Proposal to end the game',
-    agreeEndGame: lang === 'uk' ? 'РџРѕРіРѕРґР¶СѓСЋСЃСЊ' : 'Agree',
-    declineEndGame: lang === 'uk' ? 'РќРµ РїРѕРіРѕРґР¶СѓСЋСЃСЊ' : 'Disagree',
-    endVoteWaiting: lang === 'uk' ? 'РћС‡С–РєСѓС”РјРѕ РІС–РґРїРѕРІС–РґС– С–РЅС€РёС… РіСЂР°РІС†С–РІ...' : 'Waiting for other players...',
-    endVoteDeclinedInfo: lang === 'uk' ? 'Р“СЂСѓ Р±СѓРґРµ РїСЂРѕРґРѕРІР¶РµРЅРѕ, СЏРєС‰Рѕ С…С‚РѕСЃСЊ РЅРµ РїРѕРіРѕРґРёС‚СЊСЃСЏ.' : 'The game will continue if someone disagrees.',
-    selectableTargetHint: lang === 'uk' ? 'РљР»С–РєРЅС–С‚СЊ РїРѕ РіСЂР°РІС†СЋ РЅРёР¶С‡Рµ' : 'Click a player below',
-    selectableResourceHint: lang === 'uk' ? 'РљР»С–РєРЅС–С‚СЊ РїРѕ СЂРµСЃСѓСЂСЃСѓ РЅРёР¶С‡Рµ' : 'Click a resource below',
-    you: lang === 'uk' ? 'Р’Рё' : 'You',
-    chooseForCard: lang === 'uk' ? 'РґР»СЏ РєР°СЂС‚Рё' : 'for card',
-    canPlayNow: lang === 'uk' ? 'РјРѕР¶РЅР° Р·С–РіСЂР°С‚Рё Р·Р°СЂР°Р·' : 'playable now',
-    notNow: lang === 'uk' ? 'РЅРµ Р·Р°СЂР°Р·' : 'not now',
-    requiresTarget: lang === 'uk' ? 'РїРѕС‚СЂС–Р±РЅР° С†С–Р»СЊ' : 'needs target',
-    requiresResource: lang === 'uk' ? 'РїРѕС‚СЂС–Р±РµРЅ СЂРµСЃСѓСЂСЃ' : 'needs resource',
-    keyboardHint: lang === 'uk' ? 'D вЂ” РґРѕР±С–СЂ, E вЂ” Р·Р°РІРµСЂС€РёС‚Рё С…С–Рґ, Esc вЂ” СЃРєР°СЃСѓРІР°С‚Рё РІРёР±С–СЂ' : 'D вЂ” draw, E вЂ” end turn, Esc вЂ” cancel selection',
-    stepAssistant: lang === 'uk' ? 'РџРѕРјС–С‡РЅРёРє С…РѕРґСѓ' : 'Turn assistant',
-    step1: lang === 'uk' ? '1. РћР±РµСЂС–С‚СЊ РґС–СЋ' : '1. Choose action',
-    step2: lang === 'uk' ? '2. РћР±РµСЂС–С‚СЊ РїР°СЂР°РјРµС‚СЂРё' : '2. Choose parameters',
-    step3: lang === 'uk' ? '3. РџС–РґС‚РІРµСЂРґС–С‚СЊ' : '3. Confirm',
-    confirmAction: lang === 'uk' ? 'РџС–РґС‚РІРµСЂРґРёС‚Рё РґС–СЋ' : 'Confirm action',
-    previewOutcome: lang === 'uk' ? 'РџРѕРїРµСЂРµРґРЅС–Р№ СЂРµР·СѓР»СЊС‚Р°С‚' : 'Outcome preview',
-    cost: lang === 'uk' ? 'Р’Р°СЂС‚С–СЃС‚СЊ' : 'Cost',
-    effects: lang === 'uk' ? 'Р•С„РµРєС‚Рё' : 'Effects',
-    target: lang === 'uk' ? 'Р¦С–Р»СЊ' : 'Target',
-    selectedResource: lang === 'uk' ? 'Р РµСЃСѓСЂСЃ' : 'Resource',
-    tokens: lang === 'uk' ? 'РўРѕРєРµРЅРё С– СЃС‚Р°РЅРё' : 'Tokens & statuses',
-    shieldUntil: lang === 'uk' ? 'Р©РёС‚ РґРѕ С…РѕРґСѓ' : 'Shield until turn',
-    extraHandToken: lang === 'uk' ? 'Р”РѕРґР°С‚РєРѕРІРёР№ СЂРѕР·С–РіСЂР°С€ Р· СЂСѓРєРё' : 'Extra hand play',
-    sukhpayPending: lang === 'uk' ? 'РЎСѓС…РїР°Р№ РѕС‡С–РєСѓС”' : 'Sukhpay pending',
-    sukhpayUntil: lang === 'uk' ? 'РЎСѓС…РїР°Р№ Р°РєС‚РёРІРЅРёР№ РґРѕ С…РѕРґСѓ' : 'Sukhpay active until turn',
-    discardViewer: lang === 'uk' ? 'РџРµСЂРµРіР»СЏРґ СЃРєРёРґСѓ' : 'Discard viewer',
-    normalDiscard: lang === 'uk' ? 'Р—РІРёС‡Р°Р№РЅРёР№ СЃРєРёРґ' : 'Discard pile',
-    legendaryDiscard: lang === 'uk' ? 'Р›РµРіРµРЅРґР°СЂРЅРёР№ СЃРєРёРґ' : 'Legendary discard',
-    openChat: lang === 'uk' ? 'Р§Р°С‚' : 'Chat',
-    openEvents: lang === 'uk' ? 'РџРѕРґС–С—' : 'Events',
-    mobileActions: lang === 'uk' ? 'РЁРІРёРґРєС– РґС–С— (mobile)' : 'Quick actions (mobile)',
-    deficit: lang === 'uk' ? 'РќРµ РІРёСЃС‚Р°С‡Р°С”' : 'Missing',
-    actionLane: lang === 'uk' ? 'РЎРјСѓРіР° РґС–С—' : 'Action lane',
-    selectedCard: lang === 'uk' ? 'РћР±СЂР°РЅР° РєР°СЂС‚Р°' : 'Selected card',
-    selectedAction: lang === 'uk' ? 'РћР±СЂР°РЅР° РґС–СЏ' : 'Selected action',
-    waitingAction: lang === 'uk' ? 'РћР±РµСЂС–С‚СЊ РєР°СЂС‚Сѓ Р°Р±Рѕ РґС–СЋ РґР»СЏ РїСЂРѕРґРѕРІР¶РµРЅРЅСЏ С…РѕРґСѓ.' : 'Choose a card or action to continue your turn.',
-    stageFocusDraw: lang === 'uk' ? 'Р¤РѕРєСѓСЃ РµС‚Р°РїСѓ: РґРѕР±РµСЂС–С‚СЊ РєР°СЂС‚Сѓ, С‰РѕР± РІС–РґРєСЂРёС‚Рё РІР°СЂС–Р°РЅС‚Рё СЂРѕР·С–РіСЂР°С€Сѓ.' : 'Stage focus: draw a card to unlock play options.',
-    stageFocusPlay: lang === 'uk' ? 'Р¤РѕРєСѓСЃ РµС‚Р°РїСѓ: СЂРѕР·С–РіСЂСѓР№С‚Рµ РєР°СЂС‚Рё, РѕС†С–РЅСЋР№С‚Рµ РЅР°СЃР»С–РґРєРё, РїР»Р°РЅСѓР№С‚Рµ РїС–РґРІРёС‰РµРЅРЅСЏ.' : 'Stage focus: play cards, review outcomes, plan promotion.',
-    stageFocusEnd: lang === 'uk' ? 'Р¤РѕРєСѓСЃ РµС‚Р°РїСѓ: Р·Р°РІРµСЂС€С–С‚СЊ РєРѕРјР±С–РЅР°С†С–СЋ Р°Р±Рѕ Р·Р°РєСЂРёР№С‚Рµ С…С–Рґ.' : 'Stage focus: finalize your combo or end the turn.',
-    targetableNow: lang === 'uk' ? 'РјРѕР¶РЅР° С†С–Р»РёС‚Рё Р·Р°СЂР°Р·' : 'targetable now',
-    seatBlocked: lang === 'uk' ? 'РјС–СЃС†СЏ Р·Р°Р№РЅСЏС‚С–' : 'seat blocked',
-    handCardsLabel: lang === 'uk' ? 'РљР°СЂС‚Рё РІ СЂСѓС†С–' : 'Hand cards',
-    activeRoom: lang === 'uk' ? 'РђРєС‚РёРІРЅР° РєС–РјРЅР°С‚Р°' : 'Active room',
-    joinedAs: lang === 'uk' ? 'Р’Рё РІ РєС–РјРЅР°С‚С– СЏРє' : 'You are in room as',
-    leaveRoom: lang === 'uk' ? 'Р’РёР№С‚Рё Р· РєС–РјРЅР°С‚Рё' : 'Leave room',
-  };
+  const v2 = t.v2;
 
   const id = playerID ?? '0';
   const isSimplifiedMode = G?.gameMode === 'simplified';
@@ -338,7 +262,7 @@ export const BoardV2 = ({
   const hasPlayableLegendaryCard = canPlay && typeof moves.playLegendaryCard === 'function' && legendaryHand.length > 0;
   const shouldShowSkipTurnLabel = (G.deck?.length ?? 0) === 0 && !hasPlayableHandCard && !hasPlayableLegendaryCard;
   const passButtonLabel = shouldShowSkipTurnLabel
-    ? (lang === 'uk' ? 'РџСЂРѕРїСѓСЃС‚РёС‚Рё С…С–Рґ' : 'Skip turn')
+    ? v2.skipTurn
     : t.endTurn;
 
   const requestPlayHandCard = (card: CardDefinition) => {
@@ -437,7 +361,7 @@ export const BoardV2 = ({
       <header className="game-ui-v2-header">
         <div>
           <p className="game-ui-v2-kicker">JOJ V2</p>
-          <h2>{isCurrentPlayer ? (lang === 'uk' ? 'Р’Р°С€ С…С–Рґ' : 'Your turn') : (lang === 'uk' ? 'РЎС‚С–Р» РіСЂРё' : 'Game table')}</h2>
+          <h2>{isCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle}</h2>
           {roomMeta ? (
             <div className="game-ui-v2-room-meta">
               <p className="game-ui-v2-subtle">{v2.activeRoom}: <strong>{roomMeta.matchID}</strong></p>
@@ -471,10 +395,8 @@ export const BoardV2 = ({
         <section className="game-ui-v2-vote-popup" role="dialog" aria-label={v2.endVoteTitle}>
           <div className="game-ui-v2-vote-popup-card">
             <h3>{v2.endVoteTitle}</h3>
-            <p className="game-ui-v2-subtle">
-              {lang === 'uk'
-                ? `${requestedByLabel} РїСЂРѕРїРѕРЅСѓС” Р·Р°РІРµСЂС€РёС‚Рё РіСЂСѓ С– РїРµСЂРµР№С‚Рё РґРѕ С„С–РЅР°Р»СЊРЅРѕС— СЃС‚Р°С‚РёСЃС‚РёРєРё.`
-                : `${requestedByLabel} proposes to end the game and show final statistics.`}
+              <p className="game-ui-v2-subtle">
+              {`${requestedByLabel} ${v2.endVotePromptSuffix}`}
             </p>
             {!hasVotedAgree ? (
               <div className="game-ui-v2-selection-actions">
@@ -495,12 +417,10 @@ export const BoardV2 = ({
             <section className="game-ui-v2-command">
               <div className="game-ui-v2-command-top">
                 <div>
-                  <p className="game-ui-v2-kicker">{lang === 'uk' ? 'Стандарт+' : 'Standard+'}</p>
-                  <h3>{lang === 'uk' ? 'Вибір легендарних карт (5)' : 'Legendary selection (5)'}</h3>
+                  <p className="game-ui-v2-kicker">{v2.standardPlusKicker}</p>
+                  <h3>{v2.legendarySelectionTitle}</h3>
                   <p className="game-ui-v2-subtle">
-                    {lang === 'uk'
-                      ? 'Поки не оберете 5 карт, хід у грі недоступний.'
-                      : 'Until you choose 5 cards, game actions are locked.'}
+                    {v2.legendarySelectionHint}
                   </p>
                 </div>
               </div>
@@ -517,7 +437,7 @@ export const BoardV2 = ({
                       previewKey={`v2-draft-preview-${card.id}`}
                       onTogglePreview={togglePreview}
                       onClosePreview={() => setOpenPreviewKey(null)}
-                      actionLabel={selected ? (lang === 'uk' ? 'Прибрати' : 'Remove') : (lang === 'uk' ? 'Обрати' : 'Select')}
+                      actionLabel={selected ? v2.remove : v2.select}
                       onAction={() => {
                         setDraftSelection((prev) => {
                           if (prev.includes(card.id)) return prev.filter((idValue) => idValue !== card.id);
@@ -532,13 +452,13 @@ export const BoardV2 = ({
                 })}
               </div>
               <div className="game-ui-v2-selection-actions">
-                <p className="game-ui-v2-subtle">{lang === 'uk' ? 'Обрано' : 'Selected'}: {draftSelection.length}/5</p>
+                <p className="game-ui-v2-subtle">{v2.selected}: {draftSelection.length}/5</p>
                 <button
                   type="button"
                   disabled={draftSelection.length !== 5 || typeof (moves as any).selectLegendaryLoadout !== 'function'}
                   onClick={() => (moves as any).selectLegendaryLoadout?.(draftSelection)}
                 >
-                  {lang === 'uk' ? 'Підтвердити вибір' : 'Confirm selection'}
+                  {v2.confirmSelection}
                 </button>
               </div>
             </section>
@@ -653,7 +573,7 @@ export const BoardV2 = ({
                   </div>
                 ) : null}
                 <div className="game-ui-v2-selection-actions">
-                  <button type="button" onClick={confirmPendingSelection}>{lang === 'uk' ? 'РџС–РґС‚РІРµСЂРґРёС‚Рё' : 'Confirm'}</button>
+                  <button type="button" onClick={confirmPendingSelection}>{v2.confirm}</button>
                   <button type="button" className="ghost" onClick={() => { setPendingSelection(null); setSelectedTargetId(null); setSelectedResource(null); setNotice(null); }}>{v2.cancel}</button>
                 </div>
               </div>
@@ -689,7 +609,7 @@ export const BoardV2 = ({
                 ) : <p className="game-ui-v2-subtle">{v2.waitingAction}</p>}
               </div>
               <div className="game-ui-v2-action-slot">
-                <strong>{lang === 'uk' ? 'РџС–СЃР»СЏ РїС–РґС‚РІРµСЂРґР¶РµРЅРЅСЏ' : 'After confirm'}</strong>
+                <strong>{v2.afterConfirm}</strong>
                 <p className="game-ui-v2-subtle">{pendingSelection ? (activeSelectionNeedsTarget ? v2.selectableTargetHint : v2.selectableResourceHint) : v2.waitingAction}</p>
               </div>
             </div>
@@ -790,9 +710,7 @@ export const BoardV2 = ({
               <div>
                 <h3>{t.yourHand} ({hand.length}/8)</h3>
                 {mustDiscardOverflow ? (
-                  <p className="game-ui-v2-subtle is-warn">{lang === 'uk'
-                    ? `РќР°РїСЂРёРєС–РЅС†С– С…РѕРґСѓ СЃРєРёРЅСЊС‚Рµ ${handOverflow} РєР°СЂС‚(Рё) РґРѕ Р»С–РјС–С‚Сѓ 8. Р›РЇРџ/РЎРљРђРќР”РђР› РєРЅРѕРїРєРѕСЋ СЃРєРёРґСѓ РЅРµ СЃРєРёРґР°СЋС‚СЊСЃСЏ.`
-                    : `Before ending the turn, discard ${handOverflow} card(s) to return to hand limit 8. LYAP/SCANDAL cannot be discarded with discard button.`}</p>
+                  <p className="game-ui-v2-subtle is-warn">{v2.handOverflowWarning.replace('{count}', String(handOverflow))}</p>
                 ) : null}
               </div>
               <div className="game-ui-v2-hand-controls">
@@ -838,11 +756,11 @@ export const BoardV2 = ({
                     previewKey={`v2-hand-preview-${card.id}`}
                     onTogglePreview={togglePreview}
                     onClosePreview={() => setOpenPreviewKey(null)}
-                    actionLabel={lang === 'uk' ? 'Р—С–РіСЂР°С‚Рё' : 'Play'}
+                    actionLabel={v2.play}
                     onAction={() => requestPlayHandCard(card)}
                     actionDisabled={!canPlayHandCard}
                     extraAction={canDiscardThisCard ? {
-                      label: lang === 'uk' ? 'РЎРєРёРЅСѓС‚Рё' : 'Discard',
+                      label: v2.discard,
                       onClick: () => moves.discardFromHand?.(card.id),
                       disabled: typeof moves.discardFromHand !== 'function',
                       className: 'game-card-inline-discard',
@@ -880,7 +798,7 @@ export const BoardV2 = ({
                       previewKey={`v2-legendary-preview-${card.id}`}
                       onTogglePreview={togglePreview}
                       onClosePreview={() => setOpenPreviewKey(null)}
-                      actionLabel={lang === 'uk' ? 'Р—С–РіСЂР°С‚Рё Р»РµРіРµРЅРґР°СЂРЅСѓ' : 'Play legendary'}
+                      actionLabel={v2.playLegendary}
                       onAction={() => requestPlayLegendaryCard(card)}
                       actionDisabled={typeof moves.playLegendaryCard !== 'function'}
                       effectLabel={effectLabel}
@@ -896,33 +814,25 @@ export const BoardV2 = ({
             <>
               <p className="gameover">{t.winner}: {playerLabelById(String((ctx.gameover as { winner?: string }).winner ?? ''))}</p>
               {!gameoverModalClosed ? (
-              <div className="game-ui-v2-gameover-modal" role="dialog" aria-label={lang === 'uk' ? 'РЎС‚Р°С‚РёСЃС‚РёРєР° РіСЂРё' : 'Game statistics'}>
+              <div className="game-ui-v2-gameover-modal" role="dialog" aria-label={v2.gameStatsAria}>
                 <div className="game-ui-v2-gameover-card">
-                  <h3>{lang === 'uk' ? 'РЎС‚Р°С‚РёСЃС‚РёРєР° РіСЂРё' : 'Game statistics'}</h3>
+                  <h3>{v2.gameStatsTitle}</h3>
                   <p>
-                    <strong>{lang === 'uk' ? 'РџРµСЂРµРјРѕР¶РµС†СЊ' : 'Winner'}:</strong> {playerLabelById(winnerPlayerID)}
+                    <strong>{v2.winnerLabel}:</strong> {playerLabelById(winnerPlayerID)}
                     {winnerRankName ? ` (${winnerRankName})` : ''}
                   </p>
                   {gameoverMeta?.endReason === 'stalled-no-cards' ? (
-                    <p className="game-ui-v2-subtle">
-                      {lang === 'uk'
-                        ? 'Р“СЂСѓ Р·Р°РІРµСЂС€РµРЅРѕ Р°РІС‚РѕРјР°С‚РёС‡РЅРѕ РїС–СЃР»СЏ РїРѕРІРЅРѕРіРѕ РєРѕР»Р° РїСЂРѕРїСѓСЃРєС–РІ (РєР°СЂС‚ РґР»СЏ СЂРѕР·С–РіСЂР°С€Сѓ РЅРµ Р»РёС€РёР»РѕСЃСЊ).'
-                        : 'Game auto-ended after a full round of skips (no playable cards left).'}
-                    </p>
+                    <p className="game-ui-v2-subtle">{v2.gameAutoEndedSkip}</p>
                   ) : null}
                   {gameoverMeta?.endReason === 'agreed-end' ? (
-                    <p className="game-ui-v2-subtle">
-                      {lang === 'uk'
-                        ? 'Р“СЂСѓ Р·Р°РІРµСЂС€РµРЅРѕ Р·Р° СЃРїС–Р»СЊРЅРѕСЋ Р·РіРѕРґРѕСЋ РІСЃС–С… РіСЂР°РІС†С–РІ.'
-                        : 'Game ended by unanimous agreement of all players.'}
-                    </p>
+                    <p className="game-ui-v2-subtle">{v2.gameEndedByAgreement}</p>
                   ) : null}
                   <div className="game-ui-v2-token-list">
-                    <div className="game-ui-v2-token-row"><span>{lang === 'uk' ? 'РЈСЃСЊРѕРіРѕ С…РѕРґС–РІ' : 'Total turns'}</span><strong>{G.gameStats?.turnsCompleted ?? 0}</strong></div>
-                    <div className="game-ui-v2-token-row"><span>{lang === 'uk' ? 'РћС‚СЂРёРјР°РЅРѕ СЂРµСЃСѓСЂСЃС–РІ (СѓСЃСЊРѕРіРѕ)' : 'Resources gained (total)'}</span><strong>{G.gameStats?.resourcesGainedTotal ?? 0}</strong></div>
-                    <div className="game-ui-v2-token-row"><span>{lang === 'uk' ? 'Р’С‚СЂР°С‡РµРЅРѕ СЂРµСЃСѓСЂСЃС–РІ (СѓСЃСЊРѕРіРѕ)' : 'Resources lost (total)'}</span><strong>{G.gameStats?.resourcesLostTotal ?? 0}</strong></div>
-                    <div className="game-ui-v2-token-row"><span>{lang === 'uk' ? 'Р›РЇРџС–РІ Р·С–РіСЂР°РЅРѕ РЅР° С–РЅС€РёС…' : 'LYAPs played on others'}</span><strong>{G.gameStats?.lyapsPlayedOnOthers ?? 0}</strong></div>
-                    <div className="game-ui-v2-token-row"><span>{lang === 'uk' ? 'РЎРљРђРќР”РђР›С–РІ Р·С–РіСЂР°РЅРѕ РЅР° С–РЅС€РёС…' : 'SCANDALs played on others'}</span><strong>{G.gameStats?.scandalsPlayedOnOthers ?? 0}</strong></div>
+                    <div className="game-ui-v2-token-row"><span>{v2.statsTotalTurns}</span><strong>{G.gameStats?.turnsCompleted ?? 0}</strong></div>
+                    <div className="game-ui-v2-token-row"><span>{v2.statsResourcesGained}</span><strong>{G.gameStats?.resourcesGainedTotal ?? 0}</strong></div>
+                    <div className="game-ui-v2-token-row"><span>{v2.statsResourcesLost}</span><strong>{G.gameStats?.resourcesLostTotal ?? 0}</strong></div>
+                    <div className="game-ui-v2-token-row"><span>{v2.statsLyapsPlayedOnOthers}</span><strong>{G.gameStats?.lyapsPlayedOnOthers ?? 0}</strong></div>
+                    <div className="game-ui-v2-token-row"><span>{v2.statsScandalsPlayedOnOthers}</span><strong>{G.gameStats?.scandalsPlayedOnOthers ?? 0}</strong></div>
                   </div>
                   <button type="button" onClick={() => setGameoverModalClosed(true)}>
                     {t.close}
@@ -953,7 +863,7 @@ export const BoardV2 = ({
                   </div>
                 );
               })}
-              {!latestEvents.length ? <p className="game-ui-v2-subtle">{lang === 'uk' ? 'РџРѕРґС–Р№ С‰Рµ РЅРµРјР°С”' : 'No events yet'}</p> : null}
+              {!latestEvents.length ? <p className="game-ui-v2-subtle">{v2.noEventsYet}</p> : null}
             </div>
           </section>
           <section className={sidePanelTab !== 'chat' ? 'game-ui-v2-mobile-hidden' : ''}>

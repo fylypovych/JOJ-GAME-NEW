@@ -223,7 +223,7 @@ export const AdminSimulationTab = ({
           onChange={(e) => setSimulationUseMainDeck(e.target.checked)}
           disabled={simulationRunning}
         />{' '}
-        {lang === 'uk' ? 'Основна колода' : 'Main deck'}
+        {t.simulationUseMainDeck}
       </label>
       <label>
         <input
@@ -232,7 +232,7 @@ export const AdminSimulationTab = ({
           onChange={(e) => setSimulationUseLegendaryDeck(e.target.checked)}
           disabled={simulationRunning}
         />{' '}
-        {lang === 'uk' ? 'Легендарна колода' : 'Legendary deck'}
+        {t.simulationUseLegendaryDeck}
       </label>
       <button type="button" disabled={simulationRunning || Boolean(simulationBlockedReason)} onClick={runSimulation}>{simulationRunning ? t.simulationRunning : t.simulationRun}</button>
     </p>
