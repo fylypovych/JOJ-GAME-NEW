@@ -540,8 +540,7 @@ export const createJojMoves = (d: JojMovesDeps) => {
     }
 
     hand.splice(idx, 1);
-    if (args.G.gameMode === 'simplified') args.G.discard.push(card);
-    else args.G.legendaryDiscard.push(card);
+    args.G.legendaryDiscard.push(card);
     d.syncPlayerState(args.G, playerID);
     d.recordResourceFlowStats(args.G, beforeResources);
     d.resetNoPlayablePassStreak(args.G);

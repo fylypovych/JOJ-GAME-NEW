@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { SimulationReport } from '../../game/jojGame';
+import type { GameMode } from '../../game/types';
 
 export const useAdminSimulation = (args: {
   onRunSimulations: (
     players: number,
     simulations: number,
-    options?: { useMainDeck?: boolean; useLegendaryDeck?: boolean },
+    options?: { gameMode?: GameMode },
   ) => SimulationReport;
   configSignature?: string;
   blockedReason?: string;
@@ -13,8 +14,7 @@ export const useAdminSimulation = (args: {
   const { onRunSimulations, configSignature, blockedReason = '' } = args;
   const [simulationPlayers, setSimulationPlayers] = useState<number>(4);
   const [simulationCount, setSimulationCount] = useState<number>(500);
-  const [simulationUseMainDeck, setSimulationUseMainDeck] = useState<boolean>(true);
-  const [simulationUseLegendaryDeck, setSimulationUseLegendaryDeck] = useState<boolean>(true);
+  const [simulationGameMode, setSimulationGameMode] = useState<GameMode>('standard');
   const [simulationReport, setSimulationReport] = useState<SimulationReport | null>(null);
   const [simulationRunning, setSimulationRunning] = useState<boolean>(false);
   const [simulationError, setSimulationError] = useState<string>('');
@@ -33,8 +33,7 @@ export const useAdminSimulation = (args: {
     setSimulationRunning(true);
     setTimeout(() => {
       const report = onRunSimulations(simulationPlayers, simulationCount, {
-        useMainDeck: simulationUseMainDeck,
-        useLegendaryDeck: simulationUseLegendaryDeck,
+        gameMode: simulationGameMode,
       });
       setSimulationReport(report);
       setSimulationRunning(false);
@@ -46,10 +45,8 @@ export const useAdminSimulation = (args: {
     setSimulationPlayers,
     simulationCount,
     setSimulationCount,
-    simulationUseMainDeck,
-    setSimulationUseMainDeck,
-    simulationUseLegendaryDeck,
-    setSimulationUseLegendaryDeck,
+    simulationGameMode,
+    setSimulationGameMode,
     simulationReport,
     simulationRunning,
     simulationError,

@@ -168,10 +168,8 @@ export const AdminPage = ({
     setSimulationPlayers,
     simulationCount,
     setSimulationCount,
-    simulationUseMainDeck,
-    setSimulationUseMainDeck,
-    simulationUseLegendaryDeck,
-    setSimulationUseLegendaryDeck,
+    simulationGameMode,
+    setSimulationGameMode,
     simulationReport,
     simulationRunning,
     simulationError,
@@ -1000,10 +998,8 @@ export const AdminPage = ({
           setSimulationPlayers={setSimulationPlayers}
           simulationCount={simulationCount}
           setSimulationCount={setSimulationCount}
-          simulationUseMainDeck={simulationUseMainDeck}
-          setSimulationUseMainDeck={setSimulationUseMainDeck}
-          simulationUseLegendaryDeck={simulationUseLegendaryDeck}
-          setSimulationUseLegendaryDeck={setSimulationUseLegendaryDeck}
+          simulationGameMode={simulationGameMode}
+          setSimulationGameMode={setSimulationGameMode}
           simulationRunning={simulationRunning}
           runSimulation={runSimulation}
           simulationReport={simulationReport}

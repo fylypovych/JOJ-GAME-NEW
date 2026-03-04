@@ -73,9 +73,16 @@ test('simulation report stores deck mode flags', () => {
   const mainOnly = runGameSimulationsWithDeps(deps as any, 2, 1, 40, { useMainDeck: true, useLegendaryDeck: false });
   assert.equal(mainOnly.input.useMainDeck, true);
   assert.equal(mainOnly.input.useLegendaryDeck, false);
+  assert.equal(mainOnly.input.gameMode, 'simplified');
 
   const bothOff = runGameSimulationsWithDeps(deps as any, 2, 1, 40, { useMainDeck: false, useLegendaryDeck: false });
   assert.equal(bothOff.input.useMainDeck, false);
   assert.equal(bothOff.input.useLegendaryDeck, false);
+  assert.equal(bothOff.input.gameMode, 'simplified');
   assert.equal(bothOff.summary.stalled, 0);
+
+  const standardPlus = runGameSimulationsWithDeps(deps as any, 2, 1, 40, { gameMode: 'standard_plus' });
+  assert.equal(standardPlus.input.gameMode, 'standard_plus');
+  assert.equal(standardPlus.input.useMainDeck, true);
+  assert.equal(standardPlus.input.useLegendaryDeck, true);
 });

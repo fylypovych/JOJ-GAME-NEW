@@ -1,5 +1,5 @@
 import type { DeckTarget, SimulationReport } from '../../game/jojGame';
-import type { CardCategory, CardDefinition, RankDefinition } from '../../game/types';
+import type { CardCategory, CardDefinition, GameMode, RankDefinition } from '../../game/types';
 import type { Language } from '../i18n';
 export type AdminStorageMode = 'file' | 'db';
 export type AdminDbConfigDraft = {
@@ -119,7 +119,7 @@ export type AdminPageProps = {
   onRunSimulations: (
     players: number,
     simulations: number,
-    options?: { useMainDeck?: boolean; useLegendaryDeck?: boolean },
+    options?: { gameMode?: GameMode },
   ) => SimulationReport;
 };
 

@@ -1,4 +1,4 @@
-import type { CardDefinition, JojGameState, ResourceKey } from './types';
+import type { CardDefinition, GameMode, JojGameState, ResourceKey } from './types';
 
 type SetupDeps = {
   shuffle: <T>(items: T[]) => T[];
@@ -19,14 +19,26 @@ type SetupDeps = {
 export const createSimulationState = (
   deps: SetupDeps,
   playerIDs: string[],
-  options: { useMainDeck: boolean; useLegendaryDeck: boolean },
+  options: { useMainDeck: boolean; useLegendaryDeck: boolean; gameMode?: GameMode },
 ): JojGameState => {
   const sharedDeckTemplate = deps.getSharedDeckTemplate();
+  const mode = options.gameMode ?? null;
+  const mainDeckCards = sharedDeckTemplate.deck.map(deps.cloneCard);
+  const legendaryCards = sharedDeckTemplate.legendaryDeck.map(deps.cloneCard);
+  const deck = mode === 'simplified'
+    ? deps.shuffle([...mainDeckCards, ...legendaryCards])
+    : (options.useMainDeck ? deps.shuffle(mainDeckCards) : []);
+  const legendaryDeck = mode === 'simplified'
+    ? []
+    : mode === 'standard_plus'
+      ? legendaryCards
+      : (options.useLegendaryDeck ? deps.shuffle(legendaryCards) : []);
+
   const G: JojGameState = {
-    gameMode: 'standard',
-    deck: options.useMainDeck ? deps.shuffle(sharedDeckTemplate.deck.map(deps.cloneCard)) : [],
+    gameMode: mode ?? 'standard',
+    deck,
     discard: [],
-    legendaryDeck: options.useLegendaryDeck ? deps.shuffle(sharedDeckTemplate.legendaryDeck.map(deps.cloneCard)) : [],
+    legendaryDeck,
     legendaryDiscard: [],
     legendaryDraftCompleted: {},
     deckBackImage: sharedDeckTemplate.deckBackImage,
@@ -72,9 +84,11 @@ export const createSimulationState = (
     G.extraHandPlayTokens[pid] = 0;
     G.sukhpayZsuWatchUntilTurn[pid] = 0;
     G.sukhpayZsuPendingBonus[pid] = false;
-    G.legendaryDraftCompleted[pid] = true;
-    if (options.useMainDeck) deps.drawCards(G, pid, deps.startingHandSize);
-    if (options.useLegendaryDeck) deps.drawLegendaryCards(G, pid, deps.startingLegendaryHandSize);
+    G.legendaryDraftCompleted[pid] = mode !== 'standard_plus';
+    if (G.deck.length > 0) deps.drawCards(G, pid, deps.startingHandSize);
+    if (mode === 'standard' || (!mode && options.useLegendaryDeck)) {
+      deps.drawLegendaryCards(G, pid, deps.startingLegendaryHandSize);
+    }
     deps.syncPlayerState(G, pid);
   });
 

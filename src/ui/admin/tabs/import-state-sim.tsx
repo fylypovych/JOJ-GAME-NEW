@@ -1,5 +1,6 @@
 import { text } from '../../i18n';
 import type { Snapshot } from '../types';
+import type { GameMode } from '../../../game/types';
 
 type T = ReturnType<typeof text>;
 
@@ -185,8 +186,7 @@ export const AdminStateTab = ({
 export const AdminSimulationTab = ({
   t, lang, simulationPlayers, setSimulationPlayers, simulationCount, setSimulationCount,
   simulationRunning, runSimulation, simulationReport, simulationError, simulationBlockedReason, localizedRankName,
-  simulationUseMainDeck, setSimulationUseMainDeck,
-  simulationUseLegendaryDeck, setSimulationUseLegendaryDeck,
+  simulationGameMode, setSimulationGameMode,
 }: {
   t: T;
   lang: 'uk' | 'en';
@@ -200,10 +200,8 @@ export const AdminSimulationTab = ({
   simulationError?: string;
   simulationBlockedReason?: string;
   localizedRankName: (rankId: string) => string;
-  simulationUseMainDeck: boolean;
-  setSimulationUseMainDeck: (value: boolean) => void;
-  simulationUseLegendaryDeck: boolean;
-  setSimulationUseLegendaryDeck: (value: boolean) => void;
+  simulationGameMode: GameMode;
+  setSimulationGameMode: (value: GameMode) => void;
 }) => (
   <>
     <h3>{t.simulationTitle}</h3>
@@ -216,23 +214,16 @@ export const AdminSimulationTab = ({
       <label>{t.simulationCount}
         <input type="number" min={1} max={5000} step={1} value={simulationCount} onChange={(e) => setSimulationCount(Number(e.target.value || 1))} disabled={simulationRunning} />
       </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={simulationUseMainDeck}
-          onChange={(e) => setSimulationUseMainDeck(e.target.checked)}
+      <label>{t.gameModeLabel}
+        <select
+          value={simulationGameMode}
+          onChange={(e) => setSimulationGameMode(e.target.value as GameMode)}
           disabled={simulationRunning}
-        />{' '}
-        {t.simulationUseMainDeck}
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={simulationUseLegendaryDeck}
-          onChange={(e) => setSimulationUseLegendaryDeck(e.target.checked)}
-          disabled={simulationRunning}
-        />{' '}
-        {t.simulationUseLegendaryDeck}
+        >
+          <option value="standard">{t.gameModeStandard}</option>
+          <option value="standard_plus">{t.gameModeStandardPlus}</option>
+          <option value="simplified">{t.gameModeSimplified}</option>
+        </select>
       </label>
       <button type="button" disabled={simulationRunning || Boolean(simulationBlockedReason)} onClick={runSimulation}>{simulationRunning ? t.simulationRunning : t.simulationRun}</button>
     </p>
@@ -243,8 +234,8 @@ export const AdminSimulationTab = ({
       <div>
         <p>{lang === 'uk' ? `Виконано симуляцій: ${simulationReport.input.simulations} (гравців у матчі: ${simulationReport.input.players}).` : `Simulations: ${simulationReport.input.simulations} (players per game: ${simulationReport.input.players}).`}</p>
         <p>{lang === 'uk'
-          ? `Колоди: основна ${simulationReport.input.useMainDeck ? 'увімкнена' : 'вимкнена'}, легендарна ${simulationReport.input.useLegendaryDeck ? 'увімкнена' : 'вимкнена'}.`
-          : `Decks: main ${simulationReport.input.useMainDeck ? 'enabled' : 'disabled'}, legendary ${simulationReport.input.useLegendaryDeck ? 'enabled' : 'disabled'}.`}</p>
+          ? `Режим гри: ${simulationReport.input.gameMode === 'standard_plus' ? t.gameModeStandardPlus : simulationReport.input.gameMode === 'simplified' ? t.gameModeSimplified : t.gameModeStandard}.`
+          : `Game mode: ${simulationReport.input.gameMode === 'standard_plus' ? t.gameModeStandardPlus : simulationReport.input.gameMode === 'simplified' ? t.gameModeSimplified : t.gameModeStandard}.`}</p>
         <p>{lang === 'uk' ? `Завершені: ${simulationReport.summary.finished}, завислі: ${simulationReport.summary.stalled}, середня кількість ходів: ${simulationReport.summary.avgTurns}.` : `Finished: ${simulationReport.summary.finished}, stalled: ${simulationReport.summary.stalled}, average turns: ${simulationReport.summary.avgTurns}.`}</p>
         <p>{lang === 'uk' ? `Перемоги за званням: ${simulationReport.summary.rankWins}, за очками: ${simulationReport.summary.scoreWins}.` : `Rank wins: ${simulationReport.summary.rankWins}, score wins: ${simulationReport.summary.scoreWins}.`}</p>
         <p>{lang === 'uk'

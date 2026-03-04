@@ -1,4 +1,4 @@
-import type { CardDefinition, JojGameState, ResourceKey } from './types';
+import type { CardDefinition, GameMode, JojGameState, ResourceKey } from './types';
 import { createSimulationState } from './simulationSetup';
 
 export type SimulationReport = {
@@ -8,6 +8,7 @@ export type SimulationReport = {
     maxTurns: number;
     useMainDeck: boolean;
     useLegendaryDeck: boolean;
+    gameMode: GameMode;
   };
   generatedAt: string;
   summary: {
@@ -47,6 +48,7 @@ export type SimulationReport = {
 export type SimulationOptions = {
   useMainDeck?: boolean;
   useLegendaryDeck?: boolean;
+  gameMode?: GameMode;
 };
 
 type SimulationDeps = {
@@ -533,8 +535,11 @@ export const runGameSimulationsWithDeps = (
   const clampedPlayers = Math.max(2, Math.min(6, Math.floor(players || 2)));
   const clampedSims = Math.max(1, Math.min(5000, Math.floor(simulations || 1)));
   const clampedMaxTurns = Math.max(20, Math.min(4000, Math.floor(maxTurns || 600)));
-  const useMainDeck = options.useMainDeck !== false;
-  const useLegendaryDeck = options.useLegendaryDeck !== false;
+  const mode: GameMode | null = options.gameMode ?? null;
+  const useMainDeck = mode ? true : options.useMainDeck !== false;
+  const useLegendaryDeck = mode
+    ? mode !== 'simplified'
+    : options.useLegendaryDeck !== false;
   const wins: Record<string, number> = {};
   const rankReached: Record<string, number> = {};
   let totalTurns = 0;
@@ -553,11 +558,12 @@ export const runGameSimulationsWithDeps = (
   };
 
   for (let i = 0; i < clampedSims; i += 1) {
-    const result = (useMainDeck && useLegendaryDeck)
+    const result = (!mode && useMainDeck && useLegendaryDeck)
       ? simulateSingleMatch(deps, clampedPlayers, clampedMaxTurns)
       : simulateSingleMatchWithOptions(deps, clampedPlayers, clampedMaxTurns, {
         useMainDeck,
         useLegendaryDeck,
+        gameMode: mode ?? undefined,
       });
     wins[result.winner] = (wins[result.winner] ?? 0) + 1;
     totalTurns += result.turns;
@@ -642,6 +648,7 @@ export const runGameSimulationsWithDeps = (
       maxTurns: clampedMaxTurns,
       useMainDeck,
       useLegendaryDeck,
+      gameMode: mode ?? (useLegendaryDeck ? 'standard' : 'simplified'),
     },
     generatedAt: new Date().toISOString(),
     summary: {
@@ -668,7 +675,7 @@ const simulateSingleMatchWithOptions = (
   deps: SimulationDeps,
   numPlayers: number,
   maxTurns: number,
-  options: { useMainDeck: boolean; useLegendaryDeck: boolean },
+  options: { useMainDeck: boolean; useLegendaryDeck: boolean; gameMode?: GameMode },
 ) => {
   const playerIDs = Array.from({ length: numPlayers }, (_, i) => String(i));
   const G = createSimulationState(deps, playerIDs, options);
