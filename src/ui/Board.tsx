@@ -44,6 +44,9 @@ export const Board = ({
   const mustDiscardOverflow = isCurrentPlayer && handOverflow > 0 && (stage === 'play' || stage === 'end');
   const deckBackImage = G?.deckBackImage ? normalizeImagePath(G.deckBackImage) : undefined;
   const lastDiscard = G?.discard?.length ? G.discard[G.discard.length - 1] : null;
+  const lastDiscardImage = lastDiscard
+    ? (normalizeImagePath(cardImageById[lastDiscard.id]) ?? normalizeImagePath(lastDiscard.image) ?? `/cards/${lastDiscard.id}.png`)
+    : undefined;
   const lastLegendaryDiscard = G?.legendaryDiscard?.length ? G.legendaryDiscard[G.legendaryDiscard.length - 1] : null;
   const effectLabel = (resource: ResourceKey | 'rank') =>
     resource === 'rank' ? t.rankResource : resourceLabels[resource];
@@ -301,7 +304,7 @@ export const Board = ({
           <div className="pile-card">
             {lastDiscard ? (
               <PilePreview
-                imageSrc={normalizeImagePath(lastDiscard.image) ?? `/cards/${lastDiscard.id}.png`}
+                imageSrc={lastDiscardImage}
                 alt={cardTitle(lastDiscard.id, lastDiscard.title, lang)}
                 previewKey={`pile-discard-${lastDiscard.id}`}
                 openPreviewKey={openPreviewKey}

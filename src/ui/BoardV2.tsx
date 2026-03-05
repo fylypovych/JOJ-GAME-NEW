@@ -65,6 +65,7 @@ export const BoardV2 = ({
   const v2 = t.v2;
 
   const id = playerID ?? '0';
+  const selfPlayerId = playerID ?? null;
   const isSimplifiedMode = G?.gameMode === 'simplified';
   const hand = G?.hands?.[id] ?? [];
   const legendaryHand = isSimplifiedMode ? [] : (G?.legendaryHands?.[id] ?? []);
@@ -87,6 +88,9 @@ export const BoardV2 = ({
   const mustDiscardOverflow = isCurrentPlayer && handOverflow > 0 && (stage === 'play' || stage === 'end');
   const deckBackImage = G?.deckBackImage ? normalizeImagePath(G.deckBackImage) : undefined;
   const lastDiscard = G?.discard?.length ? G.discard[G.discard.length - 1] : null;
+  const lastDiscardImage = lastDiscard
+    ? (normalizeImagePath(cardImageById[lastDiscard.id]) ?? normalizeImagePath(lastDiscard.image) ?? `/cards/${lastDiscard.id}.png`)
+    : undefined;
   const [chatInput, setChatInput] = useState('');
   const [openPreviewKey, setOpenPreviewKey] = useState<string | null>(null);
   const [pendingSelection, setPendingSelection] = useState<PendingSelection | null>(null);
@@ -194,14 +198,20 @@ export const BoardV2 = ({
     return getNextRankSeatMeta({ G, playerID: id, sharedRanks });
   }, [G, id, sharedRanks, resources]);
 
-  const playerIds = useMemo(() => Object.keys(G?.players ?? {}), [G?.players]);
+  const opponentIds = useMemo(
+    () => Object.keys(G?.players ?? {}).filter((pid) => !selfPlayerId || pid !== selfPlayerId),
+    [G?.players, selfPlayerId],
+  );
   const gameoverMeta = (ctx?.gameover ?? null) as { winner?: string; endReason?: string } | null;
   const winnerPlayerID = gameoverMeta?.winner ? String(gameoverMeta.winner) : '';
   const winnerRankId = winnerPlayerID ? (G?.ranks?.[winnerPlayerID] ?? '') : '';
   const winnerRankName = winnerRankId
     ? (sharedRanks.find((row) => row.id === winnerRankId)?.name ?? rankLabel(winnerRankId, lang))
     : '';
-  const latestEvents = (G?.chat ?? []).slice(-4).reverse();
+  const latestEvents = (G?.chat ?? [])
+    .filter((row) => row.type === 'system')
+    .slice(-4)
+    .reverse();
   const endGameVote = G?.endGameVote;
   const endGameVoteActive = Boolean(endGameVote?.active) && !ctx?.gameover;
   const requestedByLabel = endGameVote?.requestedBy ? playerLabelById(endGameVote.requestedBy) : '';
@@ -539,7 +549,7 @@ export const BoardV2 = ({
                 </div>
                 {activeSelectionNeedsTarget ? (
                   <div className="game-ui-v2-chip-row">
-                    {playerIds.filter((pid) => pid !== id).map((pid) => (
+                    {opponentIds.map((pid) => (
                       <button
                         key={`pick-target-${pid}`}
                         type="button"
@@ -598,7 +608,7 @@ export const BoardV2 = ({
                 <div className="pile-card">
                   {lastDiscard ? (
                     <PilePreview
-                      imageSrc={normalizeImagePath(lastDiscard.image) ?? `/cards/${lastDiscard.id}.png`}
+                      imageSrc={lastDiscardImage}
                       alt={cardTitle(lastDiscard.id, lastDiscard.title, lang)}
                       previewKey={`v2-discard-${lastDiscard.id}`}
                       openPreviewKey={openPreviewKey}
@@ -609,50 +619,49 @@ export const BoardV2 = ({
                 </div>
                 <p>{lastDiscard ? cardTitle(lastDiscard.id, lastDiscard.title, lang) : t.noCardsInDiscard}</p>
               </div>
-            </div>
-          </section>
-
-          <section className="game-ui-v2-players">
-            <h3>{v2.playersOverview}</h3>
-            <div className="game-ui-v2-players-grid">
-              {playerIds.map((pid) => {
-                const pResources = G.resources?.[pid];
-                const pRankId = G.ranks?.[pid] ?? '';
-                const pRank = sharedRanks.find((r) => r.id === pRankId)?.name ?? rankLabel(pRankId, lang);
-                const active = ctx.currentPlayer === pid;
-                const selectable = activeSelectionNeedsTarget && pid !== id;
-                const pMeta = getNextRankSeatMeta({ G, playerID: pid, sharedRanks });
-                return (
-                  <button
-                    key={`player-${pid}`}
-                    type="button"
-                    className={`game-ui-v2-player-card${active ? ' is-active' : ''}${pid === id ? ' is-self' : ''}${selectedTargetId === pid ? ' is-selected' : ''}${selectable ? ' is-selectable' : ''}`}
-                    onClick={() => {
-                      if (!selectable) return;
-                      setSelectedTargetId(pid);
-                      postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`);
-                    }}
-                    disabled={!selectable}
-                    title={selectable ? v2.selectableTargetHint : undefined}
-                  >
-                    <div className="game-ui-v2-player-head">
-                      <strong>{playerLabelById(pid)}</strong>
-                      <span>#{pid}{pid === id ? ` В· ${v2.you}` : ''}</span>
-                    </div>
-                    <div className="game-ui-v2-player-rank">{pRank}</div>
-                    <div className="game-ui-v2-player-badges">
-                      {selectable ? <span className="pill pill-badge">{v2.targetableNow}</span> : null}
-                      {pMeta.seatBlocked ? <span className="pill pill-badge">{v2.seatBlocked}</span> : null}
-                      {(G.lyapScandalShieldUntilTurn?.[pid] ?? 0) > 0 ? <span className="pill pill-badge">{v2.shieldUntil}: {G.lyapScandalShieldUntilTurn?.[pid] ?? 0}</span> : null}
-                    </div>
-                    <div className="game-ui-v2-player-resources">
-                      {RESOURCE_ORDER.map((key) => (
-                        <span key={`${pid}-${key}`}>{resourceLabels[key]}: {pResources?.[key] ?? 0}</span>
-                      ))}
-                    </div>
-                  </button>
-                );
-              })}
+              <div className="pile">
+                <p>{v2.playersOverview} ({opponentIds.length})</p>
+                <div className="game-ui-v2-players-grid">
+                  {opponentIds.map((pid) => {
+                    const pResources = G.resources?.[pid];
+                    const pRankId = G.ranks?.[pid] ?? '';
+                    const pRank = sharedRanks.find((r) => r.id === pRankId)?.name ?? rankLabel(pRankId, lang);
+                    const active = ctx.currentPlayer === pid;
+                    const selectable = activeSelectionNeedsTarget;
+                    const pMeta = getNextRankSeatMeta({ G, playerID: pid, sharedRanks });
+                    return (
+                      <button
+                        key={`player-${pid}`}
+                        type="button"
+                        className={`game-ui-v2-player-card${active ? ' is-active' : ''}${selectedTargetId === pid ? ' is-selected' : ''}${selectable ? ' is-selectable' : ''}`}
+                        onClick={() => {
+                          if (!selectable) return;
+                          setSelectedTargetId(pid);
+                          postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`);
+                        }}
+                        disabled={!selectable}
+                        title={selectable ? v2.selectableTargetHint : undefined}
+                      >
+                        <div className="game-ui-v2-player-head">
+                          <strong>{playerLabelById(pid)}</strong>
+                          <span>#{pid}</span>
+                        </div>
+                        <div className="game-ui-v2-player-rank">{pRank}</div>
+                        <div className="game-ui-v2-player-badges">
+                          {selectable ? <span className="pill pill-badge">{v2.targetableNow}</span> : null}
+                          {pMeta.seatBlocked ? <span className="pill pill-badge">{v2.seatBlocked}</span> : null}
+                          {(G.lyapScandalShieldUntilTurn?.[pid] ?? 0) > 0 ? <span className="pill pill-badge">{v2.shieldUntil}: {G.lyapScandalShieldUntilTurn?.[pid] ?? 0}</span> : null}
+                        </div>
+                        <div className="game-ui-v2-player-resources">
+                          {RESOURCE_ORDER.map((key) => (
+                            <span key={`${pid}-${key}`}>{resourceLabels[key]}: {pResources?.[key] ?? 0}</span>
+                          ))}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </section>
 
