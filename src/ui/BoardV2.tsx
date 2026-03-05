@@ -652,16 +652,6 @@ export const BoardV2 = ({
           </section>
 
           <section className="game-ui-v2-players">
-            <h3>{v2.tokens}</h3>
-            <div className="game-ui-v2-token-list">
-              <div className="game-ui-v2-token-row"><span>{v2.extraHandToken}</span><strong>{G.extraHandPlayTokens?.[id] ?? 0}</strong></div>
-              <div className="game-ui-v2-token-row"><span>{v2.sukhpayPending}</span><strong>{G.sukhpayZsuPendingBonus?.[id] ? t.yes : t.no}</strong></div>
-              <div className="game-ui-v2-token-row"><span>{v2.sukhpayUntil}</span><strong>{G.sukhpayZsuWatchUntilTurn?.[id] ?? 0}</strong></div>
-              <div className="game-ui-v2-token-row"><span>{v2.shieldUntil}</span><strong>{G.lyapScandalShieldUntilTurn?.[id] ?? 0}</strong></div>
-            </div>
-          </section>
-
-          <section className="game-ui-v2-players">
             <h3>{v2.playersOverview}</h3>
             <div className="game-ui-v2-players-grid">
               {playerIds.map((pid) => {

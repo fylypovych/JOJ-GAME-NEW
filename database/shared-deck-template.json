@@ -916,7 +916,7 @@
       "id": "support-01",
       "title": "Моральна підтримка",
       "category": "SUPPORT",
-      "image": "/cards/support-01.png",
+      "image": "/cards/_.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -929,7 +929,7 @@
       "id": "support-02",
       "title": "Кавопауза",
       "category": "SUPPORT",
-      "image": "/cards/support-02.png",
+      "image": "/cards/_-1772714492058.webp",
       "effects": [
         {
           "resource": "time",
@@ -946,14 +946,14 @@
       "id": "support-03",
       "title": "Психологічний тренінг",
       "category": "SUPPORT",
-      "image": "/cards/support-03.png",
+      "image": "/cards/_-1772714539592.webp",
       "effects": [
         {
-          "resource": "discipline",
+          "resource": "reputation",
           "value": 1
         },
         {
-          "resource": "reputation",
+          "resource": "discipline",
           "value": 1
         }
       ],
@@ -963,7 +963,7 @@
       "id": "support-04",
       "title": "Виховна година",
       "category": "SUPPORT",
-      "image": "/cards/support-04.png",
+      "image": "/cards/card-1772714564147.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -976,7 +976,7 @@
       "id": "support-05",
       "title": "Спільна вечеря",
       "category": "SUPPORT",
-      "image": "/cards/support-05.png",
+      "image": "/cards/card-1772714604953.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -993,7 +993,7 @@
       "id": "support-06",
       "title": "Лікарська довідка",
       "category": "SUPPORT",
-      "image": "/cards/support-06.png",
+      "image": "/cards/card-1772714633584.webp",
       "effects": [
         {
           "resource": "documents",
@@ -1006,7 +1006,7 @@
       "id": "support-07",
       "title": "Підміна чергового",
       "category": "SUPPORT",
-      "image": "/cards/support-07.png",
+      "image": "/cards/card-1772714671936.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1019,7 +1019,7 @@
       "id": "support-08",
       "title": "Бойове братерство",
       "category": "SUPPORT",
-      "image": "/cards/support-08.png",
+      "image": "/cards/card-1772714689637.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1036,7 +1036,7 @@
       "id": "support-09",
       "title": "Військовий капелан",
       "category": "SUPPORT",
-      "image": "/cards/support-09.png",
+      "image": "/cards/card-1772714707997.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1049,7 +1049,7 @@
       "id": "support-10",
       "title": "Порада від старшини",
       "category": "SUPPORT",
-      "image": "/cards/support-10.png",
+      "image": "/cards/card-1772714722903.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1062,7 +1062,7 @@
       "id": "support-11",
       "title": "Відновлення документів",
       "category": "SUPPORT",
-      "image": "/cards/support-11.png",
+      "image": "/cards/card-1772714742579.webp",
       "effects": [
         {
           "resource": "documents",
@@ -1075,7 +1075,7 @@
       "id": "support-12",
       "title": "Сміх у строю",
       "category": "SUPPORT",
-      "image": "/cards/support-12.png",
+      "image": "/cards/card-1772715218332.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1088,7 +1088,7 @@
       "id": "support-13",
       "title": "Психологічна розрядка",
       "category": "SUPPORT",
-      "image": "/cards/support-13.png",
+      "image": "/cards/card-1772715244138.webp",
       "effects": [
         {
           "resource": "time",
@@ -1105,14 +1105,14 @@
       "id": "support-14",
       "title": "Діловод з досвідом",
       "category": "SUPPORT",
-      "image": "/cards/support-14.png",
+      "image": "/cards/card-1772715259141.webp",
       "effects": [
         {
-          "resource": "documents",
+          "resource": "time",
           "value": 1
         },
         {
-          "resource": "time",
+          "resource": "documents",
           "value": 1
         }
       ],
@@ -1122,7 +1122,7 @@
       "id": "support-15",
       "title": "Аудит реальності",
       "category": "SUPPORT",
-      "image": "/cards/support-15.png",
+      "image": "/cards/card-1772715273172.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1139,7 +1139,7 @@
       "id": "support-16",
       "title": "Перерозподіл завдань",
       "category": "SUPPORT",
-      "image": "/cards/support-16.png",
+      "image": "/cards/card-1772715296842.webp",
       "effects": [
         {
           "resource": "time",
@@ -1152,7 +1152,7 @@
       "id": "support-17",
       "title": "Волонтерська допомога",
       "category": "SUPPORT",
-      "image": "/cards/support-17.png",
+      "image": "/cards/card-1772715319817.webp",
       "effects": [
         {
           "resource": "documents",
@@ -1169,7 +1169,7 @@
       "id": "support-18",
       "title": "Командирський обхід",
       "category": "SUPPORT",
-      "image": "/cards/support-18.png",
+      "image": "/cards/card-1772715512342.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1182,7 +1182,7 @@
       "id": "support-19",
       "title": "Звіт за зразком НАТО",
       "category": "SUPPORT",
-      "image": "/cards/support-19.png",
+      "image": "/cards/card-1772715544114.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1199,7 +1199,7 @@
       "id": "support-20",
       "title": "Підпис у три примірники",
       "category": "SUPPORT",
-      "image": "/cards/support-20.png",
+      "image": "/cards/card-1772715580942.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1212,7 +1212,7 @@
       "id": "support-21",
       "title": "Залучення резерву часу",
       "category": "SUPPORT",
-      "image": "/cards/support-21.png",
+      "image": "/cards/card-1772715607819.webp",
       "effects": [
         {
           "resource": "time",
@@ -1225,7 +1225,7 @@
       "id": "support-22",
       "title": "Оптимізація звітності",
       "category": "SUPPORT",
-      "image": "/cards/support-22.png",
+      "image": "/cards/card-1772715652703.webp",
       "effects": [
         {
           "resource": "time",
@@ -1242,7 +1242,7 @@
       "id": "support-23",
       "title": "Внутрішній аудит документів",
       "category": "SUPPORT",
-      "image": "/cards/support-23.png",
+      "image": "/cards/card-1772715664135.webp",
       "effects": [
         {
           "resource": "documents",
@@ -1255,15 +1255,15 @@
       "id": "support-24",
       "title": "Звіт до звіту про звіт",
       "category": "SUPPORT",
-      "image": "/cards/support-24.png",
+      "image": "/cards/card-1772715687524.webp",
       "effects": [
-        {
-          "resource": "documents",
-          "value": 1
-        },
         {
           "resource": "time",
           "value": -1
+        },
+        {
+          "resource": "documents",
+          "value": 1
         }
       ],
       "flavor": "Рівень контролю: ∞."
@@ -1272,15 +1272,15 @@
       "id": "support-25",
       "title": "Позапланове ААR",
       "category": "SUPPORT",
-      "image": "/cards/support-25.png",
+      "image": "/cards/card-1772715705510.webp",
       "effects": [
-        {
-          "resource": "reputation",
-          "value": 2
-        },
         {
           "resource": "time",
           "value": -1
+        },
+        {
+          "resource": "reputation",
+          "value": 2
         }
       ],
       "flavor": "Після аналізу зрозуміли, що аналіз зайняв усе вікно."
@@ -1289,7 +1289,7 @@
       "id": "support-26",
       "title": "Польове налагодження Excel",
       "category": "SUPPORT",
-      "image": "/cards/support-26.png",
+      "image": "/cards/card-1772715718861.webp",
       "effects": [
         {
           "resource": "tech",
@@ -1302,14 +1302,14 @@
       "id": "support-27",
       "title": "Контрольний збір рапортів",
       "category": "SUPPORT",
-      "image": "/cards/support-27.png",
+      "image": "/cards/card-1772715729674.webp",
       "effects": [
         {
-          "resource": "discipline",
+          "resource": "reputation",
           "value": 1
         },
         {
-          "resource": "reputation",
+          "resource": "discipline",
           "value": 1
         }
       ],
@@ -1320,6 +1320,7 @@
       "title": "Національний університет оборони України імені Івана Черняховського",
       "category": "VVNZ",
       "image": "/cards/card-1771875754258.webp",
+      "grantRank": "junior_lieutenant",
       "effects": [
         {
           "resource": "discipline",
@@ -1330,14 +1331,14 @@
           "value": 1
         }
       ],
-      "flavor": "Тут навіть курсові звучать як накази.",
-      "grantRank": "junior_lieutenant"
+      "flavor": "Тут навіть курсові звучать як накази."
     },
     {
       "id": "vvnz-02",
       "title": "Харківський національний університет Повітряних Сил імені Івана Кожедуба",
       "category": "VVNZ",
       "image": "/cards/card-1771875767843.webp",
+      "grantRank": "junior_lieutenant",
       "effects": [
         {
           "resource": "reputation",
@@ -1348,14 +1349,14 @@
           "value": 1
         }
       ],
-      "flavor": "У небі — як у звіті: головне не втратити лінію.",
-      "grantRank": "junior_lieutenant"
+      "flavor": "У небі — як у звіті: головне не втратити лінію."
     },
     {
       "id": "vvnz-03",
       "title": "Національна академія сухопутних військ імені гетьмана Петра Сагайдачного",
       "category": "VVNZ",
       "image": "/cards/card-1771875780893.webp",
+      "grantRank": "junior_lieutenant",
       "effects": [
         {
           "resource": "discipline",
@@ -1366,14 +1367,14 @@
           "value": 1
         }
       ],
-      "flavor": "Тут формується хребет армії — і почерк рапорту.",
-      "grantRank": "junior_lieutenant"
+      "flavor": "Тут формується хребет армії — і почерк рапорту."
     },
     {
       "id": "vvnz-04",
       "title": "Військова академія (м. Одеса)",
       "category": "VVNZ",
       "image": "/cards/card-1771875790279.webp",
+      "grantRank": "junior_lieutenant",
       "effects": [
         {
           "resource": "reputation",
@@ -1384,14 +1385,14 @@
           "value": 1
         }
       ],
-      "flavor": "На Півдні народжується тактика і легенди.",
-      "grantRank": "junior_lieutenant"
+      "flavor": "На Півдні народжується тактика і легенди."
     },
     {
       "id": "vvnz-05",
       "title": "Національна академія Національної гвардії України",
       "category": "VVNZ",
       "image": "/cards/card-1771875807542.webp",
+      "grantRank": "senior_master_sergeant",
       "effects": [
         {
           "resource": "reputation",
@@ -1402,14 +1403,14 @@
           "value": 1
         }
       ],
-      "flavor": "Тут порядок — не просто слово, а режим доби.",
-      "grantRank": "senior_master_sergeant"
+      "flavor": "Тут порядок — не просто слово, а режим доби."
     },
     {
       "id": "vvnz-06",
       "title": "Академія Державної прикордонної служби України імені Богдана Хмельницького",
       "category": "VVNZ",
       "image": "/cards/card-1771875817949.webp",
+      "grantRank": "senior_master_sergeant",
       "effects": [
         {
           "resource": "reputation",
@@ -1420,14 +1421,14 @@
           "value": 1
         }
       ],
-      "flavor": "Кордон починається не з лінії на мапі, а з характеру офіцера.",
-      "grantRank": "senior_master_sergeant"
+      "flavor": "Кордон починається не з лінії на мапі, а з характеру офіцера."
     },
     {
       "id": "vvnz-07",
       "title": "Військовий інститут Київського національного університету імені Тараса Шевченка",
       "category": "VVNZ",
       "image": "/cards/card-1771875829053.webp",
+      "grantRank": "senior_master_sergeant",
       "effects": [
         {
           "resource": "reputation",
@@ -1438,14 +1439,14 @@
           "value": 1
         }
       ],
-      "flavor": "Магістерська з лідерства — і з трьома підписами.",
-      "grantRank": "senior_master_sergeant"
+      "flavor": "Магістерська з лідерства — і з трьома підписами."
     },
     {
       "id": "vvnz-08",
       "title": "Військовий інститут телекомунікацій та інформатизації імені Героїв Крут",
       "category": "VVNZ",
       "image": "/cards/card-1771875840664.webp",
+      "grantRank": "senior_master_sergeant",
       "effects": [
         {
           "resource": "reputation",
@@ -1456,14 +1457,14 @@
           "value": 1
         }
       ],
-      "flavor": "Коли мережа лягла — це значить, що курсант встав.",
-      "grantRank": "senior_master_sergeant"
+      "flavor": "Коли мережа лягла — це значить, що курсант встав."
     },
     {
       "id": "vvnz-09",
       "title": "Інститут Військово-Морських Сил Національного університету «Одеська морська академія»",
       "category": "VVNZ",
       "image": "/cards/card-1771875856832.webp",
+      "grantRank": "senior_sergeant",
       "effects": [
         {
           "resource": "reputation",
@@ -1474,14 +1475,14 @@
           "value": 1
         }
       ],
-      "flavor": "Швартуй документи, курсант, і тримай горизонт рівно.",
-      "grantRank": "senior_sergeant"
+      "flavor": "Швартуй документи, курсант, і тримай горизонт рівно."
     },
     {
       "id": "vvnz-10",
       "title": "Житомирський військовий інститут імені С. П. Корольова",
       "category": "VVNZ",
       "image": "/cards/card-1771875870514.webp",
+      "grantRank": "senior_sergeant",
       "effects": [
         {
           "resource": "discipline",
@@ -1492,14 +1493,14 @@
           "value": 1
         }
       ],
-      "flavor": "Космос починається з польового заліку.",
-      "grantRank": "senior_sergeant"
+      "flavor": "Космос починається з польового заліку."
     },
     {
       "id": "vvnz-11",
       "title": "Харківський військовий коледж сержантського складу Повітряних Сил",
       "category": "VVNZ",
       "image": "/cards/card-1771875881152.webp",
+      "grantRank": "senior_sergeant",
       "effects": [
         {
           "resource": "discipline",
@@ -1510,14 +1511,14 @@
           "value": 1
         }
       ],
-      "flavor": "Тут вчать тримати небо так само впевнено, як стрій.",
-      "grantRank": "senior_sergeant"
+      "flavor": "Тут вчать тримати небо так само впевнено, як стрій."
     },
     {
       "id": "vvnz-12",
       "title": "Київський військовий ліцей імені Івана Богуна",
       "category": "VVNZ",
       "image": "/cards/card-1771875889671.webp",
+      "grantRank": "senior_sergeant",
       "effects": [
         {
           "resource": "reputation",
@@ -1528,13 +1529,12 @@
           "value": 1
         }
       ],
-      "flavor": "Тут мрія носить форму ще до звання.",
-      "grantRank": "senior_sergeant"
+      "flavor": "Тут мрія носить форму ще до звання."
     },
     {
       "id": "legendary-01",
       "title": "Мислі Залужного",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884318909.webp",
       "effects": [
         {
@@ -1551,7 +1551,7 @@
     {
       "id": "legendary-02",
       "title": "Сміх Буданова",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884335395.webp",
       "effects": [
         {
@@ -1564,7 +1564,7 @@
     {
       "id": "legendary-03",
       "title": "Посмішка Малюка",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884348987.webp",
       "effects": [
         {
@@ -1581,7 +1581,7 @@
     {
       "id": "legendary-04",
       "title": "Фонд Притули",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884366598.webp",
       "effects": [
         {
@@ -1602,7 +1602,7 @@
     {
       "id": "legendary-05",
       "title": "Сухпай ЗСУ",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884379477.webp",
       "effects": [
         {
@@ -1623,7 +1623,7 @@
     {
       "id": "legendary-06",
       "title": "Статуя Святого ТОРа",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884391744.webp",
       "effects": [],
       "flavor": "Коли гримить звітність — мовчи і натискай “оновити”."
@@ -1631,7 +1631,7 @@
     {
       "id": "legendary-07",
       "title": "Церква Святого Лідерства",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884403769.webp",
       "effects": [
         {
@@ -1648,7 +1648,7 @@
     {
       "id": "legendary-08",
       "title": "Старлінк",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884418138.webp",
       "effects": [
         {
@@ -1665,7 +1665,7 @@
     {
       "id": "legendary-09",
       "title": "Вода “Прозора”",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884430988.webp",
       "effects": [
         {
@@ -1678,7 +1678,7 @@
     {
       "id": "legendary-10",
       "title": "Дрончик",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884442233.webp",
       "effects": [
         {
@@ -1691,7 +1691,7 @@
     {
       "id": "legendary-11",
       "title": "Старий польський корч",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884453732.webp",
       "effects": [
         {
@@ -1708,7 +1708,7 @@
     {
       "id": "legendary-12",
       "title": "Грамота “Єбать ти молодець”",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884466520.webp",
       "effects": [
         {
@@ -1721,7 +1721,7 @@
     {
       "id": "legendary-13",
       "title": "Хороший прес-офіцер",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884483248.webp",
       "effects": [],
       "flavor": "Новина — це зброя, якщо подати її з посмішкою."
@@ -1729,7 +1729,7 @@
     {
       "id": "legendary-14",
       "title": "Відпустка",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884495159.webp",
       "effects": [
         {
@@ -2777,7 +2777,7 @@
       "id": "support-01",
       "title": "Моральна підтримка",
       "category": "SUPPORT",
-      "image": "/cards/support-01.png",
+      "image": "/cards/_.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -2790,7 +2790,7 @@
       "id": "support-02",
       "title": "Кавопауза",
       "category": "SUPPORT",
-      "image": "/cards/support-02.png",
+      "image": "/cards/_-1772714492058.webp",
       "effects": [
         {
           "resource": "time",
@@ -2807,14 +2807,14 @@
       "id": "support-03",
       "title": "Психологічний тренінг",
       "category": "SUPPORT",
-      "image": "/cards/support-03.png",
+      "image": "/cards/_-1772714539592.webp",
       "effects": [
         {
-          "resource": "discipline",
+          "resource": "reputation",
           "value": 1
         },
         {
-          "resource": "reputation",
+          "resource": "discipline",
           "value": 1
         }
       ],
@@ -2824,7 +2824,7 @@
       "id": "support-04",
       "title": "Виховна година",
       "category": "SUPPORT",
-      "image": "/cards/support-04.png",
+      "image": "/cards/card-1772714564147.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2837,7 +2837,7 @@
       "id": "support-05",
       "title": "Спільна вечеря",
       "category": "SUPPORT",
-      "image": "/cards/support-05.png",
+      "image": "/cards/card-1772714604953.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -2854,7 +2854,7 @@
       "id": "support-06",
       "title": "Лікарська довідка",
       "category": "SUPPORT",
-      "image": "/cards/support-06.png",
+      "image": "/cards/card-1772714633584.webp",
       "effects": [
         {
           "resource": "documents",
@@ -2867,7 +2867,7 @@
       "id": "support-07",
       "title": "Підміна чергового",
       "category": "SUPPORT",
-      "image": "/cards/support-07.png",
+      "image": "/cards/card-1772714671936.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2880,7 +2880,7 @@
       "id": "support-08",
       "title": "Бойове братерство",
       "category": "SUPPORT",
-      "image": "/cards/support-08.png",
+      "image": "/cards/card-1772714689637.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2897,7 +2897,7 @@
       "id": "support-09",
       "title": "Військовий капелан",
       "category": "SUPPORT",
-      "image": "/cards/support-09.png",
+      "image": "/cards/card-1772714707997.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -2910,7 +2910,7 @@
       "id": "support-10",
       "title": "Порада від старшини",
       "category": "SUPPORT",
-      "image": "/cards/support-10.png",
+      "image": "/cards/card-1772714722903.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2923,7 +2923,7 @@
       "id": "support-11",
       "title": "Відновлення документів",
       "category": "SUPPORT",
-      "image": "/cards/support-11.png",
+      "image": "/cards/card-1772714742579.webp",
       "effects": [
         {
           "resource": "documents",
@@ -2936,7 +2936,7 @@
       "id": "support-12",
       "title": "Сміх у строю",
       "category": "SUPPORT",
-      "image": "/cards/support-12.png",
+      "image": "/cards/card-1772715218332.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2949,7 +2949,7 @@
       "id": "support-13",
       "title": "Психологічна розрядка",
       "category": "SUPPORT",
-      "image": "/cards/support-13.png",
+      "image": "/cards/card-1772715244138.webp",
       "effects": [
         {
           "resource": "time",
@@ -2966,14 +2966,14 @@
       "id": "support-14",
       "title": "Діловод з досвідом",
       "category": "SUPPORT",
-      "image": "/cards/support-14.png",
+      "image": "/cards/card-1772715259141.webp",
       "effects": [
         {
-          "resource": "documents",
+          "resource": "time",
           "value": 1
         },
         {
-          "resource": "time",
+          "resource": "documents",
           "value": 1
         }
       ],
@@ -2983,7 +2983,7 @@
       "id": "support-15",
       "title": "Аудит реальності",
       "category": "SUPPORT",
-      "image": "/cards/support-15.png",
+      "image": "/cards/card-1772715273172.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3000,7 +3000,7 @@
       "id": "support-16",
       "title": "Перерозподіл завдань",
       "category": "SUPPORT",
-      "image": "/cards/support-16.png",
+      "image": "/cards/card-1772715296842.webp",
       "effects": [
         {
           "resource": "time",
@@ -3013,7 +3013,7 @@
       "id": "support-17",
       "title": "Волонтерська допомога",
       "category": "SUPPORT",
-      "image": "/cards/support-17.png",
+      "image": "/cards/card-1772715319817.webp",
       "effects": [
         {
           "resource": "documents",
@@ -3030,7 +3030,7 @@
       "id": "support-18",
       "title": "Командирський обхід",
       "category": "SUPPORT",
-      "image": "/cards/support-18.png",
+      "image": "/cards/card-1772715512342.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3043,7 +3043,7 @@
       "id": "support-19",
       "title": "Звіт за зразком НАТО",
       "category": "SUPPORT",
-      "image": "/cards/support-19.png",
+      "image": "/cards/card-1772715544114.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3060,7 +3060,7 @@
       "id": "support-20",
       "title": "Підпис у три примірники",
       "category": "SUPPORT",
-      "image": "/cards/support-20.png",
+      "image": "/cards/card-1772715580942.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3073,7 +3073,7 @@
       "id": "support-21",
       "title": "Залучення резерву часу",
       "category": "SUPPORT",
-      "image": "/cards/support-21.png",
+      "image": "/cards/card-1772715607819.webp",
       "effects": [
         {
           "resource": "time",
@@ -3086,7 +3086,7 @@
       "id": "support-22",
       "title": "Оптимізація звітності",
       "category": "SUPPORT",
-      "image": "/cards/support-22.png",
+      "image": "/cards/card-1772715652703.webp",
       "effects": [
         {
           "resource": "time",
@@ -3103,7 +3103,7 @@
       "id": "support-23",
       "title": "Внутрішній аудит документів",
       "category": "SUPPORT",
-      "image": "/cards/support-23.png",
+      "image": "/cards/card-1772715664135.webp",
       "effects": [
         {
           "resource": "documents",
@@ -3116,15 +3116,15 @@
       "id": "support-24",
       "title": "Звіт до звіту про звіт",
       "category": "SUPPORT",
-      "image": "/cards/support-24.png",
+      "image": "/cards/card-1772715687524.webp",
       "effects": [
-        {
-          "resource": "documents",
-          "value": 1
-        },
         {
           "resource": "time",
           "value": -1
+        },
+        {
+          "resource": "documents",
+          "value": 1
         }
       ],
       "flavor": "Рівень контролю: ∞."
@@ -3133,15 +3133,15 @@
       "id": "support-25",
       "title": "Позапланове ААR",
       "category": "SUPPORT",
-      "image": "/cards/support-25.png",
+      "image": "/cards/card-1772715705510.webp",
       "effects": [
-        {
-          "resource": "reputation",
-          "value": 2
-        },
         {
           "resource": "time",
           "value": -1
+        },
+        {
+          "resource": "reputation",
+          "value": 2
         }
       ],
       "flavor": "Після аналізу зрозуміли, що аналіз зайняв усе вікно."
@@ -3150,7 +3150,7 @@
       "id": "support-26",
       "title": "Польове налагодження Excel",
       "category": "SUPPORT",
-      "image": "/cards/support-26.png",
+      "image": "/cards/card-1772715718861.webp",
       "effects": [
         {
           "resource": "tech",
@@ -3163,14 +3163,14 @@
       "id": "support-27",
       "title": "Контрольний збір рапортів",
       "category": "SUPPORT",
-      "image": "/cards/support-27.png",
+      "image": "/cards/card-1772715729674.webp",
       "effects": [
         {
-          "resource": "discipline",
+          "resource": "reputation",
           "value": 1
         },
         {
-          "resource": "reputation",
+          "resource": "discipline",
           "value": 1
         }
       ],
@@ -3181,6 +3181,7 @@
       "title": "Національний університет оборони України імені Івана Черняховського",
       "category": "VVNZ",
       "image": "/cards/card-1771875754258.webp",
+      "grantRank": "junior_lieutenant",
       "effects": [
         {
           "resource": "discipline",
@@ -3191,14 +3192,14 @@
           "value": 1
         }
       ],
-      "flavor": "Тут навіть курсові звучать як накази.",
-      "grantRank": "junior_lieutenant"
+      "flavor": "Тут навіть курсові звучать як накази."
     },
     {
       "id": "vvnz-02",
       "title": "Харківський національний університет Повітряних Сил імені Івана Кожедуба",
       "category": "VVNZ",
       "image": "/cards/card-1771875767843.webp",
+      "grantRank": "junior_lieutenant",
       "effects": [
         {
           "resource": "reputation",
@@ -3209,14 +3210,14 @@
           "value": 1
         }
       ],
-      "flavor": "У небі — як у звіті: головне не втратити лінію.",
-      "grantRank": "junior_lieutenant"
+      "flavor": "У небі — як у звіті: головне не втратити лінію."
     },
     {
       "id": "vvnz-03",
       "title": "Національна академія сухопутних військ імені гетьмана Петра Сагайдачного",
       "category": "VVNZ",
       "image": "/cards/card-1771875780893.webp",
+      "grantRank": "junior_lieutenant",
       "effects": [
         {
           "resource": "discipline",
@@ -3227,14 +3228,14 @@
           "value": 1
         }
       ],
-      "flavor": "Тут формується хребет армії — і почерк рапорту.",
-      "grantRank": "junior_lieutenant"
+      "flavor": "Тут формується хребет армії — і почерк рапорту."
     },
     {
       "id": "vvnz-04",
       "title": "Військова академія (м. Одеса)",
       "category": "VVNZ",
       "image": "/cards/card-1771875790279.webp",
+      "grantRank": "junior_lieutenant",
       "effects": [
         {
           "resource": "reputation",
@@ -3245,14 +3246,14 @@
           "value": 1
         }
       ],
-      "flavor": "На Півдні народжується тактика і легенди.",
-      "grantRank": "junior_lieutenant"
+      "flavor": "На Півдні народжується тактика і легенди."
     },
     {
       "id": "vvnz-05",
       "title": "Національна академія Національної гвардії України",
       "category": "VVNZ",
       "image": "/cards/card-1771875807542.webp",
+      "grantRank": "senior_master_sergeant",
       "effects": [
         {
           "resource": "reputation",
@@ -3263,14 +3264,14 @@
           "value": 1
         }
       ],
-      "flavor": "Тут порядок — не просто слово, а режим доби.",
-      "grantRank": "senior_master_sergeant"
+      "flavor": "Тут порядок — не просто слово, а режим доби."
     },
     {
       "id": "vvnz-06",
       "title": "Академія Державної прикордонної служби України імені Богдана Хмельницького",
       "category": "VVNZ",
       "image": "/cards/card-1771875817949.webp",
+      "grantRank": "senior_master_sergeant",
       "effects": [
         {
           "resource": "reputation",
@@ -3281,14 +3282,14 @@
           "value": 1
         }
       ],
-      "flavor": "Кордон починається не з лінії на мапі, а з характеру офіцера.",
-      "grantRank": "senior_master_sergeant"
+      "flavor": "Кордон починається не з лінії на мапі, а з характеру офіцера."
     },
     {
       "id": "vvnz-07",
       "title": "Військовий інститут Київського національного університету імені Тараса Шевченка",
       "category": "VVNZ",
       "image": "/cards/card-1771875829053.webp",
+      "grantRank": "senior_master_sergeant",
       "effects": [
         {
           "resource": "reputation",
@@ -3299,14 +3300,14 @@
           "value": 1
         }
       ],
-      "flavor": "Магістерська з лідерства — і з трьома підписами.",
-      "grantRank": "senior_master_sergeant"
+      "flavor": "Магістерська з лідерства — і з трьома підписами."
     },
     {
       "id": "vvnz-08",
       "title": "Військовий інститут телекомунікацій та інформатизації імені Героїв Крут",
       "category": "VVNZ",
       "image": "/cards/card-1771875840664.webp",
+      "grantRank": "senior_master_sergeant",
       "effects": [
         {
           "resource": "reputation",
@@ -3317,14 +3318,14 @@
           "value": 1
         }
       ],
-      "flavor": "Коли мережа лягла — це значить, що курсант встав.",
-      "grantRank": "senior_master_sergeant"
+      "flavor": "Коли мережа лягла — це значить, що курсант встав."
     },
     {
       "id": "vvnz-09",
       "title": "Інститут Військово-Морських Сил Національного університету «Одеська морська академія»",
       "category": "VVNZ",
       "image": "/cards/card-1771875856832.webp",
+      "grantRank": "senior_sergeant",
       "effects": [
         {
           "resource": "reputation",
@@ -3335,14 +3336,14 @@
           "value": 1
         }
       ],
-      "flavor": "Швартуй документи, курсант, і тримай горизонт рівно.",
-      "grantRank": "senior_sergeant"
+      "flavor": "Швартуй документи, курсант, і тримай горизонт рівно."
     },
     {
       "id": "vvnz-10",
       "title": "Житомирський військовий інститут імені С. П. Корольова",
       "category": "VVNZ",
       "image": "/cards/card-1771875870514.webp",
+      "grantRank": "senior_sergeant",
       "effects": [
         {
           "resource": "discipline",
@@ -3353,14 +3354,14 @@
           "value": 1
         }
       ],
-      "flavor": "Космос починається з польового заліку.",
-      "grantRank": "senior_sergeant"
+      "flavor": "Космос починається з польового заліку."
     },
     {
       "id": "vvnz-11",
       "title": "Харківський військовий коледж сержантського складу Повітряних Сил",
       "category": "VVNZ",
       "image": "/cards/card-1771875881152.webp",
+      "grantRank": "senior_sergeant",
       "effects": [
         {
           "resource": "discipline",
@@ -3371,14 +3372,14 @@
           "value": 1
         }
       ],
-      "flavor": "Тут вчать тримати небо так само впевнено, як стрій.",
-      "grantRank": "senior_sergeant"
+      "flavor": "Тут вчать тримати небо так само впевнено, як стрій."
     },
     {
       "id": "vvnz-12",
       "title": "Київський військовий ліцей імені Івана Богуна",
       "category": "VVNZ",
       "image": "/cards/card-1771875889671.webp",
+      "grantRank": "senior_sergeant",
       "effects": [
         {
           "resource": "reputation",
@@ -3389,8 +3390,7 @@
           "value": 1
         }
       ],
-      "flavor": "Тут мрія носить форму ще до звання.",
-      "grantRank": "senior_sergeant"
+      "flavor": "Тут мрія носить форму ще до звання."
     }
   ],
   "legendaryDeck": [

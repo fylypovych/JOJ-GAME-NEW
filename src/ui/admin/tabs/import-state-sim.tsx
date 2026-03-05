@@ -135,9 +135,6 @@ export const AdminStateTab = ({
                     const rankId = player?.rankId ?? raw?.ranks?.[pid] ?? '-';
                     const rankName = typeof rankId === 'string' ? localizedRankName(rankId) : String(rankId);
                     const name = raw?.playerNames?.[pid] ?? `P${pid}`;
-                    const extraToken = raw?.extraHandPlayTokens?.[pid] ?? 0;
-                    const sukhpayPending = Boolean(raw?.sukhpayZsuPendingBonus?.[pid]);
-                    const sukhpayUntil = raw?.sukhpayZsuWatchUntilTurn?.[pid] ?? 0;
                     return (
                       <li key={`state-player-${pid}`}>
                         <strong>{name}</strong> (ID: {pid}) {activePlayer === pid ? `• ${t.stateActive}` : ''}
@@ -145,8 +142,6 @@ export const AdminStateTab = ({
                         {t.stateRank}: <code>{rankName}</code> (<span>{String(rankId)}</span>) | {t.stateHand}: {handCount} | {t.stateLegendaryHand}: {legendaryHandCount}
                         <br />
                         {t.stateResources}: {t.resources.time} {resources.time ?? 0}, {t.resources.reputation} {resources.reputation ?? 0}, {t.resources.discipline} {resources.discipline ?? 0}, {t.resources.documents} {resources.documents ?? 0}, {t.resources.tech} {resources.tech ?? 0}
-                        <br />
-                        {t.stateTokens}: {t.stateTokenExtraHand} {extraToken} | {t.stateTokenSukhpayPending} {sukhpayPending ? t.yes : t.no} | {t.stateTokenSukhpayUntilTurn} {sukhpayUntil}
                       </li>
                     );
                   })}

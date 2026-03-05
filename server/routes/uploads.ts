@@ -58,10 +58,13 @@ export const registerUploadRoutes = ({
     const inputBase = parsedInput.name || cardId || `card-${Date.now()}`;
     const inputExt = (parsedInput.ext || '').replace(/^\./, '').toLowerCase();
     const ext = /^[a-z0-9]+$/.test(inputExt) ? inputExt : fallbackExt;
-    const safeNameBase = inputBase
+    const normalizedBase = inputBase
       .toLowerCase()
       .replace(/[^a-z0-9-_]+/g, '-')
-      .replace(/^-+|-+$/g, '') || `card-${Date.now()}`;
+      .replace(/^[-_]+|[-_]+$/g, '');
+    const safeNameBase = /[a-z0-9]/.test(normalizedBase)
+      ? normalizedBase
+      : `card-${Date.now()}`;
 
     await mkdir(uploadsDir, { recursive: true });
     let candidate = `${safeNameBase}.${ext}`;
