@@ -17,6 +17,7 @@ export const Board = ({
   playerName = '',
   knownPlayerNames = {},
   sharedRanks = [],
+  cardImageById = {},
   onStateChange,
 }: LocalizedBoardProps) => {
   const t = text(lang);
@@ -225,6 +226,7 @@ export const Board = ({
                 <GameCardTile
                   key={`draft-${card.id}`}
                   card={card}
+                  resolvedImage={cardImageById[card.id]}
                   lang={lang}
                   categoryText={t.legendaryDeckLabel}
                   openPreviewKey={openPreviewKey}
@@ -340,6 +342,7 @@ export const Board = ({
             <GameCardTile
               key={card.id}
               card={card}
+              resolvedImage={cardImageById[card.id]}
               lang={lang}
               categoryText={categoryLabel(card.category, lang)}
               openPreviewKey={openPreviewKey}
@@ -381,6 +384,7 @@ export const Board = ({
                 <GameCardTile
                   key={`legendary-${card.id}`}
                   card={card}
+                  resolvedImage={cardImageById[card.id]}
                   lang={lang}
                   categoryText={t.legendaryDeckLabel}
                   openPreviewKey={openPreviewKey}

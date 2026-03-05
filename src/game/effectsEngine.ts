@@ -40,21 +40,51 @@ export const createEffectsEngine = ({
   };
 
   const replacementCostUnits = (
-    _resources: Record<ResourceKey, number>,
-    _effects: CardDefinition['effects'],
+    resources: Record<ResourceKey, number>,
+    effects: CardDefinition['effects'],
   ): number => {
-    void _resources;
-    void _effects;
-    return 0;
+    if (!effects?.length) return 0;
+    const tmp = { ...resources };
+    let missingUnits = 0;
+    effects.forEach((effect) => {
+      if (effect.resource === 'rank' || effect.value >= 0) return;
+      const need = Math.abs(effect.value);
+      const have = Math.max(0, tmp[effect.resource] ?? 0);
+      const direct = Math.min(have, need);
+      tmp[effect.resource] = have - direct;
+      missingUnits += (need - direct);
+    });
+    return missingUnits * 2;
   };
 
   const planReplacementResources = (
     resources: Record<ResourceKey, number>,
     effects: CardDefinition['effects'],
   ): ResourceKey[] | null => {
-    void resources;
-    void effects;
-    return [];
+    if (!effects?.length) return [];
+    const tmp = { ...resources };
+    const plan: ResourceKey[] = [];
+    for (const effect of effects) {
+      if (effect.resource === 'rank' || effect.value >= 0) continue;
+      const need = Math.abs(effect.value);
+      const have = Math.max(0, tmp[effect.resource] ?? 0);
+      const direct = Math.min(have, need);
+      tmp[effect.resource] = have - direct;
+      let missing = need - direct;
+      while (missing > 0) {
+        for (let i = 0; i < 2; i += 1) {
+          const candidates = resourceKeys
+            .filter((key) => key !== effect.resource && (tmp[key] ?? 0) > 0)
+            .sort((a, b) => (tmp[b] ?? 0) - (tmp[a] ?? 0));
+          const pick = candidates[0];
+          if (!pick) return null;
+          tmp[pick] = Math.max(0, (tmp[pick] ?? 0) - 1);
+          plan.push(pick);
+        }
+        missing -= 1;
+      }
+    }
+    return plan;
   };
 
   const getReplacementUnitsForCard = (
@@ -97,17 +127,53 @@ export const createEffectsEngine = ({
   ): boolean => {
     if (!effects?.length) return true;
     const playerResources = G.resources[playerID];
-    if (replacementResources.length !== 0) {
-      return false;
-    }
+    const nextResources = { ...playerResources };
+    const planned = replacementResources.length > 0
+      ? [...replacementResources]
+      : (planReplacementResources(playerResources, effects) ?? []);
+    let replacementIndex = 0;
+    const consumeReplacement = (forbidden: ResourceKey): boolean => {
+      if (replacementResources.length > 0) {
+        const key = planned[replacementIndex];
+        if (!key) return false;
+        replacementIndex += 1;
+        if (key === forbidden || (nextResources[key] ?? 0) <= 0) return false;
+        nextResources[key] = Math.max(0, (nextResources[key] ?? 0) - 1);
+        return true;
+      }
+      const candidates = resourceKeys
+        .filter((key) => key !== forbidden && (nextResources[key] ?? 0) > 0)
+        .sort((a, b) => (nextResources[b] ?? 0) - (nextResources[a] ?? 0));
+      const pick = candidates[0];
+      if (!pick) return false;
+      nextResources[pick] = Math.max(0, (nextResources[pick] ?? 0) - 1);
+      return true;
+    };
 
     effects.forEach((effect) => {
       if (effect.resource === 'rank') return;
-      if (effect.value < 0) {
-        playerResources[effect.resource] = Math.max(0, playerResources[effect.resource] + effect.value);
+      if (effect.value >= 0) {
+        nextResources[effect.resource] += effect.value;
         return;
       }
-      playerResources[effect.resource] += effect.value;
+      const need = Math.abs(effect.value);
+      const have = Math.max(0, nextResources[effect.resource] ?? 0);
+      const direct = Math.min(have, need);
+      nextResources[effect.resource] = have - direct;
+      let missing = need - direct;
+      while (missing > 0) {
+        const okFirst = consumeReplacement(effect.resource);
+        const okSecond = okFirst ? consumeReplacement(effect.resource) : false;
+        if (!okFirst || !okSecond) {
+          if (replacementResources.length > 0) return false;
+          break;
+        }
+        missing -= 1;
+      }
+    });
+
+    resourceKeys.forEach((key) => {
+      playerResources[key] = nextResources[key];
     });
     effects.forEach((effect) => {
       if (effect.resource === 'rank') {

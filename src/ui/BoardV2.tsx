@@ -56,6 +56,7 @@ export const BoardV2 = ({
   playerName = '',
   knownPlayerNames = {},
   sharedRanks = [],
+  cardImageById = {},
   roomMeta,
   onLeaveRoom,
   onStateChange,
@@ -334,8 +335,6 @@ export const BoardV2 = ({
   const promoteReason = getPromoteBlockedReason();
   const activeSelectionNeedsTarget = pendingSelection?.type === 'hand-lyap' || pendingSelection?.type === 'legendary-drone';
   const activeSelectionNeedsResource = pendingSelection?.type === 'legendary-water';
-  const pendingTargetLabel = selectedTargetId ? playerLabelById(selectedTargetId) : null;
-  const pendingResourceKey = selectedResource ?? undefined;
   const pendingCost: Partial<Record<ResourceKey, number>> = {};
   const highlightedResources = new Set<ResourceKey>();
   const deficitByResource: Partial<Record<ResourceKey, number>> = {};
@@ -346,16 +345,12 @@ export const BoardV2 = ({
       const have = resources[key] ?? 0;
       if (have < need) deficitByResource[key] = need - have;
     }
-    if (pendingResourceKey && pendingResourceKey === key) highlightedResources.add(key);
+    if (selectedResource && selectedResource === key) highlightedResources.add(key);
   }
 
   const currentStageFocus =
     stage === 'draw' ? v2.stageFocusDraw : stage === 'play' ? v2.stageFocusPlay : stage === 'end' ? v2.stageFocusEnd : '';
   const stageClass = stage ? `is-stage-${stage}` : 'is-stage-waiting';
-  const actionLaneCard = currentPendingCard ?? null;
-  const actionLaneActionLabel = pendingSelection
-    ? cardTitle(currentPendingCard?.id ?? '', currentPendingCard?.title ?? '', lang)
-    : null;
   return (
     <section className={`game-ui-v2-shell ${stageClass}${compactMode ? ' is-compact' : ''}`}>
       <header className="game-ui-v2-header">
@@ -431,6 +426,7 @@ export const BoardV2 = ({
                     <GameCardTile
                       key={`v2-draft-${card.id}`}
                       card={card}
+                      resolvedImage={cardImageById[card.id]}
                       lang={lang}
                       categoryText={t.legendaryDeckLabel}
                       openPreviewKey={openPreviewKey}
@@ -580,41 +576,6 @@ export const BoardV2 = ({
             ) : null}
           </section>
 
-          <section className="game-ui-v2-action-lane">
-            <div className="game-ui-v2-action-lane-head">
-              <div>
-                <p className="game-ui-v2-kicker">{v2.actionLane}</p>
-                <h3>{v2.previewOutcome}</h3>
-              </div>
-            </div>
-            <div className="game-ui-v2-action-lane-grid">
-              <div className="game-ui-v2-action-slot">
-                <strong>{v2.selectedAction}</strong>
-                <p className="game-ui-v2-subtle">
-                  {actionLaneActionLabel ?? v2.waitingAction}
-                </p>
-                {pendingTargetLabel ? <p className="game-ui-v2-subtle">{v2.target}: {pendingTargetLabel}</p> : null}
-                {pendingResourceKey ? <p className="game-ui-v2-subtle">{v2.selectedResource}: {resourceLabels[pendingResourceKey]}</p> : null}
-              </div>
-              <div className="game-ui-v2-action-slot">
-                <strong>{v2.selectedCard}</strong>
-                {actionLaneCard ? (
-                  <div className="game-ui-v2-lane-card-mini">
-                    <img src={normalizeImagePath(actionLaneCard.image) ?? `/cards/${actionLaneCard.id}.png`} alt={cardTitle(actionLaneCard.id, actionLaneCard.title, lang)} />
-                    <div>
-                      <div>{cardTitle(actionLaneCard.id, actionLaneCard.title, lang)}</div>
-                      <small>{categoryLabel(actionLaneCard.category, lang)}</small>
-                    </div>
-                  </div>
-                ) : <p className="game-ui-v2-subtle">{v2.waitingAction}</p>}
-              </div>
-              <div className="game-ui-v2-action-slot">
-                <strong>{v2.afterConfirm}</strong>
-                <p className="game-ui-v2-subtle">{pendingSelection ? (activeSelectionNeedsTarget ? v2.selectableTargetHint : v2.selectableResourceHint) : v2.waitingAction}</p>
-              </div>
-            </div>
-          </section>
-
           <section className="game-ui-v2-piles">
             <h3>{v2.tableState}</h3>
             <div className="play-area">
@@ -740,6 +701,7 @@ export const BoardV2 = ({
                   <GameCardTile
                     key={`v2-hand-${card.id}`}
                     card={card}
+                    resolvedImage={cardImageById[card.id]}
                     lang={lang}
                     categoryText={categoryLabel(card.category, lang)}
                     openPreviewKey={openPreviewKey}
@@ -782,6 +744,7 @@ export const BoardV2 = ({
                     <GameCardTile
                       key={`v2-legendary-${card.id}`}
                       card={card}
+                      resolvedImage={cardImageById[card.id]}
                       lang={lang}
                       categoryText={t.legendaryDeckLabel}
                       openPreviewKey={openPreviewKey}

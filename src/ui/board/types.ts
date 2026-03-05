@@ -7,6 +7,7 @@ export type LocalizedBoardProps = BoardProps<JojGameState> & {
   playerName?: string;
   knownPlayerNames?: Record<string, string>;
   sharedRanks?: RankDefinition[];
+  cardImageById?: Record<string, string>;
   roomMeta?: {
     matchID: string;
     playerID: string;

@@ -177,6 +177,14 @@ export const App = () => {
       .filter((card) => galleryCategoryFilter === 'ALL' || card.category === galleryCategoryFilter)
       .sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title))
   ), [cardCatalog, galleryCategoryFilter]);
+  const cardImageById = useMemo<Record<string, string>>(
+    () =>
+      cardCatalog.reduce<Record<string, string>>((acc, card) => {
+        if (typeof card.image === 'string' && card.image.trim()) acc[card.id] = card.image;
+        return acc;
+      }, {}),
+    [cardCatalog],
+  );
   const effectLabel = (resource: 'time' | 'reputation' | 'discipline' | 'documents' | 'tech' | 'rank') =>
     resource === 'rank' ? t.rankResource : t.resources[resource];
   const rules = t.rulesList;
@@ -575,6 +583,7 @@ export const App = () => {
             playerName={playerName}
             knownPlayerNames={roomPlayerNames}
             sharedRanks={sharedRanks}
+            cardImageById={cardImageById}
             roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
             onLeaveRoom={() => { void leaveRoom(); }}
           /> : <NetworkClientV1
@@ -586,6 +595,7 @@ export const App = () => {
             playerName={playerName}
             knownPlayerNames={roomPlayerNames}
             sharedRanks={sharedRanks}
+            cardImageById={cardImageById}
           />)
         ) : null}
       </div>

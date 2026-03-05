@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from 'react';
+import type { ReactNode, RefObject, SyntheticEvent } from 'react';
 import { normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition, JojGameState, ResourceKey } from '../../game/types';
 import type { Language } from '../i18n';
@@ -40,6 +40,7 @@ export const PilePreview = ({
 
 type GameCardTileProps = {
   card: CardDefinition;
+  resolvedImage?: string;
   lang: Language;
   categoryText: string;
   openPreviewKey: string | null;
@@ -67,6 +68,7 @@ type GameCardTileProps = {
 
 export const GameCardTile = ({
   card,
+  resolvedImage,
   lang,
   categoryText,
   openPreviewKey,
@@ -82,7 +84,17 @@ export const GameCardTile = ({
   badges,
   helperText,
 }: GameCardTileProps) => {
-  const imageSrc = normalizeImagePath(card.image) ?? `/cards/${card.id}.png`;
+  const imageSrc = normalizeImagePath(resolvedImage) ?? normalizeImagePath(card.image) ?? `/cards/${card.id}.png`;
+  const withCacheBust = (src: string) => `${src}${src.includes('?') ? '&' : '?'}v=${Date.now()}`;
+  const handleCardImageError = (event: SyntheticEvent<HTMLImageElement>) => {
+    const img = event.currentTarget as HTMLImageElement & { dataset: { retried?: string } };
+    if (!img.dataset.retried) {
+      img.dataset.retried = '1';
+      img.src = withCacheBust(imageSrc);
+      return;
+    }
+    img.style.display = 'none';
+  };
   const title = cardTitleWithOverride(card.id, card.title, lang, card.titleEn);
   const flavorText = cardFlavor(card.flavor, lang, card.flavorEn);
   const effectEntries = card.effects ?? [];
@@ -123,9 +135,7 @@ export const GameCardTile = ({
             e.stopPropagation();
             onTogglePreview(previewKey);
           }}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = 'none';
-          }}
+          onError={handleCardImageError}
         />
       </div>
       <div
@@ -136,9 +146,7 @@ export const GameCardTile = ({
         <img
           src={imageSrc}
           alt={title}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = 'none';
-          }}
+          onError={handleCardImageError}
         />
       </div>
       <div className="game-card-body">
