@@ -6,6 +6,7 @@ export const createSharedConfigStore = (deps: SharedConfigStoreDeps): SharedConf
   const fileStore = createFileSharedConfigStore(deps);
   const storageMode = deps.storageMode ?? 'file';
   const databaseUrl = deps.databaseUrl ?? '';
+  const isPsqlMissing = (error: unknown) => String(error).includes('spawn psql ENOENT');
 
   if (storageMode !== 'postgres') {
     return {
@@ -24,11 +25,23 @@ export const createSharedConfigStore = (deps: SharedConfigStoreDeps): SharedConf
 
   return {
     saveTemplate: async () => {
-      await postgresStore.saveTemplateToPostgresWithUrl(databaseUrl);
+      try {
+        await postgresStore.saveTemplateToPostgresWithUrl(databaseUrl);
+      } catch (error) {
+        if (!isPsqlMissing(error)) throw error;
+        // eslint-disable-next-line no-console
+        console.warn(`[template] postgres save skipped (psql not found), fallback to disk: ${String(error)}`);
+      }
       await fileStore.saveTemplateToDisk();
     },
     saveRanks: async () => {
-      await postgresStore.saveRanksToPostgresWithUrl(databaseUrl);
+      try {
+        await postgresStore.saveRanksToPostgresWithUrl(databaseUrl);
+      } catch (error) {
+        if (!isPsqlMissing(error)) throw error;
+        // eslint-disable-next-line no-console
+        console.warn(`[ranks] postgres save skipped (psql not found), fallback to disk: ${String(error)}`);
+      }
       await fileStore.saveRanksToDisk();
     },
     loadTemplate: async () => {
@@ -52,11 +65,23 @@ export const createSharedConfigStore = (deps: SharedConfigStoreDeps): SharedConf
       }
     },
     saveTemplateToDisk: async () => {
-      await postgresStore.saveTemplateToPostgresWithUrl(databaseUrl);
+      try {
+        await postgresStore.saveTemplateToPostgresWithUrl(databaseUrl);
+      } catch (error) {
+        if (!isPsqlMissing(error)) throw error;
+        // eslint-disable-next-line no-console
+        console.warn(`[template] postgres save skipped (psql not found), fallback to disk: ${String(error)}`);
+      }
       await fileStore.saveTemplateToDisk();
     },
     saveRanksToDisk: async () => {
-      await postgresStore.saveRanksToPostgresWithUrl(databaseUrl);
+      try {
+        await postgresStore.saveRanksToPostgresWithUrl(databaseUrl);
+      } catch (error) {
+        if (!isPsqlMissing(error)) throw error;
+        // eslint-disable-next-line no-console
+        console.warn(`[ranks] postgres save skipped (psql not found), fallback to disk: ${String(error)}`);
+      }
       await fileStore.saveRanksToDisk();
     },
     loadTemplateFromDisk: async () => {
