@@ -82,6 +82,7 @@ type JojMovesDeps = {
   recordResourceFlowStats: (G: JojGameState, before: Record<string, Record<ResourceKey, number>>) => void;
   resetNoPlayablePassStreak: (G: JojGameState) => void;
   shouldCountNoPlayablePass: (G: JojGameState, playerID: string) => boolean;
+  hasPlayableCardsByInventory: (G: JojGameState, playerID: string) => boolean;
   incrementNoPlayablePassStreak: (G: JojGameState) => void;
   incrementTurnsCompleted: (G: JojGameState) => void;
   incrementLyapPlayedOnOthers: (G: JojGameState) => void;
@@ -616,6 +617,7 @@ export const createJojMoves = (d: JojMovesDeps) => {
     if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
     if (![d.PLAY_STAGE, d.END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return d.INVALID_MOVE;
     if ((args.G.hands[playerID]?.length ?? 0) > d.HAND_LIMIT) return d.INVALID_MOVE;
+    if ((args.G.deck?.length ?? 0) === 0 && d.hasPlayableCardsByInventory(args.G, playerID)) return d.INVALID_MOVE;
     d.incrementTurnsCompleted(args.G);
     if (d.shouldCountNoPlayablePass(args.G, playerID)) d.incrementNoPlayablePassStreak(args.G);
     else d.resetNoPlayablePassStreak(args.G);

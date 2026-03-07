@@ -18,7 +18,7 @@ import { resourceKeys, resourceLabelsUk } from './resourceMeta';
 import { createRankEngine, rankSeatLimitForPlayerCount } from './rankEngine';
 import { canPlayHandCardAtStage } from './turnRules';
 import { runGameSimulationsWithDeps, type SimulationOptions, type SimulationReport } from './simulation';
-import { getActiveRanks, getSharedDeckTemplate, getTopRankId, shuffle } from './sharedConfig';
+import { buildDeckModulesFromTemplate, getActiveRanks, getSharedDeckTemplate, getTopRankId, shuffle } from './sharedConfig';
 import type { CardDefinition, GameMode, JojGameState, ResourceKey } from './types';
 export {
   addCardToSharedDeckTemplate,
@@ -46,6 +46,9 @@ const HAND_LIMIT = 8;
 const GAME_MODE_STANDARD: GameMode = 'standard';
 const GAME_MODE_STANDARD_PLUS: GameMode = 'standard_plus';
 const GAME_MODE_SIMPLIFIED: GameMode = 'simplified';
+const MODULE_VVNZ = 'vvnz' as const;
+const MODULE_LEGENDARY = 'legendary' as const;
+type OptionalModuleId = typeof MODULE_VVNZ | typeof MODULE_LEGENDARY;
 const DRAW_STAGE = 'draw';
 const PLAY_STAGE = 'play';
 const END_STAGE = 'end';
@@ -58,6 +61,20 @@ const resolveGameMode = (setupData: unknown): GameMode => {
   if (rawMode === GAME_MODE_STANDARD_PLUS) return GAME_MODE_STANDARD_PLUS;
   if (rawMode === GAME_MODE_SIMPLIFIED) return GAME_MODE_SIMPLIFIED;
   return GAME_MODE_STANDARD;
+};
+
+const resolveEnabledModules = (setupData: unknown): Set<OptionalModuleId> => {
+  const defaults = new Set<OptionalModuleId>([MODULE_VVNZ, MODULE_LEGENDARY]);
+  if (!setupData || typeof setupData !== 'object') return defaults;
+  const raw = (setupData as { modules?: unknown }).modules;
+  if (!Array.isArray(raw)) return defaults;
+  const out = new Set<OptionalModuleId>();
+  raw.forEach((value) => {
+    const normalized = String(value ?? '').trim().toLowerCase();
+    if (normalized === MODULE_VVNZ) out.add(MODULE_VVNZ);
+    if (normalized === MODULE_LEGENDARY) out.add(MODULE_LEGENDARY);
+  });
+  return out;
 };
 
 
@@ -382,21 +399,10 @@ const getWinner = (G: JojGameState): string | undefined => {
   if (G.deck.length === 0) {
     const hasCardsInHands = Object.values(G.hands).some((hand) => hand.length > 0);
     if (hasCardsInHands) return undefined;
-    return Object.entries(G.resources)
-      .sort(([, a], [, b]) =>
-        resourceKeys.reduce((sum, key) => sum + (b[key] - a[key]), 0),
-      )
-      .at(0)?.[0];
+    return getRankThenResourceLeader(G);
   }
   return undefined;
 };
-
-const getResourceLeader = (G: JojGameState): string | undefined =>
-  Object.entries(G.resources)
-    .sort(([, a], [, b]) =>
-      resourceKeys.reduce((sum, key) => sum + (b[key] - a[key]), 0),
-    )
-    .at(0)?.[0];
 
 const getRankThenResourceLeader = (G: JojGameState): string | undefined => {
   const rankIndexById = new Map(getActiveRanks().map((rank, index) => [rank.id, index]));
@@ -405,9 +411,12 @@ const getRankThenResourceLeader = (G: JojGameState): string | undefined => {
       const rankA = rankIndexById.get(G.ranks[a]) ?? -1;
       const rankB = rankIndexById.get(G.ranks[b]) ?? -1;
       if (rankA !== rankB) return rankB - rankA;
-      const scoreA = resourceKeys.reduce((sum, key) => sum + (G.resources[a]?.[key] ?? 0), 0);
-      const scoreB = resourceKeys.reduce((sum, key) => sum + (G.resources[b]?.[key] ?? 0), 0);
-      return scoreB - scoreA;
+      const reputationA = G.resources[a]?.reputation ?? 0;
+      const reputationB = G.resources[b]?.reputation ?? 0;
+      if (reputationA !== reputationB) return reputationB - reputationA;
+      const timeA = G.resources[a]?.time ?? 0;
+      const timeB = G.resources[b]?.time ?? 0;
+      return timeB - timeA;
     })
     .at(0);
 };
@@ -467,22 +476,6 @@ const canPromoteToSpecificRankWithoutMutation = (
   return hasResources(playerResources, targetRank.requirement) && hasResources(playerResources, targetRank.cost);
 };
 
-const canPromoteNormallyWithoutMutation = (G: JojGameState, playerID: string): boolean => {
-  if (G.promotedThisTurn[playerID]) return false;
-  const ranks = getActiveRanks();
-  const currentRankId = G.ranks[playerID];
-  const currentRankIdx = Math.max(0, ranks.findIndex((r) => r.id === currentRankId));
-  const nextRank = ranks[currentRankIdx + 1];
-  if (!nextRank) return false;
-  const playerCount = Object.keys(G.players ?? {}).length || 2;
-  const occupied = Object.entries(G.ranks)
-    .filter(([pid, rankId]) => pid !== playerID && rankId === nextRank.id)
-    .length;
-  if (occupied >= rankSeatLimitForPlayerCount(playerCount)) return false;
-  const playerResources = G.resources[playerID];
-  return hasResources(playerResources, nextRank.requirement) && hasResources(playerResources, nextRank.cost);
-};
-
 const hasPlayableCardsByInventory = (G: JojGameState, playerID: string): boolean => {
   if ((G.legendaryHands[playerID]?.length ?? 0) > 0) return true;
   const hand = G.hands[playerID] ?? [];
@@ -491,7 +484,6 @@ const hasPlayableCardsByInventory = (G: JojGameState, playerID: string): boolean
     if (!card.grantRank) return true;
     if (canPromoteToSpecificRankWithoutMutation(G, playerID, card.grantRank)) return true;
   }
-  if (canPromoteNormallyWithoutMutation(G, playerID)) return true;
   return false;
 };
 
@@ -547,10 +539,20 @@ export const jojGame: Game<JojGameState> = {
     const players = [...ctx.playOrder];
     const template = getSharedDeckTemplate();
     const gameMode = resolveGameMode(setupData);
+    const enabledModules = resolveEnabledModules(setupData);
+    const deckModules = buildDeckModulesFromTemplate(template);
+    const optionalMainDeckCards: CardDefinition[] = [
+      ...(enabledModules.has(MODULE_VVNZ) ? (deckModules.optionalMainDeckModules.vvnz ?? []).map(cloneCard) : []),
+    ];
+    const optionalLegendaryCards: CardDefinition[] = enabledModules.has(MODULE_LEGENDARY)
+      ? (deckModules.optionalLegendaryDeckModules.legendary ?? []).map(cloneCard)
+      : [];
+    const mainDeckCards = [...deckModules.baseDeck.map(cloneCard), ...optionalMainDeckCards.map(cloneCard)];
     const mergedDeckSource = gameMode === GAME_MODE_SIMPLIFIED
-      ? [...template.deck, ...template.legendaryDeck]
-      : template.deck;
+      ? [...mainDeckCards, ...optionalLegendaryCards.map(cloneCard)]
+      : mainDeckCards;
     const deck = shuffle(mergedDeckSource.map(cloneCard));
+    const hasLegendaryModule = optionalLegendaryCards.length > 0;
 
     const state: JojGameState = {
       gameMode,
@@ -558,9 +560,11 @@ export const jojGame: Game<JojGameState> = {
       discard: [],
       legendaryDeck: gameMode === GAME_MODE_SIMPLIFIED
         ? []
-        : gameMode === GAME_MODE_STANDARD_PLUS
-          ? template.legendaryDeck.map(cloneCard)
-          : shuffle(template.legendaryDeck.map(cloneCard)),
+        : !hasLegendaryModule
+          ? []
+          : gameMode === GAME_MODE_STANDARD_PLUS
+            ? optionalLegendaryCards.map(cloneCard)
+            : shuffle(optionalLegendaryCards.map(cloneCard)),
       legendaryDiscard: [],
       legendaryDraftCompleted: {},
       deckBackImage: template.deckBackImage,
@@ -627,10 +631,10 @@ export const jojGame: Game<JojGameState> = {
       state.extraHandPlayTokens[playerID] = 0;
       state.sukhpayZsuWatchUntilTurn[playerID] = 0;
       state.sukhpayZsuPendingBonus[playerID] = false;
-      state.legendaryDraftCompleted[playerID] = gameMode === GAME_MODE_STANDARD;
+      state.legendaryDraftCompleted[playerID] = !hasLegendaryModule || gameMode === GAME_MODE_STANDARD || gameMode === GAME_MODE_SIMPLIFIED;
       state.playerNames[playerID] = '';
       drawCards(state, playerID, STARTING_HAND_SIZE);
-      if (gameMode === GAME_MODE_STANDARD) {
+      if (hasLegendaryModule && gameMode === GAME_MODE_STANDARD) {
         drawLegendaryCards(state, playerID, STARTING_LEGENDARY_HAND_SIZE);
       }
     });
@@ -689,6 +693,7 @@ export const jojGame: Game<JojGameState> = {
     recordResourceFlowStats,
     resetNoPlayablePassStreak,
     shouldCountNoPlayablePass,
+    hasPlayableCardsByInventory,
     incrementNoPlayablePassStreak: (G) => {
       G.noPlayablePassStreak = (G.noPlayablePassStreak ?? 0) + 1;
     },
@@ -718,7 +723,7 @@ export const jojGame: Game<JojGameState> = {
       const playerIDs = Object.keys(G.players ?? {});
       const allAgreed = playerIDs.length > 0 && playerIDs.every((pid) => G.endGameVote.votes?.[pid] === true);
       if (allAgreed) {
-        const winner = getWinner(G) ?? getRankThenResourceLeader(G) ?? getResourceLeader(G);
+        const winner = getWinner(G) ?? getRankThenResourceLeader(G);
         return { winner, endReason: 'agreed-end', stats: G.gameStats };
       }
     }
@@ -733,7 +738,7 @@ export const jojGame: Game<JojGameState> = {
       && allPlayersOutOfPlayableCardsByInventory(G)
       && (G.noPlayablePassStreak ?? 0) >= playerCount
     ) {
-      const fallbackWinner = getResourceLeader(G);
+      const fallbackWinner = getRankThenResourceLeader(G);
       if (!fallbackWinner) return { endReason: 'stalled-no-cards', stats: G.gameStats };
       return { winner: fallbackWinner, endReason: 'stalled-no-cards', stats: G.gameStats };
     }

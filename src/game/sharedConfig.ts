@@ -14,6 +14,20 @@ export type SharedDeckTemplate = {
 
 export type DeckTarget = 'deck' | 'legendaryDeck' | 'rankTrack';
 export type SharedRanks = RankDefinition[];
+export type OptionalGameModuleId = 'vvnz' | 'legendary';
+
+export type DeckModuleBuildResult = {
+  baseDeck: CardDefinition[];
+  optionalMainDeckModules: Partial<Record<OptionalGameModuleId, CardDefinition[]>>;
+  optionalLegendaryDeckModules: Partial<Record<OptionalGameModuleId, CardDefinition[]>>;
+};
+
+const CORE_MODULE_COUNTS = {
+  SCANDAL: 20,
+  LYAP: 20,
+  SUPPORT: 30,
+  DECISION: 30,
+} as const;
 
 const defaultSharedDeckTemplate = (): SharedDeckTemplate => ({
   deck: baseDeck.map(cloneCard),
@@ -127,6 +141,47 @@ export const getSharedDeckTemplate = (): SharedDeckTemplate => ({
   rankTrack: sharedDeckTemplate.rankTrack.map(cloneCard),
   deckBackImage: sharedDeckTemplate.deckBackImage,
 });
+
+const cloneCards = (cards: CardDefinition[]) => cards.map(cloneCard);
+
+const takeFixedCount = (cards: CardDefinition[], count: number): CardDefinition[] => {
+  const normalized = cards.map(cloneCard);
+  if (count <= 0 || normalized.length === 0) return [];
+  const shuffled = shuffle(normalized);
+  if (shuffled.length >= count) return shuffled.slice(0, count).map(cloneCard);
+  const out: CardDefinition[] = [];
+  for (let i = 0; i < count; i += 1) {
+    out.push(cloneCard(shuffled[i % shuffled.length]));
+  }
+  return out;
+};
+
+export const buildDeckModulesFromTemplate = (template: SharedDeckTemplate): DeckModuleBuildResult => {
+  const byCategory = {
+    SCANDAL: template.deck.filter((card) => card.category === 'SCANDAL'),
+    LYAP: template.deck.filter((card) => card.category === 'LYAP'),
+    SUPPORT: template.deck.filter((card) => card.category === 'SUPPORT'),
+    DECISION: template.deck.filter((card) => card.category === 'DECISION'),
+    VVNZ: template.deck.filter((card) => card.category === 'VVNZ'),
+  } as const;
+
+  const baseDeck: CardDefinition[] = [
+    ...takeFixedCount(byCategory.SCANDAL, CORE_MODULE_COUNTS.SCANDAL),
+    ...takeFixedCount(byCategory.LYAP, CORE_MODULE_COUNTS.LYAP),
+    ...takeFixedCount(byCategory.SUPPORT, CORE_MODULE_COUNTS.SUPPORT),
+    ...takeFixedCount(byCategory.DECISION, CORE_MODULE_COUNTS.DECISION),
+  ];
+
+  return {
+    baseDeck,
+    optionalMainDeckModules: {
+      vvnz: cloneCards(byCategory.VVNZ),
+    },
+    optionalLegendaryDeckModules: {
+      legendary: cloneCards(template.legendaryDeck),
+    },
+  };
+};
 
 export const getCardCatalog = (): CardDefinition[] => buildCardCatalog(sharedDeckTemplate);
 

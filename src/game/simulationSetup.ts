@@ -16,6 +16,53 @@ type SetupDeps = {
   startingLegendaryHandSize: number;
 };
 
+const CORE_MODULE_COUNTS = {
+  SCANDAL: 20,
+  LYAP: 20,
+  SUPPORT: 30,
+  DECISION: 30,
+} as const;
+
+const takeFixedCount = (
+  cards: CardDefinition[],
+  count: number,
+  shuffle: <T>(items: T[]) => T[],
+  cloneCard: (card: CardDefinition) => CardDefinition,
+): CardDefinition[] => {
+  const normalized = cards.map(cloneCard);
+  if (count <= 0 || normalized.length === 0) return [];
+  const shuffled = shuffle(normalized);
+  if (shuffled.length >= count) return shuffled.slice(0, count).map(cloneCard);
+  const out: CardDefinition[] = [];
+  for (let i = 0; i < count; i += 1) {
+    out.push(cloneCard(shuffled[i % shuffled.length]));
+  }
+  return out;
+};
+
+const composeMainDeckModules = (
+  cards: CardDefinition[],
+  deps: Pick<SetupDeps, 'shuffle' | 'cloneCard'>,
+): { baseDeck: CardDefinition[]; vvnzModule: CardDefinition[] } => {
+  const byCategory = {
+    SCANDAL: cards.filter((card) => card.category === 'SCANDAL'),
+    LYAP: cards.filter((card) => card.category === 'LYAP'),
+    SUPPORT: cards.filter((card) => card.category === 'SUPPORT'),
+    DECISION: cards.filter((card) => card.category === 'DECISION'),
+    VVNZ: cards.filter((card) => card.category === 'VVNZ'),
+  } as const;
+
+  return {
+    baseDeck: [
+      ...takeFixedCount(byCategory.SCANDAL, CORE_MODULE_COUNTS.SCANDAL, deps.shuffle, deps.cloneCard),
+      ...takeFixedCount(byCategory.LYAP, CORE_MODULE_COUNTS.LYAP, deps.shuffle, deps.cloneCard),
+      ...takeFixedCount(byCategory.SUPPORT, CORE_MODULE_COUNTS.SUPPORT, deps.shuffle, deps.cloneCard),
+      ...takeFixedCount(byCategory.DECISION, CORE_MODULE_COUNTS.DECISION, deps.shuffle, deps.cloneCard),
+    ],
+    vvnzModule: byCategory.VVNZ.map(deps.cloneCard),
+  };
+};
+
 export const createSimulationState = (
   deps: SetupDeps,
   playerIDs: string[],
@@ -23,7 +70,8 @@ export const createSimulationState = (
 ): JojGameState => {
   const sharedDeckTemplate = deps.getSharedDeckTemplate();
   const mode = options.gameMode ?? null;
-  const mainDeckCards = sharedDeckTemplate.deck.map(deps.cloneCard);
+  const modules = composeMainDeckModules(sharedDeckTemplate.deck, deps);
+  const mainDeckCards = [...modules.baseDeck.map(deps.cloneCard), ...modules.vvnzModule.map(deps.cloneCard)];
   const legendaryCards = sharedDeckTemplate.legendaryDeck.map(deps.cloneCard);
   const deck = mode === 'simplified'
     ? deps.shuffle([...mainDeckCards, ...legendaryCards])

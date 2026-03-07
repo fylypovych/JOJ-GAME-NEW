@@ -33,3 +33,9 @@
 - `/api/health` responds
 - Static frontend loads from deployed URL
 - PM2 services remain stable for a few minutes
+
+## DB Mode Cutover (If `STORAGE_MODE=postgres`)
+
+- Run `docs/ops/db-cutover-checklist.md`
+- Confirm forced sync JSON -> DB was executed
+- Confirm deck/ranks admin edits persist after restart
