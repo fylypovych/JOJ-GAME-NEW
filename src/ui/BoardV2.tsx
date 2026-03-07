@@ -65,7 +65,6 @@ export const BoardV2 = ({
   const v2 = t.v2;
 
   const id = playerID ?? '0';
-  const selfPlayerId = playerID ?? null;
   const isSimplifiedMode = G?.gameMode === 'simplified';
   const hand = G?.hands?.[id] ?? [];
   const legendaryHand = isSimplifiedMode ? [] : (G?.legendaryHands?.[id] ?? []);
@@ -199,8 +198,8 @@ export const BoardV2 = ({
   }, [G, id, sharedRanks, resources]);
 
   const opponentIds = useMemo(
-    () => Object.keys(G?.players ?? {}).filter((pid) => !selfPlayerId || pid !== selfPlayerId),
-    [G?.players, selfPlayerId],
+    () => Object.keys(G?.players ?? {}).filter((pid) => pid !== id),
+    [G?.players, id],
   );
   const gameoverMeta = (ctx?.gameover ?? null) as { winner?: string; endReason?: string } | null;
   const winnerPlayerID = gameoverMeta?.winner ? String(gameoverMeta.winner) : '';
@@ -796,6 +795,11 @@ export const BoardV2 = ({
                     <div className="game-ui-v2-token-row"><span>{v2.statsLyapsPlayedOnOthers}</span><strong>{G.gameStats?.lyapsPlayedOnOthers ?? 0}</strong></div>
                     <div className="game-ui-v2-token-row"><span>{v2.statsScandalsPlayedOnOthers}</span><strong>{G.gameStats?.scandalsPlayedOnOthers ?? 0}</strong></div>
                   </div>
+                  {onLeaveRoom ? (
+                    <button type="button" onClick={onLeaveRoom}>
+                      {v2.leaveRoom}
+                    </button>
+                  ) : null}
                   <button type="button" onClick={() => setGameoverModalClosed(true)}>
                     {t.close}
                   </button>
