@@ -8,7 +8,7 @@ export const AdminDeckTab = ({
   t, lang, deckStats, target, setTarget, categoryFilter, setCategoryFilter, categories,
   selectedCardId, setSelectedCardId, filteredCatalog, onAddCard, selectedCard, withCacheBust, imageSrc,
   onShuffleDeck, onResetTemplate, deckBackImageInput, setDeckBackImageInput, onSetDeckBackImage, uploadDeckBackImage,
-  sharedDeckTemplate, getImageSrc, beginEdit, onRemoveCard, editTarget, editIndex, inlineEditor,
+  sharedDeckTemplate, getImageSrc, beginEdit, onRemoveCard, editTarget, editIndex, inlineEditor, onStartCreateCard,
 }: {
   t: T;
   lang: 'uk' | 'en';
@@ -21,7 +21,7 @@ export const AdminDeckTab = ({
   selectedCardId: string;
   setSelectedCardId: (v: string) => void;
   filteredCatalog: Array<any>;
-  onAddCard: (target: 'deck' | 'legendaryDeck', cardId: string) => void;
+  onAddCard: (target: 'deck' | 'legendaryDeck', cardId: string) => boolean;
   selectedCard: any;
   withCacheBust: (value?: string) => string;
   imageSrc: string;
@@ -38,10 +38,21 @@ export const AdminDeckTab = ({
   editTarget: 'deck' | 'legendaryDeck';
   editIndex: number;
   inlineEditor: ReactNode;
-}) => (
-  <>
+  onStartCreateCard: (target: 'deck' | 'legendaryDeck') => void;
+}) => {
+  const filteredDeckCards = sharedDeckTemplate.deck
+    .map((card, index) => ({ card, index }))
+    .filter(({ card }) => categoryFilter === 'ALL' || card.category === categoryFilter);
+
+  return (
+    <>
     <h3>{t.deckControls}</h3>
-    <p>{t.deckCount}: {deckStats.deck} | {t.discardCount}: {deckStats.discard} | {t.legendaryCount}: {deckStats.legendary}</p>
+    <p>
+      {t.deckCount}: {deckStats.deck} | {t.discardCount}: {deckStats.discard} | {t.legendaryCount}: {deckStats.legendary}
+      {target === 'deck' && categoryFilter !== 'ALL'
+        ? ` | ${t.selectedCategoryCount}: ${filteredDeckCards.length} (${categoryLabel(categoryFilter, lang)})`
+        : ''}
+    </p>
     <p className="admin-controls">
       <select value={target} onChange={(e) => setTarget(e.target.value as 'deck' | 'legendaryDeck')}>
         <option value="deck">{t.mainDeck}</option><option value="legendaryDeck">{t.legendaryDeckLabel}</option>
@@ -55,10 +66,13 @@ export const AdminDeckTab = ({
         </label>
       ) : null}
       <select value={selectedCardId} onChange={(e) => setSelectedCardId(e.target.value)}>
+        <option value="">{t.notSelected}</option>
         {filteredCatalog.map((card) => <option key={card.id} value={card.id}>{card.id} | {cardTitle(card.id, card.title, lang)}</option>)}
       </select>
       <button type="button" onClick={() => selectedCardId && onAddCard(target, selectedCardId)} disabled={!selectedCardId}>{t.addCardById}</button>
+      <button type="button" onClick={() => onStartCreateCard(target)}>{t.addCustomCard}</button>
     </p>
+    {editIndex === -2 ? inlineEditor : null}
     {selectedCard ? (
       <div className="admin-card-preview">
         <p><strong>{cardTitle(selectedCard.id, selectedCard.title, lang)}</strong> ({categoryLabel(selectedCard.category, lang)})</p>
@@ -81,7 +95,7 @@ export const AdminDeckTab = ({
         <>
           <h4>{t.mainDeck}</h4>
           <ul>
-            {sharedDeckTemplate.deck.map((card, index) => ({ card, index })).filter(({ card }) => categoryFilter === 'ALL' || card.category === categoryFilter).map(({ card, index }) => (
+            {filteredDeckCards.map(({ card, index }) => (
               <li key={`deck-${index}-${card.id}`}>
                 <span>
                   <HoverImage src={withCacheBust(getImageSrc(card))} className="admin-thumb" alt={card.id} onLoad={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'visible'; (e.currentTarget as HTMLImageElement).style.display = 'inline-block'; }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }} />
@@ -113,5 +127,5 @@ export const AdminDeckTab = ({
       ) : null}
     </div>
   </>
-);
-
+  );
+};

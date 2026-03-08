@@ -169,8 +169,6 @@ const categoryLabelUk = (category: CardDefinition['category']) => {
       return 'ПІДТРИМКА';
     case 'DECISION':
       return 'РІШЕННЯ';
-    case 'NEUTRAL':
-      return 'НЕЙТРАЛЬНА';
     case 'VVNZ':
       return 'ВВНЗ';
     case 'LEGENDARY':
@@ -784,7 +782,7 @@ export const jojGame: Game<JojGameState> = {
       players: filteredPlayers,
       hands: filteredHands,
       legendaryHands: filteredLegendaryHands,
-      deck: ctx.gameover ? G.deck : new Array(G.deck.length).fill({ id: 'hidden', title: 'Hidden', category: 'NEUTRAL' }),
+      deck: ctx.gameover ? G.deck : new Array(G.deck.length).fill({ id: 'hidden', title: 'Hidden', category: 'SUPPORT' }),
     };
   },
 };

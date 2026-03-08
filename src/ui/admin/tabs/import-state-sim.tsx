@@ -80,6 +80,17 @@ export const AdminStateTab = ({
   const chat = Array.isArray(raw?.chat) ? raw.chat : [];
   const lastChat = chat.slice(-8);
   const deckCount = Array.isArray(raw?.deck) ? raw.deck.length : 0;
+  const deckCards: any[] = Array.isArray(raw?.deck) ? raw.deck : [];
+  const hiddenDeckCount = deckCards.filter((card: any) => card?.id === 'hidden' || card?.title === 'Hidden').length;
+  const deckCategoryCounts = deckCards.reduce((acc: Record<string, number>, card: any) => {
+    const key = typeof card?.category === 'string' && card.category.trim() ? card.category : 'UNKNOWN';
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const deckCategorySummary = Object.entries(deckCategoryCounts)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([category, count]) => `${category}:${count}`)
+    .join(' | ');
   const discardCount = Array.isArray(raw?.discard) ? raw.discard.length : 0;
   const legendaryDeckCount = Array.isArray(raw?.legendaryDeck) ? raw.legendaryDeck.length : 0;
   const legendaryDiscardCount = Array.isArray(raw?.legendaryDiscard) ? raw.legendaryDiscard.length : 0;
@@ -119,6 +130,8 @@ export const AdminStateTab = ({
             <h4>{t.stateSummaryTitle}</h4>
             <p>{t.stateTurn}: <strong>{String(turn)}</strong> | {t.statePhase}: <strong>{String(phase)}</strong> | {t.stateActivePlayer}: <strong>{activePlayer ?? '-'}</strong></p>
             <p>{t.stateDeck}: <strong>{deckCount}</strong> | {t.stateDiscard}: <strong>{discardCount}</strong> | {t.stateLegendaryDeck}: <strong>{legendaryDeckCount}</strong> | {t.stateLegendaryDiscard}: <strong>{legendaryDiscardCount}</strong></p>
+            <p>id=hidden: <strong>{hiddenDeckCount}</strong></p>
+            <p>deck by category: <code>{deckCategorySummary || '-'}</code></p>
           </div>
           ) : null}
 
@@ -241,7 +254,7 @@ export const AdminSimulationTab = ({
           : `Top-3 highest ranks by hierarchy: ${simulationReport.topReachedRanks.length ? simulationReport.topReachedRanks.map((row: any) => `${localizedRankName(row.rankId)} - ${row.pct}% (${row.games}/${simulationReport.input.simulations})`).join(' | ') : 'no data'}.`}</p>
         <p>{lang === 'uk'
           ? `Накопичені ресурси: час ${simulationReport.lastGame.winnerResources.time}, авторитет ${simulationReport.lastGame.winnerResources.reputation}, дисципліна ${simulationReport.lastGame.winnerResources.discipline}, документи ${simulationReport.lastGame.winnerResources.documents}, технології ${simulationReport.lastGame.winnerResources.tech}.`
-          : `Resources: time ${simulationReport.lastGame.winnerResources.time}, reputation ${simulationReport.lastGame.winnerResources.reputation}, discipline ${simulationReport.lastGame.winnerResources.discipline}, documents ${simulationReport.lastGame.winnerResources.documents}, tech ${simulationReport.lastGame.winnerResources.tech}.`}</p>
+          : `Resources: time ${simulationReport.lastGame.winnerResources.time}, authority ${simulationReport.lastGame.winnerResources.reputation}, discipline ${simulationReport.lastGame.winnerResources.discipline}, documents ${simulationReport.lastGame.winnerResources.documents}, tech ${simulationReport.lastGame.winnerResources.tech}.`}</p>
         <p>{lang === 'uk' ? `Ходів у симуляції: ${simulationReport.lastGame.turns}.` : `Turns in simulation: ${simulationReport.lastGame.turns}.`}</p>
         {simulationReport.issues.length ? <pre className="admin-json">{simulationReport.issues.join('\n')}</pre> : null}
       </div>

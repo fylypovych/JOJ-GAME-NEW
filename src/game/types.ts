@@ -6,7 +6,6 @@ export type CardCategory =
   | 'SCANDAL'
   | 'SUPPORT'
   | 'DECISION'
-  | 'NEUTRAL'
   | 'VVNZ'
   | 'LEGENDARY';
 

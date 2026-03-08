@@ -13,7 +13,6 @@ export const categories = {
   SCANDAL: { uk: 'СКАНДАЛ', en: 'SCANDAL' },
   SUPPORT: { uk: 'ПІДТРИМКА', en: 'SUPPORT' },
   DECISION: { uk: 'РІШЕННЯ', en: 'DECISION' },
-  NEUTRAL: { uk: 'НЕЙТРАЛЬНА', en: 'NEUTRAL' },
   VVNZ: { uk: 'ВВНЗ', en: 'VVNZ' },
   LEGENDARY: { uk: 'ЛЕГЕНДАРНА', en: 'LEGENDARY' },
 } as const;
@@ -23,7 +22,6 @@ export const cardTitlesUk: Record<string, string> = {
   'scandal-01': 'Злитий меморандум',
   'support-01': 'Тихий союзник',
   'decision-01': 'Надзвичайний указ',
-  'neutral-01': 'Кавова перерва',
   'vvnz-01': 'Директива ВВНЗ',
   'lyap-02': 'Затриманий підпис',
   'support-02': 'Польовий звіт',
@@ -41,7 +39,6 @@ export const defaultCardTitlesEnById: Record<string, string> = {
   'scandal-01': 'Leaked Memo',
   'support-01': 'Quiet Ally',
   'decision-01': 'Emergency Decree',
-  'neutral-01': 'Coffee Break',
   'vvnz-01': 'VVNZ Directive',
   'lyap-02': 'Delayed Signature',
   'support-02': 'Field Report',

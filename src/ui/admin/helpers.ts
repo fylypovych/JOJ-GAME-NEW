@@ -1,7 +1,7 @@
 import type { CardCategory, CardDefinition, EffectResource, RankDefinition, ResourceKey } from '../../game/types';
 import type { CropDraft } from './types';
 
-export const categories: CardCategory[] = ['LYAP', 'SCANDAL', 'SUPPORT', 'DECISION', 'NEUTRAL', 'VVNZ'];
+export const categories: CardCategory[] = ['LYAP', 'SCANDAL', 'SUPPORT', 'DECISION', 'VVNZ'];
 export const effectResourceKeys: EffectResource[] = ['time', 'reputation', 'discipline', 'documents', 'tech', 'rank'];
 export const rankResourceKeys: ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
 
@@ -28,7 +28,7 @@ export const valuesToEffects = (values: Record<EffectResource, number>): NonNull
 export const blankCard = (): CardDefinition => ({
   id: '',
   title: '',
-  category: 'NEUTRAL',
+  category: 'SUPPORT',
   image: '',
 });
 
@@ -69,4 +69,3 @@ export const getAspectLockedCropRect = (draft: CropDraft, imageWidth: number, im
   const sh = Math.max(1, Math.min(maxSh, cropPh));
   return { sx, sy, sw, sh };
 };
-

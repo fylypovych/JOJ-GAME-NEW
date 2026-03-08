@@ -1,13 +1,10 @@
 import type { CardDefinition } from './types';
 
-const defaultCost = {};
-
 export const baseDeck: CardDefinition[] = [
   { id: 'lyap-01', title: 'Protocol Slip', category: 'LYAP', cost: { discipline: 1 } },
   { id: 'scandal-01', title: 'Leaked Memo', category: 'SCANDAL', cost: { reputation: 1 } },
   { id: 'support-01', title: 'Quiet Ally', category: 'SUPPORT', cost: { documents: 1 } },
   { id: 'decision-01', title: 'Emergency Decree', category: 'DECISION', cost: { time: 1 } },
-  { id: 'neutral-01', title: 'Coffee Break', category: 'NEUTRAL', cost: defaultCost },
   { id: 'vvnz-01', title: 'VVNZ Directive', category: 'VVNZ', cost: { tech: 1 } },
   { id: 'lyap-02', title: 'Delayed Signature', category: 'LYAP', cost: { time: 1 } },
   { id: 'support-02', title: 'Field Report', category: 'SUPPORT', cost: { documents: 1 } },

@@ -302,7 +302,7 @@
           "value": -1
         }
       ],
-      "flavor": "Пляма на аркуші — клеймо на репутації."
+      "flavor": "Пляма на аркуші — клеймо на авторитеті."
     },
     {
       "id": "lyap-04",
@@ -1532,6 +1532,18 @@
       "flavor": "Тут мрія носить форму ще до звання."
     },
     {
+      "id": "scandal-17",
+      "title": "Полковник із ОТУ",
+      "category": "SCANDAL",
+      "image": "/cards/card-1772952038855.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -2
+        }
+      ]
+    },
+    {
       "id": "legendary-01",
       "title": "Мислі Залужного",
       "category": "LEGENDARY",
@@ -1842,7 +1854,8 @@
     "vvnz-09",
     "vvnz-10",
     "vvnz-11",
-    "vvnz-12"
+    "vvnz-12",
+    "scandal-17"
   ],
   "legendaryDeckIds": [
     "legendary-01",
@@ -2163,7 +2176,7 @@
           "value": -1
         }
       ],
-      "flavor": "Пляма на аркуші — клеймо на репутації."
+      "flavor": "Пляма на аркуші — клеймо на авторитеті."
     },
     {
       "id": "lyap-04",
@@ -3391,13 +3404,25 @@
         }
       ],
       "flavor": "Тут мрія носить форму ще до звання."
+    },
+    {
+      "id": "scandal-17",
+      "title": "Полковник із ОТУ",
+      "category": "SCANDAL",
+      "image": "/cards/card-1772952038855.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -2
+        }
+      ]
     }
   ],
   "legendaryDeck": [
     {
       "id": "legendary-01",
       "title": "Мислі Залужного",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884318909.webp",
       "effects": [
         {
@@ -3414,7 +3439,7 @@
     {
       "id": "legendary-02",
       "title": "Сміх Буданова",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884335395.webp",
       "effects": [
         {
@@ -3427,7 +3452,7 @@
     {
       "id": "legendary-03",
       "title": "Посмішка Малюка",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884348987.webp",
       "effects": [
         {
@@ -3444,7 +3469,7 @@
     {
       "id": "legendary-04",
       "title": "Фонд Притули",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884366598.webp",
       "effects": [
         {
@@ -3465,7 +3490,7 @@
     {
       "id": "legendary-05",
       "title": "Сухпай ЗСУ",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884379477.webp",
       "effects": [
         {
@@ -3486,7 +3511,7 @@
     {
       "id": "legendary-06",
       "title": "Статуя Святого ТОРа",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884391744.webp",
       "effects": [],
       "flavor": "Коли гримить звітність — мовчи і натискай “оновити”."
@@ -3494,7 +3519,7 @@
     {
       "id": "legendary-07",
       "title": "Церква Святого Лідерства",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884403769.webp",
       "effects": [
         {
@@ -3511,7 +3536,7 @@
     {
       "id": "legendary-08",
       "title": "Старлінк",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884418138.webp",
       "effects": [
         {
@@ -3528,7 +3553,7 @@
     {
       "id": "legendary-09",
       "title": "Вода “Прозора”",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884430988.webp",
       "effects": [
         {
@@ -3541,7 +3566,7 @@
     {
       "id": "legendary-10",
       "title": "Дрончик",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884442233.webp",
       "effects": [
         {
@@ -3554,7 +3579,7 @@
     {
       "id": "legendary-11",
       "title": "Старий польський корч",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884453732.webp",
       "effects": [
         {
@@ -3571,7 +3596,7 @@
     {
       "id": "legendary-12",
       "title": "Грамота “Єбать ти молодець”",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884466520.webp",
       "effects": [
         {
@@ -3584,7 +3609,7 @@
     {
       "id": "legendary-13",
       "title": "Хороший прес-офіцер",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884483248.webp",
       "effects": [],
       "flavor": "Новина — це зброя, якщо подати її з посмішкою."
@@ -3592,7 +3617,7 @@
     {
       "id": "legendary-14",
       "title": "Відпустка",
-      "category": "NEUTRAL",
+      "category": "LEGENDARY",
       "image": "/cards/card-1771884495159.webp",
       "effects": [
         {

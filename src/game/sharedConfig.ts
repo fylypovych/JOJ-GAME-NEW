@@ -201,7 +201,7 @@ export const exportSharedDeckTemplateJson = (): string => {
   }, null, 2);
 };
 
-const validCategories = new Set<CardDefinition['category']>(['LYAP', 'SCANDAL', 'SUPPORT', 'DECISION', 'NEUTRAL', 'VVNZ', 'LEGENDARY']);
+const validCategories = new Set<CardDefinition['category']>(['LYAP', 'SCANDAL', 'SUPPORT', 'DECISION', 'VVNZ', 'LEGENDARY']);
 const isLegendaryDeckOnlyCardId = (id: string) => /^legendary-/i.test(id);
 const validEffectResources = new Set<string>(['time', 'reputation', 'discipline', 'documents', 'tech', 'rank']);
 
@@ -211,7 +211,7 @@ const parseCard = (value: unknown): CardDefinition | null => {
   if (typeof raw.id !== 'string' || typeof raw.title !== 'string') return null;
   if (raw.titleEn !== undefined && typeof raw.titleEn !== 'string') return null;
   if (!validCategories.has(raw.category as CardDefinition['category'])) return null;
-  const normalizedCategory = (raw.category === 'LEGENDARY' ? 'NEUTRAL' : raw.category) as CardDefinition['category'];
+  const normalizedCategory = raw.category as CardDefinition['category'];
   const image = normalizeImagePath(typeof raw.image === 'string' ? raw.image : undefined);
   let effects: CardDefinition['effects'];
   if (raw.effects !== undefined) {

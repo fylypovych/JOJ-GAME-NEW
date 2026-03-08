@@ -74,7 +74,6 @@ export const galleryCategories: CardDefinition['category'][] = [
   'SCANDAL',
   'SUPPORT',
   'DECISION',
-  'NEUTRAL',
   'VVNZ',
   'LEGENDARY',
 ];

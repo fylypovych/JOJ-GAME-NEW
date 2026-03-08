@@ -678,7 +678,7 @@ export const BoardV2 = ({
                   <select value={handFilter} onChange={(e) => setHandFilter(e.target.value as HandFilter)}>
                     <option value="all">{v2.filterAll}</option>
                     <option value="playable">{v2.filterPlayable}</option>
-                    {['LYAP', 'SCANDAL', 'SUPPORT', 'DECISION', 'NEUTRAL', 'VVNZ'].map((category) => (
+                    {['LYAP', 'SCANDAL', 'SUPPORT', 'DECISION', 'VVNZ'].map((category) => (
                       <option key={`filter-${category}`} value={category}>{categoryLabel(category, lang)}</option>
                     ))}
                   </select>

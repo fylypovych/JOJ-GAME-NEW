@@ -41,6 +41,7 @@ import {
 } from './admin/tabs';
 
 export const AdminPage = ({
+  uiVariant,
   lang,
   adminToken,
   serverUrl,
@@ -113,7 +114,7 @@ export const AdminPage = ({
   const activeMatch = matches.find((m) => m.id === activeMatchId);
   const [target, setTarget] = useState<DeckTarget>('deck');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('ALL');
-  const [selectedCardId, setSelectedCardId] = useState<string>(cardCatalog[0]?.id ?? '');
+  const [selectedCardId, setSelectedCardId] = useState<string>('');
   const targetAwareCatalog = useMemo(() => {
     const isLegendaryId = (id: string) => /^legendary-/i.test(id);
     if (target === 'deck') {
@@ -138,9 +139,7 @@ export const AdminPage = ({
   );
   useEffect(() => {
     const exists = filteredCatalog.some((card) => card.id === selectedCardId);
-    if (!exists) {
-      setSelectedCardId(filteredCatalog[0]?.id ?? '');
-    }
+    if (!exists && selectedCardId) setSelectedCardId('');
   }, [filteredCatalog, selectedCardId]);
 
   const [editTarget, setEditTarget] = useState<DeckTarget>('deck');
@@ -312,6 +311,50 @@ export const AdminPage = ({
       flavor: editCard.flavor?.trim() || undefined,
       effects,
     });
+    setEditIndex(-1);
+    setEditError('');
+  };
+
+  const startCreateCard = (nextTarget: 'deck' | 'legendaryDeck') => {
+    const deckTarget = nextTarget as DeckTarget;
+    const defaultCategory: CardCategory = deckTarget === 'legendaryDeck'
+      ? 'LEGENDARY'
+      : (categoryFilter === 'ALL' ? 'SUPPORT' : categoryFilter);
+    const fresh = blankCard();
+    setEditTarget(deckTarget);
+    setEditIndex(-2);
+    setEditCard({
+      ...fresh,
+      category: defaultCategory,
+      image: '',
+      flavor: '',
+      effects: [],
+    });
+    const nextEffectValues = zeroEffectValues();
+    setEditEffectValues(nextEffectValues);
+    setEditEffectsText(JSON.stringify(valuesToEffects(nextEffectValues), null, 2));
+    setEditError('');
+  };
+
+  const handleAddCardFromCatalog = (nextTarget: 'deck' | 'legendaryDeck', cardId: string): boolean => {
+    const deckTarget = nextTarget as DeckTarget;
+    const nextIndex = sharedDeckTemplate[deckTarget].length;
+    const sourceCard = cardCatalog.find((card) => card.id === cardId);
+    const added = onAddCard(deckTarget, cardId);
+    if (!added || !sourceCard) return false;
+    if (deckTarget === 'deck' && categoryFilter !== 'ALL' && sourceCard.category !== categoryFilter) {
+      setCategoryFilter('ALL');
+    }
+    setTarget(deckTarget);
+    beginEdit(deckTarget, nextIndex, sourceCard);
+    setSelectedCardId('');
+    window.setTimeout(() => {
+      const listItem = document.querySelector('.admin-deck-list ul li:last-child');
+      if (listItem instanceof HTMLElement) {
+        listItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 80);
+    return true;
   };
 
   const runImport = () => {
@@ -818,7 +861,7 @@ export const AdminPage = ({
   );
 
   return (
-    <section className="board admin-panel">
+    <section className={`board admin-panel${uiVariant === 'v2' ? ' board-v2-panel' : ''}`}>
       <h2>{t.adminTitle}</h2>
       <AdminTabButtons t={t} activeTab={activeTab} setActiveTab={setActiveTab} />
       <hr />
@@ -914,7 +957,7 @@ export const AdminPage = ({
           selectedCardId={selectedCardId}
           setSelectedCardId={setSelectedCardId}
           filteredCatalog={filteredCatalog}
-          onAddCard={(tabTarget, cardId) => onAddCard(tabTarget as DeckTarget, cardId)}
+          onAddCard={(tabTarget, cardId) => handleAddCardFromCatalog(tabTarget, cardId)}
           selectedCard={selectedCard}
           withCacheBust={withCacheBust}
           imageSrc={imageSrc}
@@ -931,6 +974,7 @@ export const AdminPage = ({
           editTarget={editTarget === 'rankTrack' ? 'deck' : editTarget}
           editIndex={editIndex}
           inlineEditor={inlineEditor}
+          onStartCreateCard={startCreateCard}
         />
       ) : null}
 

@@ -64,7 +64,7 @@ const systemMessageEnReplacements: Array<[RegExp, string]> = [
   [/\bРІШЕННЯ\b/g, 'DECISION'],
   [/\bЛЕГЕНДАРНА\b/g, 'LEGENDARY'],
   [/\bЧас\b/g, 'Time'],
-  [/\bАвторитет\b/g, 'Reputation'],
+  [/\bАвторитет\b/g, 'Authority'],
   [/\bДисципліна\b/g, 'Discipline'],
   [/\bДокументи\b/g, 'Documents'],
   [/\bТехнології\b/g, 'Tech'],

@@ -61,6 +61,7 @@ import { useAdminSnapshot } from './app/useAdminSnapshot';
 
 const SERVER_URL = getConfiguredServerUrl();
 const GAME_UI_VARIANT_STORAGE_KEY = 'joj-game-ui-variant-v1';
+const ADMIN_UI_VARIANT_STORAGE_KEY = 'joj-admin-ui-variant-v1';
 
 const NetworkClientV1 = Client({
   game: jojGame,
@@ -112,6 +113,10 @@ export const App = () => {
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
   const [gameUiVariant, setGameUiVariant] = useState<'v1' | 'v2'>(() => {
     const raw = window.localStorage.getItem(GAME_UI_VARIANT_STORAGE_KEY);
+    return raw === 'v2' ? 'v2' : 'v1';
+  });
+  const [adminUiVariant, setAdminUiVariant] = useState<'v1' | 'v2'>(() => {
+    const raw = window.localStorage.getItem(ADMIN_UI_VARIANT_STORAGE_KEY);
     return raw === 'v2' ? 'v2' : 'v1';
   });
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
@@ -470,7 +475,11 @@ export const App = () => {
     window.localStorage.setItem(GAME_UI_VARIANT_STORAGE_KEY, gameUiVariant);
   }, [gameUiVariant]);
 
-  const isV2Ui = !isAdminRoute && gameUiVariant === 'v2';
+  useEffect(() => {
+    window.localStorage.setItem(ADMIN_UI_VARIANT_STORAGE_KEY, adminUiVariant);
+  }, [adminUiVariant]);
+
+  const isV2Ui = isAdminRoute ? adminUiVariant === 'v2' : gameUiVariant === 'v2';
 
   return (
     <main className={`app${isV2Ui ? ' app-v2' : ''}`}>
@@ -511,6 +520,14 @@ export const App = () => {
           </button>{' '}
           <button type="button" onClick={() => setLang('en')} disabled={lang === 'en'}>
             {t.langEn}
+          </button>
+          {' | '}
+          {t.gameUiLabel}:{' '}
+          <button type="button" onClick={() => setAdminUiVariant('v1')} disabled={adminUiVariant === 'v1'}>
+            {t.gameUiV1}
+          </button>{' '}
+          <button type="button" onClick={() => setAdminUiVariant('v2')} disabled={adminUiVariant === 'v2'}>
+            {t.gameUiV2}
           </button>
         </p>
       )}
@@ -619,6 +636,7 @@ export const App = () => {
 
       {isAdminRoute && adminAuthorized ? (
         <AdminPage
+          uiVariant={adminUiVariant}
           lang={lang}
           adminToken={adminToken}
           serverUrl={SERVER_URL}
@@ -727,8 +745,9 @@ export const App = () => {
             refreshSharedDeckTemplate();
           }}
           onAddCard={(target: DeckTarget, cardId: string) => {
-            addCardToSharedDeckTemplate(target, cardId);
-            refreshSharedDeckTemplate();
+            const added = addCardToSharedDeckTemplate(target, cardId);
+            if (added) refreshSharedDeckTemplate();
+            return added;
           }}
           onAddCustomCard={(target: DeckTarget, card: CardDefinition) => {
             addCustomCardToSharedDeckTemplate(target, card);

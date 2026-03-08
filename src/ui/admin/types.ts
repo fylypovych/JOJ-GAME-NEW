@@ -53,6 +53,7 @@ export type SharedDeckTemplate = {
 };
 
 export type AdminPageProps = {
+  uiVariant: 'v1' | 'v2';
   lang: Language;
   adminToken: string;
   serverUrl: string;
@@ -105,7 +106,7 @@ export type AdminPageProps = {
   onResetAll: () => void;
   onRestartServer: () => Promise<boolean>;
   onShuffleDeck: () => void;
-  onAddCard: (target: DeckTarget, cardId: string) => void;
+  onAddCard: (target: DeckTarget, cardId: string) => boolean;
   onAddCustomCard: (target: DeckTarget, card: CardDefinition) => void;
   onUpdateCard: (target: DeckTarget, index: number, card: CardDefinition) => void;
   onRemoveCard: (target: DeckTarget, index: number) => void;
