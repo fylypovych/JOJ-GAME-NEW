@@ -87,7 +87,7 @@ const moduleCategoryToCardCategory = (category: DeckModuleCategory): CardCategor
   }
 };
 
-const cardIdsFrom = (cards: CardDefinition[]) => cards.map((card) => card.id);
+const cardIdsFrom = (cards: CardDefinition[] | undefined | null) => (Array.isArray(cards) ? cards.map((card) => card.id) : []);
 
 const uniqueStrings = (items: string[]): string[] => Array.from(new Set(items.map((item) => item.trim()).filter(Boolean)));
 const STARTER_RELEASE_YEAR = '2026';
@@ -347,6 +347,7 @@ const defaultSharedDeckTemplate = (): SharedDeckTemplate => buildTemplateWithDef
 
 let sharedDeckTemplate: SharedDeckTemplate = defaultSharedDeckTemplate();
 let sharedRanks: SharedRanks = baseRanks.map(cloneRank);
+let sharedExtraCatalog: CardDefinition[] = [];
 
 export const getActiveRanks = (): SharedRanks => sharedRanks;
 export const getTopRankId = (): string => {
@@ -426,14 +427,17 @@ export const resetSharedRanks = () => {
 
 const buildCardCatalog = (template: SharedDeckTemplate): CardDefinition[] => {
   const byId = new Map<string, CardDefinition>();
-  template.deck.forEach((card) => {
+  sharedExtraCatalog.forEach((card) => {
     if (!byId.has(card.id)) byId.set(card.id, cloneCard(card));
+  });
+  template.deck.forEach((card) => {
+    byId.set(card.id, cloneCard(card));
   });
   template.legendaryDeck.forEach((card) => {
-    if (!byId.has(card.id)) byId.set(card.id, cloneCard({ ...card, category: 'LEGENDARY' }));
+    byId.set(card.id, cloneCard({ ...card, category: 'LEGENDARY' }));
   });
   template.rankTrack.forEach((card) => {
-    if (!byId.has(card.id)) byId.set(card.id, cloneCard(card));
+    byId.set(card.id, cloneCard(card));
   });
   return [...byId.values()];
 };
@@ -458,7 +462,7 @@ export const getSharedDeckTemplate = (): SharedDeckTemplate => ({
 
 const cardsByIdFromTemplate = (template: SharedDeckTemplate): Map<string, CardDefinition> => {
   const byId = new Map<string, CardDefinition>();
-  [template.deck, template.legendaryDeck, template.rankTrack].forEach((cards) => {
+  [sharedExtraCatalog, template.deck, template.legendaryDeck, template.rankTrack].forEach((cards) => {
     cards.forEach((card) => {
       if (!byId.has(card.id)) byId.set(card.id, cloneCard(card));
     });
@@ -481,10 +485,18 @@ export const buildDeckModulesFromTemplate = (
   template: SharedDeckTemplate,
   setupOverride?: Partial<SharedGameSetup>,
 ): DeckModuleBuildResult => {
-  const modules = normalizeModules(template.modules, template);
-  const mergedSetup = normalizeGameSetup({ ...template.gameSetup, ...setupOverride }, modules);
+  const safeTemplate = {
+    deck: Array.isArray(template?.deck) ? template.deck : [],
+    legendaryDeck: Array.isArray(template?.legendaryDeck) ? template.legendaryDeck : [],
+    rankTrack: Array.isArray(template?.rankTrack) ? template.rankTrack : [],
+    modules: Array.isArray(template?.modules) ? template.modules : [],
+    gameSetup: template?.gameSetup ?? { optionalMainDeckModuleIds: [], legendaryDeckMode: 'separate' as const },
+    deckBackImage: template?.deckBackImage,
+  };
+  const modules = normalizeModules(safeTemplate.modules, safeTemplate);
+  const mergedSetup = normalizeGameSetup({ ...safeTemplate.gameSetup, ...setupOverride }, modules);
   const moduleById = new Map(modules.map((module) => [module.id, module] as const));
-  const cardsById = cardsByIdFromTemplate(template);
+  const cardsById = cardsByIdFromTemplate(safeTemplate);
 
   const selectedMainModuleIds = [
     mergedSetup.lyapModuleId,
@@ -655,6 +667,7 @@ export const importSharedDeckTemplateJson = (text: string): { ok: true } | { ok:
   let typedDeck: CardDefinition[] = [];
   let typedLegendaryDeck: CardDefinition[] = [];
   let typedRankTrack: CardDefinition[] = [];
+  let typedExtraCatalog: CardDefinition[] = [];
 
   const importByFullCards = () => {
     if (!Array.isArray(raw.deck) || !Array.isArray(raw.legendaryDeck)) return { ok: false as const, error: 'Template must contain deck and legendaryDeck arrays' };
@@ -665,6 +678,18 @@ export const importSharedDeckTemplateJson = (text: string): { ok: true } | { ok:
     typedDeck = (deck as CardDefinition[]).map(cloneCard);
     typedLegendaryDeck = (legendaryDeck as CardDefinition[]).map(cloneCard);
     typedRankTrack = (rankTrack as CardDefinition[]).map(cloneCard);
+    if (Array.isArray(raw.catalog)) {
+      const catalogParsed = raw.catalog.map(parseCard);
+      if (catalogParsed.some((card) => !card)) return { ok: false as const, error: 'One or more catalog cards have invalid schema' };
+      const inMain = new Set<string>([
+        ...typedDeck.map((card) => card.id),
+        ...typedLegendaryDeck.map((card) => card.id),
+        ...typedRankTrack.map((card) => card.id),
+      ]);
+      typedExtraCatalog = (catalogParsed as CardDefinition[])
+        .filter((card) => !inMain.has(card.id))
+        .map(cloneCard);
+    }
     return { ok: true as const };
   };
 
@@ -692,6 +717,14 @@ export const importSharedDeckTemplateJson = (text: string): { ok: true } | { ok:
       typedDeck = deck;
       typedLegendaryDeck = legendary;
       typedRankTrack = rankTrack;
+      const used = new Set<string>([
+        ...typedDeck.map((card) => card.id),
+        ...typedLegendaryDeck.map((card) => card.id),
+        ...typedRankTrack.map((card) => card.id),
+      ]);
+      typedExtraCatalog = (catalogParsed as CardDefinition[])
+        .filter((card) => !used.has(card.id))
+        .map(cloneCard);
       return { ok: true as const };
     } catch (error) {
       return { ok: false as const, error: String(error instanceof Error ? error.message : error) };
@@ -719,11 +752,13 @@ export const importSharedDeckTemplateJson = (text: string): { ok: true } | { ok:
     modules: importedModules ?? undefined,
     gameSetup: importedSetup ?? undefined,
   });
+  sharedExtraCatalog = typedExtraCatalog.map(cloneCard);
   return { ok: true };
 };
 
 export const resetSharedDeckTemplate = () => {
   sharedDeckTemplate = defaultSharedDeckTemplate();
+  sharedExtraCatalog = [];
 };
 
 export const shuffle = <T,>(items: T[]): T[] => {

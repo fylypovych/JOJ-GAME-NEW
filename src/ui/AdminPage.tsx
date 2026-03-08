@@ -380,9 +380,20 @@ export const AdminPage = ({
       const sourceId = editOriginalCardId || nextCard.id;
       const ok = applyTemplateUpdate((nextTemplate) => {
         const rewrite = (cards: CardDefinition[]) => cards.map((row) => (row.id === sourceId ? { ...nextCard } : row));
+        const rewriteCatalog = (cards: CardDefinition[]) => {
+          let replaced = false;
+          const mapped = cards.map((row) => {
+            if (row.id !== sourceId) return row;
+            replaced = true;
+            return { ...nextCard };
+          });
+          if (!replaced) mapped.push({ ...nextCard });
+          return mapped;
+        };
         nextTemplate.deck = rewrite(nextTemplate.deck);
         nextTemplate.legendaryDeck = rewrite(nextTemplate.legendaryDeck);
         nextTemplate.rankTrack = rewrite(nextTemplate.rankTrack);
+        nextTemplate.catalog = rewriteCatalog(nextTemplate.catalog ?? []);
         nextTemplate.modules = (nextTemplate.modules ?? []).map((module) => ({
           ...module,
           cardIds: module.cardIds.map((id) => (id === sourceId ? nextCard.id : id)),
@@ -427,12 +438,13 @@ export const AdminPage = ({
     setEditError('');
   };
 
-  const applyTemplateUpdate = (mutate: (next: SharedDeckTemplate) => void): boolean => {
-    const nextTemplate: SharedDeckTemplate = {
+  const applyTemplateUpdate = (mutate: (next: SharedDeckTemplate & { catalog: CardDefinition[] }) => void): boolean => {
+    const nextTemplate: SharedDeckTemplate & { catalog: CardDefinition[] } = {
       deck: sharedDeckTemplate.deck.map((card) => ({ ...card })),
       legendaryDeck: sharedDeckTemplate.legendaryDeck.map((card) => ({ ...card })),
       rankTrack: sharedDeckTemplate.rankTrack.map((card) => ({ ...card })),
       deckBackImage: sharedDeckTemplate.deckBackImage,
+      catalog: cardCatalog.map((card) => ({ ...card })),
       modules: (sharedDeckTemplate.modules ?? []).map((module) => ({ ...module, cardIds: [...module.cardIds] })),
       gameSetup: {
         ...sharedDeckTemplate.gameSetup,
@@ -752,11 +764,12 @@ export const AdminPage = ({
       image: normalizeImagePath(card.image),
     }));
 
-    const nextTemplate: SharedDeckTemplate = {
+    const nextTemplate: SharedDeckTemplate & { catalog: CardDefinition[] } = {
       deck: sharedDeckTemplate.deck.map((card) => ({ ...card })),
       legendaryDeck: sharedDeckTemplate.legendaryDeck.map((card) => ({ ...card })),
       rankTrack: sharedDeckTemplate.rankTrack.map((card) => ({ ...card })),
       deckBackImage: sharedDeckTemplate.deckBackImage,
+      catalog: cardCatalog.map((card) => ({ ...card })),
       modules: (sharedDeckTemplate.modules ?? []).map((module) => ({ ...module, cardIds: [...module.cardIds] })),
       gameSetup: {
         ...sharedDeckTemplate.gameSetup,

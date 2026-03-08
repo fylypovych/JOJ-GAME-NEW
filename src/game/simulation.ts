@@ -340,7 +340,7 @@ export const runGameSimulationsWithDeps = (
   const clampedSims = Math.max(1, Math.min(5000, Math.floor(simulations || 1)));
   const clampedMaxTurns = Math.max(20, Math.min(4000, Math.floor(maxTurns || 600)));
   const requestedMode: GameMode | null = options.gameMode ?? null;
-  const templateLegendaryMode = deps.getSharedDeckTemplate().gameSetup.legendaryDeckMode;
+  const templateLegendaryMode = deps.getSharedDeckTemplate().gameSetup?.legendaryDeckMode ?? 'separate';
   const resolvedLegendaryMode = options.gameSetup?.legendaryDeckMode ?? templateLegendaryMode;
   const mode: GameMode | null = requestedMode
     ? (resolvedLegendaryMode === 'merged' ? 'simplified' : requestedMode)

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { text } from '../../i18n';
 import type { DeckTarget, LegendaryDeckMode } from '../../../game/jojGame';
 import { normalizeImagePath } from '../../../game/imagePaths';
@@ -112,8 +112,9 @@ export const AdminDeckTab = ({
   const legendaryDeckMode = gameSetup.legendaryDeckMode ?? 'separate';
   const selectedCardModule = modules.find((m) => m.id === cardEditorModuleId) ?? modules[0];
   const canCreateCardInModule = Boolean(selectedCardModule && selectedCardModule.category !== 'RANK' && selectedCardModule.target !== 'rankTrack');
-  const hasActiveCardEditor = editIndex >= 0 || editIndex === -2;
+  const hasActiveCardEditor = editIndex >= 0 || editIndex === -2 || editIndex === -3;
   const isCreateCardMode = editIndex === -2;
+  const isDetachedEditMode = editIndex === -3;
 
   useEffect(() => {
     if (innerTab !== 'cards' || !hasActiveCardEditor) return;
@@ -368,8 +369,8 @@ export const AdminDeckTab = ({
             </button>
           </p>
           <div ref={cardEditorAnchorRef}>
-            {isCreateCardMode ? inlineEditor : <p>{t.createOrOpenCardHint}</p>}
-            {isCreateCardMode ? <p className="admin-info">{t.editingTargetLabel}: {editTarget}</p> : null}
+            {(isCreateCardMode || isDetachedEditMode) ? inlineEditor : <p>{t.createOrOpenCardHint}</p>}
+            {(isCreateCardMode || isDetachedEditMode) ? <p className="admin-info">{t.editingTargetLabel}: {editTarget}</p> : null}
           </div>
           <p>{t.cardsInModuleLabel}: {moduleCardRows.length}</p>
           {selectedCardModule && (selectedCardModule.category === 'RANK' || selectedCardModule.target === 'rankTrack') ? (
@@ -377,33 +378,36 @@ export const AdminDeckTab = ({
           ) : null}
           <div className="admin-deck-list">
             <ul>
-              {moduleCardRows.map(({ target, index, card }) => (
-                <li key={`module-card-${target}-${index}-${card.id}`} data-card-row={`${target}-${index}`}>
-                  <span>
-                    <HoverImage src={getCardImageSrc(card)} alt={card.title} className="admin-thumb" />
-                    {' '}
-                    {index + 1}. {card.id} | {card.title}
-                  </span>
-                  <span className="admin-controls">
-                     {'__rankId' in card ? (
-                       <button type="button" disabled>{t.tabRanks}</button>
-                     ) : (
-                       <>
-                         <button type="button" onClick={() => (index >= 0 ? onEditCardAt(target, index) : onEditCardById(target, card.id))}>{t.editCard}</button>
-                         <button type="button" onClick={() => onRemoveCardAt(target, index)} disabled={index < 0}>{t.removeCard}</button>
-                       </>
-                     )}
-                   </span>
-                 </li>
-               ))}
-              {moduleCardRows.map(({ target, index, card }) => (
-                editIndex >= 0 && editTarget === target && editIndex === index ? (
-                  <li key={`module-card-editor-${target}-${index}-${card.id}`}>
-                    {inlineEditor}
-                    <p className="admin-info">{t.editingTargetLabel}: {editTarget}</p>
-                  </li>
-                ) : null
-              ))}
+              {moduleCardRows.map(({ target, index, card }) => {
+                const isEditedRow = editIndex >= 0 && editTarget === target && editIndex === index;
+                return (
+                  <Fragment key={`module-card-fragment-${target}-${index}-${card.id}`}>
+                    <li data-card-row={`${target}-${index}`}>
+                      <span>
+                        <HoverImage src={getCardImageSrc(card)} alt={card.title} className="admin-thumb" />
+                        {' '}
+                        {index >= 0 ? `${index + 1}.` : '•'} {card.id} | {card.title}
+                      </span>
+                      <span className="admin-controls">
+                        {'__rankId' in card ? (
+                          <button type="button" disabled>{t.tabRanks}</button>
+                        ) : (
+                          <>
+                            <button type="button" onClick={() => (index >= 0 ? onEditCardAt(target, index) : onEditCardById(target, card.id))}>{t.editCard}</button>
+                            <button type="button" onClick={() => onRemoveCardAt(target, index)} disabled={index < 0}>{t.removeCard}</button>
+                          </>
+                        )}
+                      </span>
+                    </li>
+                    {isEditedRow ? (
+                      <li>
+                        {inlineEditor}
+                        <p className="admin-info">{t.editingTargetLabel}: {editTarget}</p>
+                      </li>
+                    ) : null}
+                  </Fragment>
+                );
+              })}
             </ul>
           </div>
         </div>
