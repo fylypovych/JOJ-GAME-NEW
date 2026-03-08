@@ -12,7 +12,7 @@ export const categories = {
   LYAP: { uk: 'ЛЯП', en: 'LYAP' },
   SCANDAL: { uk: 'СКАНДАЛ', en: 'SCANDAL' },
   SUPPORT: { uk: 'ПІДТРИМКА', en: 'SUPPORT' },
-  DECISION: { uk: 'РІШЕННЯ', en: 'DECISION' },
+  COMMAND: { uk: 'РІШЕННЯ', en: 'COMMAND' },
   VVNZ: { uk: 'ВВНЗ', en: 'VVNZ' },
   LEGENDARY: { uk: 'ЛЕГЕНДАРНА', en: 'LEGENDARY' },
 } as const;

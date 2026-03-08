@@ -5,7 +5,7 @@ export type CardCategory =
   | 'LYAP'
   | 'SCANDAL'
   | 'SUPPORT'
-  | 'DECISION'
+  | 'COMMAND'
   | 'VVNZ'
   | 'LEGENDARY';
 
@@ -86,6 +86,11 @@ export interface JOJState {
     requestedBy: string | null;
     votes: Record<string, boolean>;
   };
+  pendingDrawAutoResolution?: {
+    kind: 'LYAP' | 'SCANDAL';
+    sourcePlayerID: string;
+    card: Card;
+  } | null;
 }
 
 // Backward-compatible aliases for existing code.

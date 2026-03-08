@@ -9,8 +9,8 @@ export const AdminImportTab = ({
   runImport, importFromFile, exportToFile, importError, importStatus, importJson, setImportJson, clearImportStatus,
 }: {
   t: T;
-  importTarget: 'deck' | 'legendaryDeck';
-  setImportTarget: (v: 'deck' | 'legendaryDeck') => void;
+  importTarget: 'deck' | 'legendaryDeck' | 'rankTrack';
+  setImportTarget: (v: 'deck' | 'legendaryDeck' | 'rankTrack') => void;
   importCategoryMode: string;
   setImportCategoryMode: (v: string) => void;
   categories: string[];
@@ -29,9 +29,10 @@ export const AdminImportTab = ({
       <button type="button" onClick={exportToFile}>{t.exportJson}</button>
       <label>
         {t.importToDeck}
-        <select value={importTarget} onChange={(e) => { setImportTarget(e.target.value as 'deck' | 'legendaryDeck'); clearImportStatus(); }}>
+        <select value={importTarget} onChange={(e) => { setImportTarget(e.target.value as 'deck' | 'legendaryDeck' | 'rankTrack'); clearImportStatus(); }}>
           <option value="deck">{t.mainDeck}</option>
           <option value="legendaryDeck">{t.legendaryDeckLabel}</option>
+          <option value="rankTrack">{t.rankTrackDeckLabel}</option>
         </select>
       </label>
       {importTarget === 'deck' ? (
@@ -130,8 +131,8 @@ export const AdminStateTab = ({
             <h4>{t.stateSummaryTitle}</h4>
             <p>{t.stateTurn}: <strong>{String(turn)}</strong> | {t.statePhase}: <strong>{String(phase)}</strong> | {t.stateActivePlayer}: <strong>{activePlayer ?? '-'}</strong></p>
             <p>{t.stateDeck}: <strong>{deckCount}</strong> | {t.stateDiscard}: <strong>{discardCount}</strong> | {t.stateLegendaryDeck}: <strong>{legendaryDeckCount}</strong> | {t.stateLegendaryDiscard}: <strong>{legendaryDiscardCount}</strong></p>
-            <p>id=hidden: <strong>{hiddenDeckCount}</strong></p>
-            <p>deck by category: <code>{deckCategorySummary || '-'}</code></p>
+            <p>{t.stateHiddenDeckCards}: <strong>{hiddenDeckCount}</strong></p>
+            <p>{t.stateDeckByCategory}: <code>{deckCategorySummary || '-'}</code></p>
           </div>
           ) : null}
 
@@ -192,9 +193,10 @@ export const AdminStateTab = ({
 };
 
 export const AdminSimulationTab = ({
-  t, lang, simulationPlayers, setSimulationPlayers, simulationCount, setSimulationCount,
+  t, lang: _lang, simulationPlayers, setSimulationPlayers, simulationCount, setSimulationCount,
   simulationRunning, runSimulation, simulationReport, simulationError, simulationBlockedReason, localizedRankName,
   simulationGameMode, setSimulationGameMode,
+  simulationOptionalModules, simulationOptionalModuleIds, setSimulationOptionalModuleIds,
 }: {
   t: T;
   lang: 'uk' | 'en';
@@ -210,6 +212,9 @@ export const AdminSimulationTab = ({
   localizedRankName: (rankId: string) => string;
   simulationGameMode: GameMode;
   setSimulationGameMode: (value: GameMode) => void;
+  simulationOptionalModules: Array<{ id: string; name: string; alwaysOn: boolean }>;
+  simulationOptionalModuleIds: string[];
+  setSimulationOptionalModuleIds: (ids: string[]) => void;
 }) => (
   <>
     <h3>{t.simulationTitle}</h3>
@@ -223,15 +228,48 @@ export const AdminSimulationTab = ({
         <input type="number" min={1} max={5000} step={1} value={simulationCount} onChange={(e) => setSimulationCount(Number(e.target.value || 1))} disabled={simulationRunning} />
       </label>
       <label>{t.gameModeLabel}
-        <select
-          value={simulationGameMode}
-          onChange={(e) => setSimulationGameMode(e.target.value as GameMode)}
-          disabled={simulationRunning}
-        >
-          <option value="standard">{t.gameModeStandard}</option>
-          <option value="standard_plus">{t.gameModeStandardPlus}</option>
-          <option value="simplified">{t.gameModeSimplified}</option>
-        </select>
+        <span className="admin-controls">
+          {[
+            { id: 'standard', label: t.gameModeStandard },
+            { id: 'standard_plus', label: t.gameModeStandardPlus },
+            { id: 'simplified', label: t.gameModeSimplified },
+          ].map((mode) => (
+            <button
+              key={`sim-mode-${mode.id}`}
+              type="button"
+              aria-pressed={simulationGameMode === mode.id}
+              onClick={() => setSimulationGameMode(mode.id as GameMode)}
+              disabled={simulationRunning}
+            >
+              {simulationGameMode === mode.id ? '✓ ' : ''}{mode.label}
+            </button>
+          ))}
+        </span>
+      </label>
+      <label>{t.roomModulesLabel}
+        <span className="admin-controls">
+          {simulationOptionalModules.map((module) => {
+            const enabled = simulationOptionalModuleIds.includes(module.id) || module.alwaysOn;
+            return (
+              <button
+                key={`sim-module-${module.id}`}
+                type="button"
+                aria-pressed={enabled}
+                onClick={() => {
+                  if (module.alwaysOn) return;
+                  if (simulationOptionalModuleIds.includes(module.id)) {
+                    setSimulationOptionalModuleIds(simulationOptionalModuleIds.filter((id) => id !== module.id));
+                  } else {
+                    setSimulationOptionalModuleIds([...simulationOptionalModuleIds, module.id]);
+                  }
+                }}
+                disabled={simulationRunning || module.alwaysOn}
+              >
+                {enabled ? '✓ ' : ''}{module.name}{module.alwaysOn ? ` (${t.roomModuleAlwaysOn})` : ''}
+              </button>
+            );
+          })}
+        </span>
       </label>
       <button type="button" disabled={simulationRunning || Boolean(simulationBlockedReason)} onClick={runSimulation}>{simulationRunning ? t.simulationRunning : t.simulationRun}</button>
     </p>
@@ -240,22 +278,14 @@ export const AdminSimulationTab = ({
     <h4>{t.simulationReport}</h4>
     {!simulationReport ? <p>{t.simulationNoReport}</p> : (
       <div>
-        <p>{lang === 'uk' ? `Виконано симуляцій: ${simulationReport.input.simulations} (гравців у матчі: ${simulationReport.input.players}).` : `Simulations: ${simulationReport.input.simulations} (players per game: ${simulationReport.input.players}).`}</p>
-        <p>{lang === 'uk'
-          ? `Режим гри: ${simulationReport.input.gameMode === 'standard_plus' ? t.gameModeStandardPlus : simulationReport.input.gameMode === 'simplified' ? t.gameModeSimplified : t.gameModeStandard}.`
-          : `Game mode: ${simulationReport.input.gameMode === 'standard_plus' ? t.gameModeStandardPlus : simulationReport.input.gameMode === 'simplified' ? t.gameModeSimplified : t.gameModeStandard}.`}</p>
-        <p>{lang === 'uk' ? `Завершені: ${simulationReport.summary.finished}, завислі: ${simulationReport.summary.stalled}, середня кількість ходів: ${simulationReport.summary.avgTurns}.` : `Finished: ${simulationReport.summary.finished}, stalled: ${simulationReport.summary.stalled}, average turns: ${simulationReport.summary.avgTurns}.`}</p>
-        <p>{lang === 'uk' ? `Перемоги за званням: ${simulationReport.summary.rankWins}, за очками: ${simulationReport.summary.scoreWins}.` : `Rank wins: ${simulationReport.summary.rankWins}, score wins: ${simulationReport.summary.scoreWins}.`}</p>
-        <p>{lang === 'uk'
-          ? `Топ-3 звань за найбільшим відсотком досягнення: ${simulationReport.topReachedRanksByPct.length ? simulationReport.topReachedRanksByPct.map((row: any) => `${localizedRankName(row.rankId)} — ${row.pct}% (${row.games}/${simulationReport.input.simulations})`).join(' | ') : 'немає даних'}.`
-          : `Top-3 most reached ranks by percentage: ${simulationReport.topReachedRanksByPct.length ? simulationReport.topReachedRanksByPct.map((row: any) => `${localizedRankName(row.rankId)} - ${row.pct}% (${row.games}/${simulationReport.input.simulations})`).join(' | ') : 'no data'}.`}</p>
-        <p>{lang === 'uk'
-          ? `Топ-3 найвищих за ієрархією звань: ${simulationReport.topReachedRanks.length ? simulationReport.topReachedRanks.map((row: any) => `${localizedRankName(row.rankId)} — ${row.pct}% (${row.games}/${simulationReport.input.simulations})`).join(' | ') : 'немає даних'}.`
-          : `Top-3 highest ranks by hierarchy: ${simulationReport.topReachedRanks.length ? simulationReport.topReachedRanks.map((row: any) => `${localizedRankName(row.rankId)} - ${row.pct}% (${row.games}/${simulationReport.input.simulations})`).join(' | ') : 'no data'}.`}</p>
-        <p>{lang === 'uk'
-          ? `Накопичені ресурси: час ${simulationReport.lastGame.winnerResources.time}, авторитет ${simulationReport.lastGame.winnerResources.reputation}, дисципліна ${simulationReport.lastGame.winnerResources.discipline}, документи ${simulationReport.lastGame.winnerResources.documents}, технології ${simulationReport.lastGame.winnerResources.tech}.`
-          : `Resources: time ${simulationReport.lastGame.winnerResources.time}, authority ${simulationReport.lastGame.winnerResources.reputation}, discipline ${simulationReport.lastGame.winnerResources.discipline}, documents ${simulationReport.lastGame.winnerResources.documents}, tech ${simulationReport.lastGame.winnerResources.tech}.`}</p>
-        <p>{lang === 'uk' ? `Ходів у симуляції: ${simulationReport.lastGame.turns}.` : `Turns in simulation: ${simulationReport.lastGame.turns}.`}</p>
+        <p>{t.simulationExecuted}: {simulationReport.input.simulations} ({t.simulationPlayersPerMatch}: {simulationReport.input.players}).</p>
+        <p>{t.gameModeLabel}: {simulationReport.input.gameMode === 'standard_plus' ? t.gameModeStandardPlus : simulationReport.input.gameMode === 'simplified' ? t.gameModeSimplified : t.gameModeStandard}.</p>
+        <p>{t.simulationFinishedLabel}: {simulationReport.summary.finished}, {t.simulationStalledLabel}: {simulationReport.summary.stalled}, {t.simulationAverageTurnsLabel}: {simulationReport.summary.avgTurns}.</p>
+        <p>{t.simulationRankWinsLabel}: {simulationReport.summary.rankWins}, {t.simulationScoreWinsLabel}: {simulationReport.summary.scoreWins}.</p>
+        <p>{t.simulationTopReachedByPctLabel}: {simulationReport.topReachedRanksByPct.length ? simulationReport.topReachedRanksByPct.map((row: any) => `${localizedRankName(row.rankId)} - ${row.pct}% (${row.games}/${simulationReport.input.simulations})`).join(' | ') : t.simulationNoData}.</p>
+        <p>{t.simulationTopHighestRanksLabel}: {simulationReport.topReachedRanks.length ? simulationReport.topReachedRanks.map((row: any) => `${localizedRankName(row.rankId)} - ${row.pct}% (${row.games}/${simulationReport.input.simulations})`).join(' | ') : t.simulationNoData}.</p>
+        <p>{t.simulationAccumulatedResourcesLabel}: {t.resources.time} {simulationReport.lastGame.winnerResources.time}, {t.resources.reputation} {simulationReport.lastGame.winnerResources.reputation}, {t.resources.discipline} {simulationReport.lastGame.winnerResources.discipline}, {t.resources.documents} {simulationReport.lastGame.winnerResources.documents}, {t.resources.tech} {simulationReport.lastGame.winnerResources.tech}.</p>
+        <p>{t.simulationTurnsInMatchLabel}: {simulationReport.lastGame.turns}.</p>
         {simulationReport.issues.length ? <pre className="admin-json">{simulationReport.issues.join('\n')}</pre> : null}
       </div>
     )}

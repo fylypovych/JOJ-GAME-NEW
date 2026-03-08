@@ -21,6 +21,8 @@ type MoveArgs = {
   events?: MoveEvents;
 };
 
+type ReplacementByTarget = Record<string, ResourceKey[]>;
+
 type JojMovesDeps = {
   INVALID_MOVE: 'INVALID_MOVE';
   DRAW_STAGE: string;
@@ -51,6 +53,10 @@ type JojMovesDeps = {
     playerID: string,
     effects: CardDefinition['effects'],
   ) => { resources: Partial<Record<ResourceKey, number>>; rank: number };
+  getReplacementUnitsForCard: (
+    resources: Record<ResourceKey, number>,
+    card: CardDefinition,
+  ) => number;
   summarizeAppliedDiff: (
     beforeResources: Record<ResourceKey, number>,
     afterResources: Record<ResourceKey, number>,
@@ -121,12 +127,18 @@ type JojMovesDeps = {
 };
 
 export const createJojMoves = (d: JojMovesDeps) => {
+  const isCommandCategory = (card: CardDefinition): boolean => {
+    const rawCategory = (card as unknown as { category?: string }).category;
+    return rawCategory === 'COMMAND' || rawCategory === 'DECISION';
+  };
+
   const isLegendaryDraftPending = (G: JojGameState) => {
     if (G.gameMode !== 'standard_plus') return false;
     const playerIDs = Object.keys(G.players ?? {});
     if (playerIDs.length === 0) return false;
     return playerIDs.some((pid) => G.legendaryDraftCompleted?.[pid] !== true);
   };
+  const isDrawAutoResolutionPending = (G: JojGameState) => Boolean(G.pendingDrawAutoResolution);
 
   // Apply legendary special effects regardless of whether the card came from
   // legendary hand (standard mode) or from main hand (simplified mode).
@@ -287,44 +299,96 @@ export const createJojMoves = (d: JojMovesDeps) => {
     const playerID = args.playerID;
     if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
     if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
+    if (isDrawAutoResolutionPending(args.G)) return d.INVALID_MOVE;
     if (args.ctx.activePlayers?.[playerID] !== d.DRAW_STAGE) return d.INVALID_MOVE;
 
     const beforeResources = d.snapshotResourcesForStats(args.G);
     const hand = args.G.hands[playerID];
     let autoPlayed = false;
+    let pendingAutoResolution = false;
     const card = args.G.deck.pop();
     if (card) {
       if (card.category === 'LYAP') {
         const protectedSelf = d.isProtectedFromLyapScandal(args.G, args.ctx, playerID);
-        const summary = protectedSelf ? { resources: {}, rank: 0 } : d.applyCardEffectsSoft(args.G, playerID, card.effects);
-        const seq = d.nextSystemMessageSeq(args.G);
-        d.appendChat(args.G, {
-          type: 'system',
-          text: protectedSelf
-            ? `🛡️ [${seq}] ${d.getPlayerLabel(args.G, playerID)} витягнув «${card.title}», але щит від Грамоти скасував ЛЯП.`
-            : d.buildLyapSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, summary),
-        });
-        args.G.discard.push(card);
-        autoPlayed = true;
-      } else if (card.category === 'SCANDAL') {
-        const targetSummaries: string[] = [];
-        Object.keys(args.G.players).forEach((pid) => {
-          if (d.isProtectedFromLyapScandal(args.G, args.ctx, pid)) {
-            targetSummaries.push(`${d.getPlayerLabel(args.G, pid)}: щит від Грамоти (без змін)`);
+        if (protectedSelf) {
+          const seq = d.nextSystemMessageSeq(args.G);
+          d.appendChat(args.G, {
+            type: 'system',
+            text: `🛡️ [${seq}] ${d.getPlayerLabel(args.G, playerID)} витягнув «${card.title}», але щит від Грамоти скасував ЛЯП.`,
+          });
+          args.G.discard.push(card);
+          autoPlayed = true;
+        } else {
+          const requiredReplacementUnits = d.getReplacementUnitsForCard(args.G.resources[playerID], card);
+          if (requiredReplacementUnits > 0) {
+            args.G.pendingDrawAutoResolution = { kind: 'LYAP', sourcePlayerID: playerID, card: { ...card } };
+            pendingAutoResolution = true;
           } else {
-            const summary = d.applyCardEffectsSoft(args.G, pid, card.effects);
-            targetSummaries.push(`${d.getPlayerLabel(args.G, pid)}: ${d.effectSummaryToText(summary)}`);
+            const beforeTargetResources = { ...args.G.resources[playerID] };
+            const beforeTargetRankId = args.G.ranks[playerID];
+            try {
+              const applied = d.applyCardEffects(args.G, playerID, card.effects, []);
+              if (!applied) return d.INVALID_MOVE;
+            } catch {
+              return d.INVALID_MOVE;
+            }
+            const summary = d.summarizeAppliedDiff(
+              beforeTargetResources,
+              args.G.resources[playerID],
+              beforeTargetRankId,
+              args.G.ranks[playerID],
+            );
+            const seq = d.nextSystemMessageSeq(args.G);
+            d.appendChat(args.G, {
+              type: 'system',
+              text: d.buildLyapSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, summary),
+            });
+            args.G.discard.push(card);
+            autoPlayed = true;
           }
-          d.syncPlayerState(args.G, pid);
+        }
+      } else if (card.category === 'SCANDAL') {
+        const targetIds = Object.keys(args.G.players);
+        const hasAnyReplacementNeed = targetIds.some((pid) => {
+          if (d.isProtectedFromLyapScandal(args.G, args.ctx, pid)) return false;
+          return d.getReplacementUnitsForCard(args.G.resources[pid], card) > 0;
         });
-        d.triggerSukhpayZsuOnScandal(args.G, args.ctx, playerID);
-        const seq = d.nextSystemMessageSeq(args.G);
-        d.appendChat(args.G, {
-          type: 'system',
-          text: d.buildScandalSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, targetSummaries),
-        });
-        args.G.discard.push(card);
-        autoPlayed = true;
+        if (hasAnyReplacementNeed) {
+          args.G.pendingDrawAutoResolution = { kind: 'SCANDAL', sourcePlayerID: playerID, card: { ...card } };
+          pendingAutoResolution = true;
+        } else {
+          const targetSummaries: string[] = [];
+          targetIds.forEach((pid) => {
+            if (d.isProtectedFromLyapScandal(args.G, args.ctx, pid)) {
+              targetSummaries.push(`${d.getPlayerLabel(args.G, pid)}: щит від Грамоти (без змін)`);
+            } else {
+              const beforeTargetResources = { ...args.G.resources[pid] };
+              const beforeTargetRankId = args.G.ranks[pid];
+              try {
+                const applied = d.applyCardEffects(args.G, pid, card.effects, []);
+                if (!applied) return;
+              } catch {
+                return;
+              }
+              const summary = d.summarizeAppliedDiff(
+                beforeTargetResources,
+                args.G.resources[pid],
+                beforeTargetRankId,
+                args.G.ranks[pid],
+              );
+              targetSummaries.push(`${d.getPlayerLabel(args.G, pid)}: ${d.effectSummaryToText(summary)}`);
+            }
+            d.syncPlayerState(args.G, pid);
+          });
+          d.triggerSukhpayZsuOnScandal(args.G, args.ctx, playerID);
+          const seq = d.nextSystemMessageSeq(args.G);
+          d.appendChat(args.G, {
+            type: 'system',
+            text: d.buildScandalSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, targetSummaries),
+          });
+          args.G.discard.push(card);
+          autoPlayed = true;
+        }
       } else {
         hand.push(card);
       }
@@ -333,18 +397,131 @@ export const createJojMoves = (d: JojMovesDeps) => {
     d.recordResourceFlowStats(args.G, beforeResources);
     d.resetNoPlayablePassStreak(args.G);
     d.resetEndGameVote(args.G);
-    args.events?.setStage?.(autoPlayed ? d.END_STAGE : d.PLAY_STAGE);
+    if (pendingAutoResolution) {
+      args.events?.setStage?.(d.DRAW_STAGE);
+    } else {
+      args.events?.setStage?.(autoPlayed ? d.END_STAGE : d.PLAY_STAGE);
+    }
     return undefined;
+  },
+  resolveDrawAutoCard: (
+    args: MoveArgs,
+    replacementResources: ResourceKey[] = [],
+    replacementByTarget: ReplacementByTarget = {},
+  ) => {
+    const playerID = args.playerID;
+    if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
+    if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
+    if (args.ctx.activePlayers?.[playerID] !== d.DRAW_STAGE) return d.INVALID_MOVE;
+    const pending = args.G.pendingDrawAutoResolution;
+    if (!pending || pending.sourcePlayerID !== playerID) return d.INVALID_MOVE;
+    const card = pending.card;
+    const beforeResources = d.snapshotResourcesForStats(args.G);
+    if (pending.kind === 'LYAP') {
+      const protectedSelf = d.isProtectedFromLyapScandal(args.G, args.ctx, playerID);
+      if (protectedSelf) {
+        const seq = d.nextSystemMessageSeq(args.G);
+        d.appendChat(args.G, {
+          type: 'system',
+          text: `🛡️ [${seq}] ${d.getPlayerLabel(args.G, playerID)} витягнув «${card.title}», але щит від Грамоти скасував ЛЯП.`,
+        });
+      } else {
+        const requiredReplacementUnits = d.getReplacementUnitsForCard(args.G.resources[playerID], card);
+        if (requiredReplacementUnits > 0 && replacementResources.length !== requiredReplacementUnits) return d.INVALID_MOVE;
+        const beforeTargetResources = { ...args.G.resources[playerID] };
+        const beforeTargetRankId = args.G.ranks[playerID];
+        try {
+          const applied = d.applyCardEffects(args.G, playerID, card.effects, replacementResources);
+          if (!applied) return d.INVALID_MOVE;
+        } catch {
+          return d.INVALID_MOVE;
+        }
+        const summary = d.summarizeAppliedDiff(
+          beforeTargetResources,
+          args.G.resources[playerID],
+          beforeTargetRankId,
+          args.G.ranks[playerID],
+        );
+        const seq = d.nextSystemMessageSeq(args.G);
+        d.appendChat(args.G, {
+          type: 'system',
+          text: d.buildLyapSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, summary),
+        });
+      }
+      args.G.discard.push(card);
+      d.syncPlayerState(args.G, playerID);
+      args.G.pendingDrawAutoResolution = null;
+      d.recordResourceFlowStats(args.G, beforeResources);
+      d.resetNoPlayablePassStreak(args.G);
+      d.resetEndGameVote(args.G);
+      args.events?.setStage?.(d.END_STAGE);
+      return undefined;
+    }
+    if (pending.kind === 'SCANDAL') {
+      const targetSummaries: string[] = [];
+      let invalidScandalReplacement = false;
+      Object.keys(args.G.players).forEach((pid) => {
+        if (invalidScandalReplacement) return;
+        if (d.isProtectedFromLyapScandal(args.G, args.ctx, pid)) {
+          targetSummaries.push(`${d.getPlayerLabel(args.G, pid)}: щит від Грамоти (без змін)`);
+          return;
+        }
+        const replacementForTarget = replacementByTarget?.[pid] ?? [];
+        const requiredReplacementUnits = d.getReplacementUnitsForCard(args.G.resources[pid], card);
+        if (requiredReplacementUnits > 0 && replacementForTarget.length !== requiredReplacementUnits) {
+          invalidScandalReplacement = true;
+          return;
+        }
+        const beforeTargetResources = { ...args.G.resources[pid] };
+        const beforeTargetRankId = args.G.ranks[pid];
+        try {
+          const applied = d.applyCardEffects(args.G, pid, card.effects, replacementForTarget);
+          if (!applied) {
+            invalidScandalReplacement = true;
+            return;
+          }
+        } catch {
+          invalidScandalReplacement = true;
+          return;
+        }
+        const summary = d.summarizeAppliedDiff(
+          beforeTargetResources,
+          args.G.resources[pid],
+          beforeTargetRankId,
+          args.G.ranks[pid],
+        );
+        targetSummaries.push(`${d.getPlayerLabel(args.G, pid)}: ${d.effectSummaryToText(summary)}`);
+        d.syncPlayerState(args.G, pid);
+      });
+      if (invalidScandalReplacement) return d.INVALID_MOVE;
+      d.triggerSukhpayZsuOnScandal(args.G, args.ctx, playerID);
+      const seq = d.nextSystemMessageSeq(args.G);
+      d.appendChat(args.G, {
+        type: 'system',
+        text: d.buildScandalSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, targetSummaries),
+      });
+      args.G.discard.push(card);
+      Object.keys(args.G.players).forEach((pid) => d.syncPlayerState(args.G, pid));
+      args.G.pendingDrawAutoResolution = null;
+      d.recordResourceFlowStats(args.G, beforeResources);
+      d.resetNoPlayablePassStreak(args.G);
+      d.resetEndGameVote(args.G);
+      args.events?.setStage?.(d.END_STAGE);
+      return undefined;
+    }
+    return d.INVALID_MOVE;
   },
   playCard: (
     args: MoveArgs,
     cardId: string,
     replacementResources: ResourceKey[] = [],
     targetPlayerID?: string,
+    replacementByTarget: ReplacementByTarget = {},
   ) => {
     const playerID = args.playerID;
     if (!playerID) return d.INVALID_MOVE;
     if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
+    if (isDrawAutoResolutionPending(args.G)) return d.INVALID_MOVE;
     if (args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
     const stage = args.ctx.activePlayers?.[playerID] as string | undefined;
     const usingExtraToken = (args.G.extraHandPlayTokens[playerID] ?? 0) > 0 && stage === d.END_STAGE;
@@ -371,7 +548,26 @@ export const createJojMoves = (d: JojMovesDeps) => {
       if (!targetPlayerID || targetPlayerID === playerID || !(targetPlayerID in args.G.players)) return d.INVALID_MOVE;
       d.incrementLyapPlayedOnOthers(args.G);
       const protectedTarget = d.isProtectedFromLyapScandal(args.G, args.ctx, targetPlayerID);
-      const summary = protectedTarget ? { resources: {}, rank: 0 } : applySoftTo(targetPlayerID);
+      let summary = { resources: {}, rank: 0 };
+      if (!protectedTarget) {
+        const requiredReplacementUnits = d.getReplacementUnitsForCard(args.G.resources[targetPlayerID], card);
+        if (requiredReplacementUnits > 0 && replacementResources.length !== requiredReplacementUnits) return d.INVALID_MOVE;
+        const beforeTargetResources = { ...args.G.resources[targetPlayerID] };
+        const beforeTargetRankId = args.G.ranks[targetPlayerID];
+        try {
+          const applied = d.applyCardEffects(args.G, targetPlayerID, card.effects, replacementResources);
+          if (!applied) return d.INVALID_MOVE;
+        } catch {
+          return d.INVALID_MOVE;
+        }
+        summary = d.summarizeAppliedDiff(
+          beforeTargetResources,
+          args.G.resources[targetPlayerID],
+          beforeTargetRankId,
+          args.G.ranks[targetPlayerID],
+        );
+        d.syncPlayerState(args.G, targetPlayerID);
+      }
       const seq = d.nextSystemMessageSeq(args.G);
       d.appendChat(args.G, {
         type: 'system',
@@ -382,14 +578,41 @@ export const createJojMoves = (d: JojMovesDeps) => {
     } else if (card.category === 'SCANDAL') {
       d.incrementScandalPlayedOnOthers(args.G);
       const targetSummaries: string[] = [];
+      let invalidScandalReplacement = false;
       allPlayerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
+        if (invalidScandalReplacement) return;
         if (d.isProtectedFromLyapScandal(args.G, args.ctx, pid)) {
           targetSummaries.push(`${d.getPlayerLabel(args.G, pid)}: щит від Грамоти (без змін)`);
           return;
         }
-        const summary = applySoftTo(pid);
+        const replacementForTarget = replacementByTarget?.[pid] ?? [];
+        const requiredReplacementUnits = d.getReplacementUnitsForCard(args.G.resources[pid], card);
+        if (requiredReplacementUnits > 0 && replacementForTarget.length !== requiredReplacementUnits) {
+          invalidScandalReplacement = true;
+          return;
+        }
+        const beforeTargetResources = { ...args.G.resources[pid] };
+        const beforeTargetRankId = args.G.ranks[pid];
+        try {
+          const applied = d.applyCardEffects(args.G, pid, card.effects, replacementForTarget);
+          if (!applied) {
+            invalidScandalReplacement = true;
+            return;
+          }
+        } catch {
+          invalidScandalReplacement = true;
+          return;
+        }
+        const summary = d.summarizeAppliedDiff(
+          beforeTargetResources,
+          args.G.resources[pid],
+          beforeTargetRankId,
+          args.G.ranks[pid],
+        );
+        d.syncPlayerState(args.G, pid);
         targetSummaries.push(`${d.getPlayerLabel(args.G, pid)}: ${d.effectSummaryToText(summary)}`);
       });
+      if (invalidScandalReplacement) return d.INVALID_MOVE;
       d.triggerSukhpayZsuOnScandal(args.G, args.ctx, playerID);
       const seq = d.nextSystemMessageSeq(args.G);
       d.appendChat(args.G, {
@@ -411,7 +634,7 @@ export const createJojMoves = (d: JojMovesDeps) => {
         type: 'system',
         text: d.buildSupportSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, summary),
       });
-    } else if (card.category === 'DECISION') {
+    } else if (isCommandCategory(card)) {
       const targetSummaries: string[] = [];
       let invalidDecisionReplacement = false;
       allPlayerIDs.forEach((pid) => {
@@ -517,6 +740,7 @@ export const createJojMoves = (d: JojMovesDeps) => {
     const playerID = args.playerID;
     if (!playerID) return d.INVALID_MOVE;
     if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
+    if (isDrawAutoResolutionPending(args.G)) return d.INVALID_MOVE;
     if (args.G.gameMode === 'simplified') return d.INVALID_MOVE;
     const hand = args.G.legendaryHands[playerID] ?? [];
     const idx = hand.findIndex((card: CardDefinition) => card.id === cardId);
@@ -557,6 +781,7 @@ export const createJojMoves = (d: JojMovesDeps) => {
     const playerID = args.playerID;
     if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
     if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
+    if (isDrawAutoResolutionPending(args.G)) return d.INVALID_MOVE;
     const stage = args.ctx.activePlayers?.[playerID];
     if (![d.PLAY_STAGE, d.END_STAGE].includes(stage as string)) return d.INVALID_MOVE;
     const hand = args.G.hands[playerID];
@@ -582,6 +807,7 @@ export const createJojMoves = (d: JojMovesDeps) => {
     const playerID = args.playerID;
     if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
     if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
+    if (isDrawAutoResolutionPending(args.G)) return d.INVALID_MOVE;
     if (![d.PLAY_STAGE, d.END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return d.INVALID_MOVE;
     if (args.G.promotedThisTurn[playerID]) return d.INVALID_MOVE;
     const beforeResources = { ...args.G.resources[playerID] };
@@ -615,6 +841,7 @@ export const createJojMoves = (d: JojMovesDeps) => {
     const playerID = args.playerID;
     if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
     if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
+    if (isDrawAutoResolutionPending(args.G)) return d.INVALID_MOVE;
     if (![d.PLAY_STAGE, d.END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return d.INVALID_MOVE;
     if ((args.G.hands[playerID]?.length ?? 0) > d.HAND_LIMIT) return d.INVALID_MOVE;
     if ((args.G.deck?.length ?? 0) === 0 && d.hasPlayableCardsByInventory(args.G, playerID)) return d.INVALID_MOVE;
@@ -632,6 +859,74 @@ export const enumerateAiMoves = (deps: {
   END_STAGE: string;
 }) => (G: JojGameState, ctx: Ctx, playerID?: string) => {
   const currentPlayer = playerID ?? ctx.currentPlayer;
+  if (G.pendingDrawAutoResolution && G.pendingDrawAutoResolution.sourcePlayerID === currentPlayer) {
+    const pendingCard = G.pendingDrawAutoResolution.card;
+    if (G.pendingDrawAutoResolution.kind === 'LYAP') {
+      const resources = G.resources?.[currentPlayer];
+      const tmp = { ...(resources ?? { time: 0, reputation: 0, discipline: 0, documents: 0, tech: 0 }) } as Record<ResourceKey, number>;
+      const picks: ResourceKey[] = [];
+      let valid = true;
+      (pendingCard.effects ?? []).forEach((effect) => {
+        if (effect.resource === 'rank' || effect.value >= 0) return;
+        const need = Math.abs(effect.value);
+        const have = Math.max(0, tmp[effect.resource] ?? 0);
+        const direct = Math.min(have, need);
+        tmp[effect.resource] = have - direct;
+        let missing = need - direct;
+        while (missing > 0) {
+          for (let k = 0; k < 2; k += 1) {
+            const candidate = (['time', 'reputation', 'discipline', 'documents', 'tech'] as const)
+              .filter((key) => key !== effect.resource && (tmp[key] ?? 0) > 0)
+              .sort((a, b) => (tmp[b] ?? 0) - (tmp[a] ?? 0))[0];
+            if (!candidate) {
+              valid = false;
+              return;
+            }
+            tmp[candidate] = Math.max(0, (tmp[candidate] ?? 0) - 1);
+            picks.push(candidate);
+          }
+          missing -= 1;
+        }
+      });
+      return valid
+        ? [{ move: 'resolveDrawAutoCard' as const, args: [picks, {}] }]
+        : [{ move: 'resolveDrawAutoCard' as const, args: [[], {}] }];
+    }
+    const replacementByTarget: Record<string, ResourceKey[]> = {};
+    const targets = Object.keys(G.players ?? {});
+    for (const pid of targets) {
+      const resources = G.resources?.[pid];
+      if (!resources) continue;
+      const tmp = { ...resources };
+      const picks: ResourceKey[] = [];
+      let valid = true;
+      (pendingCard.effects ?? []).forEach((effect) => {
+        if (effect.resource === 'rank' || effect.value >= 0) return;
+        const need = Math.abs(effect.value);
+        const have = Math.max(0, tmp[effect.resource] ?? 0);
+        const direct = Math.min(have, need);
+        tmp[effect.resource] = have - direct;
+        let missing = need - direct;
+        while (missing > 0) {
+          for (let k = 0; k < 2; k += 1) {
+            const candidate = (['time', 'reputation', 'discipline', 'documents', 'tech'] as const)
+              .filter((key) => key !== effect.resource && (tmp[key] ?? 0) > 0)
+              .sort((a, b) => (tmp[b] ?? 0) - (tmp[a] ?? 0))[0];
+            if (!candidate) {
+              valid = false;
+              return;
+            }
+            tmp[candidate] = Math.max(0, (tmp[candidate] ?? 0) - 1);
+            picks.push(candidate);
+          }
+          missing -= 1;
+        }
+      });
+      if (!valid) return [{ move: 'resolveDrawAutoCard' as const, args: [[], {}] }];
+      if (picks.length > 0) replacementByTarget[pid] = picks;
+    }
+    return [{ move: 'resolveDrawAutoCard' as const, args: [[], replacementByTarget] }];
+  }
   if (G.gameMode === 'standard_plus') {
     const allLegendary = G.legendaryDeck ?? [];
     const draftReady = Object.keys(G.players ?? {}).every((pid) => G.legendaryDraftCompleted?.[pid] === true);

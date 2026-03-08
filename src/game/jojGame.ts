@@ -18,7 +18,15 @@ import { resourceKeys, resourceLabelsUk } from './resourceMeta';
 import { createRankEngine, rankSeatLimitForPlayerCount } from './rankEngine';
 import { canPlayHandCardAtStage } from './turnRules';
 import { runGameSimulationsWithDeps, type SimulationOptions, type SimulationReport } from './simulation';
-import { buildDeckModulesFromTemplate, getActiveRanks, getSharedDeckTemplate, getTopRankId, shuffle } from './sharedConfig';
+import {
+  buildDeckModulesFromTemplate,
+  getActiveRanks,
+  getSharedDeckTemplate,
+  getTopRankId,
+  shuffle,
+  type LegendaryDeckMode,
+  type SharedGameSetup,
+} from './sharedConfig';
 import type { CardDefinition, GameMode, JojGameState, ResourceKey } from './types';
 export {
   addCardToSharedDeckTemplate,
@@ -37,7 +45,15 @@ export {
   shuffleSharedDeckTemplate,
   updateCardAtInSharedDeckTemplate,
 } from './sharedConfig';
-export type { DeckTarget, SharedRanks } from './sharedConfig';
+export type {
+  DeckModuleCategory,
+  DeckModuleDefinition,
+  DeckModuleType,
+  DeckTarget,
+  LegendaryDeckMode,
+  SharedGameSetup,
+  SharedRanks,
+} from './sharedConfig';
 
 const INVALID_MOVE = 'INVALID_MOVE' as const;
 const STARTING_HAND_SIZE = 5;
@@ -63,17 +79,54 @@ const resolveGameMode = (setupData: unknown): GameMode => {
   return GAME_MODE_STANDARD;
 };
 
-const resolveEnabledModules = (setupData: unknown): Set<OptionalModuleId> => {
-  const defaults = new Set<OptionalModuleId>([MODULE_VVNZ, MODULE_LEGENDARY]);
-  if (!setupData || typeof setupData !== 'object') return defaults;
+const normalizeGameModeByLegendaryMode = (
+  requestedMode: GameMode,
+  legendaryDeckMode: LegendaryDeckMode,
+): GameMode => {
+  if (legendaryDeckMode !== 'merged') return requestedMode;
+  // Merged legendary deck is logically equivalent to simplified legendary flow:
+  // no separate legendary hand and no legendary draft phase.
+  return GAME_MODE_SIMPLIFIED;
+};
+
+const resolveLegacyEnabledModules = (setupData: unknown): Set<OptionalModuleId> | null => {
+  if (!setupData || typeof setupData !== 'object') return null;
   const raw = (setupData as { modules?: unknown }).modules;
-  if (!Array.isArray(raw)) return defaults;
+  if (!Array.isArray(raw)) return null;
   const out = new Set<OptionalModuleId>();
   raw.forEach((value) => {
     const normalized = String(value ?? '').trim().toLowerCase();
     if (normalized === MODULE_VVNZ) out.add(MODULE_VVNZ);
     if (normalized === MODULE_LEGENDARY) out.add(MODULE_LEGENDARY);
   });
+  return out;
+};
+
+const resolveSetupOverride = (setupData: unknown): Partial<SharedGameSetup> => {
+  if (!setupData || typeof setupData !== 'object') return {};
+  const raw = setupData as { gameSetup?: unknown; legendaryDeckMode?: unknown };
+  const safeId = (value: unknown): string | undefined => {
+    if (typeof value !== 'string') return undefined;
+    const normalized = value.trim().toLowerCase();
+    return normalized || undefined;
+  };
+  const out: Partial<SharedGameSetup> = {};
+  if (raw.gameSetup && typeof raw.gameSetup === 'object') {
+    const setup = raw.gameSetup as Record<string, unknown>;
+    out.lyapModuleId = safeId(setup.lyapModuleId);
+    out.scandalModuleId = safeId(setup.scandalModuleId);
+    out.supportModuleId = safeId(setup.supportModuleId);
+    out.commandModuleId = safeId(setup.commandModuleId);
+    out.optionalMainDeckModuleIds = Array.isArray(setup.optionalMainDeckModuleIds)
+      ? setup.optionalMainDeckModuleIds.filter((item): item is string => typeof item === 'string').map((id) => id.trim().toLowerCase()).filter(Boolean)
+      : undefined;
+    out.legendaryModuleId = safeId(setup.legendaryModuleId);
+    out.rankModuleId = safeId(setup.rankModuleId);
+    const mode = setup.legendaryDeckMode;
+    if (mode === 'merged' || mode === 'separate') out.legendaryDeckMode = mode;
+  }
+  const mode = raw.legendaryDeckMode;
+  if (mode === 'merged' || mode === 'separate') out.legendaryDeckMode = mode as LegendaryDeckMode;
   return out;
 };
 
@@ -167,7 +220,7 @@ const categoryLabelUk = (category: CardDefinition['category']) => {
       return 'СКАНДАЛ';
     case 'SUPPORT':
       return 'ПІДТРИМКА';
-    case 'DECISION':
+    case 'COMMAND':
       return 'РІШЕННЯ';
     case 'VVNZ':
       return 'ВВНЗ';
@@ -335,9 +388,10 @@ const drawCards = (G: JojGameState, playerID: string, amount: number): void => {
   }
 };
 
-const drawLegendaryCards = (G: JojGameState, playerID: string, amount: number): void => {
-  const template = getSharedDeckTemplate();
-  G.legendaryHands[playerID] = shuffle(template.legendaryDeck.map(cloneCard)).slice(0, Math.max(0, amount));
+const drawLegendaryCards = (G: JojGameState, playerID: string, amount: number, sourceCards?: CardDefinition[]): void => {
+  const fallback = getSharedDeckTemplate().legendaryDeck;
+  const source = (sourceCards ?? G.legendaryDeck ?? fallback).map(cloneCard);
+  G.legendaryHands[playerID] = shuffle(source).slice(0, Math.max(0, amount));
 };
 
 const syncPlayerState = (G: JojGameState, playerID: string): void => {
@@ -536,31 +590,40 @@ export const jojGame: Game<JojGameState> = {
   setup: ({ ctx }, setupData) => {
     const players = [...ctx.playOrder];
     const template = getSharedDeckTemplate();
-    const gameMode = resolveGameMode(setupData);
-    const enabledModules = resolveEnabledModules(setupData);
-    const deckModules = buildDeckModulesFromTemplate(template);
-    const optionalMainDeckCards: CardDefinition[] = [
-      ...(enabledModules.has(MODULE_VVNZ) ? (deckModules.optionalMainDeckModules.vvnz ?? []).map(cloneCard) : []),
-    ];
-    const optionalLegendaryCards: CardDefinition[] = enabledModules.has(MODULE_LEGENDARY)
-      ? (deckModules.optionalLegendaryDeckModules.legendary ?? []).map(cloneCard)
-      : [];
+    const requestedGameMode = resolveGameMode(setupData);
+    const setupOverride = resolveSetupOverride(setupData);
+    const legacyEnabledModules = resolveLegacyEnabledModules(setupData);
+    const deckModules = buildDeckModulesFromTemplate(template, setupOverride);
+    let optionalMainDeckCards: CardDefinition[] = deckModules.gameSetup.optionalMainDeckModuleIds
+      .flatMap((moduleId) => (deckModules.optionalMainDeckModules[moduleId] ?? []).map(cloneCard));
+    if (legacyEnabledModules && !legacyEnabledModules.has(MODULE_VVNZ)) {
+      optionalMainDeckCards = optionalMainDeckCards.filter((card) => card.category !== 'VVNZ');
+    }
+    let optionalLegendaryCards: CardDefinition[] = deckModules.legendaryDeck.map(cloneCard);
+    if (legacyEnabledModules && !legacyEnabledModules.has(MODULE_LEGENDARY)) {
+      optionalLegendaryCards = [];
+    }
+    const mergedLegendaryMode = deckModules.gameSetup.legendaryDeckMode === 'merged';
+    const effectiveGameMode = normalizeGameModeByLegendaryMode(
+      requestedGameMode,
+      mergedLegendaryMode ? 'merged' : 'separate',
+    );
     const mainDeckCards = [...deckModules.baseDeck.map(cloneCard), ...optionalMainDeckCards.map(cloneCard)];
-    const mergedDeckSource = gameMode === GAME_MODE_SIMPLIFIED
+    const mergedDeckSource = effectiveGameMode === GAME_MODE_SIMPLIFIED
       ? [...mainDeckCards, ...optionalLegendaryCards.map(cloneCard)]
       : mainDeckCards;
     const deck = shuffle(mergedDeckSource.map(cloneCard));
     const hasLegendaryModule = optionalLegendaryCards.length > 0;
 
     const state: JojGameState = {
-      gameMode,
+      gameMode: effectiveGameMode,
       deck,
       discard: [],
-      legendaryDeck: gameMode === GAME_MODE_SIMPLIFIED
+      legendaryDeck: effectiveGameMode === GAME_MODE_SIMPLIFIED
         ? []
         : !hasLegendaryModule
           ? []
-          : gameMode === GAME_MODE_STANDARD_PLUS
+          : effectiveGameMode === GAME_MODE_STANDARD_PLUS
             ? optionalLegendaryCards.map(cloneCard)
             : shuffle(optionalLegendaryCards.map(cloneCard)),
       legendaryDiscard: [],
@@ -606,6 +669,7 @@ export const jojGame: Game<JojGameState> = {
         requestedBy: null,
         votes: {},
       },
+      pendingDrawAutoResolution: null,
     };
 
     players.forEach((playerID) => {
@@ -629,11 +693,11 @@ export const jojGame: Game<JojGameState> = {
       state.extraHandPlayTokens[playerID] = 0;
       state.sukhpayZsuWatchUntilTurn[playerID] = 0;
       state.sukhpayZsuPendingBonus[playerID] = false;
-      state.legendaryDraftCompleted[playerID] = !hasLegendaryModule || gameMode === GAME_MODE_STANDARD || gameMode === GAME_MODE_SIMPLIFIED;
+      state.legendaryDraftCompleted[playerID] = !hasLegendaryModule || effectiveGameMode === GAME_MODE_STANDARD || effectiveGameMode === GAME_MODE_SIMPLIFIED;
       state.playerNames[playerID] = '';
       drawCards(state, playerID, STARTING_HAND_SIZE);
-      if (hasLegendaryModule && gameMode === GAME_MODE_STANDARD) {
-        drawLegendaryCards(state, playerID, STARTING_LEGENDARY_HAND_SIZE);
+      if (hasLegendaryModule && effectiveGameMode === GAME_MODE_STANDARD) {
+        drawLegendaryCards(state, playerID, STARTING_LEGENDARY_HAND_SIZE, optionalLegendaryCards);
       }
     });
 
@@ -670,6 +734,7 @@ export const jojGame: Game<JojGameState> = {
     triggerSukhpayZsuOnScandal,
     applyCardEffects,
     applyCardEffectsSoft,
+    getReplacementUnitsForCard,
     summarizeAppliedDiff,
     effectSummaryToText,
     resourceDeltaToText,

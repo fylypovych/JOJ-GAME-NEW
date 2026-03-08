@@ -1,4 +1,4 @@
-import type { DeckTarget, SimulationReport } from '../../game/jojGame';
+import type { DeckModuleDefinition, DeckTarget, SharedGameSetup, SimulationReport } from '../../game/jojGame';
 import type { CardCategory, CardDefinition, GameMode, RankDefinition } from '../../game/types';
 import type { Language } from '../i18n';
 export type AdminStorageMode = 'file' | 'db';
@@ -50,6 +50,8 @@ export type SharedDeckTemplate = {
   legendaryDeck: CardDefinition[];
   rankTrack: CardDefinition[];
   deckBackImage?: string;
+  modules: DeckModuleDefinition[];
+  gameSetup: SharedGameSetup;
 };
 
 export type AdminPageProps = {
@@ -120,12 +122,12 @@ export type AdminPageProps = {
   onRunSimulations: (
     players: number,
     simulations: number,
-    options?: { gameMode?: GameMode },
+    options?: { gameMode?: GameMode; gameSetup?: Partial<SharedGameSetup> },
   ) => SimulationReport;
 };
 
 export type ImportCategoryMode = CardCategory | 'AS_IS';
-export type CategoryFilter = CardCategory | 'ALL';
+export type CategoryFilter = CardCategory | 'ALL' | 'CORE';
 export type AdminTab = 'matches' | 'deck' | 'import' | 'state' | 'ranks' | 'database' | 'settings' | 'simulation';
 
 export type CropDraft = {

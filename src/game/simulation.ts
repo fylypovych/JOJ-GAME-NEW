@@ -1,5 +1,6 @@
 import type { CardDefinition, GameMode, JojGameState, ResourceKey } from './types';
 import { createSimulationState } from './simulationSetup';
+import type { SharedGameSetup } from './sharedConfig';
 
 export type SimulationReport = {
   input: {
@@ -49,6 +50,7 @@ export type SimulationOptions = {
   useMainDeck?: boolean;
   useLegendaryDeck?: boolean;
   gameMode?: GameMode;
+  gameSetup?: Partial<SharedGameSetup>;
 };
 
 type SimulationDeps = {
@@ -58,12 +60,35 @@ type SimulationDeps = {
   getSharedDeckTemplate: () => {
     deck: CardDefinition[];
     legendaryDeck: CardDefinition[];
+    rankTrack: CardDefinition[];
     deckBackImage?: string;
+    modules: Array<{
+      id: string;
+      name: string;
+      moduleType: 'MAIN_DECK_MODULE' | 'SEPARATE_DECK_MODULE' | 'SYSTEM_MODULE' | 'VISUAL_TRACK_MODULE';
+      category: 'LYAP' | 'SCANDAL' | 'SUPPORT' | 'COMMAND' | 'LEGENDARY' | 'VVNZ' | 'RANK';
+      cardCount: number;
+      enabled: boolean;
+      target: 'deck' | 'legendaryDeck' | 'rankTrack';
+      cardIds: string[];
+      defaultCategory?: CardDefinition['category'];
+      deckBackImage?: string;
+    }>;
+    gameSetup: {
+      lyapModuleId?: string;
+      scandalModuleId?: string;
+      supportModuleId?: string;
+      commandModuleId?: string;
+      optionalMainDeckModuleIds: string[];
+      legendaryModuleId?: string;
+      rankModuleId?: string;
+      legendaryDeckMode: 'separate' | 'merged';
+    };
   };
   getActiveRanks: () => Array<{ id: string } & Partial<{ victory: boolean }>>;
   getTopRankId: () => string;
   drawCards: (G: JojGameState, playerID: string, amount: number) => void;
-  drawLegendaryCards: (G: JojGameState, playerID: string, amount: number) => void;
+  drawLegendaryCards: (G: JojGameState, playerID: string, amount: number, sourceCards?: CardDefinition[]) => void;
   syncPlayerState: (G: JojGameState, playerID: string) => void;
   promoteRank: (G: JojGameState, playerID: string, playerCount: number) => boolean;
   promoteToSpecificRank: (G: JojGameState, playerID: string, rankId: string, playerCount: number) => { ok: boolean };
@@ -119,6 +144,11 @@ const chooseLyapTarget = (
 const isProtectedFromLyapScandal = (G: JojGameState, currentTurn: number, playerID: string): boolean => {
   const untilTurn = Number(G.lyapScandalShieldUntilTurn?.[playerID] ?? 0);
   return untilTurn > 0 && currentTurn < untilTurn;
+};
+
+const isCommandCategory = (card: CardDefinition): boolean => {
+  const rawCategory = (card as unknown as { category?: string }).category;
+  return rawCategory === 'COMMAND' || rawCategory === 'DECISION';
 };
 
 const chooseLowestResource = (
@@ -236,7 +266,7 @@ const tryPlayOneHandCardSim = (args: {
         deps.syncPlayerState(G, pid);
       });
       deps.triggerSukhpayZsuOnScandal(G, { turn: currentTurn }, playerID);
-    } else if (card.category === 'DECISION') {
+    } else if (isCommandCategory(card)) {
       const replacement = deps.planReplacementResources(G.resources[playerID], card.effects);
       if (replacement === null) continue;
       try {
@@ -309,7 +339,12 @@ export const runGameSimulationsWithDeps = (
   const clampedPlayers = Math.max(2, Math.min(6, Math.floor(players || 2)));
   const clampedSims = Math.max(1, Math.min(5000, Math.floor(simulations || 1)));
   const clampedMaxTurns = Math.max(20, Math.min(4000, Math.floor(maxTurns || 600)));
-  const mode: GameMode | null = options.gameMode ?? null;
+  const requestedMode: GameMode | null = options.gameMode ?? null;
+  const templateLegendaryMode = deps.getSharedDeckTemplate().gameSetup.legendaryDeckMode;
+  const resolvedLegendaryMode = options.gameSetup?.legendaryDeckMode ?? templateLegendaryMode;
+  const mode: GameMode | null = requestedMode
+    ? (resolvedLegendaryMode === 'merged' ? 'simplified' : requestedMode)
+    : null;
   const useMainDeck = mode ? true : options.useMainDeck !== false;
   const useLegendaryDeck = mode
     ? mode !== 'simplified'
@@ -332,12 +367,13 @@ export const runGameSimulationsWithDeps = (
   };
 
   for (let i = 0; i < clampedSims; i += 1) {
-    const result = (!mode && useMainDeck && useLegendaryDeck)
+    const result = (!mode && useMainDeck && useLegendaryDeck && !options.gameSetup)
       ? simulateSingleMatch(deps, clampedPlayers, clampedMaxTurns)
       : simulateSingleMatchWithOptions(deps, clampedPlayers, clampedMaxTurns, {
         useMainDeck,
         useLegendaryDeck,
         gameMode: mode ?? undefined,
+        gameSetup: options.gameSetup,
       });
     wins[result.winner] = (wins[result.winner] ?? 0) + 1;
     totalTurns += result.turns;
@@ -449,7 +485,7 @@ const simulateSingleMatchWithOptions = (
   deps: SimulationDeps,
   numPlayers: number,
   maxTurns: number,
-  options: { useMainDeck: boolean; useLegendaryDeck: boolean; gameMode?: GameMode },
+  options: { useMainDeck: boolean; useLegendaryDeck: boolean; gameMode?: GameMode; gameSetup?: Partial<SharedGameSetup> },
 ) => {
   const playerIDs = Array.from({ length: numPlayers }, (_, i) => String(i));
   const G = createSimulationState(deps, playerIDs, options);

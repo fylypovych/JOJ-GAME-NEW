@@ -1,4 +1,5 @@
 import type { CardDefinition } from '../../game/types';
+import type { DeckModuleDefinition, SharedGameSetup } from '../../game/jojGame';
 
 export const SERVER_URL_STORAGE_KEY = 'joj-server-url-v1';
 export const SHARED_TEMPLATE_STORAGE_KEY = 'joj-shared-deck-template-v1';
@@ -52,6 +53,8 @@ export type SharedDeckTemplate = {
   legendaryDeck: CardDefinition[];
   rankTrack: CardDefinition[];
   deckBackImage?: string;
+  modules: DeckModuleDefinition[];
+  gameSetup: SharedGameSetup;
 };
 
 export type Snapshot = {
@@ -73,7 +76,7 @@ export const galleryCategories: CardDefinition['category'][] = [
   'LYAP',
   'SCANDAL',
   'SUPPORT',
-  'DECISION',
+  'COMMAND',
   'VVNZ',
   'LEGENDARY',
 ];

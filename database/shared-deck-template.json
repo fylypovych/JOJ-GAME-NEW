@@ -1,266 +1,6 @@
 {
-  "version": 2,
+  "version": 3,
   "catalog": [
-    {
-      "id": "scandal-01",
-      "title": "Яйця по 17 гривень",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614354252.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -2
-        },
-        {
-          "resource": "discipline",
-          "value": -1
-        }
-      ],
-      "flavor": "Символ епохи великого апетиту та малого контролю."
-    },
-    {
-      "id": "scandal-02",
-      "title": "Куртки Резнікова",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614366040.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "documents",
-          "value": -1
-        }
-      ],
-      "flavor": "Тепло — поняття відносне, особливо в тендері."
-    },
-    {
-      "id": "scandal-03",
-      "title": "Дрони по завищеній ціні",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614378587.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "tech",
-          "value": -1
-        }
-      ],
-      "flavor": "Коли ціна злітає швидше, ніж сам дрон."
-    },
-    {
-      "id": "scandal-04",
-      "title": "Пропажа пального",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614390190.webp",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": -2
-        }
-      ],
-      "flavor": "Випарувалось разом із совістю чергового."
-    },
-    {
-      "id": "scandal-05",
-      "title": "Закупівля підписів на тендер",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614425063.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "documents",
-          "value": -1
-        }
-      ],
-      "flavor": "Коли “мокра печатка” — це ще не найвологіше місце в історії."
-    },
-    {
-      "id": "scandal-06",
-      "title": "Пропажа дронів",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614439747.webp",
-      "effects": [
-        {
-          "resource": "tech",
-          "value": -2
-        }
-      ],
-      "flavor": "Злетіли — і не повернулись. Як довіра."
-    },
-    {
-      "id": "scandal-07",
-      "title": "Списання бронежилетів як витратних",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614451008.webp",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": -1
-        },
-        {
-          "resource": "documents",
-          "value": -1
-        }
-      ],
-      "flavor": "Захищають від куль, але не від Excel."
-    },
-    {
-      "id": "scandal-08",
-      "title": "Паперовий аудит без документів",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614500039.webp",
-      "effects": [
-        {
-          "resource": "time",
-          "value": 1
-        },
-        {
-          "resource": "documents",
-          "value": -1
-        }
-      ],
-      "flavor": "Аудит проведено. Папери знайдуться потім."
-    },
-    {
-      "id": "scandal-09",
-      "title": "Відео з полігону",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614508047.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        }
-      ],
-      "flavor": "Мало тренувань — багато переглядів."
-    },
-    {
-      "id": "scandal-10",
-      "title": "Витік наказів у пресу",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771615063474.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "documents",
-          "value": -1
-        }
-      ],
-      "flavor": "Конфіденційно — значить, завтра на YouTube."
-    },
-    {
-      "id": "scandal-11",
-      "title": "Зникнення гуманітарки",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614820343.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "discipline",
-          "value": -1
-        }
-      ],
-      "flavor": "Гуманітарка не зникає. Вона просто змінює власника."
-    },
-    {
-      "id": "scandal-12",
-      "title": "Підроблені рапорти",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614939024.webp",
-      "effects": [
-        {
-          "resource": "documents",
-          "value": -2
-        }
-      ],
-      "flavor": "Усе збігається, крім правди."
-    },
-    {
-      "id": "scandal-13",
-      "title": "Бюджет на ремонт даху",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614949216.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "documents",
-          "value": -1
-        }
-      ],
-      "flavor": "Гроші витекли швидше, ніж дощ крізь дірки."
-    },
-    {
-      "id": "scandal-14",
-      "title": "Викриття корупційної схеми",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771615029111.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "discipline",
-          "value": 1
-        }
-      ],
-      "flavor": "Хоч хтось зробив AAR правильно."
-    },
-    {
-      "id": "scandal-15",
-      "title": "Тушонка",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614982549.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "documents",
-          "value": 1
-        }
-      ],
-      "flavor": "Сумнівна за смаком, але офіційно прийнята."
-    },
-    {
-      "id": "scandal-16",
-      "title": "Колаборант",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771615017418.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -2
-        },
-        {
-          "resource": "discipline",
-          "value": -1
-        },
-        {
-          "resource": "tech",
-          "value": -1
-        }
-      ],
-      "flavor": "Він завжди з флешкою. І завжди “просто цікавиться”."
-    },
     {
       "id": "lyap-01",
       "title": "Журнал обліку журналів",
@@ -546,326 +286,121 @@
       "flavor": "Видихай рівно, вдихай повагу."
     },
     {
-      "id": "decision-01",
-      "title": "Зразковий рапорт",
-      "category": "DECISION",
-      "image": "/cards/card-1771871420538.webp",
+      "id": "scandal-01",
+      "title": "Яйця по 17 гривень",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614354252.webp",
       "effects": [
         {
           "resource": "reputation",
-          "value": 1
+          "value": -2
         },
         {
           "resource": "discipline",
-          "value": 1
+          "value": -1
         }
       ],
-      "flavor": "Писав три дні, затвердили за п’ять хвилин."
+      "flavor": "Символ епохи великого апетиту та малого контролю."
     },
     {
-      "id": "decision-02",
-      "title": "Вдалий виступ на шикуванні",
-      "category": "DECISION",
-      "image": "/cards/card-1771871439446.webp",
+      "id": "scandal-02",
+      "title": "Куртки Резнікова",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614366040.webp",
       "effects": [
         {
           "resource": "reputation",
-          "value": 2
-        }
-      ],
-      "flavor": "Голос тремтів, але аплодували стоячи."
-    },
-    {
-      "id": "decision-03",
-      "title": "Перемога у спортивних змаганнях",
-      "category": "DECISION",
-      "image": "/cards/card-1771871453560.webp",
-      "effects": [
-        {
-          "resource": "time",
-          "value": 1
-        },
-        {
-          "resource": "reputation",
-          "value": 1
-        }
-      ],
-      "flavor": "Біг швидше за накази."
-    },
-    {
-      "id": "decision-04",
-      "title": "Успішний ААR",
-      "category": "DECISION",
-      "image": "/cards/card-1771871467975.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
+          "value": -1
         },
         {
           "resource": "documents",
-          "value": 2
+          "value": -1
         }
       ],
-      "flavor": "Помилки знайшли, винних — теж."
+      "flavor": "Тепло — поняття відносне, особливо в тендері."
     },
     {
-      "id": "decision-05",
-      "title": "Волонтерська ініціатива",
-      "category": "DECISION",
-      "image": "/cards/card-1771871484518.webp",
+      "id": "scandal-03",
+      "title": "Дрони по завищеній ціні",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614378587.webp",
       "effects": [
         {
           "resource": "reputation",
-          "value": 1
+          "value": -1
         },
         {
           "resource": "tech",
-          "value": 1
+          "value": -1
         }
       ],
-      "flavor": "Авторитет росте швидше, ніж принтер друкує."
+      "flavor": "Коли ціна злітає швидше, ніж сам дрон."
     },
     {
-      "id": "decision-06",
-      "title": "Публікація у військовому журналі",
-      "category": "DECISION",
-      "image": "/cards/card-1771871500051.webp",
+      "id": "scandal-04",
+      "title": "Пропажа пального",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614390190.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": -2
+        }
+      ],
+      "flavor": "Випарувалось разом із совістю чергового."
+    },
+    {
+      "id": "scandal-05",
+      "title": "Закупівля підписів на тендер",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614425063.webp",
       "effects": [
         {
           "resource": "reputation",
-          "value": 1
+          "value": -1
         },
         {
           "resource": "documents",
-          "value": 1
+          "value": -1
         }
       ],
-      "flavor": "Твій досвід тепер у бібліотеці Міноборони."
+      "flavor": "Коли “мокра печатка” — це ще не найвологіше місце в історії."
     },
     {
-      "id": "decision-07",
-      "title": "Прийняття на курс лідерства",
-      "category": "DECISION",
-      "image": "/cards/card-1771871519462.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "discipline",
-          "value": 1
-        }
-      ],
-      "flavor": "Після лекцій навіть командир став слухнянішим."
-    },
-    {
-      "id": "decision-08",
-      "title": "Затвердження нового SOP",
-      "category": "DECISION",
-      "image": "/cards/card-1771871537749.webp",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": 1
-        },
-        {
-          "resource": "documents",
-          "value": 1
-        }
-      ],
-      "flavor": "Порядок встановлено. Тимчасово."
-    },
-    {
-      "id": "decision-09",
-      "title": "Участь у навчаннях НАТО",
-      "category": "DECISION",
-      "image": "/cards/card-1771871551984.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Справжня перемога — знайти перекладача."
-    },
-    {
-      "id": "decision-10",
-      "title": "Ефективне використання ресурсів",
-      "category": "DECISION",
-      "image": "/cards/card-1771871573623.webp",
-      "effects": [
-        {
-          "resource": "time",
-          "value": 1
-        },
-        {
-          "resource": "discipline",
-          "value": 1
-        }
-      ],
-      "flavor": "Скоротив витрати — збільшив звіти."
-    },
-    {
-      "id": "decision-11",
-      "title": "Вдалий брифінг перед начальством",
-      "category": "DECISION",
-      "image": "/cards/card-1771871588026.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 2
-        }
-      ],
-      "flavor": "Слайди говорили самі за себе."
-    },
-    {
-      "id": "decision-12",
-      "title": "Відмінна інвентаризація",
-      "category": "DECISION",
-      "image": "/cards/card-1771871600284.webp",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": 1
-        },
-        {
-          "resource": "documents",
-          "value": 1
-        }
-      ],
-      "flavor": "Пораховано навіть повітря в шафі."
-    },
-    {
-      "id": "decision-13",
-      "title": "Курс з кібербезпеки",
-      "category": "DECISION",
-      "image": "/cards/card-1771871612720.webp",
+      "id": "scandal-06",
+      "title": "Пропажа дронів",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614439747.webp",
       "effects": [
         {
           "resource": "tech",
-          "value": 2
+          "value": -2
         }
       ],
-      "flavor": "Тепер навіть принтер не ризикує зламуватись."
+      "flavor": "Злетіли — і не повернулись. Як довіра."
     },
     {
-      "id": "decision-14",
-      "title": "Відзнака командира",
-      "category": "DECISION",
-      "image": "/cards/card-1771871627089.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 2
-        }
-      ],
-      "flavor": "Підписав грамоту без єдиної помилки."
-    },
-    {
-      "id": "decision-15",
-      "title": "Призначення на нову посаду",
-      "category": "DECISION",
-      "image": "/cards/card-1771871647198.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "discipline",
-          "value": 1
-        }
-      ],
-      "flavor": "Більше відповідальності, менше вихідних."
-    },
-    {
-      "id": "decision-16",
-      "title": "Успішний аудит холодильника",
-      "category": "DECISION",
-      "image": "/cards/card-1771871660520.webp",
+      "id": "scandal-07",
+      "title": "Списання бронежилетів як витратних",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614451008.webp",
       "effects": [
         {
           "resource": "discipline",
-          "value": 1
+          "value": -1
         },
         {
           "resource": "documents",
-          "value": 1
+          "value": -1
         }
       ],
-      "flavor": "Вперше все зійшлося — навіть списане."
+      "flavor": "Захищають від куль, але не від Excel."
     },
     {
-      "id": "decision-17",
-      "title": "Підтримка волонтерів",
-      "category": "DECISION",
-      "image": "/cards/card-1771871672495.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Замість наказу — подяка у Facebook."
-    },
-    {
-      "id": "decision-18",
-      "title": "Вдале інтерв’ю для преси",
-      "category": "DECISION",
-      "image": "/cards/card-1771873874546.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        }
-      ],
-      "flavor": "Головне — щоб начальство не читало."
-    },
-    {
-      "id": "decision-19",
-      "title": "Успішна сертифікація підрозділу",
-      "category": "DECISION",
-      "image": "/cards/card-1771873894734.webp",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": 2
-        }
-      ],
-      "flavor": "Всі стояли рівно. Навіть документи."
-    },
-    {
-      "id": "decision-20",
-      "title": "Покращення побутових умов",
-      "category": "DECISION",
-      "image": "/cards/card-1771874748714.webp",
-      "effects": [
-        {
-          "resource": "time",
-          "value": 1
-        },
-        {
-          "resource": "reputation",
-          "value": 1
-        }
-      ],
-      "flavor": "Справжня розкіш — гаряча вода й порядок у журналах."
-    },
-    {
-      "id": "decision-21",
-      "title": "Перенесення термінів",
-      "category": "DECISION",
-      "image": "/cards/card-1771873958187.webp",
+      "id": "scandal-08",
+      "title": "Паперовий аудит без документів",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614500039.webp",
       "effects": [
         {
           "resource": "time",
@@ -873,44 +408,205 @@
         },
         {
           "resource": "documents",
-          "value": 1
+          "value": -1
         }
       ],
-      "flavor": "Приїхали, побачили, написали акт."
+      "flavor": "Аудит проведено. Папери знайдуться потім."
     },
     {
-      "id": "decision-22",
-      "title": "Ротація командирів",
-      "category": "DECISION",
-      "image": "/cards/card-1771873978850.webp",
+      "id": "scandal-09",
+      "title": "Відео з полігону",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614508047.webp",
       "effects": [
         {
           "resource": "reputation",
-          "value": 1
+          "value": -1
+        }
+      ],
+      "flavor": "Мало тренувань — багато переглядів."
+    },
+    {
+      "id": "scandal-10",
+      "title": "Витік наказів у пресу",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771615063474.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -1
+        },
+        {
+          "resource": "documents",
+          "value": -1
+        }
+      ],
+      "flavor": "Конфіденційно — значить, завтра на YouTube."
+    },
+    {
+      "id": "scandal-11",
+      "title": "Зникнення гуманітарки",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614820343.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -1
+        },
+        {
+          "resource": "discipline",
+          "value": -1
+        }
+      ],
+      "flavor": "Гуманітарка не зникає. Вона просто змінює власника."
+    },
+    {
+      "id": "scandal-12",
+      "title": "Підроблені рапорти",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614939024.webp",
+      "effects": [
+        {
+          "resource": "documents",
+          "value": -2
+        }
+      ],
+      "flavor": "Усе збігається, крім правди."
+    },
+    {
+      "id": "scandal-13",
+      "title": "Бюджет на ремонт даху",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614949216.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -1
+        },
+        {
+          "resource": "documents",
+          "value": -1
+        }
+      ],
+      "flavor": "Гроші витекли швидше, ніж дощ крізь дірки."
+    },
+    {
+      "id": "scandal-14",
+      "title": "Викриття корупційної схеми",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771615029111.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -1
         },
         {
           "resource": "discipline",
           "value": 1
         }
       ],
-      "flavor": "Ніхто не знає, хто головний, але всі при ділі."
+      "flavor": "Хоч хтось зробив AAR правильно."
     },
     {
-      "id": "decision-23",
-      "title": "Новий наказ про реформу",
-      "category": "DECISION",
-      "image": "/cards/card-1771873991299.webp",
+      "id": "scandal-15",
+      "title": "Тушонка",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614982549.webp",
       "effects": [
         {
           "resource": "reputation",
-          "value": 1
+          "value": -1
         },
         {
           "resource": "documents",
           "value": 1
         }
       ],
-      "flavor": "Змінюємо все, крім тих, хто змінює."
+      "flavor": "Сумнівна за смаком, але офіційно прийнята."
+    },
+    {
+      "id": "scandal-16",
+      "title": "Колаборант",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771615017418.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -2
+        },
+        {
+          "resource": "discipline",
+          "value": -1
+        },
+        {
+          "resource": "tech",
+          "value": -1
+        }
+      ],
+      "flavor": "Він завжди з флешкою. І завжди “просто цікавиться”."
+    },
+    {
+      "id": "scandal-17",
+      "title": "Полковник із ОТУ",
+      "category": "SCANDAL",
+      "image": "/cards/card-1772952038855.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -2
+        }
+      ]
+    },
+    {
+      "id": "scandal-18",
+      "title": "ВЛК",
+      "category": "SCANDAL",
+      "image": "/cards/card-1772956066783.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": -1
+        },
+        {
+          "resource": "reputation",
+          "value": -1
+        }
+      ],
+      "flavor": "💬 «Черга рухається швидше, ніж рішення.»"
+    },
+    {
+      "id": "scandal-19",
+      "title": "гИометрія",
+      "category": "SCANDAL",
+      "image": "/cards/card-1772956549834.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": -1
+        },
+        {
+          "resource": "discipline",
+          "value": -1
+        }
+      ],
+      "flavor": "«Круглоє носіть. Квадратноє катать.»"
+    },
+    {
+      "id": "scandal-20",
+      "title": "Службове розслідування",
+      "category": "SCANDAL",
+      "image": "/cards/card-1772956616687.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -1
+        },
+        {
+          "resource": "tech",
+          "value": -1
+        }
+      ],
+      "flavor": "«Головне — знайти винного. Бажано швидко.»"
     },
     {
       "id": "support-01",
@@ -1316,83 +1012,57 @@
       "flavor": "Тепер усі рапорти на місці, але ніхто не знає де."
     },
     {
-      "id": "vvnz-01",
-      "title": "Національний університет оборони України імені Івана Черняховського",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875754258.webp",
-      "grantRank": "junior_lieutenant",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Тут навіть курсові звучать як накази."
-    },
-    {
-      "id": "vvnz-02",
-      "title": "Харківський національний університет Повітряних Сил імені Івана Кожедуба",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875767843.webp",
-      "grantRank": "junior_lieutenant",
+      "id": "support-28",
+      "title": "Схвалюючий погляд командира",
+      "category": "SUPPORT",
+      "image": "/cards/card-1772960967836.webp",
       "effects": [
         {
           "resource": "reputation",
           "value": 1
-        },
-        {
-          "resource": "discipline",
-          "value": 1
         }
       ],
-      "flavor": "У небі — як у звіті: головне не втратити лінію."
+      "flavor": "«Іноді одного погляду достатньо.»"
     },
     {
-      "id": "vvnz-03",
-      "title": "Національна академія сухопутних військ імені гетьмана Петра Сагайдачного",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875780893.webp",
-      "grantRank": "junior_lieutenant",
+      "id": "support-29",
+      "title": "Три П.",
+      "category": "SUPPORT",
+      "image": "/cards/3-1772964546873.webp",
       "effects": [
         {
-          "resource": "discipline",
+          "resource": "time",
           "value": 1
         },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Тут формується хребет армії — і почерк рапорту."
-    },
-    {
-      "id": "vvnz-04",
-      "title": "Військова академія (м. Одеса)",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875790279.webp",
-      "grantRank": "junior_lieutenant",
-      "effects": [
         {
           "resource": "reputation",
           "value": 1
+        }
+      ],
+      "flavor": "«Прийшов, попиздів та пішов.»"
+    },
+    {
+      "id": "support-30",
+      "title": "Допомога суміжників",
+      "category": "SUPPORT",
+      "image": "/cards/card-1772964593007.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
         },
         {
-          "resource": "tech",
+          "resource": "discipline",
           "value": 1
         }
       ],
-      "flavor": "На Півдні народжується тактика і легенди."
+      "flavor": "«Коли сусіди виручають швидше, ніж наказ.»"
     },
     {
-      "id": "vvnz-05",
-      "title": "Національна академія Національної гвардії України",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875807542.webp",
-      "grantRank": "senior_master_sergeant",
+      "id": "decision-01",
+      "title": "Зразковий рапорт",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871420538.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1403,14 +1073,94 @@
           "value": 1
         }
       ],
-      "flavor": "Тут порядок — не просто слово, а режим доби."
+      "flavor": "Писав три дні, затвердили за п’ять хвилин."
     },
     {
-      "id": "vvnz-06",
-      "title": "Академія Державної прикордонної служби України імені Богдана Хмельницького",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875817949.webp",
-      "grantRank": "senior_master_sergeant",
+      "id": "decision-02",
+      "title": "Вдалий виступ на шикуванні",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871439446.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 2
+        }
+      ],
+      "flavor": "Голос тремтів, але аплодували стоячи."
+    },
+    {
+      "id": "decision-03",
+      "title": "Перемога у спортивних змаганнях",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871453560.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "reputation",
+          "value": 1
+        }
+      ],
+      "flavor": "Біг швидше за накази."
+    },
+    {
+      "id": "decision-04",
+      "title": "Успішний ААR",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871467975.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 2
+        }
+      ],
+      "flavor": "Помилки знайшли, винних — теж."
+    },
+    {
+      "id": "decision-05",
+      "title": "Волонтерська ініціатива",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871484518.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Авторитет росте швидше, ніж принтер друкує."
+    },
+    {
+      "id": "decision-06",
+      "title": "Публікація у військовому журналі",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871500051.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "Твій досвід тепер у бібліотеці Міноборони."
+    },
+    {
+      "id": "decision-07",
+      "title": "Прийняття на курс лідерства",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871519462.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1421,14 +1171,30 @@
           "value": 1
         }
       ],
-      "flavor": "Кордон починається не з лінії на мапі, а з характеру офіцера."
+      "flavor": "Після лекцій навіть командир став слухнянішим."
     },
     {
-      "id": "vvnz-07",
-      "title": "Військовий інститут Київського національного університету імені Тараса Шевченка",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875829053.webp",
-      "grantRank": "senior_master_sergeant",
+      "id": "decision-08",
+      "title": "Затвердження нового SOP",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871537749.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "Порядок встановлено. Тимчасово."
+    },
+    {
+      "id": "decision-09",
+      "title": "Участь у навчаннях НАТО",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871551984.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1439,14 +1205,120 @@
           "value": 1
         }
       ],
-      "flavor": "Магістерська з лідерства — і з трьома підписами."
+      "flavor": "Справжня перемога — знайти перекладача."
     },
     {
-      "id": "vvnz-08",
-      "title": "Військовий інститут телекомунікацій та інформатизації імені Героїв Крут",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875840664.webp",
-      "grantRank": "senior_master_sergeant",
+      "id": "decision-10",
+      "title": "Ефективне використання ресурсів",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871573623.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Скоротив витрати — збільшив звіти."
+    },
+    {
+      "id": "decision-11",
+      "title": "Вдалий брифінг перед начальством",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871588026.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 2
+        }
+      ],
+      "flavor": "Слайди говорили самі за себе."
+    },
+    {
+      "id": "decision-12",
+      "title": "Відмінна інвентаризація",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871600284.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "Пораховано навіть повітря в шафі."
+    },
+    {
+      "id": "decision-13",
+      "title": "Курс з кібербезпеки",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871612720.webp",
+      "effects": [
+        {
+          "resource": "tech",
+          "value": 2
+        }
+      ],
+      "flavor": "Тепер навіть принтер не ризикує зламуватись."
+    },
+    {
+      "id": "decision-14",
+      "title": "Відзнака командира",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871627089.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 2
+        }
+      ],
+      "flavor": "Підписав грамоту без єдиної помилки."
+    },
+    {
+      "id": "decision-15",
+      "title": "Призначення на нову посаду",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871647198.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Більше відповідальності, менше вихідних."
+    },
+    {
+      "id": "decision-16",
+      "title": "Успішний аудит холодильника",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871660520.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "Вперше все зійшлося — навіть списане."
+    },
+    {
+      "id": "decision-17",
+      "title": "Підтримка волонтерів",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871672495.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1457,32 +1329,124 @@
           "value": 1
         }
       ],
-      "flavor": "Коли мережа лягла — це значить, що курсант встав."
+      "flavor": "Замість наказу — подяка у Facebook."
     },
     {
-      "id": "vvnz-09",
-      "title": "Інститут Військово-Морських Сил Національного університету «Одеська морська академія»",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875856832.webp",
-      "grantRank": "senior_sergeant",
+      "id": "decision-18",
+      "title": "Вдале інтерв’ю для преси",
+      "category": "COMMAND",
+      "image": "/cards/card-1771873874546.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        }
+      ],
+      "flavor": "Головне — щоб начальство не читало."
+    },
+    {
+      "id": "decision-19",
+      "title": "Успішна сертифікація підрозділу",
+      "category": "COMMAND",
+      "image": "/cards/card-1771873894734.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 2
+        }
+      ],
+      "flavor": "Всі стояли рівно. Навіть документи."
+    },
+    {
+      "id": "decision-20",
+      "title": "Покращення побутових умов",
+      "category": "COMMAND",
+      "image": "/cards/card-1771874748714.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "reputation",
+          "value": 1
+        }
+      ],
+      "flavor": "Справжня розкіш — гаряча вода й порядок у журналах."
+    },
+    {
+      "id": "decision-21",
+      "title": "Перенесення термінів",
+      "category": "COMMAND",
+      "image": "/cards/card-1771873958187.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "Приїхали, побачили, написали акт."
+    },
+    {
+      "id": "decision-22",
+      "title": "Ротація командирів",
+      "category": "COMMAND",
+      "image": "/cards/card-1771873978850.webp",
       "effects": [
         {
           "resource": "reputation",
           "value": 1
         },
         {
-          "resource": "tech",
+          "resource": "discipline",
           "value": 1
         }
       ],
-      "flavor": "Швартуй документи, курсант, і тримай горизонт рівно."
+      "flavor": "Ніхто не знає, хто головний, але всі при ділі."
     },
     {
-      "id": "vvnz-10",
-      "title": "Житомирський військовий інститут імені С. П. Корольова",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875870514.webp",
-      "grantRank": "senior_sergeant",
+      "id": "decision-23",
+      "title": "Новий наказ про реформу",
+      "category": "COMMAND",
+      "image": "/cards/card-1771873991299.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "Змінюємо все, крім тих, хто змінює."
+    },
+    {
+      "id": "decision-24",
+      "title": "Анонімне опитування",
+      "category": "COMMAND",
+      "image": "/cards/card-1772964742729.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "«Головне — чесно відповісти… анонімно.»"
+    },
+    {
+      "id": "decision-25",
+      "title": "БЗВП",
+      "category": "COMMAND",
+      "image": "/cards/card-1772964779436.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1493,32 +1457,81 @@
           "value": 1
         }
       ],
-      "flavor": "Космос починається з польового заліку."
+      "flavor": "«Тут починається справжня служба.»"
     },
     {
-      "id": "vvnz-11",
-      "title": "Харківський військовий коледж сержантського складу Повітряних Сил",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875881152.webp",
-      "grantRank": "senior_sergeant",
+      "id": "decision-26",
+      "title": "Окреме розпорядження",
+      "category": "COMMAND",
+      "image": "/cards/card-1772964805573.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "«Короткий документ — довгий вплив.»"
+    },
+    {
+      "id": "decision-27",
+      "title": "Інструкція",
+      "category": "COMMAND",
+      "image": "/cards/card-1772964869593.webp",
       "effects": [
         {
           "resource": "discipline",
           "value": 1
         },
         {
-          "resource": "tech",
+          "resource": "documents",
           "value": 1
         }
       ],
-      "flavor": "Тут вчать тримати небо так само впевнено, як стрій."
+      "flavor": "«Як робити правильно. Теоретично.»"
     },
     {
-      "id": "vvnz-12",
-      "title": "Київський військовий ліцей імені Івана Богуна",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875889671.webp",
-      "grantRank": "senior_sergeant",
+      "id": "decision-28",
+      "title": "Координаційний центр",
+      "category": "COMMAND",
+      "image": "/cards/card-1772964900628.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "reputation",
+          "value": 1
+        }
+      ],
+      "flavor": "«Тепер усі звітують сюди.»"
+    },
+    {
+      "id": "decision-29",
+      "title": "Злагодження підрозділів",
+      "category": "COMMAND",
+      "image": "/cards/card-1772964939595.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "«Коли всі нарешті працюють як один механізм.»"
+    },
+    {
+      "id": "decision-30",
+      "title": "Необмежено придатний",
+      "category": "COMMAND",
+      "image": "/cards/card-1772964687130.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1529,25 +1542,13 @@
           "value": 1
         }
       ],
-      "flavor": "Тут мрія носить форму ще до звання."
-    },
-    {
-      "id": "scandal-17",
-      "title": "Полковник із ОТУ",
-      "category": "SCANDAL",
-      "image": "/cards/card-1772952038855.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -2
-        }
-      ]
+      "flavor": "«Формулювання, яке вирішує все.»"
     },
     {
       "id": "legendary-01",
-      "title": "Мислі Залужного",
+      "title": "Мислі Головкома",
       "category": "LEGENDARY",
-      "image": "/cards/card-1771884318909.webp",
+      "image": "/cards/card-1772961126046.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1562,9 +1563,9 @@
     },
     {
       "id": "legendary-02",
-      "title": "Сміх Буданова",
+      "title": "Cміх BUDDA-н-OFF",
       "category": "LEGENDARY",
-      "image": "/cards/card-1771884335395.webp",
+      "image": "/cards/card-1772961254432.webp",
       "effects": [
         {
           "resource": "tech",
@@ -1592,9 +1593,9 @@
     },
     {
       "id": "legendary-04",
-      "title": "Фонд Притули",
+      "title": "Фонд Добродія",
       "category": "LEGENDARY",
-      "image": "/cards/card-1771884366598.webp",
+      "image": "/cards/card-1772961289925.webp",
       "effects": [
         {
           "resource": "time",
@@ -1659,9 +1660,9 @@
     },
     {
       "id": "legendary-08",
-      "title": "Старлінк",
+      "title": "Зірколінк",
       "category": "LEGENDARY",
-      "image": "/cards/card-1771884418138.webp",
+      "image": "/cards/card-1772961348506.webp",
       "effects": [
         {
           "resource": "time",
@@ -1676,9 +1677,9 @@
     },
     {
       "id": "legendary-09",
-      "title": "Вода “Прозора”",
+      "title": "Вода “ПроZORRO”",
       "category": "LEGENDARY",
-      "image": "/cards/card-1771884430988.webp",
+      "image": "/cards/card-1772961387230.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1754,25 +1755,30 @@
         }
       ],
       "flavor": "Головне — повернутись із неї добровільно."
+    },
+    {
+      "id": "legendary-15",
+      "title": "SLON.FM",
+      "category": "LEGENDARY",
+      "image": "/cards/card-1772961436932.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 2
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "«Новини іноді доходять раніше наказів.»"
     }
   ],
   "deckIds": [
-    "scandal-01",
-    "scandal-02",
-    "scandal-03",
-    "scandal-04",
-    "scandal-05",
-    "scandal-06",
-    "scandal-07",
-    "scandal-08",
-    "scandal-09",
-    "scandal-10",
-    "scandal-11",
-    "scandal-12",
-    "scandal-13",
-    "scandal-14",
-    "scandal-15",
-    "scandal-16",
     "lyap-01",
     "lyap-02",
     "lyap-03",
@@ -1793,29 +1799,26 @@
     "lyap-18",
     "lyap-19",
     "lyap-20",
-    "decision-01",
-    "decision-02",
-    "decision-03",
-    "decision-04",
-    "decision-05",
-    "decision-06",
-    "decision-07",
-    "decision-08",
-    "decision-09",
-    "decision-10",
-    "decision-11",
-    "decision-12",
-    "decision-13",
-    "decision-14",
-    "decision-15",
-    "decision-16",
-    "decision-17",
-    "decision-18",
-    "decision-19",
-    "decision-20",
-    "decision-21",
-    "decision-22",
-    "decision-23",
+    "scandal-01",
+    "scandal-02",
+    "scandal-03",
+    "scandal-04",
+    "scandal-05",
+    "scandal-06",
+    "scandal-07",
+    "scandal-08",
+    "scandal-09",
+    "scandal-10",
+    "scandal-11",
+    "scandal-12",
+    "scandal-13",
+    "scandal-14",
+    "scandal-15",
+    "scandal-16",
+    "scandal-17",
+    "scandal-18",
+    "scandal-19",
+    "scandal-20",
     "support-01",
     "support-02",
     "support-03",
@@ -1843,19 +1846,39 @@
     "support-25",
     "support-26",
     "support-27",
-    "vvnz-01",
-    "vvnz-02",
-    "vvnz-03",
-    "vvnz-04",
-    "vvnz-05",
-    "vvnz-06",
-    "vvnz-07",
-    "vvnz-08",
-    "vvnz-09",
-    "vvnz-10",
-    "vvnz-11",
-    "vvnz-12",
-    "scandal-17"
+    "support-28",
+    "support-29",
+    "support-30",
+    "decision-01",
+    "decision-02",
+    "decision-03",
+    "decision-04",
+    "decision-05",
+    "decision-06",
+    "decision-07",
+    "decision-08",
+    "decision-09",
+    "decision-10",
+    "decision-11",
+    "decision-12",
+    "decision-13",
+    "decision-14",
+    "decision-15",
+    "decision-16",
+    "decision-17",
+    "decision-18",
+    "decision-19",
+    "decision-20",
+    "decision-21",
+    "decision-22",
+    "decision-23",
+    "decision-24",
+    "decision-25",
+    "decision-26",
+    "decision-27",
+    "decision-28",
+    "decision-29",
+    "decision-30"
   ],
   "legendaryDeckIds": [
     "legendary-01",
@@ -1871,270 +1894,11 @@
     "legendary-11",
     "legendary-12",
     "legendary-13",
-    "legendary-14"
+    "legendary-14",
+    "legendary-15"
   ],
   "rankTrackIds": [],
   "deck": [
-    {
-      "id": "scandal-01",
-      "title": "Яйця по 17 гривень",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614354252.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -2
-        },
-        {
-          "resource": "discipline",
-          "value": -1
-        }
-      ],
-      "flavor": "Символ епохи великого апетиту та малого контролю."
-    },
-    {
-      "id": "scandal-02",
-      "title": "Куртки Резнікова",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614366040.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "documents",
-          "value": -1
-        }
-      ],
-      "flavor": "Тепло — поняття відносне, особливо в тендері."
-    },
-    {
-      "id": "scandal-03",
-      "title": "Дрони по завищеній ціні",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614378587.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "tech",
-          "value": -1
-        }
-      ],
-      "flavor": "Коли ціна злітає швидше, ніж сам дрон."
-    },
-    {
-      "id": "scandal-04",
-      "title": "Пропажа пального",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614390190.webp",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": -2
-        }
-      ],
-      "flavor": "Випарувалось разом із совістю чергового."
-    },
-    {
-      "id": "scandal-05",
-      "title": "Закупівля підписів на тендер",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614425063.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "documents",
-          "value": -1
-        }
-      ],
-      "flavor": "Коли “мокра печатка” — це ще не найвологіше місце в історії."
-    },
-    {
-      "id": "scandal-06",
-      "title": "Пропажа дронів",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614439747.webp",
-      "effects": [
-        {
-          "resource": "tech",
-          "value": -2
-        }
-      ],
-      "flavor": "Злетіли — і не повернулись. Як довіра."
-    },
-    {
-      "id": "scandal-07",
-      "title": "Списання бронежилетів як витратних",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614451008.webp",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": -1
-        },
-        {
-          "resource": "documents",
-          "value": -1
-        }
-      ],
-      "flavor": "Захищають від куль, але не від Excel."
-    },
-    {
-      "id": "scandal-08",
-      "title": "Паперовий аудит без документів",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614500039.webp",
-      "effects": [
-        {
-          "resource": "time",
-          "value": 1
-        },
-        {
-          "resource": "documents",
-          "value": -1
-        }
-      ],
-      "flavor": "Аудит проведено. Папери знайдуться потім."
-    },
-    {
-      "id": "scandal-09",
-      "title": "Відео з полігону",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614508047.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        }
-      ],
-      "flavor": "Мало тренувань — багато переглядів."
-    },
-    {
-      "id": "scandal-10",
-      "title": "Витік наказів у пресу",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771615063474.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "documents",
-          "value": -1
-        }
-      ],
-      "flavor": "Конфіденційно — значить, завтра на YouTube."
-    },
-    {
-      "id": "scandal-11",
-      "title": "Зникнення гуманітарки",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614820343.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "discipline",
-          "value": -1
-        }
-      ],
-      "flavor": "Гуманітарка не зникає. Вона просто змінює власника."
-    },
-    {
-      "id": "scandal-12",
-      "title": "Підроблені рапорти",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614939024.webp",
-      "effects": [
-        {
-          "resource": "documents",
-          "value": -2
-        }
-      ],
-      "flavor": "Усе збігається, крім правди."
-    },
-    {
-      "id": "scandal-13",
-      "title": "Бюджет на ремонт даху",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614949216.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "documents",
-          "value": -1
-        }
-      ],
-      "flavor": "Гроші витекли швидше, ніж дощ крізь дірки."
-    },
-    {
-      "id": "scandal-14",
-      "title": "Викриття корупційної схеми",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771615029111.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "discipline",
-          "value": 1
-        }
-      ],
-      "flavor": "Хоч хтось зробив AAR правильно."
-    },
-    {
-      "id": "scandal-15",
-      "title": "Тушонка",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771614982549.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -1
-        },
-        {
-          "resource": "documents",
-          "value": 1
-        }
-      ],
-      "flavor": "Сумнівна за смаком, але офіційно прийнята."
-    },
-    {
-      "id": "scandal-16",
-      "title": "Колаборант",
-      "category": "SCANDAL",
-      "image": "/cards/card-1771615017418.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -2
-        },
-        {
-          "resource": "discipline",
-          "value": -1
-        },
-        {
-          "resource": "tech",
-          "value": -1
-        }
-      ],
-      "flavor": "Він завжди з флешкою. І завжди “просто цікавиться”."
-    },
     {
       "id": "lyap-01",
       "title": "Журнал обліку журналів",
@@ -2420,326 +2184,121 @@
       "flavor": "Видихай рівно, вдихай повагу."
     },
     {
-      "id": "decision-01",
-      "title": "Зразковий рапорт",
-      "category": "DECISION",
-      "image": "/cards/card-1771871420538.webp",
+      "id": "scandal-01",
+      "title": "Яйця по 17 гривень",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614354252.webp",
       "effects": [
         {
           "resource": "reputation",
-          "value": 1
+          "value": -2
         },
         {
           "resource": "discipline",
-          "value": 1
+          "value": -1
         }
       ],
-      "flavor": "Писав три дні, затвердили за п’ять хвилин."
+      "flavor": "Символ епохи великого апетиту та малого контролю."
     },
     {
-      "id": "decision-02",
-      "title": "Вдалий виступ на шикуванні",
-      "category": "DECISION",
-      "image": "/cards/card-1771871439446.webp",
+      "id": "scandal-02",
+      "title": "Куртки Резнікова",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614366040.webp",
       "effects": [
         {
           "resource": "reputation",
-          "value": 2
-        }
-      ],
-      "flavor": "Голос тремтів, але аплодували стоячи."
-    },
-    {
-      "id": "decision-03",
-      "title": "Перемога у спортивних змаганнях",
-      "category": "DECISION",
-      "image": "/cards/card-1771871453560.webp",
-      "effects": [
-        {
-          "resource": "time",
-          "value": 1
-        },
-        {
-          "resource": "reputation",
-          "value": 1
-        }
-      ],
-      "flavor": "Біг швидше за накази."
-    },
-    {
-      "id": "decision-04",
-      "title": "Успішний ААR",
-      "category": "DECISION",
-      "image": "/cards/card-1771871467975.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
+          "value": -1
         },
         {
           "resource": "documents",
-          "value": 2
+          "value": -1
         }
       ],
-      "flavor": "Помилки знайшли, винних — теж."
+      "flavor": "Тепло — поняття відносне, особливо в тендері."
     },
     {
-      "id": "decision-05",
-      "title": "Волонтерська ініціатива",
-      "category": "DECISION",
-      "image": "/cards/card-1771871484518.webp",
+      "id": "scandal-03",
+      "title": "Дрони по завищеній ціні",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614378587.webp",
       "effects": [
         {
           "resource": "reputation",
-          "value": 1
+          "value": -1
         },
         {
           "resource": "tech",
-          "value": 1
+          "value": -1
         }
       ],
-      "flavor": "Авторитет росте швидше, ніж принтер друкує."
+      "flavor": "Коли ціна злітає швидше, ніж сам дрон."
     },
     {
-      "id": "decision-06",
-      "title": "Публікація у військовому журналі",
-      "category": "DECISION",
-      "image": "/cards/card-1771871500051.webp",
+      "id": "scandal-04",
+      "title": "Пропажа пального",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614390190.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": -2
+        }
+      ],
+      "flavor": "Випарувалось разом із совістю чергового."
+    },
+    {
+      "id": "scandal-05",
+      "title": "Закупівля підписів на тендер",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614425063.webp",
       "effects": [
         {
           "resource": "reputation",
-          "value": 1
+          "value": -1
         },
         {
           "resource": "documents",
-          "value": 1
+          "value": -1
         }
       ],
-      "flavor": "Твій досвід тепер у бібліотеці Міноборони."
+      "flavor": "Коли “мокра печатка” — це ще не найвологіше місце в історії."
     },
     {
-      "id": "decision-07",
-      "title": "Прийняття на курс лідерства",
-      "category": "DECISION",
-      "image": "/cards/card-1771871519462.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "discipline",
-          "value": 1
-        }
-      ],
-      "flavor": "Після лекцій навіть командир став слухнянішим."
-    },
-    {
-      "id": "decision-08",
-      "title": "Затвердження нового SOP",
-      "category": "DECISION",
-      "image": "/cards/card-1771871537749.webp",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": 1
-        },
-        {
-          "resource": "documents",
-          "value": 1
-        }
-      ],
-      "flavor": "Порядок встановлено. Тимчасово."
-    },
-    {
-      "id": "decision-09",
-      "title": "Участь у навчаннях НАТО",
-      "category": "DECISION",
-      "image": "/cards/card-1771871551984.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Справжня перемога — знайти перекладача."
-    },
-    {
-      "id": "decision-10",
-      "title": "Ефективне використання ресурсів",
-      "category": "DECISION",
-      "image": "/cards/card-1771871573623.webp",
-      "effects": [
-        {
-          "resource": "time",
-          "value": 1
-        },
-        {
-          "resource": "discipline",
-          "value": 1
-        }
-      ],
-      "flavor": "Скоротив витрати — збільшив звіти."
-    },
-    {
-      "id": "decision-11",
-      "title": "Вдалий брифінг перед начальством",
-      "category": "DECISION",
-      "image": "/cards/card-1771871588026.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 2
-        }
-      ],
-      "flavor": "Слайди говорили самі за себе."
-    },
-    {
-      "id": "decision-12",
-      "title": "Відмінна інвентаризація",
-      "category": "DECISION",
-      "image": "/cards/card-1771871600284.webp",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": 1
-        },
-        {
-          "resource": "documents",
-          "value": 1
-        }
-      ],
-      "flavor": "Пораховано навіть повітря в шафі."
-    },
-    {
-      "id": "decision-13",
-      "title": "Курс з кібербезпеки",
-      "category": "DECISION",
-      "image": "/cards/card-1771871612720.webp",
+      "id": "scandal-06",
+      "title": "Пропажа дронів",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614439747.webp",
       "effects": [
         {
           "resource": "tech",
-          "value": 2
+          "value": -2
         }
       ],
-      "flavor": "Тепер навіть принтер не ризикує зламуватись."
+      "flavor": "Злетіли — і не повернулись. Як довіра."
     },
     {
-      "id": "decision-14",
-      "title": "Відзнака командира",
-      "category": "DECISION",
-      "image": "/cards/card-1771871627089.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 2
-        }
-      ],
-      "flavor": "Підписав грамоту без єдиної помилки."
-    },
-    {
-      "id": "decision-15",
-      "title": "Призначення на нову посаду",
-      "category": "DECISION",
-      "image": "/cards/card-1771871647198.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "discipline",
-          "value": 1
-        }
-      ],
-      "flavor": "Більше відповідальності, менше вихідних."
-    },
-    {
-      "id": "decision-16",
-      "title": "Успішний аудит холодильника",
-      "category": "DECISION",
-      "image": "/cards/card-1771871660520.webp",
+      "id": "scandal-07",
+      "title": "Списання бронежилетів як витратних",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614451008.webp",
       "effects": [
         {
           "resource": "discipline",
-          "value": 1
+          "value": -1
         },
         {
           "resource": "documents",
-          "value": 1
+          "value": -1
         }
       ],
-      "flavor": "Вперше все зійшлося — навіть списане."
+      "flavor": "Захищають від куль, але не від Excel."
     },
     {
-      "id": "decision-17",
-      "title": "Підтримка волонтерів",
-      "category": "DECISION",
-      "image": "/cards/card-1771871672495.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Замість наказу — подяка у Facebook."
-    },
-    {
-      "id": "decision-18",
-      "title": "Вдале інтерв’ю для преси",
-      "category": "DECISION",
-      "image": "/cards/card-1771873874546.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 1
-        }
-      ],
-      "flavor": "Головне — щоб начальство не читало."
-    },
-    {
-      "id": "decision-19",
-      "title": "Успішна сертифікація підрозділу",
-      "category": "DECISION",
-      "image": "/cards/card-1771873894734.webp",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": 2
-        }
-      ],
-      "flavor": "Всі стояли рівно. Навіть документи."
-    },
-    {
-      "id": "decision-20",
-      "title": "Покращення побутових умов",
-      "category": "DECISION",
-      "image": "/cards/card-1771874748714.webp",
-      "effects": [
-        {
-          "resource": "time",
-          "value": 1
-        },
-        {
-          "resource": "reputation",
-          "value": 1
-        }
-      ],
-      "flavor": "Справжня розкіш — гаряча вода й порядок у журналах."
-    },
-    {
-      "id": "decision-21",
-      "title": "Перенесення термінів",
-      "category": "DECISION",
-      "image": "/cards/card-1771873958187.webp",
+      "id": "scandal-08",
+      "title": "Паперовий аудит без документів",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614500039.webp",
       "effects": [
         {
           "resource": "time",
@@ -2747,44 +2306,205 @@
         },
         {
           "resource": "documents",
-          "value": 1
+          "value": -1
         }
       ],
-      "flavor": "Приїхали, побачили, написали акт."
+      "flavor": "Аудит проведено. Папери знайдуться потім."
     },
     {
-      "id": "decision-22",
-      "title": "Ротація командирів",
-      "category": "DECISION",
-      "image": "/cards/card-1771873978850.webp",
+      "id": "scandal-09",
+      "title": "Відео з полігону",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614508047.webp",
       "effects": [
         {
           "resource": "reputation",
-          "value": 1
+          "value": -1
+        }
+      ],
+      "flavor": "Мало тренувань — багато переглядів."
+    },
+    {
+      "id": "scandal-10",
+      "title": "Витік наказів у пресу",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771615063474.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -1
+        },
+        {
+          "resource": "documents",
+          "value": -1
+        }
+      ],
+      "flavor": "Конфіденційно — значить, завтра на YouTube."
+    },
+    {
+      "id": "scandal-11",
+      "title": "Зникнення гуманітарки",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614820343.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -1
+        },
+        {
+          "resource": "discipline",
+          "value": -1
+        }
+      ],
+      "flavor": "Гуманітарка не зникає. Вона просто змінює власника."
+    },
+    {
+      "id": "scandal-12",
+      "title": "Підроблені рапорти",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614939024.webp",
+      "effects": [
+        {
+          "resource": "documents",
+          "value": -2
+        }
+      ],
+      "flavor": "Усе збігається, крім правди."
+    },
+    {
+      "id": "scandal-13",
+      "title": "Бюджет на ремонт даху",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614949216.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -1
+        },
+        {
+          "resource": "documents",
+          "value": -1
+        }
+      ],
+      "flavor": "Гроші витекли швидше, ніж дощ крізь дірки."
+    },
+    {
+      "id": "scandal-14",
+      "title": "Викриття корупційної схеми",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771615029111.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -1
         },
         {
           "resource": "discipline",
           "value": 1
         }
       ],
-      "flavor": "Ніхто не знає, хто головний, але всі при ділі."
+      "flavor": "Хоч хтось зробив AAR правильно."
     },
     {
-      "id": "decision-23",
-      "title": "Новий наказ про реформу",
-      "category": "DECISION",
-      "image": "/cards/card-1771873991299.webp",
+      "id": "scandal-15",
+      "title": "Тушонка",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771614982549.webp",
       "effects": [
         {
           "resource": "reputation",
-          "value": 1
+          "value": -1
         },
         {
           "resource": "documents",
           "value": 1
         }
       ],
-      "flavor": "Змінюємо все, крім тих, хто змінює."
+      "flavor": "Сумнівна за смаком, але офіційно прийнята."
+    },
+    {
+      "id": "scandal-16",
+      "title": "Колаборант",
+      "category": "SCANDAL",
+      "image": "/cards/card-1771615017418.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -2
+        },
+        {
+          "resource": "discipline",
+          "value": -1
+        },
+        {
+          "resource": "tech",
+          "value": -1
+        }
+      ],
+      "flavor": "Він завжди з флешкою. І завжди “просто цікавиться”."
+    },
+    {
+      "id": "scandal-17",
+      "title": "Полковник із ОТУ",
+      "category": "SCANDAL",
+      "image": "/cards/card-1772952038855.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -2
+        }
+      ]
+    },
+    {
+      "id": "scandal-18",
+      "title": "ВЛК",
+      "category": "SCANDAL",
+      "image": "/cards/card-1772956066783.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": -1
+        },
+        {
+          "resource": "reputation",
+          "value": -1
+        }
+      ],
+      "flavor": "💬 «Черга рухається швидше, ніж рішення.»"
+    },
+    {
+      "id": "scandal-19",
+      "title": "гИометрія",
+      "category": "SCANDAL",
+      "image": "/cards/card-1772956549834.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": -1
+        },
+        {
+          "resource": "discipline",
+          "value": -1
+        }
+      ],
+      "flavor": "«Круглоє носіть. Квадратноє катать.»"
+    },
+    {
+      "id": "scandal-20",
+      "title": "Службове розслідування",
+      "category": "SCANDAL",
+      "image": "/cards/card-1772956616687.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -1
+        },
+        {
+          "resource": "tech",
+          "value": -1
+        }
+      ],
+      "flavor": "«Головне — знайти винного. Бажано швидко.»"
     },
     {
       "id": "support-01",
@@ -3190,83 +2910,57 @@
       "flavor": "Тепер усі рапорти на місці, але ніхто не знає де."
     },
     {
-      "id": "vvnz-01",
-      "title": "Національний університет оборони України імені Івана Черняховського",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875754258.webp",
-      "grantRank": "junior_lieutenant",
-      "effects": [
-        {
-          "resource": "discipline",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Тут навіть курсові звучать як накази."
-    },
-    {
-      "id": "vvnz-02",
-      "title": "Харківський національний університет Повітряних Сил імені Івана Кожедуба",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875767843.webp",
-      "grantRank": "junior_lieutenant",
+      "id": "support-28",
+      "title": "Схвалюючий погляд командира",
+      "category": "SUPPORT",
+      "image": "/cards/card-1772960967836.webp",
       "effects": [
         {
           "resource": "reputation",
           "value": 1
-        },
-        {
-          "resource": "discipline",
-          "value": 1
         }
       ],
-      "flavor": "У небі — як у звіті: головне не втратити лінію."
+      "flavor": "«Іноді одного погляду достатньо.»"
     },
     {
-      "id": "vvnz-03",
-      "title": "Національна академія сухопутних військ імені гетьмана Петра Сагайдачного",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875780893.webp",
-      "grantRank": "junior_lieutenant",
+      "id": "support-29",
+      "title": "Три П.",
+      "category": "SUPPORT",
+      "image": "/cards/3-1772964546873.webp",
       "effects": [
         {
-          "resource": "discipline",
+          "resource": "time",
           "value": 1
         },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "Тут формується хребет армії — і почерк рапорту."
-    },
-    {
-      "id": "vvnz-04",
-      "title": "Військова академія (м. Одеса)",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875790279.webp",
-      "grantRank": "junior_lieutenant",
-      "effects": [
         {
           "resource": "reputation",
           "value": 1
+        }
+      ],
+      "flavor": "«Прийшов, попиздів та пішов.»"
+    },
+    {
+      "id": "support-30",
+      "title": "Допомога суміжників",
+      "category": "SUPPORT",
+      "image": "/cards/card-1772964593007.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
         },
         {
-          "resource": "tech",
+          "resource": "discipline",
           "value": 1
         }
       ],
-      "flavor": "На Півдні народжується тактика і легенди."
+      "flavor": "«Коли сусіди виручають швидше, ніж наказ.»"
     },
     {
-      "id": "vvnz-05",
-      "title": "Національна академія Національної гвардії України",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875807542.webp",
-      "grantRank": "senior_master_sergeant",
+      "id": "decision-01",
+      "title": "Зразковий рапорт",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871420538.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3277,14 +2971,94 @@
           "value": 1
         }
       ],
-      "flavor": "Тут порядок — не просто слово, а режим доби."
+      "flavor": "Писав три дні, затвердили за п’ять хвилин."
     },
     {
-      "id": "vvnz-06",
-      "title": "Академія Державної прикордонної служби України імені Богдана Хмельницького",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875817949.webp",
-      "grantRank": "senior_master_sergeant",
+      "id": "decision-02",
+      "title": "Вдалий виступ на шикуванні",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871439446.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 2
+        }
+      ],
+      "flavor": "Голос тремтів, але аплодували стоячи."
+    },
+    {
+      "id": "decision-03",
+      "title": "Перемога у спортивних змаганнях",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871453560.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "reputation",
+          "value": 1
+        }
+      ],
+      "flavor": "Біг швидше за накази."
+    },
+    {
+      "id": "decision-04",
+      "title": "Успішний ААR",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871467975.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 2
+        }
+      ],
+      "flavor": "Помилки знайшли, винних — теж."
+    },
+    {
+      "id": "decision-05",
+      "title": "Волонтерська ініціатива",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871484518.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "Авторитет росте швидше, ніж принтер друкує."
+    },
+    {
+      "id": "decision-06",
+      "title": "Публікація у військовому журналі",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871500051.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "Твій досвід тепер у бібліотеці Міноборони."
+    },
+    {
+      "id": "decision-07",
+      "title": "Прийняття на курс лідерства",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871519462.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3295,14 +3069,30 @@
           "value": 1
         }
       ],
-      "flavor": "Кордон починається не з лінії на мапі, а з характеру офіцера."
+      "flavor": "Після лекцій навіть командир став слухнянішим."
     },
     {
-      "id": "vvnz-07",
-      "title": "Військовий інститут Київського національного університету імені Тараса Шевченка",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875829053.webp",
-      "grantRank": "senior_master_sergeant",
+      "id": "decision-08",
+      "title": "Затвердження нового SOP",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871537749.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "Порядок встановлено. Тимчасово."
+    },
+    {
+      "id": "decision-09",
+      "title": "Участь у навчаннях НАТО",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871551984.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3313,14 +3103,120 @@
           "value": 1
         }
       ],
-      "flavor": "Магістерська з лідерства — і з трьома підписами."
+      "flavor": "Справжня перемога — знайти перекладача."
     },
     {
-      "id": "vvnz-08",
-      "title": "Військовий інститут телекомунікацій та інформатизації імені Героїв Крут",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875840664.webp",
-      "grantRank": "senior_master_sergeant",
+      "id": "decision-10",
+      "title": "Ефективне використання ресурсів",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871573623.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Скоротив витрати — збільшив звіти."
+    },
+    {
+      "id": "decision-11",
+      "title": "Вдалий брифінг перед начальством",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871588026.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 2
+        }
+      ],
+      "flavor": "Слайди говорили самі за себе."
+    },
+    {
+      "id": "decision-12",
+      "title": "Відмінна інвентаризація",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871600284.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "Пораховано навіть повітря в шафі."
+    },
+    {
+      "id": "decision-13",
+      "title": "Курс з кібербезпеки",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871612720.webp",
+      "effects": [
+        {
+          "resource": "tech",
+          "value": 2
+        }
+      ],
+      "flavor": "Тепер навіть принтер не ризикує зламуватись."
+    },
+    {
+      "id": "decision-14",
+      "title": "Відзнака командира",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871627089.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 2
+        }
+      ],
+      "flavor": "Підписав грамоту без єдиної помилки."
+    },
+    {
+      "id": "decision-15",
+      "title": "Призначення на нову посаду",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871647198.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "Більше відповідальності, менше вихідних."
+    },
+    {
+      "id": "decision-16",
+      "title": "Успішний аудит холодильника",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871660520.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "Вперше все зійшлося — навіть списане."
+    },
+    {
+      "id": "decision-17",
+      "title": "Підтримка волонтерів",
+      "category": "COMMAND",
+      "image": "/cards/card-1771871672495.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3331,32 +3227,124 @@
           "value": 1
         }
       ],
-      "flavor": "Коли мережа лягла — це значить, що курсант встав."
+      "flavor": "Замість наказу — подяка у Facebook."
     },
     {
-      "id": "vvnz-09",
-      "title": "Інститут Військово-Морських Сил Національного університету «Одеська морська академія»",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875856832.webp",
-      "grantRank": "senior_sergeant",
+      "id": "decision-18",
+      "title": "Вдале інтерв’ю для преси",
+      "category": "COMMAND",
+      "image": "/cards/card-1771873874546.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        }
+      ],
+      "flavor": "Головне — щоб начальство не читало."
+    },
+    {
+      "id": "decision-19",
+      "title": "Успішна сертифікація підрозділу",
+      "category": "COMMAND",
+      "image": "/cards/card-1771873894734.webp",
+      "effects": [
+        {
+          "resource": "discipline",
+          "value": 2
+        }
+      ],
+      "flavor": "Всі стояли рівно. Навіть документи."
+    },
+    {
+      "id": "decision-20",
+      "title": "Покращення побутових умов",
+      "category": "COMMAND",
+      "image": "/cards/card-1771874748714.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "reputation",
+          "value": 1
+        }
+      ],
+      "flavor": "Справжня розкіш — гаряча вода й порядок у журналах."
+    },
+    {
+      "id": "decision-21",
+      "title": "Перенесення термінів",
+      "category": "COMMAND",
+      "image": "/cards/card-1771873958187.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "Приїхали, побачили, написали акт."
+    },
+    {
+      "id": "decision-22",
+      "title": "Ротація командирів",
+      "category": "COMMAND",
+      "image": "/cards/card-1771873978850.webp",
       "effects": [
         {
           "resource": "reputation",
           "value": 1
         },
         {
-          "resource": "tech",
+          "resource": "discipline",
           "value": 1
         }
       ],
-      "flavor": "Швартуй документи, курсант, і тримай горизонт рівно."
+      "flavor": "Ніхто не знає, хто головний, але всі при ділі."
     },
     {
-      "id": "vvnz-10",
-      "title": "Житомирський військовий інститут імені С. П. Корольова",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875870514.webp",
-      "grantRank": "senior_sergeant",
+      "id": "decision-23",
+      "title": "Новий наказ про реформу",
+      "category": "COMMAND",
+      "image": "/cards/card-1771873991299.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "Змінюємо все, крім тих, хто змінює."
+    },
+    {
+      "id": "decision-24",
+      "title": "Анонімне опитування",
+      "category": "COMMAND",
+      "image": "/cards/card-1772964742729.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "«Головне — чесно відповісти… анонімно.»"
+    },
+    {
+      "id": "decision-25",
+      "title": "БЗВП",
+      "category": "COMMAND",
+      "image": "/cards/card-1772964779436.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3367,32 +3355,81 @@
           "value": 1
         }
       ],
-      "flavor": "Космос починається з польового заліку."
+      "flavor": "«Тут починається справжня служба.»"
     },
     {
-      "id": "vvnz-11",
-      "title": "Харківський військовий коледж сержантського складу Повітряних Сил",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875881152.webp",
-      "grantRank": "senior_sergeant",
+      "id": "decision-26",
+      "title": "Окреме розпорядження",
+      "category": "COMMAND",
+      "image": "/cards/card-1772964805573.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        }
+      ],
+      "flavor": "«Короткий документ — довгий вплив.»"
+    },
+    {
+      "id": "decision-27",
+      "title": "Інструкція",
+      "category": "COMMAND",
+      "image": "/cards/card-1772964869593.webp",
       "effects": [
         {
           "resource": "discipline",
           "value": 1
         },
         {
-          "resource": "tech",
+          "resource": "documents",
           "value": 1
         }
       ],
-      "flavor": "Тут вчать тримати небо так само впевнено, як стрій."
+      "flavor": "«Як робити правильно. Теоретично.»"
     },
     {
-      "id": "vvnz-12",
-      "title": "Київський військовий ліцей імені Івана Богуна",
-      "category": "VVNZ",
-      "image": "/cards/card-1771875889671.webp",
-      "grantRank": "senior_sergeant",
+      "id": "decision-28",
+      "title": "Координаційний центр",
+      "category": "COMMAND",
+      "image": "/cards/card-1772964900628.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "reputation",
+          "value": 1
+        }
+      ],
+      "flavor": "«Тепер усі звітують сюди.»"
+    },
+    {
+      "id": "decision-29",
+      "title": "Злагодження підрозділів",
+      "category": "COMMAND",
+      "image": "/cards/card-1772964939595.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
+      ],
+      "flavor": "«Коли всі нарешті працюють як один механізм.»"
+    },
+    {
+      "id": "decision-30",
+      "title": "Необмежено придатний",
+      "category": "COMMAND",
+      "image": "/cards/card-1772964687130.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3403,27 +3440,15 @@
           "value": 1
         }
       ],
-      "flavor": "Тут мрія носить форму ще до звання."
-    },
-    {
-      "id": "scandal-17",
-      "title": "Полковник із ОТУ",
-      "category": "SCANDAL",
-      "image": "/cards/card-1772952038855.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": -2
-        }
-      ]
+      "flavor": "«Формулювання, яке вирішує все.»"
     }
   ],
   "legendaryDeck": [
     {
       "id": "legendary-01",
-      "title": "Мислі Залужного",
+      "title": "Мислі Головкома",
       "category": "LEGENDARY",
-      "image": "/cards/card-1771884318909.webp",
+      "image": "/cards/card-1772961126046.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3438,9 +3463,9 @@
     },
     {
       "id": "legendary-02",
-      "title": "Сміх Буданова",
+      "title": "Cміх BUDDA-н-OFF",
       "category": "LEGENDARY",
-      "image": "/cards/card-1771884335395.webp",
+      "image": "/cards/card-1772961254432.webp",
       "effects": [
         {
           "resource": "tech",
@@ -3468,9 +3493,9 @@
     },
     {
       "id": "legendary-04",
-      "title": "Фонд Притули",
+      "title": "Фонд Добродія",
       "category": "LEGENDARY",
-      "image": "/cards/card-1771884366598.webp",
+      "image": "/cards/card-1772961289925.webp",
       "effects": [
         {
           "resource": "time",
@@ -3535,9 +3560,9 @@
     },
     {
       "id": "legendary-08",
-      "title": "Старлінк",
+      "title": "Зірколінк",
       "category": "LEGENDARY",
-      "image": "/cards/card-1771884418138.webp",
+      "image": "/cards/card-1772961348506.webp",
       "effects": [
         {
           "resource": "time",
@@ -3552,9 +3577,9 @@
     },
     {
       "id": "legendary-09",
-      "title": "Вода “Прозора”",
+      "title": "Вода “ПроZORRO”",
       "category": "LEGENDARY",
-      "image": "/cards/card-1771884430988.webp",
+      "image": "/cards/card-1772961387230.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3630,8 +3655,252 @@
         }
       ],
       "flavor": "Головне — повернутись із неї добровільно."
+    },
+    {
+      "id": "legendary-15",
+      "title": "SLON.FM",
+      "category": "LEGENDARY",
+      "image": "/cards/card-1772961436932.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": 2
+        },
+        {
+          "resource": "documents",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
+      ],
+      "flavor": "«Новини іноді доходять раніше наказів.»"
     }
   ],
   "rankTrack": [],
-  "deckBackImage": "/cards/626a45d5-79de-44ec-b2cf-7bf701c578d6.webp"
+  "deckBackImage": "/cards/626a45d5-79de-44ec-b2cf-7bf701c578d6.webp",
+  "modules": [
+    {
+      "id": "lyap_core",
+      "name": "2026.LYAP.STARTER",
+      "moduleType": "MAIN_DECK_MODULE",
+      "category": "LYAP",
+      "cardCount": 20,
+      "enabled": true,
+      "target": "deck",
+      "cardIds": [
+        "lyap-01",
+        "lyap-02",
+        "lyap-03",
+        "lyap-04",
+        "lyap-05",
+        "lyap-06",
+        "lyap-07",
+        "lyap-08",
+        "lyap-09",
+        "lyap-10",
+        "lyap-11",
+        "lyap-12",
+        "lyap-13",
+        "lyap-14",
+        "lyap-15",
+        "lyap-16",
+        "lyap-17",
+        "lyap-18",
+        "lyap-19",
+        "lyap-20"
+      ],
+      "defaultCategory": "LYAP"
+    },
+    {
+      "id": "scandal_core",
+      "name": "2026.SCANDAL.STARTER",
+      "moduleType": "MAIN_DECK_MODULE",
+      "category": "SCANDAL",
+      "cardCount": 20,
+      "enabled": true,
+      "target": "deck",
+      "cardIds": [
+        "scandal-01",
+        "scandal-02",
+        "scandal-03",
+        "scandal-04",
+        "scandal-05",
+        "scandal-06",
+        "scandal-07",
+        "scandal-08",
+        "scandal-09",
+        "scandal-10",
+        "scandal-11",
+        "scandal-12",
+        "scandal-13",
+        "scandal-14",
+        "scandal-15",
+        "scandal-16",
+        "scandal-17",
+        "scandal-18",
+        "scandal-19",
+        "scandal-20"
+      ],
+      "defaultCategory": "SCANDAL"
+    },
+    {
+      "id": "support_core",
+      "name": "2026.SUPPORT.STARTER",
+      "moduleType": "MAIN_DECK_MODULE",
+      "category": "SUPPORT",
+      "cardCount": 30,
+      "enabled": true,
+      "target": "deck",
+      "cardIds": [
+        "support-01",
+        "support-02",
+        "support-03",
+        "support-04",
+        "support-05",
+        "support-06",
+        "support-07",
+        "support-08",
+        "support-09",
+        "support-10",
+        "support-11",
+        "support-12",
+        "support-13",
+        "support-14",
+        "support-15",
+        "support-16",
+        "support-17",
+        "support-18",
+        "support-19",
+        "support-20",
+        "support-21",
+        "support-22",
+        "support-23",
+        "support-24",
+        "support-25",
+        "support-26",
+        "support-27",
+        "support-28",
+        "support-29",
+        "support-30"
+      ],
+      "defaultCategory": "SUPPORT"
+    },
+    {
+      "id": "command_core",
+      "name": "2026.COMMAND.STARTER",
+      "moduleType": "MAIN_DECK_MODULE",
+      "category": "COMMAND",
+      "cardCount": 30,
+      "enabled": true,
+      "target": "deck",
+      "cardIds": [
+        "decision-01",
+        "decision-02",
+        "decision-03",
+        "decision-04",
+        "decision-05",
+        "decision-06",
+        "decision-07",
+        "decision-08",
+        "decision-09",
+        "decision-10",
+        "decision-11",
+        "decision-12",
+        "decision-13",
+        "decision-14",
+        "decision-15",
+        "decision-16",
+        "decision-17",
+        "decision-18",
+        "decision-19",
+        "decision-20",
+        "decision-21",
+        "decision-22",
+        "decision-23",
+        "decision-30",
+        "decision-24",
+        "decision-25",
+        "decision-26",
+        "decision-27",
+        "decision-28",
+        "decision-29"
+      ],
+      "defaultCategory": "COMMAND"
+    },
+    {
+      "id": "vvnz_default",
+      "name": "2026.VVNZ.MODULE",
+      "moduleType": "SYSTEM_MODULE",
+      "category": "VVNZ",
+      "cardCount": 12,
+      "enabled": true,
+      "target": "deck",
+      "cardIds": [
+        "vvnz-01",
+        "vvnz-02",
+        "vvnz-03",
+        "vvnz-04",
+        "vvnz-05",
+        "vvnz-06",
+        "vvnz-07",
+        "vvnz-08",
+        "vvnz-09",
+        "vvnz-10",
+        "vvnz-11",
+        "vvnz-12"
+      ],
+      "defaultCategory": "VVNZ"
+    },
+    {
+      "id": "legendary_default",
+      "name": "2026.LEGENDARY.MODULE",
+      "moduleType": "SEPARATE_DECK_MODULE",
+      "category": "LEGENDARY",
+      "cardCount": 15,
+      "enabled": true,
+      "target": "legendaryDeck",
+      "cardIds": [
+        "legendary-01",
+        "legendary-02",
+        "legendary-03",
+        "legendary-04",
+        "legendary-05",
+        "legendary-06",
+        "legendary-07",
+        "legendary-08",
+        "legendary-09",
+        "legendary-10",
+        "legendary-11",
+        "legendary-12",
+        "legendary-13",
+        "legendary-14",
+        "legendary-15"
+      ],
+      "defaultCategory": "LEGENDARY"
+    },
+    {
+      "id": "rank_default",
+      "name": "2026.RANK.CARDS",
+      "moduleType": "VISUAL_TRACK_MODULE",
+      "category": "RANK",
+      "cardCount": 0,
+      "enabled": true,
+      "target": "rankTrack",
+      "cardIds": []
+    }
+  ],
+  "gameSetup": {
+    "lyapModuleId": "lyap_core",
+    "scandalModuleId": "scandal_core",
+    "supportModuleId": "support_core",
+    "commandModuleId": "command_core",
+    "optionalMainDeckModuleIds": [
+      "vvnz_default"
+    ],
+    "legendaryModuleId": "legendary_default",
+    "rankModuleId": "rank_default",
+    "legendaryDeckMode": "separate"
+  }
 }

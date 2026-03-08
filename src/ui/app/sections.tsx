@@ -93,6 +93,9 @@ type LobbySectionProps = {
   error: string;
   matches: LobbyMatch[];
   joinRoom: (match: LobbyMatch) => void;
+  optionalModules: Array<{ id: string; name: string; alwaysOn: boolean }>;
+  selectedOptionalModuleIds: string[];
+  setSelectedOptionalModuleIds: (ids: string[]) => void;
   uiVariant?: 'v1' | 'v2';
 };
 
@@ -110,65 +113,109 @@ export const LobbySection = ({
   error,
   matches,
   joinRoom,
+  optionalModules,
+  selectedOptionalModuleIds,
+  setSelectedOptionalModuleIds,
   uiVariant = 'v1',
-}: LobbySectionProps) => (
+}: LobbySectionProps) => {
+  const toggleModule = (id: string, alwaysOn: boolean) => {
+    if (alwaysOn) return;
+    if (selectedOptionalModuleIds.includes(id)) {
+      setSelectedOptionalModuleIds(selectedOptionalModuleIds.filter((row) => row !== id));
+      return;
+    }
+    setSelectedOptionalModuleIds([...selectedOptionalModuleIds, id]);
+  };
+
+  return (
   <section className={`board${uiVariant === 'v2' ? ' board-v2-panel' : ''}`}>
     <h2>{t.lobbyTitle}</h2>
-    <p>
-      {t.playerName}:{' '}
-      <input
-        value={playerName}
-        onChange={(e) => setPlayerName(e.target.value)}
-        placeholder={t.playerNamePlaceholder}
-      />
-    </p>
-    <p>
-      {t.roomCapacity}:{' '}
-      <select value={roomCapacity} onChange={(e) => setRoomCapacity(Number(e.target.value))}>
-        <option value={2}>2</option>
-        <option value={3}>3</option>
-        <option value={4}>4</option>
-        <option value={5}>5</option>
-        <option value={6}>6</option>
-      </select>{' '}
-      {t.gameModeLabel}:{' '}
-      <select value={gameMode} onChange={(e) => setGameMode(e.target.value as GameMode)}>
-        <option value="standard">{t.gameModeStandard}</option>
-        <option value="standard_plus">{t.gameModeStandardPlus}</option>
-        <option value="simplified">{t.gameModeSimplified}</option>
-      </select>{' '}
-      <button type="button" onClick={createRoom} disabled={!playerName.trim() || loading}>
-        {t.createRoom}
-      </button>{' '}
-      <button type="button" onClick={refreshMatches} disabled={loading}>
-        {t.refreshRooms}
-      </button>
-    </p>
-
-    {error ? <p className="admin-error">{error}</p> : null}
-    {loading ? <p>{t.loadingRooms}</p> : null}
-
-    <h3>{t.availableRooms}</h3>
-    {matches.length === 0 ? <p>{t.noRooms}</p> : null}
-    {matches.map((match) => {
-      const taken = match.players.filter((player) => Boolean(player.name)).length;
-      const capacity = match.players.length;
-      const hasFree = taken < capacity;
-      return (
-        <p key={match.matchID}>
-          {match.matchID} | {taken}/{capacity}{' '}
-          <button
-            type="button"
-            onClick={() => joinRoom(match)}
-            disabled={!playerName.trim() || loading || !hasFree}
-          >
-            {t.joinRoom}
+    <div className="lobby-layout">
+      <div className="lobby-col">
+        <h3>{t.roomListTitle}</h3>
+        <p className="admin-controls">
+          <button type="button" onClick={refreshMatches} disabled={loading}>
+            {t.refreshRooms}
           </button>
         </p>
-      );
-    })}
+        {loading ? <p>{t.loadingRooms}</p> : null}
+        {matches.length === 0 ? <p>{t.noRooms}</p> : null}
+        {matches.map((match) => {
+          const taken = match.players.filter((player) => Boolean(player.name)).length;
+          const capacity = match.players.length;
+          const hasFree = taken < capacity;
+          return (
+            <p key={match.matchID}>
+              {match.matchID} | {taken}/{capacity}{' '}
+              <button
+                type="button"
+                onClick={() => joinRoom(match)}
+                disabled={!playerName.trim() || loading || !hasFree}
+              >
+                {t.joinRoom}
+              </button>
+            </p>
+          );
+        })}
+      </div>
+      <div className="lobby-col">
+        <h3>{t.roomCreateTitle}</h3>
+        <p>
+          {t.playerName}:{' '}
+          <input
+            value={playerName}
+            onChange={(e) => setPlayerName(e.target.value)}
+            placeholder={t.playerNamePlaceholder}
+          />
+        </p>
+        <p>{t.roomCapacity}:</p>
+        <p className="admin-controls">
+          {[2, 3, 4, 5, 6].map((size) => (
+            <button key={`room-cap-${size}`} type="button" aria-pressed={roomCapacity === size} onClick={() => setRoomCapacity(size)}>
+              {roomCapacity === size ? '✓ ' : ''}{size}
+            </button>
+          ))}
+        </p>
+        <p>{t.gameModeLabel}:</p>
+        <p className="admin-controls">
+          {[
+            { id: 'standard', label: t.gameModeStandard },
+            { id: 'standard_plus', label: t.gameModeStandardPlus },
+            { id: 'simplified', label: t.gameModeSimplified },
+          ].map((mode) => (
+            <button key={`room-mode-${mode.id}`} type="button" aria-pressed={gameMode === mode.id} onClick={() => setGameMode(mode.id as GameMode)}>
+              {gameMode === mode.id ? '✓ ' : ''}{mode.label}
+            </button>
+          ))}
+        </p>
+        <p>{t.roomModulesLabel}:</p>
+        <p className="admin-controls">
+          {optionalModules.map((module) => {
+            const enabled = selectedOptionalModuleIds.includes(module.id) || module.alwaysOn;
+            return (
+              <button
+                key={`room-module-${module.id}`}
+                type="button"
+                aria-pressed={enabled}
+                onClick={() => toggleModule(module.id, module.alwaysOn)}
+                disabled={module.alwaysOn}
+              >
+                {enabled ? '✓ ' : ''}{module.name}{module.alwaysOn ? ` (${t.roomModuleAlwaysOn})` : ''}
+              </button>
+            );
+          })}
+        </p>
+        <p className="admin-controls">
+          <button type="button" onClick={createRoom} disabled={!playerName.trim() || loading}>
+            {t.createRoom}
+          </button>
+        </p>
+      </div>
+    </div>
+    {error ? <p className="admin-error">{error}</p> : null}
   </section>
 );
+};
 
 type ActiveSessionSectionProps = {
   t: T;

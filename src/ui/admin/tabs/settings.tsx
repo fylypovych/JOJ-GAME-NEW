@@ -5,7 +5,7 @@ type T = ReturnType<typeof text>;
 
 export const AdminSettingsTab = ({
   t,
-  lang,
+  lang: _lang,
   serverUrlDraft,
   onServerUrlDraftChange,
   onSaveServerUrl,
@@ -81,7 +81,7 @@ export const AdminSettingsTab = ({
         type="button"
         onClick={() => void applyGitDeploy()}
         disabled={gitDeployRunning || gitUpdateRunning || gitStatusLoading || (gitStatus ? gitStatus.dirty : false)}
-        title={lang === 'uk' ? 'Git pull + npm install + tsc + vite build + pm2 restart' : 'Git pull + npm install + tsc + vite build + pm2 restart'}
+        title={t.githubDeployTooltip}
       >
         {gitDeployRunning ? t.githubDeployLoading : t.githubDeploy}
       </button>

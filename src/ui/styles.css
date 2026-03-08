@@ -154,6 +154,10 @@ button:disabled {
 }
 
 @media (max-width: 900px) {
+  .lobby-layout {
+    grid-template-columns: 1fr;
+  }
+
   .app-top-toolbar {
     align-items: stretch;
   }
@@ -188,6 +192,16 @@ button:disabled {
     radial-gradient(880px 240px at -10% -30%, rgba(99, 187, 255, 0.12), transparent 65%),
     linear-gradient(180deg, #ffffff, #f7fbff);
   box-shadow: 0 12px 30px rgba(20, 40, 72, 0.09);
+}
+
+.lobby-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.lobby-col {
+  min-width: 0;
 }
 
 .gallery-grid {

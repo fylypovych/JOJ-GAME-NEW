@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { DeckTarget } from '../game/jojGame';
+import type { DeckModuleCategory, DeckModuleDefinition, DeckTarget, SharedGameSetup } from '../game/jojGame';
 import { normalizeImagePath } from '../game/imagePaths';
 import type { CardCategory, CardDefinition, EffectResource } from '../game/types';
 import { rankLabel } from './i18n';
@@ -24,7 +24,6 @@ import type {
   AdminStorageMode,
   AdminPageProps,
   AdminTab,
-  CategoryFilter,
   ImportCategoryMode,
   SharedDeckTemplate,
 } from './admin/types';
@@ -93,12 +92,12 @@ export const AdminPage = ({
   onDeleteMatch,
   onResetAll,
   onRestartServer,
-  onShuffleDeck,
-  onAddCard,
+  onShuffleDeck: _onShuffleDeck,
+  onAddCard: _onAddCard,
   onAddCustomCard,
   onUpdateCard,
-  onRemoveCard,
-  onResetTemplate,
+  onRemoveCard: _onRemoveCard,
+  onResetTemplate: _onResetTemplate,
   onSetDeckBackImage,
   onExportTemplate,
   onImportTemplate,
@@ -112,39 +111,21 @@ export const AdminPage = ({
   const localizedRankName = (rankId: string) =>
     sharedRanks.find((row) => row.id === rankId)?.name ?? rankLabel(rankId, lang);
   const activeMatch = matches.find((m) => m.id === activeMatchId);
-  const [target, setTarget] = useState<DeckTarget>('deck');
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('ALL');
-  const [selectedCardId, setSelectedCardId] = useState<string>('');
-  const targetAwareCatalog = useMemo(() => {
-    const isLegendaryId = (id: string) => /^legendary-/i.test(id);
-    if (target === 'deck') {
-      return cardCatalog.filter((card) => !isLegendaryId(card.id));
-    }
-    if (target === 'legendaryDeck') {
-      return cardCatalog.filter((card) => isLegendaryId(card.id));
-    }
-    return cardCatalog;
-  }, [cardCatalog, target]);
-  const filteredCatalog = useMemo(
-    () => (
-      categoryFilter === 'ALL'
-        ? targetAwareCatalog
-        : targetAwareCatalog.filter((card) => card.category === categoryFilter)
-    ),
-    [targetAwareCatalog, categoryFilter],
-  );
-  const selectedCard = useMemo(
-    () => filteredCatalog.find((card) => card.id === selectedCardId),
-    [filteredCatalog, selectedCardId],
-  );
-  useEffect(() => {
-    const exists = filteredCatalog.some((card) => card.id === selectedCardId);
-    if (!exists && selectedCardId) setSelectedCardId('');
-  }, [filteredCatalog, selectedCardId]);
+  type DeckModuleId = string;
+  type DeckModuleAction = 'add' | 'replace' | 'remove';
+  type DeckModuleDef = DeckModuleDefinition;
+  const STARTER_RELEASE_YEAR = '2026';
+  const baseStarterNameById: Record<string, string> = {
+    lyap_core: `${STARTER_RELEASE_YEAR}.LYAP.STARTER`,
+    scandal_core: `${STARTER_RELEASE_YEAR}.SCANDAL.STARTER`,
+    support_core: `${STARTER_RELEASE_YEAR}.SUPPORT.STARTER`,
+    command_core: `${STARTER_RELEASE_YEAR}.COMMAND.STARTER`,
+  };
 
   const [editTarget, setEditTarget] = useState<DeckTarget>('deck');
   const [editIndex, setEditIndex] = useState<number>(-1);
   const [editCard, setEditCard] = useState<CardDefinition>(blankCard());
+  const [editOriginalCardId, setEditOriginalCardId] = useState<string>('');
   const [editEffectValues, setEditEffectValues] = useState<Record<EffectResource, number>>(zeroEffectValues());
   const [editEffectsText, setEditEffectsText] = useState<string>('[]');
   const [editError, setEditError] = useState<string>('');
@@ -161,7 +142,20 @@ export const AdminPage = ({
   const [stopGameError, setStopGameError] = useState<string>('');
   const [stopGameStatus, setStopGameStatus] = useState<string>('');
   const [activeTab, setActiveTab] = useState<AdminTab>('matches');
-  const [deckBackImageInput, setDeckBackImageInput] = useState<string>(sharedDeckTemplate.deckBackImage ?? '');
+  const [deckManagerStatus, setDeckManagerStatus] = useState<string>('');
+  const [deckModules, setDeckModules] = useState<DeckModuleDef[]>([]);
+  const [createCardModuleId, setCreateCardModuleId] = useState<string>('');
+  const [, setDeckBackImageInput] = useState<string>(sharedDeckTemplate.deckBackImage ?? '');
+  const optionalSimulationModules = useMemo(
+    () => (sharedDeckTemplate.modules ?? [])
+      .filter((module) => module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
+      .map((module) => ({
+        id: module.id,
+        name: module.name,
+        alwaysOn: module.category === 'VVNZ',
+      })),
+    [sharedDeckTemplate.modules],
+  );
   const {
     simulationPlayers,
     setSimulationPlayers,
@@ -169,6 +163,8 @@ export const AdminPage = ({
     setSimulationCount,
     simulationGameMode,
     setSimulationGameMode,
+    simulationOptionalModuleIds,
+    setSimulationOptionalModuleIds,
     simulationReport,
     simulationRunning,
     simulationError,
@@ -176,6 +172,7 @@ export const AdminPage = ({
     runSimulation,
   } = useAdminSimulation({
     onRunSimulations,
+    optionalModules: optionalSimulationModules,
     configSignature: JSON.stringify({
       loaded: sharedConfigLoaded,
       deck: sharedDeckTemplate.deck.length,
@@ -184,9 +181,7 @@ export const AdminPage = ({
     }),
     blockedReason: sharedConfigLoaded
       ? ''
-      : (lang === 'uk'
-        ? 'Симуляція буде доступна після завантаження шаблону колоди та звань.'
-        : 'Simulation will be available after deck template and ranks are loaded.'),
+      : t.simulationBlockedByConfig,
   });
   const {
     gitStatus,
@@ -216,6 +211,60 @@ export const AdminPage = ({
     setStopGameStatus('');
   }, [activeMatchId]);
 
+  useEffect(() => {
+    if (Array.isArray(sharedDeckTemplate.modules) && sharedDeckTemplate.modules.length > 0) {
+      const normalizedModules = sharedDeckTemplate.modules.map((module) => {
+        const forced = baseStarterNameById[module.id];
+        return { ...module, name: forced ?? module.name, cardIds: [...module.cardIds] };
+      });
+      setDeckModules(normalizedModules);
+      const changed = normalizedModules.some((module, index) => module.name !== sharedDeckTemplate.modules[index]?.name);
+      if (changed) {
+        void applyTemplateUpdate((nextTemplate) => {
+          nextTemplate.modules = normalizedModules.map((module) => ({ ...module, cardIds: [...module.cardIds] }));
+        });
+      }
+      return;
+    }
+    if (cardCatalog.length === 0) return;
+    const byCategory = (category: CardCategory) => cardCatalog.filter((card) => card.category === category).map((card) => card.id);
+    const byLegendary = () => cardCatalog
+      .filter((card) => /^legendary-/i.test(card.id) || card.category === 'LEGENDARY')
+      .map((card) => card.id);
+    const byRankTrack = () => cardCatalog.filter((card) => /^rank[-_]/i.test(card.id)).map((card) => card.id);
+    const lyap = byCategory('LYAP');
+    const scandal = byCategory('SCANDAL');
+    const support = byCategory('SUPPORT');
+    const command = byCategory('COMMAND');
+    const vvnz = byCategory('VVNZ');
+    const legendary = byLegendary();
+    const rank = byRankTrack();
+    const seededModules: DeckModuleDef[] = [
+      { id: 'lyap_core', name: baseStarterNameById.lyap_core, moduleType: 'MAIN_DECK_MODULE', category: 'LYAP', cardCount: 20, enabled: true, target: 'deck', defaultCategory: 'LYAP', cardIds: lyap },
+      { id: 'scandal_core', name: baseStarterNameById.scandal_core, moduleType: 'MAIN_DECK_MODULE', category: 'SCANDAL', cardCount: 20, enabled: true, target: 'deck', defaultCategory: 'SCANDAL', cardIds: scandal },
+      { id: 'support_core', name: baseStarterNameById.support_core, moduleType: 'MAIN_DECK_MODULE', category: 'SUPPORT', cardCount: 30, enabled: true, target: 'deck', defaultCategory: 'SUPPORT', cardIds: support },
+      { id: 'command_core', name: baseStarterNameById.command_core, moduleType: 'MAIN_DECK_MODULE', category: 'COMMAND', cardCount: 30, enabled: true, target: 'deck', defaultCategory: 'COMMAND', cardIds: command },
+      { id: 'vvnz_default', name: 'VVNZ_DEFAULT', moduleType: 'SYSTEM_MODULE', category: 'VVNZ', cardCount: vvnz.length, enabled: true, target: 'deck', defaultCategory: 'VVNZ', cardIds: vvnz },
+      { id: 'legendary_default', name: 'LEGENDARY_DEFAULT', moduleType: 'SEPARATE_DECK_MODULE', category: 'LEGENDARY', cardCount: legendary.length, enabled: true, target: 'legendaryDeck', defaultCategory: 'LEGENDARY', cardIds: legendary },
+      { id: 'rank_default', name: 'RANK_DEFAULT', moduleType: 'VISUAL_TRACK_MODULE', category: 'RANK', cardCount: rank.length, enabled: true, target: 'rankTrack', defaultCategory: undefined, cardIds: rank },
+    ];
+    setDeckModules(seededModules);
+    const seededSetup: SharedGameSetup = {
+      lyapModuleId: 'lyap_core',
+      scandalModuleId: 'scandal_core',
+      supportModuleId: 'support_core',
+      commandModuleId: 'command_core',
+      optionalMainDeckModuleIds: ['vvnz_default'],
+      legendaryModuleId: 'legendary_default',
+      rankModuleId: 'rank_default',
+      legendaryDeckMode: 'separate',
+    };
+    void applyTemplateUpdate((nextTemplate) => {
+      nextTemplate.modules = seededModules.map((module) => ({ ...module, cardIds: [...module.cardIds] }));
+      nextTemplate.gameSetup = seededSetup;
+    });
+  }, [cardCatalog, sharedDeckTemplate.modules]);
+
   const stopGame = async () => {
     if (!activeMatchId || stopGameRunning) return;
     setStopGameError('');
@@ -233,21 +282,6 @@ export const AdminPage = ({
     } finally {
       setStopGameRunning(false);
     }
-  };
-
-  const beginEdit = (nextTarget: DeckTarget, index: number, card: CardDefinition) => {
-    setEditTarget(nextTarget);
-    setEditIndex(index);
-    setEditCard({
-      ...card,
-      image: card.image ?? '',
-      flavor: card.flavor ?? '',
-      effects: card.effects?.map((effect) => ({ ...effect })),
-    });
-    const nextEffectValues = effectsToValues(card.effects);
-    setEditEffectValues(nextEffectValues);
-    setEditEffectsText(JSON.stringify(valuesToEffects(nextEffectValues), null, 2));
-    setEditError('');
   };
 
   const parseEffects = (): CardDefinition['effects'] | null => {
@@ -284,44 +318,290 @@ export const AdminPage = ({
     return effects;
   };
 
-  const saveEdit = () => {
-    if (editIndex < 0) return;
-    if (!editCard.id.trim() || !editCard.title.trim()) return;
-    const effects = parseEffects();
-    if (effects === null) return;
-    onUpdateCard(editTarget, editIndex, {
-      ...editCard,
-      id: editCard.id.trim(),
-      title: editCard.title.trim(),
-      image: normalizeImagePath(editCard.image?.trim()),
-      flavor: editCard.flavor?.trim() || undefined,
-      effects,
+  const openCardEditorAt = (target: DeckTarget, index: number) => {
+    const sourceList = sharedDeckTemplate[target];
+    const card = sourceList?.[index];
+    if (!card) return;
+    setEditTarget(target);
+    setEditIndex(index);
+    setEditOriginalCardId(card.id);
+    setEditCard({
+      ...card,
+      image: card.image ?? '',
+      flavor: card.flavor ?? '',
+      effects: card.effects?.map((effect) => ({ ...effect })),
     });
-  };
-
-  const addFromForm = () => {
-    if (!editCard.id.trim() || !editCard.title.trim()) return;
-    const effects = parseEffects();
-    if (effects === null) return;
-    onAddCustomCard(editTarget, {
-      ...editCard,
-      id: editCard.id.trim(),
-      title: editCard.title.trim(),
-      image: normalizeImagePath(editCard.image?.trim()),
-      flavor: editCard.flavor?.trim() || undefined,
-      effects,
-    });
-    setEditIndex(-1);
+    const nextEffectValues = effectsToValues(card.effects);
+    setEditEffectValues(nextEffectValues);
+    setEditEffectsText(JSON.stringify(valuesToEffects(nextEffectValues), null, 2));
+    setCreateCardModuleId('');
     setEditError('');
   };
 
-  const startCreateCard = (nextTarget: 'deck' | 'legendaryDeck') => {
-    const deckTarget = nextTarget as DeckTarget;
-    const defaultCategory: CardCategory = deckTarget === 'legendaryDeck'
-      ? 'LEGENDARY'
-      : (categoryFilter === 'ALL' ? 'SUPPORT' : categoryFilter);
+  const openCardEditorById = (target: DeckTarget, cardId: string) => {
+    const list = sharedDeckTemplate[target];
+    const inTargetIndex = list.findIndex((row) => row.id === cardId);
+    if (inTargetIndex >= 0) {
+      openCardEditorAt(target, inTargetIndex);
+      return;
+    }
+    const catalogCard = cardCatalog.find((row) => row.id === cardId);
+    if (!catalogCard) return;
+    const nextEffectValues = effectsToValues(catalogCard.effects);
+    setEditTarget(target);
+    setEditIndex(-3);
+    setEditOriginalCardId(catalogCard.id);
+    setEditCard({
+      ...catalogCard,
+      image: catalogCard.image ?? '',
+      flavor: catalogCard.flavor ?? '',
+      effects: catalogCard.effects?.map((effect) => ({ ...effect })),
+    });
+    setEditEffectValues(nextEffectValues);
+    setEditEffectsText(JSON.stringify(valuesToEffects(nextEffectValues), null, 2));
+    setCreateCardModuleId('');
+    setEditError('');
+  };
+
+  const saveEdit = () => {
+    if (editIndex < 0 && editIndex !== -3) return;
+    if (!editCard.id.trim() || !editCard.title.trim()) return;
+    const effects = parseEffects();
+    if (effects === null) return;
+    const nextCard: CardDefinition = {
+      ...editCard,
+      id: editCard.id.trim(),
+      title: editCard.title.trim(),
+      image: normalizeImagePath(editCard.image?.trim()),
+      flavor: editCard.flavor?.trim() || undefined,
+      effects,
+    };
+    if (editIndex === -3) {
+      const sourceId = editOriginalCardId || nextCard.id;
+      const ok = applyTemplateUpdate((nextTemplate) => {
+        const rewrite = (cards: CardDefinition[]) => cards.map((row) => (row.id === sourceId ? { ...nextCard } : row));
+        nextTemplate.deck = rewrite(nextTemplate.deck);
+        nextTemplate.legendaryDeck = rewrite(nextTemplate.legendaryDeck);
+        nextTemplate.rankTrack = rewrite(nextTemplate.rankTrack);
+        nextTemplate.modules = (nextTemplate.modules ?? []).map((module) => ({
+          ...module,
+          cardIds: module.cardIds.map((id) => (id === sourceId ? nextCard.id : id)),
+        }));
+      });
+      if (!ok) return;
+    } else {
+      onUpdateCard(editTarget, editIndex, nextCard);
+    }
+    setCreateCardModuleId('');
+    setEditOriginalCardId(nextCard.id);
+  };
+
+  const addFromForm = () => {
+    if (editIndex !== -2) return;
+    if (!editCard.id.trim() || !editCard.title.trim()) return;
+    const effects = parseEffects();
+    if (effects === null) return;
+    const nextCard: CardDefinition = {
+      ...editCard,
+      id: editCard.id.trim(),
+      title: editCard.title.trim(),
+      image: normalizeImagePath(editCard.image?.trim()),
+      flavor: editCard.flavor?.trim() || undefined,
+      effects,
+    };
+    if (createCardModuleId) {
+      const ok = applyTemplateUpdate((nextTemplate) => {
+        nextTemplate[editTarget] = [...nextTemplate[editTarget], nextCard];
+        nextTemplate.modules = (nextTemplate.modules ?? []).map((module) => (
+          module.id === createCardModuleId && !module.cardIds.includes(nextCard.id)
+            ? { ...module, cardIds: [...module.cardIds, nextCard.id], cardCount: Math.max(module.cardCount, module.cardIds.length + 1) }
+            : module
+        ));
+      });
+      if (!ok) return;
+    } else {
+      onAddCustomCard(editTarget, nextCard);
+    }
+    setEditIndex(-1);
+    setCreateCardModuleId('');
+    setEditError('');
+  };
+
+  const applyTemplateUpdate = (mutate: (next: SharedDeckTemplate) => void): boolean => {
+    const nextTemplate: SharedDeckTemplate = {
+      deck: sharedDeckTemplate.deck.map((card) => ({ ...card })),
+      legendaryDeck: sharedDeckTemplate.legendaryDeck.map((card) => ({ ...card })),
+      rankTrack: sharedDeckTemplate.rankTrack.map((card) => ({ ...card })),
+      deckBackImage: sharedDeckTemplate.deckBackImage,
+      modules: (sharedDeckTemplate.modules ?? []).map((module) => ({ ...module, cardIds: [...module.cardIds] })),
+      gameSetup: {
+        ...sharedDeckTemplate.gameSetup,
+        optionalMainDeckModuleIds: [...(sharedDeckTemplate.gameSetup?.optionalMainDeckModuleIds ?? [])],
+      },
+    };
+    mutate(nextTemplate);
+    const error = onImportTemplate(JSON.stringify(nextTemplate, null, 2));
+    if (error) {
+      setDeckManagerStatus(`${t.moduleManagerErrorPrefix}: ${error}`);
+      return false;
+    }
+    return true;
+  };
+
+  useEffect(() => {
+    const modules = sharedDeckTemplate.modules ?? [];
+    if (modules.length === 0) return;
+    const setup = sharedDeckTemplate.gameSetup ?? { optionalMainDeckModuleIds: [] };
+    const byId = new Map(modules.map((module) => [module.id, module] as const));
+    const moduleIdsByTarget = {
+      deck: new Set(modules.filter((m) => m.target === 'deck').flatMap((m) => m.cardIds)),
+      legendaryDeck: new Set(modules.filter((m) => m.target === 'legendaryDeck').flatMap((m) => m.cardIds)),
+      rankTrack: new Set(modules.filter((m) => m.target === 'rankTrack').flatMap((m) => m.cardIds)),
+    };
+    const missingDeckIds = Array.from(
+      new Set(
+        sharedDeckTemplate.deck
+          .map((card) => card.id)
+          .filter((id) => !moduleIdsByTarget.deck.has(id)),
+      ),
+    );
+    const missingLegendaryIds = Array.from(
+      new Set(
+        sharedDeckTemplate.legendaryDeck
+          .map((card) => card.id)
+          .filter((id) => !moduleIdsByTarget.legendaryDeck.has(id)),
+      ),
+    );
+    const missingRankIds = Array.from(
+      new Set(
+        sharedDeckTemplate.rankTrack
+          .map((card) => card.id)
+          .filter((id) => !moduleIdsByTarget.rankTrack.has(id)),
+      ),
+    );
+    if (missingDeckIds.length === 0 && missingLegendaryIds.length === 0 && missingRankIds.length === 0) return;
+
+    const targetByDeckCategory = (category: CardCategory): string | undefined => {
+      if (category === 'LYAP') return setup.lyapModuleId;
+      if (category === 'SCANDAL') return setup.scandalModuleId;
+      if (category === 'SUPPORT') return setup.supportModuleId;
+      if (category === 'COMMAND') return setup.commandModuleId;
+      if (category === 'VVNZ') {
+        const fromSetup = (setup.optionalMainDeckModuleIds ?? []).find((id) => byId.get(id)?.category === 'VVNZ');
+        if (fromSetup) return fromSetup;
+        return modules.find((m) => m.moduleType === 'SYSTEM_MODULE' && m.category === 'VVNZ' && m.target === 'deck')?.id;
+      }
+      return undefined;
+    };
+
+    const addByModuleId = new Map<string, Set<string>>();
+    const queue = (moduleId: string | undefined, cardId: string) => {
+      if (!moduleId) return;
+      const module = byId.get(moduleId);
+      if (!module) return;
+      if (!addByModuleId.has(moduleId)) addByModuleId.set(moduleId, new Set<string>());
+      addByModuleId.get(moduleId)?.add(cardId);
+    };
+
+    missingDeckIds.forEach((cardId) => {
+      const card = sharedDeckTemplate.deck.find((row) => row.id === cardId);
+      if (!card) return;
+      queue(targetByDeckCategory(card.category), cardId);
+    });
+    missingLegendaryIds.forEach((cardId) => queue(setup.legendaryModuleId, cardId));
+    missingRankIds.forEach((cardId) => queue(setup.rankModuleId, cardId));
+
+    if (addByModuleId.size === 0) return;
+    void applyTemplateUpdate((nextTemplate) => {
+      nextTemplate.modules = (nextTemplate.modules ?? []).map((module) => {
+        const toAdd = addByModuleId.get(module.id);
+        if (!toAdd || toAdd.size === 0) return module;
+        const merged = [...module.cardIds, ...Array.from(toAdd).filter((id) => !module.cardIds.includes(id))];
+        return { ...module, cardIds: merged, cardCount: Math.max(module.cardCount, merged.length) };
+      });
+    });
+  }, [sharedDeckTemplate]);
+
+  const applyModuleAction = (moduleId: DeckModuleId, action: DeckModuleAction) => {
+    const module = deckModules.find((row) => row.id === moduleId);
+    if (!module) {
+      setDeckManagerStatus(t.moduleNotFound);
+      return;
+    }
+    const byId = new Map(cardCatalog.map((card) => [card.id, card] as const));
+    const source = module.cardIds.map((id) => byId.get(id)).filter(Boolean).map((card) => ({ ...(card as CardDefinition) }));
+    const targetKey = module.target;
+
+    const ok = applyTemplateUpdate((nextTemplate) => {
+      const existingCards = nextTemplate[targetKey];
+      const existingIds = new Set(existingCards.map((card) => card.id));
+      if (action === 'remove') {
+        nextTemplate[targetKey] = existingCards.filter((card) => !module.cardIds.includes(card.id));
+      } else if (action === 'replace') {
+        const sameCategoryModuleIds = new Set(
+          deckModules
+            .filter((row) => row.id !== module.id && row.target === module.target && row.category === module.category)
+            .flatMap((row) => row.cardIds),
+        );
+        const rest = existingCards.filter((card) => !module.cardIds.includes(card.id) && !sameCategoryModuleIds.has(card.id));
+        nextTemplate[targetKey] = [...rest, ...source];
+      } else {
+        nextTemplate[targetKey] = [...existingCards, ...source.filter((card) => !existingIds.has(card.id))];
+      }
+      if (module.deckBackImage && action !== 'remove') {
+        nextTemplate.deckBackImage = normalizeImagePath(module.deckBackImage);
+      }
+      const setup = nextTemplate.gameSetup;
+      const ensureOptional = new Set(setup.optionalMainDeckModuleIds ?? []);
+      if (module.moduleType === 'MAIN_DECK_MODULE') {
+        if (module.category === 'LYAP' && action !== 'remove') setup.lyapModuleId = module.id;
+        if (module.category === 'SCANDAL' && action !== 'remove') setup.scandalModuleId = module.id;
+        if (module.category === 'SUPPORT' && action !== 'remove') setup.supportModuleId = module.id;
+        if (module.category === 'COMMAND' && action !== 'remove') setup.commandModuleId = module.id;
+        if (action === 'remove') {
+          if (setup.lyapModuleId === module.id) setup.lyapModuleId = undefined;
+          if (setup.scandalModuleId === module.id) setup.scandalModuleId = undefined;
+          if (setup.supportModuleId === module.id) setup.supportModuleId = undefined;
+          if (setup.commandModuleId === module.id) setup.commandModuleId = undefined;
+        }
+      }
+      if (module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck') {
+        if (action === 'remove') ensureOptional.delete(module.id);
+        else ensureOptional.add(module.id);
+        setup.optionalMainDeckModuleIds = [...ensureOptional];
+      }
+      if (module.moduleType === 'SEPARATE_DECK_MODULE' && module.category === 'LEGENDARY') {
+        if (action === 'remove' && setup.legendaryModuleId === module.id) setup.legendaryModuleId = undefined;
+        if (action !== 'remove') setup.legendaryModuleId = module.id;
+      }
+      if (module.moduleType === 'VISUAL_TRACK_MODULE' && module.category === 'RANK') {
+        if (action === 'remove' && setup.rankModuleId === module.id) setup.rankModuleId = undefined;
+        if (action !== 'remove') setup.rankModuleId = module.id;
+      }
+    });
+
+    if (!ok) return;
+    const label = module.name;
+    const verb = action === 'add'
+      ? t.moduleActionAdded
+      : action === 'replace'
+        ? t.moduleActionReplaced
+        : t.moduleActionRemoved;
+    setDeckManagerStatus(`${t.moduleActionStatusPrefix} ${label}: ${verb}.`);
+  };
+
+  const startCreateCardForModule = (moduleId: string) => {
+    const module = deckModules.find((row) => row.id === moduleId);
+    if (module?.category === 'RANK' || module?.target === 'rankTrack') {
+      setDeckManagerStatus(t.rankCardsManagedInRanks);
+      return;
+    }
+    const nextTarget: DeckTarget = module?.target ?? 'deck';
+    const defaultCategory: CardCategory = module?.defaultCategory
+      ?? (module?.category === 'COMMAND' ? 'COMMAND' : undefined)
+      ?? (nextTarget === 'legendaryDeck' ? 'LEGENDARY' : 'SUPPORT');
     const fresh = blankCard();
-    setEditTarget(deckTarget);
+    setEditTarget(nextTarget);
     setEditIndex(-2);
     setEditCard({
       ...fresh,
@@ -333,28 +613,104 @@ export const AdminPage = ({
     const nextEffectValues = zeroEffectValues();
     setEditEffectValues(nextEffectValues);
     setEditEffectsText(JSON.stringify(valuesToEffects(nextEffectValues), null, 2));
+    setCreateCardModuleId(moduleId);
     setEditError('');
   };
 
-  const handleAddCardFromCatalog = (nextTarget: 'deck' | 'legendaryDeck', cardId: string): boolean => {
-    const deckTarget = nextTarget as DeckTarget;
-    const nextIndex = sharedDeckTemplate[deckTarget].length;
-    const sourceCard = cardCatalog.find((card) => card.id === cardId);
-    const added = onAddCard(deckTarget, cardId);
-    if (!added || !sourceCard) return false;
-    if (deckTarget === 'deck' && categoryFilter !== 'ALL' && sourceCard.category !== categoryFilter) {
-      setCategoryFilter('ALL');
+  const removeCardAtFromEditor = (target: DeckTarget, index: number) => {
+    const card = sharedDeckTemplate[target]?.[index];
+    if (!card) return;
+    const ok = applyTemplateUpdate((nextTemplate) => {
+      nextTemplate[target] = nextTemplate[target].filter((_, i) => i !== index);
+      nextTemplate.modules = (nextTemplate.modules ?? []).map((module) => (
+        module.cardIds.includes(card.id)
+          ? { ...module, cardIds: module.cardIds.filter((id) => id !== card.id), cardCount: Math.max(0, module.cardCount - 1) }
+          : module
+      ));
+    });
+    if (!ok) return;
+    if (editTarget === target && editIndex === index) {
+      setEditIndex(-1);
+      setCreateCardModuleId('');
+      setEditOriginalCardId('');
     }
-    setTarget(deckTarget);
-    beginEdit(deckTarget, nextIndex, sourceCard);
-    setSelectedCardId('');
-    window.setTimeout(() => {
-      const listItem = document.querySelector('.admin-deck-list ul li:last-child');
-      if (listItem instanceof HTMLElement) {
-        listItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  const saveDeckModule = (nextModule: {
+    id: string;
+    name: string;
+    moduleType: DeckModuleDefinition['moduleType'];
+    category: DeckModuleCategory;
+    cardCount: number;
+    enabled: boolean;
+    target: DeckTarget;
+    cardIds: string[];
+    defaultCategory?: CardCategory;
+    deckBackImage?: string;
+  }) => {
+    const normalizedId = nextModule.id.trim().toLowerCase();
+    if (!normalizedId) return;
+    const normalized: DeckModuleDef = {
+      ...nextModule,
+      id: normalizedId,
+      name: nextModule.name.trim() || normalizedId,
+      cardIds: Array.from(new Set(nextModule.cardIds.map((id) => id.trim()).filter(Boolean))),
+      cardCount: Math.max(0, Number(nextModule.cardCount || nextModule.cardIds.length || 0)),
+      deckBackImage: normalizeImagePath(nextModule.deckBackImage?.trim()),
+    };
+    const ok = applyTemplateUpdate((nextTemplate) => {
+      const prev = nextTemplate.modules ?? [];
+      const idx = prev.findIndex((row) => row.id === normalized.id);
+      const nextModules = idx === -1
+        ? [...prev, normalized]
+        : prev.map((row, i) => (i === idx ? normalized : row));
+      nextTemplate.modules = nextModules;
+      const nextSetup = { ...nextTemplate.gameSetup, optionalMainDeckModuleIds: [...(nextTemplate.gameSetup?.optionalMainDeckModuleIds ?? [])] };
+      if (normalized.moduleType === 'MAIN_DECK_MODULE') {
+        if (normalized.category === 'LYAP' && !nextSetup.lyapModuleId) nextSetup.lyapModuleId = normalized.id;
+        if (normalized.category === 'SCANDAL' && !nextSetup.scandalModuleId) nextSetup.scandalModuleId = normalized.id;
+        if (normalized.category === 'SUPPORT' && !nextSetup.supportModuleId) nextSetup.supportModuleId = normalized.id;
+        if (normalized.category === 'COMMAND' && !nextSetup.commandModuleId) nextSetup.commandModuleId = normalized.id;
       }
-    }, 80);
-    return true;
+      if (normalized.moduleType === 'SYSTEM_MODULE' && normalized.target === 'deck' && normalized.enabled) {
+        if (!nextSetup.optionalMainDeckModuleIds.includes(normalized.id)) nextSetup.optionalMainDeckModuleIds.push(normalized.id);
+      }
+      if (normalized.moduleType === 'SEPARATE_DECK_MODULE' && normalized.category === 'LEGENDARY' && !nextSetup.legendaryModuleId) {
+        nextSetup.legendaryModuleId = normalized.id;
+      }
+      if (normalized.moduleType === 'VISUAL_TRACK_MODULE' && normalized.category === 'RANK' && !nextSetup.rankModuleId) {
+        nextSetup.rankModuleId = normalized.id;
+      }
+      if (!nextSetup.legendaryDeckMode) nextSetup.legendaryDeckMode = 'separate';
+      nextTemplate.gameSetup = nextSetup;
+    });
+    if (!ok) return;
+    setDeckManagerStatus(`${t.moduleActionStatusPrefix} ${normalized.name}: ${t.moduleSavedStatus}`);
+  };
+
+  const deleteDeckModule = (moduleId: string) => {
+    const ok = applyTemplateUpdate((nextTemplate) => {
+      nextTemplate.modules = (nextTemplate.modules ?? []).filter((row) => row.id !== moduleId);
+      const setup = nextTemplate.gameSetup;
+      if (setup.lyapModuleId === moduleId) setup.lyapModuleId = undefined;
+      if (setup.scandalModuleId === moduleId) setup.scandalModuleId = undefined;
+      if (setup.supportModuleId === moduleId) setup.supportModuleId = undefined;
+      if (setup.commandModuleId === moduleId) setup.commandModuleId = undefined;
+      if (setup.legendaryModuleId === moduleId) setup.legendaryModuleId = undefined;
+      if (setup.rankModuleId === moduleId) setup.rankModuleId = undefined;
+      setup.optionalMainDeckModuleIds = (setup.optionalMainDeckModuleIds ?? []).filter((id) => id !== moduleId);
+    });
+    if (!ok) return;
+    setDeckManagerStatus(t.moduleDeletedStatus);
+  };
+
+  const setLegendaryDeckMode = (mode: 'separate' | 'merged') => {
+    const ok = applyTemplateUpdate((nextTemplate) => {
+      nextTemplate.gameSetup.legendaryDeckMode = mode;
+    });
+    if (!ok) return;
+    const modeLabel = mode === 'merged' ? t.legendaryModeMerged : t.legendaryModeSeparate;
+    setDeckManagerStatus(`${t.legendaryModeLabel}: ${modeLabel}.`);
   };
 
   const runImport = () => {
@@ -401,6 +757,11 @@ export const AdminPage = ({
       legendaryDeck: sharedDeckTemplate.legendaryDeck.map((card) => ({ ...card })),
       rankTrack: sharedDeckTemplate.rankTrack.map((card) => ({ ...card })),
       deckBackImage: sharedDeckTemplate.deckBackImage,
+      modules: (sharedDeckTemplate.modules ?? []).map((module) => ({ ...module, cardIds: [...module.cardIds] })),
+      gameSetup: {
+        ...sharedDeckTemplate.gameSetup,
+        optionalMainDeckModuleIds: [...(sharedDeckTemplate.gameSetup?.optionalMainDeckModuleIds ?? [])],
+      },
       [importTarget]: [...sharedDeckTemplate[importTarget], ...normalizedCards],
     };
 
@@ -418,9 +779,7 @@ export const AdminPage = ({
         : t.rankTrackDeckLabel;
     const suffix = effectiveImportCategoryMode === 'AS_IS' ? t.importCategoryAsIs : effectiveImportCategoryMode;
     setImportStatus(
-      lang === 'uk'
-        ? `Імпорт успішний: додано ${normalizedCards.length} карт у «${targetLabel}» (категорія: ${suffix}).`
-        : `Import successful: added ${normalizedCards.length} cards to "${targetLabel}" (category: ${suffix}).`,
+      `${t.importSuccessAddedPrefix} ${normalizedCards.length} ${t.importSuccessCardsWord} ${t.importSuccessInto} "${targetLabel}" (${t.importSuccessCategory}: ${suffix}).`,
     );
   };
   const exportToFile = () => {
@@ -447,7 +806,7 @@ export const AdminPage = ({
       cardId,
     });
     if (!path) {
-      setEditError(error ?? (lang === 'uk' ? 'Помилка завантаження' : 'Upload failed'));
+      setEditError(error ?? t.uploadFailedGeneric);
       return null;
     }
     return path;
@@ -461,7 +820,7 @@ export const AdminPage = ({
     uploadOriginalFromCropDraft,
     applyCropAndUpload,
     cancelCropDraft,
-    uploadDeckBackImage,
+    uploadDeckBackImage: _uploadDeckBackImage,
   } = useAdminImageTools({
     lang,
     editCard,
@@ -650,19 +1009,15 @@ export const AdminPage = ({
       }
 
       setGitActionMessage(
-        lang === 'uk'
-          ? `Перегенерацію завершено. Перевірено: ${scanned}, оновлено: ${updated}, пропущено webp: ${skippedWebp}, видалено оригінали: ${deletedOriginals}, помилок: ${failed}.`
-          : `Regeneration complete. Scanned: ${scanned}, updated: ${updated}, skipped webp: ${skippedWebp}, deleted originals: ${deletedOriginals}, failed: ${failed}.`,
+        `${t.regenDonePrefix}. ${t.regenScannedLabel}: ${scanned}, ${t.regenUpdatedLabel}: ${updated}, ${t.regenSkippedWebpLabel}: ${skippedWebp}, ${t.regenDeletedOriginalsLabel}: ${deletedOriginals}, ${t.regenFailedLabel}: ${failed}.`,
       );
       if (errorLines.length > 0) {
         setGitActionLog(
           [
-            lang === 'uk' ? 'Лог перегенерації (перші помилки):' : 'Regeneration log (first errors):',
+            t.regenLogHeader,
             ...errorLines,
             failed > errorLines.length
-              ? (lang === 'uk'
-                  ? `... ще ${failed - errorLines.length} помилок`
-                  : `... and ${failed - errorLines.length} more errors`)
+              ? `... ${failed - errorLines.length} ${t.regenMoreErrors}`
               : '',
           ]
             .filter(Boolean)
@@ -688,12 +1043,12 @@ export const AdminPage = ({
     const value = src ?? '';
     return `${value}${value.includes('?') ? '&' : '?'}v=${imagePreviewNonce}`;
   };
-  const imageSrc = normalizeImagePath(selectedCard?.image) ?? (selectedCard ? `/cards/${selectedCard.id}.png` : '');
-  const getImageSrc = (card: CardDefinition) => normalizeImagePath(card.image) ?? `/cards/${card.id}.png`;
   const closeEditor = () => {
     setEditIndex(-1);
+    setCreateCardModuleId('');
     setEditError('');
   };
+  const isCreateCardMode = editIndex === -2;
   const inlineEditor = (
     <div className="admin-inline-editor">
       <h4>{t.cardEditor}</h4>
@@ -835,7 +1190,7 @@ export const AdminPage = ({
       <h5>{t.effectsDelta}</h5>
       <div className="admin-editor-grid">
         {effectResourceKeys.map((key) => (
-          <label key={`effect-${key}`}>{key}
+          <label key={`effect-${key}`}>{key === 'rank' ? t.rankResource : t.resources[key as keyof typeof t.resources]}
             <input
               type="number"
               value={editEffectValues[key]}
@@ -854,7 +1209,7 @@ export const AdminPage = ({
       {editError ? <p className="admin-error">{editError}</p> : null}
       <p className="admin-controls">
         <button type="button" onClick={saveEdit}>{t.saveCard}</button>
-        <button type="button" onClick={addFromForm}>{t.addCustomCard}</button>
+        <button type="button" onClick={addFromForm} disabled={!isCreateCardMode}>{t.addCustomCard}</button>
         <button type="button" onClick={closeEditor}>{t.close}</button>
       </p>
     </div>
@@ -949,39 +1304,29 @@ export const AdminPage = ({
           t={t}
           lang={lang}
           deckStats={deckStats}
-          target={target === 'rankTrack' ? 'deck' : target}
-          setTarget={(v) => setTarget(v as DeckTarget)}
-          categoryFilter={categoryFilter}
-          setCategoryFilter={(v) => setCategoryFilter(v as CategoryFilter)}
-          categories={categories}
-          selectedCardId={selectedCardId}
-          setSelectedCardId={setSelectedCardId}
-          filteredCatalog={filteredCatalog}
-          onAddCard={(tabTarget, cardId) => handleAddCardFromCatalog(tabTarget, cardId)}
-          selectedCard={selectedCard}
-          withCacheBust={withCacheBust}
-          imageSrc={imageSrc}
-          onShuffleDeck={onShuffleDeck}
-          onResetTemplate={onResetTemplate}
-          deckBackImageInput={deckBackImageInput}
-          setDeckBackImageInput={setDeckBackImageInput}
-          onSetDeckBackImage={onSetDeckBackImage}
-          uploadDeckBackImage={uploadDeckBackImage}
           sharedDeckTemplate={sharedDeckTemplate}
-          getImageSrc={getImageSrc}
-          beginEdit={(tabTarget, index, card) => beginEdit(tabTarget as DeckTarget, index, card)}
-          onRemoveCard={(tabTarget, index) => onRemoveCard(tabTarget as DeckTarget, index)}
-          editTarget={editTarget === 'rankTrack' ? 'deck' : editTarget}
+          editTarget={editTarget}
           editIndex={editIndex}
           inlineEditor={inlineEditor}
-          onStartCreateCard={startCreateCard}
+          onModuleAction={(moduleId, action) => applyModuleAction(moduleId, action)}
+          deckManagerStatus={deckManagerStatus}
+          onStartCreateCardForModule={startCreateCardForModule}
+          onEditCardAt={openCardEditorAt}
+          onEditCardById={openCardEditorById}
+          onRemoveCardAt={removeCardAtFromEditor}
+          cardCatalog={cardCatalog}
+          modules={deckModules}
+          onSaveModule={saveDeckModule}
+          onDeleteModule={deleteDeckModule}
+          sharedRanks={sharedRanks}
+          onSetLegendaryDeckMode={setLegendaryDeckMode}
         />
       ) : null}
 
       {activeTab === 'import' ? (
         <AdminImportTab
           t={t}
-          importTarget={importTarget === 'rankTrack' ? 'deck' : importTarget}
+          importTarget={importTarget}
           setImportTarget={(v) => setImportTarget(v as DeckTarget)}
           importCategoryMode={importCategoryMode}
           setImportCategoryMode={(v) => setImportCategoryMode(v as ImportCategoryMode)}
@@ -1044,6 +1389,9 @@ export const AdminPage = ({
           setSimulationCount={setSimulationCount}
           simulationGameMode={simulationGameMode}
           setSimulationGameMode={setSimulationGameMode}
+          simulationOptionalModules={optionalSimulationModules}
+          simulationOptionalModuleIds={simulationOptionalModuleIds}
+          setSimulationOptionalModuleIds={setSimulationOptionalModuleIds}
           simulationRunning={simulationRunning}
           runSimulation={runSimulation}
           simulationReport={simulationReport}

@@ -11,6 +11,9 @@ const RESOURCE_ORDER: ResourceKey[] = ['time', 'reputation', 'discipline', 'docu
 
 type PendingSelection =
   | { type: 'hand-lyap'; cardId: string }
+  | { type: 'hand-scandal'; cardId: string }
+  | { type: 'draw-lyap'; cardId: string }
+  | { type: 'draw-scandal'; cardId: string }
   | { type: 'legendary-drone'; cardId: string }
   | { type: 'legendary-water'; cardId: string };
 
@@ -23,6 +26,46 @@ type SidePanelTab = 'events' | 'chat';
 
 const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
   stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
+
+const buildReplacementSlots = (
+  resources: Record<ResourceKey, number>,
+  effects: CardDefinition['effects'],
+): { slots: ResourceKey[]; poolAfterDirect: Record<ResourceKey, number> } => {
+  const tmp = { ...resources };
+  const slots: ResourceKey[] = [];
+  (effects ?? []).forEach((effect) => {
+    if (effect.resource === 'rank' || effect.value >= 0) return;
+    const need = Math.abs(effect.value);
+    const have = Math.max(0, tmp[effect.resource] ?? 0);
+    const direct = Math.min(have, need);
+    tmp[effect.resource] = have - direct;
+    let missing = need - direct;
+    while (missing > 0) {
+      slots.push(effect.resource);
+      slots.push(effect.resource);
+      missing -= 1;
+    }
+  });
+  return { slots, poolAfterDirect: tmp };
+};
+
+const isReplacementPrefixValid = (
+  resources: Record<ResourceKey, number>,
+  effects: CardDefinition['effects'],
+  selected: ResourceKey[],
+): boolean => {
+  const { slots, poolAfterDirect } = buildReplacementSlots(resources, effects);
+  if (selected.length > slots.length) return false;
+  const pool = { ...poolAfterDirect };
+  for (let index = 0; index < selected.length; index += 1) {
+    const forbidden = slots[index];
+    const chosen = selected[index];
+    if (chosen === forbidden) return false;
+    if ((pool[chosen] ?? 0) <= 0) return false;
+    pool[chosen] -= 1;
+  }
+  return true;
+};
 
 const isPlayAllowedForCard = (args: {
   card: CardDefinition;
@@ -78,7 +121,8 @@ export const BoardV2 = ({
   const resourceLabels: Record<ResourceKey, string> = t.resources;
   const isCurrentPlayer = ctx?.currentPlayer === id;
   const stage = ctx?.activePlayers?.[id] as string | undefined;
-  const canDraw = isCurrentPlayer && !draftPending && stage === 'draw';
+  const hasPendingDrawAuto = Boolean(G?.pendingDrawAutoResolution && G.pendingDrawAutoResolution.sourcePlayerID === id);
+  const canDraw = isCurrentPlayer && !draftPending && stage === 'draw' && !hasPendingDrawAuto;
   const canPlay = isCurrentPlayer && !draftPending && (stage === 'play' || stage === 'end');
   const canEndTurn = isCurrentPlayer && !draftPending && (stage === 'play' || stage === 'end');
   const extraHandPlayTokens = G?.extraHandPlayTokens?.[id] ?? 0;
@@ -95,6 +139,8 @@ export const BoardV2 = ({
   const [pendingSelection, setPendingSelection] = useState<PendingSelection | null>(null);
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
   const [selectedResource, setSelectedResource] = useState<ResourceKey | null>(null);
+  const [replacementSelectionsByTarget, setReplacementSelectionsByTarget] = useState<Record<string, ResourceKey[]>>({});
+  const [activeReplacementTargetId, setActiveReplacementTargetId] = useState<string | null>(null);
   const [draftSelection, setDraftSelection] = useState<string[]>([]);
   const [notice, setNotice] = useState<Notice>(null);
   const [gameoverModalClosed, setGameoverModalClosed] = useState<boolean>(false);
@@ -170,8 +216,31 @@ export const BoardV2 = ({
     setPendingSelection(null);
     setSelectedTargetId(null);
     setSelectedResource(null);
+    setReplacementSelectionsByTarget({});
+    setActiveReplacementTargetId(null);
     setDraftSelection([]);
   }, [ctx?.turn, stage, id]);
+
+  useEffect(() => {
+    const pending = G?.pendingDrawAutoResolution;
+    if (!pending || pending.sourcePlayerID !== id || stage !== 'draw') {
+      if (pendingSelection?.type === 'draw-lyap' || pendingSelection?.type === 'draw-scandal') {
+        setPendingSelection(null);
+        setReplacementSelectionsByTarget({});
+        setActiveReplacementTargetId(null);
+      }
+      return;
+    }
+    const nextType = pending.kind === 'LYAP' ? 'draw-lyap' : 'draw-scandal';
+    if (pendingSelection?.type !== nextType || pendingSelection.cardId !== pending.card.id) {
+      setPendingSelection({ type: nextType, cardId: pending.card.id } as PendingSelection);
+      setSelectedTargetId(null);
+      setSelectedResource(null);
+      setReplacementSelectionsByTarget({});
+      setActiveReplacementTargetId(pending.kind === 'SCANDAL' ? (Object.keys(G?.players ?? {})[0] ?? null) : id);
+      postNotice('info', `${v2.replacementSelection}: ${cardTitle(pending.card.id, pending.card.title, lang)}`);
+    }
+  }, [G?.pendingDrawAutoResolution, G?.players, id, stage, lang]);
 
   useEffect(() => {
     setGameoverModalClosed(false);
@@ -288,7 +357,18 @@ export const BoardV2 = ({
     if (card.category === 'LYAP') {
       setPendingSelection({ type: 'hand-lyap', cardId: card.id });
       setSelectedTargetId(null);
+      setReplacementSelectionsByTarget({});
+      setActiveReplacementTargetId(null);
       postNotice('info', `${v2.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
+      return;
+    }
+    if (card.category === 'SCANDAL') {
+      const targets = opponentIds.filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
+      setPendingSelection({ type: 'hand-scandal', cardId: card.id });
+      setSelectedTargetId(null);
+      setReplacementSelectionsByTarget({});
+      setActiveReplacementTargetId(targets[0] ?? null);
+      postNotice('info', `${v2.pickResource}: ${cardTitle(card.id, card.title, lang)}`);
       return;
     }
     moves.playCard(card.id, [], undefined);
@@ -317,7 +397,79 @@ export const BoardV2 = ({
     if (!pendingSelection) return;
     if (pendingSelection.type === 'hand-lyap') {
       if (!selectedTargetId) return postNotice('error', v2.targetRequired);
-      moves.playCard(pendingSelection.cardId, [], selectedTargetId);
+      const selectedCard = hand.find((card) => card.id === pendingSelection.cardId);
+      if (!selectedCard) return postNotice('error', v2.actionUnavailable);
+      const shielded = Number(G?.lyapScandalShieldUntilTurn?.[selectedTargetId] ?? 0) > Number(ctx?.turn ?? 0);
+      const targetResources = G?.resources?.[selectedTargetId];
+      if (!targetResources) return postNotice('error', v2.actionUnavailable);
+      if (shielded) {
+        moves.playCard(pendingSelection.cardId, [], selectedTargetId);
+      } else {
+        const required = buildReplacementSlots(targetResources, selectedCard.effects).slots.length;
+        const selected = replacementSelectionsByTarget[selectedTargetId] ?? [];
+        if (selected.length !== required) return postNotice('error', v2.replacementIncomplete);
+        if (!isReplacementPrefixValid(targetResources, selectedCard.effects, selected)) {
+          return postNotice('error', v2.replacementInvalid);
+        }
+        moves.playCard(pendingSelection.cardId, selected, selectedTargetId);
+      }
+    }
+    if (pendingSelection.type === 'hand-scandal') {
+      const selectedCard = hand.find((card) => card.id === pendingSelection.cardId);
+      if (!selectedCard) return postNotice('error', v2.actionUnavailable);
+      const targets = opponentIds.filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
+      const replacementByTarget: Record<string, ResourceKey[]> = {};
+      for (const pid of targets) {
+        const targetResources = G?.resources?.[pid];
+        if (!targetResources) continue;
+        const required = buildReplacementSlots(targetResources, selectedCard.effects).slots.length;
+        const selected = replacementSelectionsByTarget[pid] ?? [];
+        if (selected.length !== required) {
+          setActiveReplacementTargetId(pid);
+          return postNotice('error', v2.replacementIncomplete);
+        }
+        if (!isReplacementPrefixValid(targetResources, selectedCard.effects, selected)) {
+          setActiveReplacementTargetId(pid);
+          return postNotice('error', v2.replacementInvalid);
+        }
+        replacementByTarget[pid] = selected;
+      }
+      (moves as any).playCard(pendingSelection.cardId, [], undefined, replacementByTarget);
+    }
+    if (pendingSelection.type === 'draw-lyap') {
+      const pendingCard = G?.pendingDrawAutoResolution?.card;
+      if (!pendingCard) return postNotice('error', v2.actionUnavailable);
+      const targetResources = G?.resources?.[id];
+      if (!targetResources) return postNotice('error', v2.actionUnavailable);
+      const required = buildReplacementSlots(targetResources, pendingCard.effects).slots.length;
+      const selected = replacementSelectionsByTarget[id] ?? [];
+      if (selected.length !== required) return postNotice('error', v2.replacementIncomplete);
+      if (!isReplacementPrefixValid(targetResources, pendingCard.effects, selected)) {
+        return postNotice('error', v2.replacementInvalid);
+      }
+      (moves as any).resolveDrawAutoCard?.(selected, {});
+    }
+    if (pendingSelection.type === 'draw-scandal') {
+      const pendingCard = G?.pendingDrawAutoResolution?.card;
+      if (!pendingCard) return postNotice('error', v2.actionUnavailable);
+      const targets = Object.keys(G?.players ?? {}).filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
+      const replacementByTarget: Record<string, ResourceKey[]> = {};
+      for (const pid of targets) {
+        const targetResources = G?.resources?.[pid];
+        if (!targetResources) continue;
+        const required = buildReplacementSlots(targetResources, pendingCard.effects).slots.length;
+        const selected = replacementSelectionsByTarget[pid] ?? [];
+        if (selected.length !== required) {
+          setActiveReplacementTargetId(pid);
+          return postNotice('error', v2.replacementIncomplete);
+        }
+        if (!isReplacementPrefixValid(targetResources, pendingCard.effects, selected)) {
+          setActiveReplacementTargetId(pid);
+          return postNotice('error', v2.replacementInvalid);
+        }
+        replacementByTarget[pid] = selected;
+      }
+      (moves as any).resolveDrawAutoCard?.([], replacementByTarget);
     }
     if (pendingSelection.type === 'legendary-drone') {
       if (!selectedTargetId) return postNotice('error', v2.targetRequired);
@@ -330,12 +482,74 @@ export const BoardV2 = ({
     setPendingSelection(null);
     setSelectedTargetId(null);
     setSelectedResource(null);
+    setReplacementSelectionsByTarget({});
+    setActiveReplacementTargetId(null);
     setNotice(null);
   };
 
   const currentPendingCard = pendingSelection
-    ? [...hand, ...legendaryHand].find((c) => c.id === pendingSelection.cardId)
+    ? (pendingSelection.type === 'draw-lyap' || pendingSelection.type === 'draw-scandal'
+      ? (G?.pendingDrawAutoResolution?.card ?? null)
+      : [...hand, ...legendaryHand].find((c) => c.id === pendingSelection.cardId))
     : null;
+  const replacementTargetIds = useMemo(() => {
+    if (!pendingSelection || !currentPendingCard) return [] as string[];
+    if (pendingSelection.type === 'hand-lyap') {
+      if (!selectedTargetId) return [] as string[];
+      const shielded = Number(G?.lyapScandalShieldUntilTurn?.[selectedTargetId] ?? 0) > Number(ctx?.turn ?? 0);
+      return shielded ? [] as string[] : [selectedTargetId];
+    }
+    if (pendingSelection.type === 'hand-scandal') {
+      return opponentIds.filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
+    }
+    if (pendingSelection.type === 'draw-lyap') {
+      const shielded = Number(G?.lyapScandalShieldUntilTurn?.[id] ?? 0) > Number(ctx?.turn ?? 0);
+      return shielded ? [] as string[] : [id];
+    }
+    if (pendingSelection.type === 'draw-scandal') {
+      return Object.keys(G?.players ?? {}).filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
+    }
+    return [] as string[];
+  }, [pendingSelection, currentPendingCard, selectedTargetId, G?.lyapScandalShieldUntilTurn, G?.players, ctx?.turn, opponentIds, id]);
+  const replacementActiveTargetId = (pendingSelection?.type === 'hand-lyap' || pendingSelection?.type === 'draw-lyap')
+    ? ((pendingSelection?.type === 'draw-lyap'
+      ? (replacementTargetIds.includes(id) ? id : null)
+      : (selectedTargetId && replacementTargetIds.includes(selectedTargetId) ? selectedTargetId : null)))
+    : (activeReplacementTargetId && replacementTargetIds.includes(activeReplacementTargetId)
+      ? activeReplacementTargetId
+      : (replacementTargetIds[0] ?? null));
+  const replacementActiveTargetResources = replacementActiveTargetId ? (G?.resources?.[replacementActiveTargetId] ?? null) : null;
+  const replacementActiveSlots = (replacementActiveTargetResources && currentPendingCard)
+    ? buildReplacementSlots(replacementActiveTargetResources, currentPendingCard.effects).slots
+    : [];
+  const replacementActiveSelected = replacementActiveTargetId ? (replacementSelectionsByTarget[replacementActiveTargetId] ?? []) : [];
+  const appendReplacementResource = (resource: ResourceKey) => {
+    if (!replacementActiveTargetId || !replacementActiveTargetResources || !currentPendingCard) return;
+    const next = [...replacementActiveSelected, resource];
+    if (!isReplacementPrefixValid(replacementActiveTargetResources, currentPendingCard.effects, next)) return;
+    if (next.length > replacementActiveSlots.length) return;
+    setReplacementSelectionsByTarget((prev) => ({ ...prev, [replacementActiveTargetId]: next }));
+  };
+  const undoReplacementResource = () => {
+    if (!replacementActiveTargetId) return;
+    const prevSelected = replacementSelectionsByTarget[replacementActiveTargetId] ?? [];
+    if (!prevSelected.length) return;
+    setReplacementSelectionsByTarget((prev) => ({
+      ...prev,
+      [replacementActiveTargetId]: prevSelected.slice(0, -1),
+    }));
+  };
+
+  useEffect(() => {
+    if (pendingSelection?.type !== 'hand-scandal') return;
+    if (replacementTargetIds.length === 0) {
+      setActiveReplacementTargetId(null);
+      return;
+    }
+    if (!activeReplacementTargetId || !replacementTargetIds.includes(activeReplacementTargetId)) {
+      setActiveReplacementTargetId(replacementTargetIds[0]);
+    }
+  }, [pendingSelection, replacementTargetIds, activeReplacementTargetId]);
 
   if (!G || !ctx || !resources) {
     return <section className="board"><p>{t.loading}</p></section>;
@@ -344,6 +558,11 @@ export const BoardV2 = ({
   const promoteReason = getPromoteBlockedReason();
   const activeSelectionNeedsTarget = pendingSelection?.type === 'hand-lyap' || pendingSelection?.type === 'legendary-drone';
   const activeSelectionNeedsResource = pendingSelection?.type === 'legendary-water';
+  const activeSelectionNeedsReplacement =
+    pendingSelection?.type === 'hand-lyap'
+    || pendingSelection?.type === 'hand-scandal'
+    || pendingSelection?.type === 'draw-lyap'
+    || pendingSelection?.type === 'draw-scandal';
   const pendingCost: Partial<Record<ResourceKey, number>> = {};
   const highlightedResources = new Set<ResourceKey>();
   const deficitByResource: Partial<Record<ResourceKey, number>> = {};
@@ -542,9 +761,17 @@ export const BoardV2 = ({
             {pendingSelection ? (
               <div className="game-ui-v2-selection-panel game-ui-v2-selection-panel-inline">
                 <div>
-                  <p className="game-ui-v2-kicker">{activeSelectionNeedsTarget ? v2.pickTarget : v2.pickResource}</p>
+                  <p className="game-ui-v2-kicker">
+                    {activeSelectionNeedsTarget
+                      ? v2.pickTarget
+                      : (activeSelectionNeedsReplacement ? v2.replacementSelection : v2.pickResource)}
+                  </p>
                   <h3>{currentPendingCard ? cardTitle(currentPendingCard.id, currentPendingCard.title, lang) : pendingSelection.cardId}</h3>
-                  <p className="game-ui-v2-subtle">{activeSelectionNeedsTarget ? v2.selectableTargetHint : v2.selectableResourceHint}</p>
+                  <p className="game-ui-v2-subtle">
+                    {activeSelectionNeedsTarget
+                      ? v2.selectableTargetHint
+                      : (activeSelectionNeedsReplacement ? v2.replacementGuide : v2.selectableResourceHint)}
+                  </p>
                 </div>
                 {activeSelectionNeedsTarget ? (
                   <div className="game-ui-v2-chip-row">
@@ -563,6 +790,62 @@ export const BoardV2 = ({
                     ))}
                   </div>
                 ) : null}
+                {activeSelectionNeedsReplacement ? (
+                  <>
+                    {replacementTargetIds.length > 0 ? (
+                      <>
+                        <p className="game-ui-v2-subtle">{v2.replacementTarget}</p>
+                        <div className="game-ui-v2-chip-row">
+                          {replacementTargetIds.map((pid) => {
+                            const targetResources = G?.resources?.[pid];
+                            const required = targetResources && currentPendingCard
+                              ? buildReplacementSlots(targetResources, currentPendingCard.effects).slots.length
+                              : 0;
+                            const selected = replacementSelectionsByTarget[pid]?.length ?? 0;
+                            return (
+                              <button
+                                key={`replacement-target-${pid}`}
+                                type="button"
+                                className={`game-ui-v2-pick-chip${replacementActiveTargetId === pid ? ' is-selected' : ''}`}
+                                onClick={() => setActiveReplacementTargetId(pid)}
+                              >
+                                {playerLabelById(pid)} ({selected}/{required})
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {replacementActiveTargetId ? (
+                          <>
+                            <p className="game-ui-v2-subtle">
+                              {v2.replacementProgress}: {replacementActiveSelected.length}/{replacementActiveSlots.length}
+                            </p>
+                            <div className="game-ui-v2-chip-row">
+                              {RESOURCE_ORDER.map((key) => (
+                                <button
+                                  key={`replacement-resource-${key}`}
+                                  type="button"
+                                  className={`game-ui-v2-pick-chip${
+                                    replacementActiveSlots[replacementActiveSelected.length] === key ? ' is-selected' : ''
+                                  }`}
+                                  onClick={() => appendReplacementResource(key)}
+                                >
+                                  {resourceLabels[key]} ({replacementActiveTargetResources?.[key] ?? 0})
+                                </button>
+                              ))}
+                            </div>
+                            <div className="game-ui-v2-selection-actions">
+                              <button type="button" className="ghost" onClick={undoReplacementResource}>
+                                {v2.undoPick}
+                              </button>
+                            </div>
+                          </>
+                        ) : null}
+                      </>
+                    ) : (
+                      <p className="game-ui-v2-subtle">{v2.replacementNotRequired}</p>
+                    )}
+                  </>
+                ) : null}
                 {activeSelectionNeedsResource ? (
                   <div className="game-ui-v2-chip-row">
                     {RESOURCE_ORDER.map((key) => (
@@ -579,7 +862,20 @@ export const BoardV2 = ({
                 ) : null}
                 <div className="game-ui-v2-selection-actions">
                   <button type="button" onClick={confirmPendingSelection}>{v2.confirm}</button>
-                  <button type="button" className="ghost" onClick={() => { setPendingSelection(null); setSelectedTargetId(null); setSelectedResource(null); setNotice(null); }}>{v2.cancel}</button>
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={() => {
+                      setPendingSelection(null);
+                      setSelectedTargetId(null);
+                      setSelectedResource(null);
+                      setReplacementSelectionsByTarget({});
+                      setActiveReplacementTargetId(null);
+                      setNotice(null);
+                    }}
+                  >
+                    {v2.cancel}
+                  </button>
                 </div>
               </div>
             ) : null}
@@ -678,7 +974,7 @@ export const BoardV2 = ({
                   <select value={handFilter} onChange={(e) => setHandFilter(e.target.value as HandFilter)}>
                     <option value="all">{v2.filterAll}</option>
                     <option value="playable">{v2.filterPlayable}</option>
-                    {['LYAP', 'SCANDAL', 'SUPPORT', 'DECISION', 'VVNZ'].map((category) => (
+                    {['LYAP', 'SCANDAL', 'SUPPORT', 'COMMAND', 'VVNZ'].map((category) => (
                       <option key={`filter-${category}`} value={category}>{categoryLabel(category, lang)}</option>
                     ))}
                   </select>

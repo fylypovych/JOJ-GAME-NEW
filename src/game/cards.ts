@@ -4,12 +4,12 @@ export const baseDeck: CardDefinition[] = [
   { id: 'lyap-01', title: 'Protocol Slip', category: 'LYAP', cost: { discipline: 1 } },
   { id: 'scandal-01', title: 'Leaked Memo', category: 'SCANDAL', cost: { reputation: 1 } },
   { id: 'support-01', title: 'Quiet Ally', category: 'SUPPORT', cost: { documents: 1 } },
-  { id: 'decision-01', title: 'Emergency Decree', category: 'DECISION', cost: { time: 1 } },
+  { id: 'decision-01', title: 'Emergency Decree', category: 'COMMAND', cost: { time: 1 } },
   { id: 'vvnz-01', title: 'VVNZ Directive', category: 'VVNZ', cost: { tech: 1 } },
   { id: 'lyap-02', title: 'Delayed Signature', category: 'LYAP', cost: { time: 1 } },
   { id: 'support-02', title: 'Field Report', category: 'SUPPORT', cost: { documents: 1 } },
   { id: 'scandal-02', title: 'Whistleblower', category: 'SCANDAL', cost: { reputation: 2 } },
-  { id: 'decision-02', title: 'Cabinet Vote', category: 'DECISION', cost: { discipline: 1, time: 1 } },
+  { id: 'decision-02', title: 'Cabinet Vote', category: 'COMMAND', cost: { discipline: 1, time: 1 } },
 ];
 
 export const legendaryCards: CardDefinition[] = [

@@ -4,7 +4,7 @@
       "id": "lyap-01",
       "title": "Журнал обліку журналів",
       "category": "LYAP",
-      "image": "/cards/card-1771613013689.png",
+      "image": "/cards/card-1771613013689.webp",
       "effects": [
         {
           "resource": "time",
@@ -21,7 +21,7 @@
       "id": "lyap-02",
       "title": "Три сантиметри відступу",
       "category": "LYAP",
-      "image": "/cards/3-1771613029493.png",
+      "image": "/cards/3-1771613029493.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -34,7 +34,7 @@
       "id": "lyap-03",
       "title": "Кава на журналі обліку",
       "category": "LYAP",
-      "image": "/cards/lyap-03.png",
+      "image": "/cards/lyap-03.webp",
       "effects": [
         {
           "resource": "documents",
@@ -47,7 +47,7 @@
       "id": "lyap-04",
       "title": "Загублений бланк №27",
       "category": "LYAP",
-      "image": "/cards/lyap-04.png",
+      "image": "/cards/lyap-04.webp",
       "effects": [
         {
           "resource": "documents",
@@ -60,7 +60,7 @@
       "id": "lyap-05",
       "title": "План евакуації з орфографічною помилкою",
       "category": "LYAP",
-      "image": "/cards/lyap-05.png",
+      "image": "/cards/lyap-05.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -73,7 +73,7 @@
       "id": "lyap-06",
       "title": "П’ять нарад за один день",
       "category": "LYAP",
-      "image": "/cards/5-1771613043832.png",
+      "image": "/cards/5-1771613043832.webp",
       "effects": [
         {
           "resource": "time",
@@ -86,7 +86,7 @@
       "id": "lyap-07",
       "title": "Підпис за відсутнього начальника",
       "category": "LYAP",
-      "image": "/cards/card-1771613058005.png",
+      "image": "/cards/card-1771613058005.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -103,7 +103,7 @@
       "id": "lyap-08",
       "title": "Фотозвіт без фото",
       "category": "LYAP",
-      "image": "/cards/card-1771613066196.png",
+      "image": "/cards/card-1771613066196.webp",
       "effects": [
         {
           "resource": "tech",
@@ -116,7 +116,7 @@
       "id": "lyap-09",
       "title": "Плутанина з печатками",
       "category": "LYAP",
-      "image": "/cards/card-1771613078854.png",
+      "image": "/cards/card-1771613078854.webp",
       "effects": [
         {
           "resource": "time",
@@ -133,7 +133,7 @@
       "id": "lyap-10",
       "title": "Карта-схема загублена у Google Maps",
       "category": "LYAP",
-      "image": "/cards/card-1771613088169.png",
+      "image": "/cards/card-1771613088169.webp",
       "effects": [
         {
           "resource": "tech",
@@ -146,7 +146,7 @@
       "id": "lyap-11",
       "title": "Плутанина з особовими справами",
       "category": "LYAP",
-      "image": "/cards/3-1771613102827.png",
+      "image": "/cards/3-1771613102827.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -163,7 +163,7 @@
       "id": "lyap-12",
       "title": "Рапорт на ім’я іншого командира",
       "category": "LYAP",
-      "image": "/cards/card-1771613115148.png",
+      "image": "/cards/card-1771613115148.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -176,7 +176,7 @@
       "id": "lyap-13",
       "title": "Неправильна дата у наказі",
       "category": "LYAP",
-      "image": "/cards/card-1771613133973.png",
+      "image": "/cards/card-1771613133973.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -189,7 +189,7 @@
       "id": "lyap-14",
       "title": "Втрачений журнал",
       "category": "LYAP",
-      "image": "/cards/card-1771613146108.png",
+      "image": "/cards/card-1771613146108.webp",
       "effects": [
         {
           "resource": "documents",
@@ -202,7 +202,7 @@
       "id": "lyap-15",
       "title": "Подвійна звітність",
       "category": "LYAP",
-      "image": "/cards/card-1771613156561.png",
+      "image": "/cards/card-1771613156561.webp",
       "effects": [
         {
           "resource": "time",
@@ -215,7 +215,7 @@
       "id": "lyap-16",
       "title": "Рапорт без дати",
       "category": "LYAP",
-      "image": "/cards/card-1771613164308.png",
+      "image": "/cards/card-1771613164308.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -228,7 +228,7 @@
       "id": "lyap-17",
       "title": "Неправильний шрифт у наказі",
       "category": "LYAP",
-      "image": "/cards/card-1771613170671.png",
+      "image": "/cards/card-1771613170671.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -241,7 +241,7 @@
       "id": "lyap-18",
       "title": "Майте повагу до звання",
       "category": "LYAP",
-      "image": "/cards/card-1771613178947.png",
+      "image": "/cards/card-1771613178947.webp",
       "effects": [
         {
           "resource": "rank",
@@ -254,7 +254,7 @@
       "id": "lyap-19",
       "title": "СЗЧ",
       "category": "LYAP",
-      "image": "/cards/card-1771613186122.png",
+      "image": "/cards/card-1771613186122.webp",
       "effects": [
         {
           "resource": "time",
@@ -271,7 +271,7 @@
       "id": "lyap-20",
       "title": "Задувка",
       "category": "LYAP",
-      "image": "/cards/card-1771613196642.png",
+      "image": "/cards/card-1771613196642.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -284,6 +284,5 @@
       ],
       "flavor": "Видихай рівно, вдихай повагу."
     }
-  ],
-  "legendaryDeck": []
+  ]
 }

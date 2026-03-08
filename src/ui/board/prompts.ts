@@ -10,6 +10,13 @@ type PromptDeps = {
   resources: Record<ResourceKey, number>;
   playerLabelById: (id: string | null | undefined) => string;
   chooseLyapTargetPrompt: string;
+  promptEnterPlayerOrNumber: string;
+  promptMinimumRank: string;
+  promptChooseDroneTarget: string;
+  promptDroneMinRankBlocked: string;
+  promptDroneSeatsBlocked: string;
+  promptChooseResourceRestore: string;
+  promptEnterResourceOrNumber: string;
 };
 
 const rankSeatLimit = (playerCount: number): number => {
@@ -21,12 +28,19 @@ const rankSeatLimit = (playerCount: number): number => {
 export const createBoardPrompts = ({
   G,
   currentPlayerID,
-  lang,
+  lang: _lang,
   sharedRanks,
   resourceLabels,
   resources,
   playerLabelById,
   chooseLyapTargetPrompt,
+  promptEnterPlayerOrNumber,
+  promptMinimumRank,
+  promptChooseDroneTarget,
+  promptDroneMinRankBlocked,
+  promptDroneSeatsBlocked,
+  promptChooseResourceRestore,
+  promptEnterResourceOrNumber,
 }: PromptDeps) => {
   const promptLyapTarget = (): string | null => {
     const playerIds = Object.keys(G?.players ?? {}).filter((pid) => pid !== currentPlayerID);
@@ -35,7 +49,7 @@ export const createBoardPrompts = ({
       .map((pid, index) => `${index + 1}: ${playerLabelById(pid)} (#${pid})`)
       .join('\n');
     const value = window.prompt(
-      `${chooseLyapTargetPrompt}:\n${options}\n${lang === 'uk' ? 'Введіть номер або playerID.' : 'Enter option number or playerID.'}`,
+      `${chooseLyapTargetPrompt}:\n${options}\n${promptEnterPlayerOrNumber}`,
     );
     if (value === null) return null;
     const trimmed = value.trim();
@@ -52,11 +66,11 @@ export const createBoardPrompts = ({
         const currentRankId = G?.ranks?.[pid] ?? '';
         const currentIdx = sharedRanks.findIndex((r) => r.id === currentRankId);
         const lower = currentIdx > 0 ? sharedRanks[currentIdx - 1] : null;
-        return `${index + 1}: ${playerLabelById(pid)} (#${pid})${lower ? ` -> ${lower.name}` : ` (${lang === 'uk' ? 'мінімальне звання' : 'minimum rank'})`}`;
+        return `${index + 1}: ${playerLabelById(pid)} (#${pid})${lower ? ` -> ${lower.name}` : ` (${promptMinimumRank})`}`;
       })
       .join('\n');
     const value = window.prompt(
-      `${lang === 'uk' ? 'Оберіть ціль для «Дрончик»' : 'Choose target for "Drone"'}:\n${options}\n${lang === 'uk' ? 'Введіть номер або playerID.' : 'Enter option number or playerID.'}`,
+      `${promptChooseDroneTarget}:\n${options}\n${promptEnterPlayerOrNumber}`,
     );
     if (value === null) return null;
     const trimmed = value.trim();
@@ -69,11 +83,7 @@ export const createBoardPrompts = ({
     const targetRankId = G?.ranks?.[target] ?? '';
     const targetRankIdx = sharedRanks.findIndex((r) => r.id === targetRankId);
     if (targetRankIdx <= 0) {
-      window.alert(
-        lang === 'uk'
-          ? 'Проти цього гравця зараз зіграти не можна: у нього вже мінімальне звання.'
-          : 'Cannot play against this player now: they already have the minimum rank.',
-      );
+      window.alert(promptDroneMinRankBlocked);
       return null;
     }
 
@@ -83,11 +93,7 @@ export const createBoardPrompts = ({
     ).length;
     const playerCount = Object.keys(G?.players ?? {}).length || 2;
     if (occupied >= rankSeatLimit(playerCount)) {
-      window.alert(
-        lang === 'uk'
-          ? 'Проти цього гравця зараз зіграти не можна: усі місця в нижчому званні зайняті.'
-          : 'Cannot play against this player now: all seats in the lower rank are occupied.',
-      );
+      window.alert(promptDroneSeatsBlocked);
       return null;
     }
     return target;
@@ -99,9 +105,7 @@ export const createBoardPrompts = ({
       .map((key, index) => `${index + 1}: ${resourceLabels[key]} (${resources[key] ?? 0})`)
       .join('\n');
     const value = window.prompt(
-      `${lang === 'uk' ? 'Оберіть ресурс для відновлення до 3' : 'Choose a resource to restore to 3'}:\n${options}\n${
-        lang === 'uk' ? 'Введіть номер або ключ ресурсу.' : 'Enter option number or resource key.'
-      }`,
+      `${promptChooseResourceRestore}:\n${options}\n${promptEnterResourceOrNumber}`,
     );
     if (value === null) return null;
     const trimmed = value.trim();
@@ -112,4 +116,3 @@ export const createBoardPrompts = ({
 
   return { promptLyapTarget, promptDroneTarget, promptWaterResource };
 };
-

@@ -7,8 +7,14 @@
       "image": "/cards/vvnz-01.png",
       "grantRank": "junior_lieutenant",
       "effects": [
-        { "resource": "discipline", "value": 1 },
-        { "resource": "tech", "value": 1 }
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
       ],
       "flavor": "Тут навіть курсові звучать як накази."
     },
@@ -19,8 +25,14 @@
       "image": "/cards/vvnz-02.png",
       "grantRank": "junior_lieutenant",
       "effects": [
-        { "resource": "reputation", "value": 1 },
-        { "resource": "discipline", "value": 1 }
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
       ],
       "flavor": "У небі — як у звіті: головне не втратити лінію."
     },
@@ -31,8 +43,14 @@
       "image": "/cards/vvnz-03.png",
       "grantRank": "junior_lieutenant",
       "effects": [
-        { "resource": "discipline", "value": 1 },
-        { "resource": "tech", "value": 1 }
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
       ],
       "flavor": "Тут формується хребет армії — і почерк рапорту."
     },
@@ -43,8 +61,14 @@
       "image": "/cards/vvnz-04.png",
       "grantRank": "junior_lieutenant",
       "effects": [
-        { "resource": "reputation", "value": 1 },
-        { "resource": "tech", "value": 1 }
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
       ],
       "flavor": "На Півдні народжується тактика і легенди."
     },
@@ -55,8 +79,14 @@
       "image": "/cards/vvnz-05.png",
       "grantRank": "senior_master_sergeant",
       "effects": [
-        { "resource": "discipline", "value": 1 },
-        { "resource": "reputation", "value": 1 }
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "reputation",
+          "value": 1
+        }
       ],
       "flavor": "Тут порядок — не просто слово, а режим доби."
     },
@@ -67,8 +97,14 @@
       "image": "/cards/vvnz-06.png",
       "grantRank": "senior_master_sergeant",
       "effects": [
-        { "resource": "reputation", "value": 1 },
-        { "resource": "discipline", "value": 1 }
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
       ],
       "flavor": "Кордон починається не з лінії на мапі, а з характеру офіцера."
     },
@@ -79,8 +115,14 @@
       "image": "/cards/vvnz-07.png",
       "grantRank": "senior_master_sergeant",
       "effects": [
-        { "resource": "reputation", "value": 1 },
-        { "resource": "tech", "value": 1 }
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
       ],
       "flavor": "Магістерська з лідерства — і з трьома підписами."
     },
@@ -91,8 +133,14 @@
       "image": "/cards/vvnz-08.png",
       "grantRank": "senior_master_sergeant",
       "effects": [
-        { "resource": "tech", "value": 1 },
-        { "resource": "reputation", "value": 1 }
+        {
+          "resource": "tech",
+          "value": 1
+        },
+        {
+          "resource": "reputation",
+          "value": 1
+        }
       ],
       "flavor": "Коли мережа лягла — це значить, що курсант встав."
     },
@@ -103,8 +151,14 @@
       "image": "/cards/vvnz-09.png",
       "grantRank": "senior_sergeant",
       "effects": [
-        { "resource": "reputation", "value": 1 },
-        { "resource": "tech", "value": 1 }
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
       ],
       "flavor": "Швартуй документи, курсант, і тримай горизонт рівно."
     },
@@ -115,8 +169,14 @@
       "image": "/cards/vvnz-10.png",
       "grantRank": "senior_sergeant",
       "effects": [
-        { "resource": "discipline", "value": 1 },
-        { "resource": "tech", "value": 1 }
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
       ],
       "flavor": "Космос починається з польового заліку."
     },
@@ -127,8 +187,14 @@
       "image": "/cards/vvnz-11.png",
       "grantRank": "senior_sergeant",
       "effects": [
-        { "resource": "discipline", "value": 1 },
-        { "resource": "tech", "value": 1 }
+        {
+          "resource": "discipline",
+          "value": 1
+        },
+        {
+          "resource": "tech",
+          "value": 1
+        }
       ],
       "flavor": "Тут вчать тримати небо так само впевнено, як стрій."
     },
@@ -139,8 +205,14 @@
       "image": "/cards/vvnz-12.png",
       "grantRank": "senior_sergeant",
       "effects": [
-        { "resource": "reputation", "value": 1 },
-        { "resource": "discipline", "value": 1 }
+        {
+          "resource": "reputation",
+          "value": 1
+        },
+        {
+          "resource": "discipline",
+          "value": 1
+        }
       ],
       "flavor": "Тут мрія носить форму ще до звання."
     }

@@ -5,11 +5,11 @@
     "requirement": {},
     "cost": {},
     "bonus": {
-      "tech": 1,
-      "documents": 1,
       "time": 1,
       "reputation": 1,
-      "discipline": 1
+      "discipline": 1,
+      "documents": 1,
+      "tech": 1
     },
     "flavor": "Знає різницю між наказом і порадою."
   },
@@ -39,8 +39,8 @@
       "time": 2
     },
     "bonus": {
-      "documents": 1,
-      "reputation": 1
+      "reputation": 1,
+      "documents": 1
     },
     "flavor": "Молодим — приклад, старшим — пам’ятка."
   },
@@ -56,8 +56,8 @@
       "time": 2
     },
     "bonus": {
-      "tech": 1,
-      "discipline": 1
+      "discipline": 1,
+      "tech": 1
     },
     "flavor": "Перше “так точно” з нотками відповідальності."
   },
@@ -106,8 +106,8 @@
       "time": 2
     },
     "bonus": {
-      "documents": 1,
-      "reputation": 1
+      "reputation": 1,
+      "documents": 1
     },
     "flavor": "Веде журнал точніше, ніж взвод у бій."
   },
@@ -123,8 +123,8 @@
       "documents": 1
     },
     "bonus": {
-      "tech": 1,
-      "discipline": 1
+      "discipline": 1,
+      "tech": 1
     },
     "flavor": "Знає, де журнал, і хто його не здав."
   },
@@ -139,8 +139,8 @@
       "time": 2
     },
     "bonus": {
-      "tech": 1,
-      "discipline": 1
+      "discipline": 1,
+      "tech": 1
     },
     "flavor": "Майстер не тому, що вміє, а тому, що вже бачив."
   },
@@ -156,8 +156,8 @@
       "documents": 1
     },
     "bonus": {
-      "tech": 1,
-      "discipline": 1
+      "discipline": 1,
+      "tech": 1
     },
     "flavor": "Підлеглі слухають, навіть коли мовчиш."
   },
@@ -172,8 +172,8 @@
       "time": 3
     },
     "bonus": {
-      "documents": 1,
-      "reputation": 1
+      "reputation": 1,
+      "documents": 1
     },
     "flavor": "Той, хто вміє навести лад навіть у ладах."
   },
@@ -205,8 +205,8 @@
       "time": 2
     },
     "bonus": {
-      "tech": 1,
-      "discipline": 1
+      "discipline": 1,
+      "tech": 1
     },
     "flavor": "Вивчив різницю між планом і реальністю."
   },
@@ -238,8 +238,8 @@
       "time": 3
     },
     "bonus": {
-      "tech": 1,
-      "discipline": 1
+      "discipline": 1,
+      "tech": 1
     },
     "flavor": "Відповідає за все, навіть за погоду."
   },
@@ -255,8 +255,8 @@
       "time": 4
     },
     "bonus": {
-      "documents": 1,
-      "discipline": 1
+      "discipline": 1,
+      "documents": 1
     },
     "flavor": "Якщо нічого не згоріло — значить, керував майор."
   },
@@ -288,8 +288,8 @@
       "time": 5
     },
     "bonus": {
-      "documents": 1,
-      "reputation": 1
+      "reputation": 1,
+      "documents": 1
     },
     "flavor": "Розпорядження, накази, вказівки — і все з підписом."
   },
@@ -305,8 +305,8 @@
       "time": 5
     },
     "bonus": {
-      "documents": 1,
-      "discipline": 1
+      "discipline": 1,
+      "documents": 1
     },
     "flavor": "Якщо бачиш порядок — десь поруч генерал."
   },
@@ -321,8 +321,8 @@
       "time": 6
     },
     "bonus": {
-      "documents": 1,
-      "discipline": 1
+      "discipline": 1,
+      "documents": 1
     },
     "flavor": "Планує стратегічно, рахує дріб’язково."
   },
@@ -339,8 +339,8 @@
       "tech": 1
     },
     "bonus": {
-      "documents": 1,
-      "reputation": 2
+      "reputation": 2,
+      "documents": 1
     },
     "flavor": "Журнали самі тебе знаходять."
   },

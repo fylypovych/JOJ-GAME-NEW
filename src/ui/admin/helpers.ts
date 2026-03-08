@@ -1,7 +1,7 @@
 import type { CardCategory, CardDefinition, EffectResource, RankDefinition, ResourceKey } from '../../game/types';
 import type { CropDraft } from './types';
 
-export const categories: CardCategory[] = ['LYAP', 'SCANDAL', 'SUPPORT', 'DECISION', 'VVNZ'];
+export const categories: CardCategory[] = ['LYAP', 'SCANDAL', 'SUPPORT', 'COMMAND', 'VVNZ'];
 export const effectResourceKeys: EffectResource[] = ['time', 'reputation', 'discipline', 'documents', 'tech', 'rank'];
 export const rankResourceKeys: ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
 

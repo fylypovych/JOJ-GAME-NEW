@@ -98,6 +98,7 @@ export const App = () => {
   const [playerName, setPlayerName] = useState<string>(() => window.localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ?? '');
   const [roomCapacity, setRoomCapacity] = useState<number>(2);
   const [gameMode, setGameMode] = useState<GameMode>('standard');
+  const [selectedOptionalModuleIds, setSelectedOptionalModuleIds] = useState<string[]>(['vvnz_default']);
   const [matches, setMatches] = useState<LobbyMatch[]>([]);
   const [adminSelectedMatchID, setAdminSelectedMatchID] = useState<string>('');
   const [session, setSession] = useState<Session | null>(() => parseSession(window.localStorage.getItem(SESSION_STORAGE_KEY)));
@@ -177,6 +178,24 @@ export const App = () => {
     ADMIN_STORAGE_MODE_STORAGE_KEY,
   } = useDbAdminTools({ lang, adminFetch, serverUrl: SERVER_URL });
   const sharedDeckStats = getSharedDeckTemplateStats();
+  const optionalLobbyModules = useMemo(
+    () => (sharedDeckTemplate.modules ?? [])
+      .filter((module) => module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
+      .map((module) => ({
+        id: module.id,
+        name: module.name,
+        alwaysOn: module.category === 'VVNZ',
+      })),
+    [sharedDeckTemplate.modules],
+  );
+  useEffect(() => {
+    const alwaysOn = optionalLobbyModules.filter((module) => module.alwaysOn).map((module) => module.id);
+    setSelectedOptionalModuleIds((prev) => {
+      const merged = Array.from(new Set([...prev, ...alwaysOn]));
+      const allowed = new Set(optionalLobbyModules.map((module) => module.id));
+      return merged.filter((id) => allowed.has(id));
+    });
+  }, [optionalLobbyModules]);
   const galleryCards = useMemo(() => (
     [...cardCatalog]
       .filter((card) => galleryCategoryFilter === 'ALL' || card.category === galleryCategoryFilter)
@@ -300,7 +319,12 @@ export const App = () => {
     try {
       const result = await lobbyClient.createMatch(GAME_NAME, {
         numPlayers: Math.max(2, Math.min(6, roomCapacity)),
-        setupData: { gameMode },
+        setupData: {
+          gameMode,
+          gameSetup: {
+            optionalMainDeckModuleIds: selectedOptionalModuleIds,
+          },
+        },
       });
       const matchID = result.matchID;
       const joined = await lobbyClient.joinMatch(GAME_NAME, matchID, {
@@ -572,6 +596,9 @@ export const App = () => {
           error={error}
           matches={matches}
           joinRoom={(match) => { void joinRoom(match); }}
+          optionalModules={optionalLobbyModules}
+          selectedOptionalModuleIds={selectedOptionalModuleIds}
+          setSelectedOptionalModuleIds={setSelectedOptionalModuleIds}
           uiVariant={gameUiVariant}
         />
       ) : null}

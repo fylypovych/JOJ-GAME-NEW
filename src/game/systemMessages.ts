@@ -125,7 +125,7 @@ export const buildDecisionMessageText = (args: {
   flavor: string;
   targetsText: string;
 }) => {
-  const seed = `${args.seq}:${args.cardTitle}:decision`;
+  const seed = `${args.seq}:${args.cardTitle}:command`;
   const intros = [
     'оголосив рішення, яке "тимчасово назавжди"',
     'підписав документ із таким оптимізмом, ніби аудит у відпустці',

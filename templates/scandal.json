@@ -4,7 +4,7 @@
       "id": "scandal-01",
       "title": "Яйця по 17 гривень",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614354252.png",
+      "image": "/cards/card-1771614354252.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -21,7 +21,7 @@
       "id": "scandal-02",
       "title": "Куртки Резнікова",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614366040.png",
+      "image": "/cards/card-1771614366040.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -38,7 +38,7 @@
       "id": "scandal-03",
       "title": "Дрони по завищеній ціні",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614378587.png",
+      "image": "/cards/card-1771614378587.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -55,7 +55,7 @@
       "id": "scandal-04",
       "title": "Пропажа пального",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614390190.png",
+      "image": "/cards/card-1771614390190.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -68,7 +68,7 @@
       "id": "scandal-05",
       "title": "Закупівля підписів на тендер",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614425063.png",
+      "image": "/cards/card-1771614425063.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -85,7 +85,7 @@
       "id": "scandal-06",
       "title": "Пропажа дронів",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614439747.png",
+      "image": "/cards/card-1771614439747.webp",
       "effects": [
         {
           "resource": "tech",
@@ -98,7 +98,7 @@
       "id": "scandal-07",
       "title": "Списання бронежилетів як витратних",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614451008.png",
+      "image": "/cards/card-1771614451008.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -115,7 +115,7 @@
       "id": "scandal-08",
       "title": "Паперовий аудит без документів",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614500039.png",
+      "image": "/cards/card-1771614500039.webp",
       "effects": [
         {
           "resource": "time",
@@ -132,7 +132,7 @@
       "id": "scandal-09",
       "title": "Відео з полігону",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614508047.png",
+      "image": "/cards/card-1771614508047.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -145,7 +145,7 @@
       "id": "scandal-10",
       "title": "Витік наказів у пресу",
       "category": "SCANDAL",
-      "image": "/cards/card-1771615063474.png",
+      "image": "/cards/card-1771615063474.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -162,7 +162,7 @@
       "id": "scandal-11",
       "title": "Зникнення гуманітарки",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614820343.png",
+      "image": "/cards/card-1771614820343.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -179,7 +179,7 @@
       "id": "scandal-12",
       "title": "Підроблені рапорти",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614939024.png",
+      "image": "/cards/card-1771614939024.webp",
       "effects": [
         {
           "resource": "documents",
@@ -192,7 +192,7 @@
       "id": "scandal-13",
       "title": "Бюджет на ремонт даху",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614949216.png",
+      "image": "/cards/card-1771614949216.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -209,7 +209,7 @@
       "id": "scandal-14",
       "title": "Викриття корупційної схеми",
       "category": "SCANDAL",
-      "image": "/cards/card-1771615029111.png",
+      "image": "/cards/card-1771615029111.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -226,7 +226,7 @@
       "id": "scandal-15",
       "title": "Тушонка",
       "category": "SCANDAL",
-      "image": "/cards/card-1771614982549.png",
+      "image": "/cards/card-1771614982549.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -243,7 +243,7 @@
       "id": "scandal-16",
       "title": "Колаборант",
       "category": "SCANDAL",
-      "image": "/cards/card-1771615017418.png",
+      "image": "/cards/card-1771615017418.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -259,7 +259,69 @@
         }
       ],
       "flavor": "Він завжди з флешкою. І завжди “просто цікавиться”."
+    },
+    {
+      "id": "scandal-17",
+      "title": "Полковник із ОТУ",
+      "category": "SCANDAL",
+      "image": "/cards/card-1772952038855.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -2
+        }
+      ]
+    },
+    {
+      "id": "scandal-18",
+      "title": "ВЛК",
+      "category": "SCANDAL",
+      "image": "/cards/card-1772956066783.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": -1
+        },
+        {
+          "resource": "reputation",
+          "value": -1
+        }
+      ],
+      "flavor": "💬 «Черга рухається швидше, ніж рішення.»"
+    },
+    {
+      "id": "scandal-19",
+      "title": "гИометрія",
+      "category": "SCANDAL",
+      "image": "/cards/card-1772956549834.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": -1
+        },
+        {
+          "resource": "discipline",
+          "value": -1
+        }
+      ],
+      "flavor": "«Круглоє носіть. Квадратноє катать.»"
+    },
+    {
+      "id": "scandal-20",
+      "title": "Службове розслідування",
+      "category": "SCANDAL",
+      "image": "/cards/card-1772956616687.webp",
+      "effects": [
+        {
+          "resource": "reputation",
+          "value": -1
+        },
+        {
+          "resource": "tech",
+          "value": -1
+        }
+      ],
+      "flavor": "«Головне — знайти винного. Бажано швидко.»"
     }
-  ],
-  "legendaryDeck": []
+  ]
 }

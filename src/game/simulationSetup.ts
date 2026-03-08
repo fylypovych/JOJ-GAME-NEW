@@ -1,4 +1,6 @@
+import { buildDeckModulesFromTemplate } from './sharedConfig';
 import type { CardDefinition, GameMode, JojGameState, ResourceKey } from './types';
+import type { SharedGameSetup } from './sharedConfig';
 
 type SetupDeps = {
   shuffle: <T>(items: T[]) => T[];
@@ -6,77 +8,58 @@ type SetupDeps = {
   getSharedDeckTemplate: () => {
     deck: CardDefinition[];
     legendaryDeck: CardDefinition[];
+    rankTrack: CardDefinition[];
     deckBackImage?: string;
+    modules: Array<{
+      id: string;
+      name: string;
+      moduleType: 'MAIN_DECK_MODULE' | 'SEPARATE_DECK_MODULE' | 'SYSTEM_MODULE' | 'VISUAL_TRACK_MODULE';
+      category: 'LYAP' | 'SCANDAL' | 'SUPPORT' | 'COMMAND' | 'LEGENDARY' | 'VVNZ' | 'RANK';
+      cardCount: number;
+      enabled: boolean;
+      target: 'deck' | 'legendaryDeck' | 'rankTrack';
+      cardIds: string[];
+      defaultCategory?: CardDefinition['category'];
+      deckBackImage?: string;
+    }>;
+    gameSetup: {
+      lyapModuleId?: string;
+      scandalModuleId?: string;
+      supportModuleId?: string;
+      commandModuleId?: string;
+      optionalMainDeckModuleIds: string[];
+      legendaryModuleId?: string;
+      rankModuleId?: string;
+      legendaryDeckMode: 'separate' | 'merged';
+    };
   };
   getActiveRanks: () => Array<{ id: string }>;
   drawCards: (G: JojGameState, playerID: string, amount: number) => void;
-  drawLegendaryCards: (G: JojGameState, playerID: string, amount: number) => void;
+  drawLegendaryCards: (G: JojGameState, playerID: string, amount: number, sourceCards?: CardDefinition[]) => void;
   syncPlayerState: (G: JojGameState, playerID: string) => void;
   startingHandSize: number;
   startingLegendaryHandSize: number;
 };
 
-const CORE_MODULE_COUNTS = {
-  SCANDAL: 20,
-  LYAP: 20,
-  SUPPORT: 30,
-  DECISION: 30,
-} as const;
-
-const takeFixedCount = (
-  cards: CardDefinition[],
-  count: number,
-  shuffle: <T>(items: T[]) => T[],
-  cloneCard: (card: CardDefinition) => CardDefinition,
-): CardDefinition[] => {
-  const normalized = cards.map(cloneCard);
-  if (count <= 0 || normalized.length === 0) return [];
-  const shuffled = shuffle(normalized);
-  if (shuffled.length >= count) return shuffled.slice(0, count).map(cloneCard);
-  const out: CardDefinition[] = [];
-  for (let i = 0; i < count; i += 1) {
-    out.push(cloneCard(shuffled[i % shuffled.length]));
-  }
-  return out;
-};
-
-const composeMainDeckModules = (
-  cards: CardDefinition[],
-  deps: Pick<SetupDeps, 'shuffle' | 'cloneCard'>,
-): { baseDeck: CardDefinition[]; vvnzModule: CardDefinition[] } => {
-  const byCategory = {
-    SCANDAL: cards.filter((card) => card.category === 'SCANDAL'),
-    LYAP: cards.filter((card) => card.category === 'LYAP'),
-    SUPPORT: cards.filter((card) => card.category === 'SUPPORT'),
-    DECISION: cards.filter((card) => card.category === 'DECISION'),
-    VVNZ: cards.filter((card) => card.category === 'VVNZ'),
-  } as const;
-
-  return {
-    baseDeck: [
-      ...takeFixedCount(byCategory.SCANDAL, CORE_MODULE_COUNTS.SCANDAL, deps.shuffle, deps.cloneCard),
-      ...takeFixedCount(byCategory.LYAP, CORE_MODULE_COUNTS.LYAP, deps.shuffle, deps.cloneCard),
-      ...takeFixedCount(byCategory.SUPPORT, CORE_MODULE_COUNTS.SUPPORT, deps.shuffle, deps.cloneCard),
-      ...takeFixedCount(byCategory.DECISION, CORE_MODULE_COUNTS.DECISION, deps.shuffle, deps.cloneCard),
-    ],
-    vvnzModule: byCategory.VVNZ.map(deps.cloneCard),
-  };
-};
-
 export const createSimulationState = (
   deps: SetupDeps,
   playerIDs: string[],
-  options: { useMainDeck: boolean; useLegendaryDeck: boolean; gameMode?: GameMode },
+  options: { useMainDeck: boolean; useLegendaryDeck: boolean; gameMode?: GameMode; gameSetup?: Partial<SharedGameSetup> },
 ): JojGameState => {
   const sharedDeckTemplate = deps.getSharedDeckTemplate();
-  const mode = options.gameMode ?? null;
-  const modules = composeMainDeckModules(sharedDeckTemplate.deck, deps);
-  const mainDeckCards = [...modules.baseDeck.map(deps.cloneCard), ...modules.vvnzModule.map(deps.cloneCard)];
-  const legendaryCards = sharedDeckTemplate.legendaryDeck.map(deps.cloneCard);
-  const deck = mode === 'simplified'
+  const requestedMode = options.gameMode ?? null;
+  const build = buildDeckModulesFromTemplate(sharedDeckTemplate, options.gameSetup);
+  const legendaryDeckModeMerged = build.gameSetup.legendaryDeckMode === 'merged';
+  const mode = requestedMode && legendaryDeckModeMerged ? 'simplified' as const : requestedMode;
+
+  const mainDeckCards = build.mainDeck.map(deps.cloneCard);
+  const legendaryCards = options.useLegendaryDeck ? build.legendaryDeck.map(deps.cloneCard) : [];
+
+  const shouldMergeLegendary = mode === 'simplified' || legendaryDeckModeMerged;
+  const deck = shouldMergeLegendary
     ? deps.shuffle([...mainDeckCards, ...legendaryCards])
     : (options.useMainDeck ? deps.shuffle(mainDeckCards) : []);
-  const legendaryDeck = mode === 'simplified'
+  const legendaryDeck = shouldMergeLegendary
     ? []
     : mode === 'standard_plus'
       ? legendaryCards
@@ -118,6 +101,7 @@ export const createSimulationState = (
       requestedBy: null,
       votes: {},
     },
+    pendingDrawAutoResolution: null,
   };
 
   playerIDs.forEach((pid, index) => {
@@ -132,10 +116,10 @@ export const createSimulationState = (
     G.extraHandPlayTokens[pid] = 0;
     G.sukhpayZsuWatchUntilTurn[pid] = 0;
     G.sukhpayZsuPendingBonus[pid] = false;
-    G.legendaryDraftCompleted[pid] = mode !== 'standard_plus';
+    G.legendaryDraftCompleted[pid] = mode !== 'standard_plus' || legendaryCards.length === 0;
     if (G.deck.length > 0) deps.drawCards(G, pid, deps.startingHandSize);
-    if (mode === 'standard' || (!mode && options.useLegendaryDeck)) {
-      deps.drawLegendaryCards(G, pid, deps.startingLegendaryHandSize);
+    if (legendaryCards.length > 0 && (mode === 'standard' || (!mode && options.useLegendaryDeck))) {
+      deps.drawLegendaryCards(G, pid, deps.startingLegendaryHandSize, legendaryCards);
     }
     deps.syncPlayerState(G, pid);
   });

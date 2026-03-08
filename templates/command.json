@@ -1,0 +1,489 @@
+[
+  {
+    "id": "decision-01",
+    "title": "Зразковий рапорт",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871420538.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 1
+      },
+      {
+        "resource": "discipline",
+        "value": 1
+      }
+    ],
+    "flavor": "Писав три дні, затвердили за п’ять хвилин."
+  },
+  {
+    "id": "decision-02",
+    "title": "Вдалий виступ на шикуванні",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871439446.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 2
+      }
+    ],
+    "flavor": "Голос тремтів, але аплодували стоячи."
+  },
+  {
+    "id": "decision-03",
+    "title": "Перемога у спортивних змаганнях",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871453560.webp",
+    "effects": [
+      {
+        "resource": "time",
+        "value": 1
+      },
+      {
+        "resource": "reputation",
+        "value": 1
+      }
+    ],
+    "flavor": "Біг швидше за накази."
+  },
+  {
+    "id": "decision-04",
+    "title": "Успішний ААR",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871467975.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 1
+      },
+      {
+        "resource": "documents",
+        "value": 2
+      }
+    ],
+    "flavor": "Помилки знайшли, винних — теж."
+  },
+  {
+    "id": "decision-05",
+    "title": "Волонтерська ініціатива",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871484518.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 1
+      },
+      {
+        "resource": "tech",
+        "value": 1
+      }
+    ],
+    "flavor": "Авторитет росте швидше, ніж принтер друкує."
+  },
+  {
+    "id": "decision-06",
+    "title": "Публікація у військовому журналі",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871500051.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 1
+      },
+      {
+        "resource": "documents",
+        "value": 1
+      }
+    ],
+    "flavor": "Твій досвід тепер у бібліотеці Міноборони."
+  },
+  {
+    "id": "decision-07",
+    "title": "Прийняття на курс лідерства",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871519462.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 1
+      },
+      {
+        "resource": "discipline",
+        "value": 1
+      }
+    ],
+    "flavor": "Після лекцій навіть командир став слухнянішим."
+  },
+  {
+    "id": "decision-08",
+    "title": "Затвердження нового SOP",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871537749.webp",
+    "effects": [
+      {
+        "resource": "discipline",
+        "value": 1
+      },
+      {
+        "resource": "documents",
+        "value": 1
+      }
+    ],
+    "flavor": "Порядок встановлено. Тимчасово."
+  },
+  {
+    "id": "decision-09",
+    "title": "Участь у навчаннях НАТО",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871551984.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 1
+      },
+      {
+        "resource": "tech",
+        "value": 1
+      }
+    ],
+    "flavor": "Справжня перемога — знайти перекладача."
+  },
+  {
+    "id": "decision-10",
+    "title": "Ефективне використання ресурсів",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871573623.webp",
+    "effects": [
+      {
+        "resource": "time",
+        "value": 1
+      },
+      {
+        "resource": "discipline",
+        "value": 1
+      }
+    ],
+    "flavor": "Скоротив витрати — збільшив звіти."
+  },
+  {
+    "id": "decision-11",
+    "title": "Вдалий брифінг перед начальством",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871588026.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 2
+      }
+    ],
+    "flavor": "Слайди говорили самі за себе."
+  },
+  {
+    "id": "decision-12",
+    "title": "Відмінна інвентаризація",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871600284.webp",
+    "effects": [
+      {
+        "resource": "discipline",
+        "value": 1
+      },
+      {
+        "resource": "documents",
+        "value": 1
+      }
+    ],
+    "flavor": "Пораховано навіть повітря в шафі."
+  },
+  {
+    "id": "decision-13",
+    "title": "Курс з кібербезпеки",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871612720.webp",
+    "effects": [
+      {
+        "resource": "tech",
+        "value": 2
+      }
+    ],
+    "flavor": "Тепер навіть принтер не ризикує зламуватись."
+  },
+  {
+    "id": "decision-14",
+    "title": "Відзнака командира",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871627089.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 2
+      }
+    ],
+    "flavor": "Підписав грамоту без єдиної помилки."
+  },
+  {
+    "id": "decision-15",
+    "title": "Призначення на нову посаду",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871647198.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 1
+      },
+      {
+        "resource": "discipline",
+        "value": 1
+      }
+    ],
+    "flavor": "Більше відповідальності, менше вихідних."
+  },
+  {
+    "id": "decision-16",
+    "title": "Успішний аудит холодильника",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871660520.webp",
+    "effects": [
+      {
+        "resource": "discipline",
+        "value": 1
+      },
+      {
+        "resource": "documents",
+        "value": 1
+      }
+    ],
+    "flavor": "Вперше все зійшлося — навіть списане."
+  },
+  {
+    "id": "decision-17",
+    "title": "Підтримка волонтерів",
+    "category": "COMMAND",
+    "image": "/cards/card-1771871672495.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 1
+      },
+      {
+        "resource": "tech",
+        "value": 1
+      }
+    ],
+    "flavor": "Замість наказу — подяка у Facebook."
+  },
+  {
+    "id": "decision-18",
+    "title": "Вдале інтерв’ю для преси",
+    "category": "COMMAND",
+    "image": "/cards/card-1771873874546.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 1
+      }
+    ],
+    "flavor": "Головне — щоб начальство не читало."
+  },
+  {
+    "id": "decision-19",
+    "title": "Успішна сертифікація підрозділу",
+    "category": "COMMAND",
+    "image": "/cards/card-1771873894734.webp",
+    "effects": [
+      {
+        "resource": "discipline",
+        "value": 2
+      }
+    ],
+    "flavor": "Всі стояли рівно. Навіть документи."
+  },
+  {
+    "id": "decision-20",
+    "title": "Покращення побутових умов",
+    "category": "COMMAND",
+    "image": "/cards/card-1771874748714.webp",
+    "effects": [
+      {
+        "resource": "time",
+        "value": 1
+      },
+      {
+        "resource": "reputation",
+        "value": 1
+      }
+    ],
+    "flavor": "Справжня розкіш — гаряча вода й порядок у журналах."
+  },
+  {
+    "id": "decision-21",
+    "title": "Перенесення термінів",
+    "category": "COMMAND",
+    "image": "/cards/card-1771873958187.webp",
+    "effects": [
+      {
+        "resource": "time",
+        "value": 1
+      },
+      {
+        "resource": "documents",
+        "value": 1
+      }
+    ],
+    "flavor": "Приїхали, побачили, написали акт."
+  },
+  {
+    "id": "decision-22",
+    "title": "Ротація командирів",
+    "category": "COMMAND",
+    "image": "/cards/card-1771873978850.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 1
+      },
+      {
+        "resource": "discipline",
+        "value": 1
+      }
+    ],
+    "flavor": "Ніхто не знає, хто головний, але всі при ділі."
+  },
+  {
+    "id": "decision-23",
+    "title": "Новий наказ про реформу",
+    "category": "COMMAND",
+    "image": "/cards/card-1771873991299.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 1
+      },
+      {
+        "resource": "documents",
+        "value": 1
+      }
+    ],
+    "flavor": "Змінюємо все, крім тих, хто змінює."
+  },
+  {
+    "id": "decision-30",
+    "title": "Необмежено придатний",
+    "category": "COMMAND",
+    "image": "/cards/card-1772964687130.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 1
+      },
+      {
+        "resource": "discipline",
+        "value": 1
+      }
+    ],
+    "flavor": "«Формулювання, яке вирішує все.»"
+  },
+  {
+    "id": "decision-24",
+    "title": "Анонімне опитування",
+    "category": "COMMAND",
+    "image": "/cards/card-1772964742729.webp",
+    "effects": [
+      {
+        "resource": "reputation",
+        "value": 1
+      },
+      {
+        "resource": "documents",
+        "value": 1
+      }
+    ],
+    "flavor": "«Головне — чесно відповісти… анонімно.»"
+  },
+  {
+    "id": "decision-25",
+    "title": "БЗВП",
+    "category": "COMMAND",
+    "image": "/cards/card-1772964779436.webp",
+    "effects": [
+      {
+        "resource": "discipline",
+        "value": 1
+      },
+      {
+        "resource": "tech",
+        "value": 1
+      }
+    ],
+    "flavor": "«Тут починається справжня служба.»"
+  },
+  {
+    "id": "decision-26",
+    "title": "Окреме розпорядження",
+    "category": "COMMAND",
+    "image": "/cards/card-1772964805573.webp",
+    "effects": [
+      {
+        "resource": "time",
+        "value": 1
+      },
+      {
+        "resource": "documents",
+        "value": 1
+      }
+    ],
+    "flavor": "«Короткий документ — довгий вплив.»"
+  },
+  {
+    "id": "decision-27",
+    "title": "Інструкція",
+    "category": "COMMAND",
+    "image": "/cards/card-1772964869593.webp",
+    "effects": [
+      {
+        "resource": "discipline",
+        "value": 1
+      },
+      {
+        "resource": "documents",
+        "value": 1
+      }
+    ],
+    "flavor": "«Як робити правильно. Теоретично.»"
+  },
+  {
+    "id": "decision-28",
+    "title": "Координаційний центр",
+    "category": "COMMAND",
+    "image": "/cards/card-1772964900628.webp",
+    "effects": [
+      {
+        "resource": "time",
+        "value": 1
+      },
+      {
+        "resource": "reputation",
+        "value": 1
+      }
+    ],
+    "flavor": "«Тепер усі звітують сюди.»"
+  },
+  {
+    "id": "decision-29",
+    "title": "Злагодження підрозділів",
+    "category": "COMMAND",
+    "image": "/cards/card-1772964939595.webp",
+    "effects": [
+      {
+        "resource": "time",
+        "value": 1
+      },
+      {
+        "resource": "discipline",
+        "value": 1
+      }
+    ],
+    "flavor": "«Коли всі нарешті працюють як один механізм.»"
+  }
+]
+
