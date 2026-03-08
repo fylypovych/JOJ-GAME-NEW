@@ -80,6 +80,7 @@ export const createSimulationState = (
     hands: {},
     legendaryHands: {},
     ranks: {},
+    rankImageByPlayer: {},
     resources: {},
     promotedThisTurn: {},
     lyapScandalShieldUntilTurn: {},

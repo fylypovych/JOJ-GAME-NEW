@@ -117,7 +117,11 @@ export const BoardV2 = ({
   const myDraftDone = G?.legendaryDraftCompleted?.[id] === true;
   const resources = G?.resources?.[id];
   const rankId = G?.ranks?.[id];
-  const rankName = sharedRanks.find((row) => row.id === (rankId ?? ''))?.name ?? rankLabel(rankId ?? '', lang);
+  const currentRank = sharedRanks.find((row) => row.id === (rankId ?? ''));
+  const rankName = currentRank?.name ?? rankLabel(rankId ?? '', lang);
+  const rankImage = normalizeImagePath(G?.rankImageByPlayer?.[id])
+    ?? normalizeImagePath(currentRank?.imageVariants?.[0])
+    ?? normalizeImagePath(currentRank?.image);
   const resourceLabels: Record<ResourceKey, string> = t.resources;
   const isCurrentPlayer = ctx?.currentPlayer === id;
   const stage = ctx?.activePlayers?.[id] as string | undefined;
@@ -693,6 +697,7 @@ export const BoardV2 = ({
                 <p className="game-ui-v2-kicker">{v2.commandCenter}</p>
                 <h3>{playerLabelById(ctx.currentPlayer)}</h3>
                 <p className="game-ui-v2-subtle">{t.turnStage}: {stageLabel(stage, t)} В· {t.yourRank}: {rankName}</p>
+                {rankImage ? <p><img src={rankImage} alt={rankName} style={{ maxHeight: 84, borderRadius: 6 }} /></p> : null}
               </div>
               <div className="game-ui-v2-command-buttons">
                 <button type="button" onClick={() => {

@@ -365,6 +365,10 @@ const isValidRank = (rank: unknown): rank is RankDefinition => {
   if (raw.cost !== undefined && (!raw.cost || typeof raw.cost !== 'object')) return false;
   if (raw.bonus !== undefined && (!raw.bonus || typeof raw.bonus !== 'object')) return false;
   if (raw.image !== undefined && typeof raw.image !== 'string') return false;
+  if (raw.imageVariants !== undefined) {
+    if (!Array.isArray(raw.imageVariants)) return false;
+    if (raw.imageVariants.some((value) => typeof value !== 'string')) return false;
+  }
   if (raw.victory !== undefined && typeof raw.victory !== 'boolean') return false;
   if (raw.flavor !== undefined && typeof raw.flavor !== 'string') return false;
   const req = raw.requirement as Record<string, unknown>;
@@ -414,11 +418,29 @@ export const setSharedRanks = (next: SharedRanks): boolean => {
       cost,
       bonus,
       image: normalizeImagePath(typeof rawRank.image === 'string' ? rawRank.image : undefined),
+      imageVariants: Array.isArray(rawRank.imageVariants)
+        ? rawRank.imageVariants
+          .map((path) => normalizeImagePath(typeof path === 'string' ? path : undefined))
+          .filter((path): path is string => Boolean(path))
+        : undefined,
       victory: rawRank.victory === true ? true : undefined,
       flavor: typeof rawRank.flavor === 'string' ? rawRank.flavor : undefined,
     });
   });
   return true;
+};
+
+export const resolveRandomRankImage = (rankId: string): string | undefined => {
+  const rank = sharedRanks.find((row) => row.id === rankId);
+  if (!rank) return undefined;
+  const variants = (rank.imageVariants ?? [])
+    .map((path) => normalizeImagePath(path))
+    .filter((path): path is string => Boolean(path));
+  if (variants.length > 0) {
+    const index = Math.floor(Math.random() * variants.length);
+    return variants[index];
+  }
+  return normalizeImagePath(rank.image);
 };
 
 export const resetSharedRanks = () => {

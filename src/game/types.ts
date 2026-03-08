@@ -40,6 +40,7 @@ export interface Rank {
   cost: Partial<Record<ResourceKey, number>>;
   bonus: Partial<Record<ResourceKey, number>>;
   image?: string;
+  imageVariants?: string[];
   victory?: boolean;
   flavor?: string;
 }
@@ -65,6 +66,7 @@ export interface JOJState {
   hands: Record<string, Card[]>;
   legendaryHands: Record<string, Card[]>;
   ranks: Record<string, string>;
+  rankImageByPlayer: Record<string, string>;
   resources: Record<string, Record<ResourceKey, number>>;
   promotedThisTurn: Record<string, boolean>;
   lyapScandalShieldUntilTurn: Record<string, number>;

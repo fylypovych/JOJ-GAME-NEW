@@ -67,7 +67,7 @@ export const AdminDeckTab = ({
   modules: ModuleDef[];
   onSaveModule: (module: ModuleDef) => void;
   onDeleteModule: (moduleId: string) => void;
-  sharedRanks: Array<{ id: string; name: string; image?: string }>;
+  sharedRanks: Array<{ id: string; name: string; image?: string; imageVariants?: string[] }>;
   onSetLegendaryDeckMode: (mode: LegendaryDeckMode) => void;
 }) => {
   const [innerTab, setInnerTab] = useState<DeckInnerTab>('manager');
@@ -134,7 +134,12 @@ export const AdminDeckTab = ({
       return sharedRanks.map((rank, index) => ({
         target: 'rankTrack' as DeckTarget,
         index,
-        card: { id: `rank-${rank.id}`, title: rank.name, image: rank.image, __rankId: rank.id },
+        card: {
+          id: `rank-${rank.id}`,
+          title: rank.name,
+          image: (Array.isArray(rank.imageVariants) && rank.imageVariants.length > 0 ? rank.imageVariants[0] : rank.image),
+          __rankId: rank.id,
+        },
         isRank: true,
       }));
     }

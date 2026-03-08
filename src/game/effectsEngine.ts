@@ -8,11 +8,13 @@ export type EffectSummary = {
 type EffectsEngineDeps = {
   resourceKeys: readonly ResourceKey[];
   getActiveRanks: () => Array<{ id: string }>;
+  onRankChanged?: (G: JojGameState, playerID: string, fromRankId: string, toRankId: string) => void;
 };
 
 export const createEffectsEngine = ({
   resourceKeys,
   getActiveRanks,
+  onRankChanged,
 }: EffectsEngineDeps) => {
   const hasResources = (resources: Record<ResourceKey, number>, cost: Partial<Record<ResourceKey, number>>): boolean =>
     resourceKeys.every((key) => (resources[key] ?? 0) >= (cost[key] ?? 0));
@@ -98,7 +100,9 @@ export const createEffectsEngine = ({
     const currentRankId = G.ranks[playerID];
     const currentRankIdx = Math.max(0, ranks.findIndex((r) => r.id === currentRankId));
     const nextIdx = Math.max(0, Math.min(ranks.length - 1, currentRankIdx + delta));
-    G.ranks[playerID] = ranks[nextIdx].id;
+    const nextRankId = ranks[nextIdx].id;
+    G.ranks[playerID] = nextRankId;
+    if (nextRankId !== currentRankId) onRankChanged?.(G, playerID, currentRankId, nextRankId);
   };
 
   const summarizeAppliedDiff = (

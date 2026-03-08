@@ -33,6 +33,7 @@ export const useAdminRanksEditor = ({
     id: '',
     name: '',
     image: '',
+    imageVariants: [],
     requirement: {},
     cost: {},
     bonus: {},
@@ -49,6 +50,7 @@ export const useAdminRanksEditor = ({
   const updateRankAt = (index: number, updater: (rank: RankDefinition) => RankDefinition) => {
     setEditableRanks((prev) => prev.map((rank, i) => (i === index ? updater({
       ...rank,
+      imageVariants: Array.isArray(rank.imageVariants) ? [...rank.imageVariants] : [],
       requirement: { ...rank.requirement },
       cost: { ...rank.cost },
       bonus: { ...rank.bonus },
@@ -71,6 +73,23 @@ export const useAdminRanksEditor = ({
     setRanksImportStatus('');
   };
 
+  const attachRankVariantImageFile = async (index: number, rankId: string, file: File | null) => {
+    if (!file) return;
+    const optimized = await optimizeBlobForUpload(file, file.name, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
+    if (!optimized) {
+      setRanksImportError(lang === 'uk' ? 'Не вдалося обробити файл зображення' : 'Failed to process image file');
+      return;
+    }
+    const path = await uploadDataUrl(optimized.filename, optimized.dataUrl, `${rankId || 'rank'}-variant`);
+    if (!path) return;
+    updateRankAt(index, (row) => ({
+      ...row,
+      imageVariants: Array.from(new Set([...(row.imageVariants ?? []), path])),
+    }));
+    setRanksImportError('');
+    setRanksImportStatus('');
+  };
+
   const attachRankDraftImageFile = async (file: File | null) => {
     if (!file) return;
     const optimized = await optimizeBlobForUpload(file, file.name, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
@@ -85,9 +104,27 @@ export const useAdminRanksEditor = ({
     setRanksImportStatus('');
   };
 
+  const attachRankDraftVariantImageFile = async (file: File | null) => {
+    if (!file) return;
+    const optimized = await optimizeBlobForUpload(file, file.name, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
+    if (!optimized) {
+      setRanksImportError(lang === 'uk' ? 'Не вдалося обробити файл зображення' : 'Failed to process image file');
+      return;
+    }
+    const path = await uploadDataUrl(optimized.filename, optimized.dataUrl, `${rankDraft.id || 'rank-draft'}-variant`);
+    if (!path) return;
+    setRankDraft((prev) => ({
+      ...prev,
+      imageVariants: Array.from(new Set([...(prev.imageVariants ?? []), path])),
+    }));
+    setRanksImportError('');
+    setRanksImportStatus('');
+  };
+
   const saveRanks = () => {
     const next = editableRanks.map((row) => ({
       ...row,
+      imageVariants: Array.isArray(row.imageVariants) ? [...row.imageVariants] : [],
       requirement: { ...row.requirement },
       cost: { ...row.cost },
       bonus: { ...row.bonus },
@@ -108,6 +145,7 @@ export const useAdminRanksEditor = ({
     const next: RankDefinition[] = [
       ...editableRanks.map((row) => ({
         ...row,
+        imageVariants: Array.isArray(row.imageVariants) ? [...row.imageVariants] : [],
         requirement: { ...row.requirement },
         cost: { ...row.cost },
         bonus: { ...row.bonus },
@@ -115,6 +153,8 @@ export const useAdminRanksEditor = ({
       {
         id,
         name,
+        image: rankDraft.image?.trim() || undefined,
+        imageVariants: (rankDraft.imageVariants ?? []).map((path) => path.trim()).filter(Boolean),
         requirement: { ...rankDraft.requirement },
         cost: { ...rankDraft.cost },
         bonus: { ...rankDraft.bonus },
@@ -123,7 +163,7 @@ export const useAdminRanksEditor = ({
     setEditableRanks(next);
     setRanksImportStatus('');
     setRanksImportError('');
-    setRankDraft({ id: '', name: '', requirement: {}, cost: {}, bonus: {} });
+    setRankDraft({ id: '', name: '', image: '', imageVariants: [], requirement: {}, cost: {}, bonus: {} });
   };
 
   const removeRankAt = (index: number) => {
@@ -195,7 +235,9 @@ export const useAdminRanksEditor = ({
     setRanksImportStatus,
     updateRankAt,
     attachRankImageFile,
+    attachRankVariantImageFile,
     attachRankDraftImageFile,
+    attachRankDraftVariantImageFile,
     saveRanks,
     addRank,
     removeRankAt,

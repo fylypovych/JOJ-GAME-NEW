@@ -18,6 +18,7 @@ const mkState = (): JojGameState => ({
   },
   hands: { '0': [], '1': [] }, legendaryHands: { '0': [], '1': [] },
   ranks: { '0': 'recruit', '1': 'recruit' },
+  rankImageByPlayer: {},
   resources: {
     '0': { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 },
     '1': { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 },
@@ -65,4 +66,3 @@ test('promoteRank respects seat limit for 2 players', () => {
   const ok = engine.promoteRank(G, '0', 2);
   assert.equal(ok, false);
 });
-

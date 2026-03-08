@@ -860,7 +860,9 @@ export const AdminPage = ({
     setRanksImportStatus,
     updateRankAt,
     attachRankImageFile,
+    attachRankVariantImageFile,
     attachRankDraftImageFile,
+    attachRankDraftVariantImageFile,
     saveRanks,
     addRank,
     removeRankAt,
@@ -1382,11 +1384,13 @@ export const AdminPage = ({
           editableRanks={editableRanks}
           updateRankAt={updateRankAt}
           attachRankImageFile={attachRankImageFile}
+          attachRankVariantImageFile={attachRankVariantImageFile}
           rankResourceKeys={rankResourceKeys}
           removeRankAt={removeRankAt}
           rankDraft={rankDraft}
           setRankDraft={setRankDraft}
           attachRankDraftImageFile={attachRankDraftImageFile}
+          attachRankDraftVariantImageFile={attachRankDraftVariantImageFile}
           saveRanks={saveRanks}
           addRank={addRank}
           onResetRanks={onResetRanks}

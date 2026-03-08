@@ -15,7 +15,9 @@ export const cloneRank = (rank: RankDefinition): RankDefinition => ({
   cost: { ...rank.cost },
   bonus: { ...rank.bonus },
   image: normalizeImagePath(rank.image),
+  imageVariants: Array.isArray(rank.imageVariants)
+    ? rank.imageVariants.map((path) => normalizeImagePath(path)).filter((path): path is string => Boolean(path))
+    : undefined,
   victory: rank.victory === true ? true : undefined,
   flavor: typeof rank.flavor === 'string' ? rank.flavor : undefined,
 });
-

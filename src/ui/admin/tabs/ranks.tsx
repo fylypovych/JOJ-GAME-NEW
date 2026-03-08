@@ -5,15 +5,16 @@ type T = ReturnType<typeof text>;
 export const AdminRanksTab = ({
   t, exportRanksToFile, importRanks, importRanksFromFile, ranksImportError, ranksImportStatus,
   ranksJson, setRanksJson, setRanksImportError, setRanksImportStatus, editableRanks, updateRankAt,
-  attachRankImageFile, rankResourceKeys, removeRankAt, rankDraft, setRankDraft, attachRankDraftImageFile,
+  attachRankImageFile, attachRankVariantImageFile, rankResourceKeys, removeRankAt, rankDraft, setRankDraft, attachRankDraftImageFile, attachRankDraftVariantImageFile,
   saveRanks, addRank, onResetRanks,
 }: {
   t: T; exportRanksToFile: () => void; importRanks: () => void; importRanksFromFile: (file: File | null) => void;
   ranksImportError: string; ranksImportStatus: string; ranksJson: string; setRanksJson: (v: string) => void;
   setRanksImportError: (v: string) => void; setRanksImportStatus: (v: string) => void; editableRanks: any[];
   updateRankAt: (index: number, updater: (rank: any) => any) => void; attachRankImageFile: (index: number, rankId: string, file: File | null) => Promise<void> | void;
+  attachRankVariantImageFile: (index: number, rankId: string, file: File | null) => Promise<void> | void;
   rankResourceKeys: string[]; removeRankAt: (index: number) => void; rankDraft: any; setRankDraft: (updater: any) => void;
-  attachRankDraftImageFile: (file: File | null) => Promise<void> | void; saveRanks: () => void; addRank: () => void; onResetRanks: () => void;
+  attachRankDraftImageFile: (file: File | null) => Promise<void> | void; attachRankDraftVariantImageFile: (file: File | null) => Promise<void> | void; saveRanks: () => void; addRank: () => void; onResetRanks: () => void;
 }) => (
   <>
     <h3>{t.ranksTitle}</h3>
@@ -34,6 +35,30 @@ export const AdminRanksTab = ({
           <label>{t.rankNameLabel}<input value={rank.name} onChange={(e) => updateRankAt(index, (row) => ({ ...row, name: e.target.value }))} /></label>
           <label>{t.rankImageLabel}<input value={rank.image ?? ''} onChange={(e) => updateRankAt(index, (row) => ({ ...row, image: e.target.value }))} placeholder="/cards/rank-*.webp" /></label>
           <label>{t.rankImageFileLabel}<input type="file" accept="image/*" onChange={(e) => { void attachRankImageFile(index, rank.id, e.target.files?.[0] ?? null); e.currentTarget.value = ''; }} /></label>
+          <label>{t.rankImageVariantsLabel}
+            <textarea
+              className="admin-textarea"
+              value={(rank.imageVariants ?? []).join('\n')}
+              onChange={(e) => updateRankAt(index, (row) => ({ ...row, imageVariants: e.target.value.split('\n').map((v) => v.trim()).filter(Boolean) }))}
+              placeholder="/cards/rank-1.webp"
+            />
+          </label>
+          <label>{t.rankVariantImageFileLabel}<input type="file" accept="image/*" onChange={(e) => { void attachRankVariantImageFile(index, rank.id, e.target.files?.[0] ?? null); e.currentTarget.value = ''; }} /></label>
+          {(rank.imageVariants ?? []).length > 0 ? (
+            <div>
+              <strong>{t.rankImageVariantsListLabel}</strong>
+              <ul>
+                {(rank.imageVariants ?? []).map((path: string, variantIndex: number) => (
+                  <li key={`rank-variant-${rank.id}-${variantIndex}`}>
+                    <code>{path}</code>{' '}
+                    <button type="button" onClick={() => updateRankAt(index, (row) => ({ ...row, imageVariants: (row.imageVariants ?? []).filter((_: string, i: number) => i !== variantIndex) }))}>
+                      {t.removeCard}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {rankResourceKeys.map((key) => <label key={`req-${rank.id}-${key}`}>{t.resources[key as keyof typeof t.resources]}<input type="number" min={0} value={rank.requirement[key] ?? 0} onChange={(e) => updateRankAt(index, (row) => ({ ...row, requirement: { ...row.requirement, [key]: Math.max(0, Number(e.target.value || 0)) } }))} /></label>)}
           {rankResourceKeys.map((key) => <label key={`cost-${rank.id}-${key}`}>{`${t.rankCostLabel} ${t.resources[key as keyof typeof t.resources]}`}<input type="number" min={0} value={rank.cost[key] ?? 0} onChange={(e) => updateRankAt(index, (row) => ({ ...row, cost: { ...row.cost, [key]: Math.max(0, Number(e.target.value || 0)) } }))} /></label>)}
           {rankResourceKeys.map((key) => <label key={`bonus-${rank.id}-${key}`}>{`${t.rankBonusLabel} ${t.resources[key as keyof typeof t.resources]}`}<input type="number" value={rank.bonus[key] ?? 0} onChange={(e) => updateRankAt(index, (row) => ({ ...row, bonus: { ...row.bonus, [key]: Number(e.target.value || 0) } }))} /></label>)}
@@ -46,6 +71,15 @@ export const AdminRanksTab = ({
       <label>{t.rankNameLabel}<input value={rankDraft.name} onChange={(e) => setRankDraft((prev: any) => ({ ...prev, name: e.target.value }))} /></label>
       <label>{t.rankImageLabel}<input value={rankDraft.image ?? ''} onChange={(e) => setRankDraft((prev: any) => ({ ...prev, image: e.target.value }))} placeholder="/cards/rank-*.webp" /></label>
       <label>{t.rankImageFileLabel}<input type="file" accept="image/*" onChange={(e) => { void attachRankDraftImageFile(e.target.files?.[0] ?? null); e.currentTarget.value = ''; }} /></label>
+      <label>{t.rankImageVariantsLabel}
+        <textarea
+          className="admin-textarea"
+          value={(rankDraft.imageVariants ?? []).join('\n')}
+          onChange={(e) => setRankDraft((prev: any) => ({ ...prev, imageVariants: e.target.value.split('\n').map((v: string) => v.trim()).filter(Boolean) }))}
+          placeholder="/cards/rank-1.webp"
+        />
+      </label>
+      <label>{t.rankVariantImageFileLabel}<input type="file" accept="image/*" onChange={(e) => { void attachRankDraftVariantImageFile(e.target.files?.[0] ?? null); e.currentTarget.value = ''; }} /></label>
       {rankResourceKeys.map((key) => <label key={`draft-req-${key}`}>{t.resources[key as keyof typeof t.resources]}<input type="number" min={0} value={rankDraft.requirement[key] ?? 0} onChange={(e) => setRankDraft((prev: any) => ({ ...prev, requirement: { ...prev.requirement, [key]: Math.max(0, Number(e.target.value || 0)) } }))} /></label>)}
       {rankResourceKeys.map((key) => <label key={`draft-cost-${key}`}>{`${t.rankCostLabel} ${t.resources[key as keyof typeof t.resources]}`}<input type="number" min={0} value={rankDraft.cost[key] ?? 0} onChange={(e) => setRankDraft((prev: any) => ({ ...prev, cost: { ...prev.cost, [key]: Math.max(0, Number(e.target.value || 0)) } }))} /></label>)}
       {rankResourceKeys.map((key) => <label key={`draft-bonus-${key}`}>{`${t.rankBonusLabel} ${t.resources[key as keyof typeof t.resources]}`}<input type="number" value={rankDraft.bonus[key] ?? 0} onChange={(e) => setRankDraft((prev: any) => ({ ...prev, bonus: { ...prev.bonus, [key]: Number(e.target.value || 0) } }))} /></label>)}

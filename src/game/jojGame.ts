@@ -22,6 +22,7 @@ import {
   buildDeckModulesFromTemplate,
   getActiveRanks,
   getSharedDeckTemplate,
+  resolveRandomRankImage,
   getTopRankId,
   shuffle,
   type LegendaryDeckMode,
@@ -135,6 +136,15 @@ const appendChat = (
   G: JojGameState,
   entry: { type: 'player' | 'system'; text: string; playerID?: string },
 ) => appendChatBase(G, entry, CHAT_LIMIT);
+
+const applyRankImageForPlayer = (G: JojGameState, playerID: string) => {
+  if (!G.rankImageByPlayer) G.rankImageByPlayer = {};
+  const rankId = G.ranks[playerID];
+  const image = resolveRandomRankImage(rankId);
+  if (image) G.rankImageByPlayer[playerID] = image;
+  else delete G.rankImageByPlayer[playerID];
+};
+
 const {
   hasResources,
   spendResources,
@@ -150,6 +160,9 @@ const {
 } = createEffectsEngine({
   resourceKeys,
   getActiveRanks,
+  onRankChanged: (G, playerID) => {
+    applyRankImageForPlayer(G, playerID);
+  },
 });
 export { getReplacementUnitsForCard };
 
@@ -395,6 +408,7 @@ const drawLegendaryCards = (G: JojGameState, playerID: string, amount: number, s
 };
 
 const syncPlayerState = (G: JojGameState, playerID: string): void => {
+  if (!G.rankImageByPlayer) G.rankImageByPlayer = {};
   G.players[playerID].hand = G.hands[playerID];
   G.players[playerID].rankId = G.ranks[playerID];
   G.players[playerID].resources = G.resources[playerID];
@@ -411,6 +425,9 @@ const {
   applyResourceDelta,
   clampNonNegativeResources,
   syncPlayerState,
+  onRankChanged: (G, playerID) => {
+    applyRankImageForPlayer(G, playerID);
+  },
 });
 
 const buildVvnzRankSystemMessage = (
@@ -636,6 +653,7 @@ export const jojGame: Game<JojGameState> = {
       hands: {},
       legendaryHands: {},
       ranks: {},
+      rankImageByPlayer: {},
       resources: {},
       promotedThisTurn: {},
       lyapScandalShieldUntilTurn: {},
@@ -683,6 +701,7 @@ export const jojGame: Game<JojGameState> = {
         documents: 1,
         tech: 1,
       };
+      applyRankImageForPlayer(state, playerID);
       state.players[playerID] = {
         hand: state.hands[playerID],
         rankId: state.ranks[playerID],

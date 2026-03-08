@@ -32,7 +32,11 @@ export const Board = ({
   const myDraftDone = G?.legendaryDraftCompleted?.[id] === true;
   const resources = G?.resources?.[id];
   const rankId = G?.ranks?.[id];
-  const rankName = sharedRanks.find((row) => row.id === (rankId ?? ''))?.name ?? rankLabel(rankId ?? '', lang);
+  const currentRank = sharedRanks.find((row) => row.id === (rankId ?? ''));
+  const rankName = currentRank?.name ?? rankLabel(rankId ?? '', lang);
+  const rankImage = normalizeImagePath(G?.rankImageByPlayer?.[id])
+    ?? normalizeImagePath(currentRank?.imageVariants?.[0])
+    ?? normalizeImagePath(currentRank?.image);
   const isCurrentPlayer = ctx?.currentPlayer === id;
   const stage = ctx?.activePlayers?.[id];
   const canDraw = isCurrentPlayer && !draftPending && stage === 'draw';
@@ -210,6 +214,7 @@ export const Board = ({
                 : t.stageWaiting}
         </p>
         <p>{t.yourRank}: {rankName}</p>
+        {rankImage ? <p><img src={rankImage} alt={rankName} style={{ maxHeight: 84, borderRadius: 6 }} /></p> : null}
         {G && resources ? (
           <p className="rank-next-hint">
             {buildNextRankHint({

@@ -36,6 +36,7 @@ export const cloneEditableRanks = (sharedRanks: RankDefinition[]): RankDefinitio
   sharedRanks.map((row) => ({
     ...row,
     image: row.image ?? '',
+    imageVariants: Array.isArray(row.imageVariants) ? [...row.imageVariants] : [],
     requirement: { ...row.requirement },
     cost: { ...row.cost },
     bonus: { ...row.bonus },

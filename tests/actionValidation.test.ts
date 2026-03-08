@@ -32,6 +32,7 @@ const makeState = (overrides?: Partial<JojGameState>): JojGameState => ({
   hands: { '0': [], '1': [] },
   legendaryHands: { '0': [], '1': [] },
   ranks: { '0': 'recruit', '1': 'recruit' },
+  rankImageByPlayer: {},
   resources: {
     '0': { time: 2, reputation: 2, discipline: 2, documents: 0, tech: 0 },
     '1': { time: 2, reputation: 2, discipline: 2, documents: 0, tech: 0 },

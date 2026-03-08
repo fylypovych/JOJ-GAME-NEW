@@ -10,6 +10,7 @@ type RankEngineDeps = {
   ) => void;
   clampNonNegativeResources: (resources: Record<ResourceKey, number>) => void;
   syncPlayerState: (G: JojGameState, playerID: string) => void;
+  onRankChanged?: (G: JojGameState, playerID: string, fromRankId: string, toRankId: string) => void;
 };
 
 export function rankSeatLimitForPlayerCount(playerCount: number): number {
@@ -25,6 +26,7 @@ export const createRankEngine = ({
   applyResourceDelta,
   clampNonNegativeResources,
   syncPlayerState,
+  onRankChanged,
 }: RankEngineDeps) => {
   const rankSeatLimit = rankSeatLimitForPlayerCount;
 
@@ -47,6 +49,7 @@ export const createRankEngine = ({
     applyResourceDelta(playerResources, nextRank.bonus);
     clampNonNegativeResources(playerResources);
     G.ranks[playerID] = nextRank.id;
+    onRankChanged?.(G, playerID, currentRankId, nextRank.id);
     syncPlayerState(G, playerID);
     return true;
   };
@@ -78,6 +81,7 @@ export const createRankEngine = ({
     applyResourceDelta(playerResources, targetRank.bonus);
     clampNonNegativeResources(playerResources);
     G.ranks[playerID] = targetRank.id;
+    onRankChanged?.(G, playerID, currentRankId, targetRank.id);
     syncPlayerState(G, playerID);
     return { ok: true, rank: targetRank };
   };
@@ -110,6 +114,7 @@ export const createRankEngine = ({
     applyResourceDelta(playerResources, targetRank.bonus);
     clampNonNegativeResources(playerResources);
     G.ranks[playerID] = targetRank.id;
+    onRankChanged?.(G, playerID, currentRankId, targetRank.id);
     syncPlayerState(G, playerID);
     return { ok: true, rank: targetRank, fromRankId: currentRankId, applied: true };
   };
@@ -133,6 +138,7 @@ export const createRankEngine = ({
     if (occupied >= rankSeatLimit(playerCount)) return { ok: false, reason: 'no-seat' };
 
     G.ranks[targetPlayerID] = lowerRank.id;
+    onRankChanged?.(G, targetPlayerID, currentRankId, lowerRank.id);
     syncPlayerState(G, targetPlayerID);
     return { ok: true, fromRankId: currentRankId, toRankId: lowerRank.id };
   };
