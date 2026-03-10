@@ -14,9 +14,20 @@ type RankEngineDeps = {
 };
 
 export function rankSeatLimitForPlayerCount(playerCount: number): number {
-  if (playerCount <= 2) return 1;
-  if (playerCount <= 4) return 2;
-  return 3;
+  if (playerCount <= 1) return 1;
+  if (playerCount <= 3) return 2;
+  if (playerCount === 4) return 3;
+  return 4;
+}
+
+export function rankSeatLimitForRank(
+  playerCount: number,
+  targetRankId: string,
+  ranks: RankDefinition[],
+): number {
+  const lowestRankId = ranks[0]?.id;
+  if (lowestRankId && targetRankId === lowestRankId) return Math.max(1, playerCount);
+  return rankSeatLimitForPlayerCount(playerCount);
 }
 
 export const createRankEngine = ({
@@ -29,6 +40,8 @@ export const createRankEngine = ({
   onRankChanged,
 }: RankEngineDeps) => {
   const rankSeatLimit = rankSeatLimitForPlayerCount;
+  const seatLimitForRank = (playerCount: number, targetRankId: string, ranks: RankDefinition[]) =>
+    rankSeatLimitForRank(playerCount, targetRankId, ranks);
 
   const promoteRank = (G: JojGameState, playerID: string, playerCount: number): boolean => {
     const ranks = getActiveRanks();
@@ -40,7 +53,7 @@ export const createRankEngine = ({
     const occupied = Object.entries(G.ranks)
       .filter(([pid, rankId]) => pid !== playerID && rankId === nextRank.id)
       .length;
-    if (occupied >= rankSeatLimit(playerCount)) return false;
+    if (occupied >= seatLimitForRank(playerCount, nextRank.id, ranks)) return false;
 
     const playerResources = G.resources[playerID];
     if (!hasResources(playerResources, nextRank.requirement)) return false;
@@ -71,7 +84,7 @@ export const createRankEngine = ({
     const occupied = Object.entries(G.ranks)
       .filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id)
       .length;
-    if (occupied >= rankSeatLimit(playerCount)) return { ok: false };
+    if (occupied >= seatLimitForRank(playerCount, targetRank.id, ranks)) return { ok: false };
 
     const playerResources = G.resources[playerID];
     if (!hasResources(playerResources, targetRank.requirement)) return { ok: false };
@@ -108,7 +121,7 @@ export const createRankEngine = ({
     const occupied = Object.entries(G.ranks)
       .filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id)
       .length;
-    if (occupied >= rankSeatLimit(playerCount)) return { ok: false, reason: 'no-seat' };
+    if (occupied >= seatLimitForRank(playerCount, targetRank.id, ranks)) return { ok: false, reason: 'no-seat' };
 
     const playerResources = G.resources[playerID];
     applyResourceDelta(playerResources, targetRank.bonus);
@@ -135,7 +148,7 @@ export const createRankEngine = ({
     const occupied = Object.entries(G.ranks)
       .filter(([pid, rankId]) => pid !== targetPlayerID && rankId === lowerRank.id)
       .length;
-    if (occupied >= rankSeatLimit(playerCount)) return { ok: false, reason: 'no-seat' };
+    if (occupied >= seatLimitForRank(playerCount, lowerRank.id, ranks)) return { ok: false, reason: 'no-seat' };
 
     G.ranks[targetPlayerID] = lowerRank.id;
     onRankChanged?.(G, targetPlayerID, currentRankId, lowerRank.id);

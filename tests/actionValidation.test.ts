@@ -52,13 +52,29 @@ test('getPromoteBlockedReason reports missing requirement', () => {
   assert.match(reason ?? '', /Авторитет/);
 });
 
-test('getPromoteBlockedReason reports seat limit for 2 players', () => {
+test('getPromoteBlockedReason reports seat limit for 4 players', () => {
   const G = makeState({
-    ranks: { '0': 'recruit', '1': 'soldier' },
+    playerNames: { '0': 'P1', '1': 'P2', '2': 'P3', '3': 'P4' },
+    players: {
+      '0': { hand: [], rankId: 'recruit', resources: { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 } },
+      '1': { hand: [], rankId: 'soldier', resources: { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 } },
+      '2': { hand: [], rankId: 'soldier', resources: { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 } },
+      '3': { hand: [], rankId: 'soldier', resources: { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 } },
+    },
+    hands: { '0': [], '1': [], '2': [], '3': [] },
+    legendaryHands: { '0': [], '1': [], '2': [], '3': [] },
+    ranks: { '0': 'recruit', '1': 'soldier', '2': 'soldier', '3': 'soldier' },
     resources: {
       '0': { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 },
       '1': { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 },
+      '2': { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 },
+      '3': { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 },
     },
+    promotedThisTurn: { '0': false, '1': false, '2': false, '3': false },
+    lyapScandalShieldUntilTurn: { '0': 0, '1': 0, '2': 0, '3': 0 },
+    extraHandPlayTokens: { '0': 0, '1': 0, '2': 0, '3': 0 },
+    sukhpayZsuWatchUntilTurn: { '0': 0, '1': 0, '2': 0, '3': 0 },
+    sukhpayZsuPendingBonus: { '0': false, '1': false, '2': false, '3': false },
   });
   const reason = getPromoteBlockedReason({ G, playerID: '0', ranks, resourceLabels: labels, lang: 'uk' });
   assert.match(reason ?? '', /Немає вільного місця/);

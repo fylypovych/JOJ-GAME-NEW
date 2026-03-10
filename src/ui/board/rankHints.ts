@@ -1,5 +1,5 @@
 import { findNextRank, getPromoteBlockedReason, getVvnzPlayBlockedReason, type ResourceLabels } from '../../game/actionValidation';
-import { rankSeatLimitForPlayerCount } from '../../game/rankEngine';
+import { rankSeatLimitForRank } from '../../game/rankEngine';
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from '../../game/types';
 
 type Lang = 'uk' | 'en';
@@ -33,7 +33,7 @@ export const getNextRankSeatMeta = (args: {
   const { G, playerID, sharedRanks } = args;
   const nextRank = findNextRank(sharedRanks, G.ranks[playerID]);
   const playerCount = Object.keys(G.players ?? {}).length;
-  const seatLimit = rankSeatLimitForPlayerCount(playerCount);
+  const seatLimit = nextRank ? rankSeatLimitForRank(playerCount, nextRank.id, sharedRanks) : 0;
   const occupied = nextRank
     ? Object.entries(G.ranks ?? {}).filter(([pid, rid]) => pid !== playerID && rid === nextRank.id).length
     : 0;

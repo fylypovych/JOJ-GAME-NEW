@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRankEngine, rankSeatLimitForPlayerCount } from '../src/game/rankEngine';
+import { createRankEngine, rankSeatLimitForPlayerCount, rankSeatLimitForRank } from '../src/game/rankEngine';
 import type { JojGameState, RankDefinition, ResourceKey } from '../src/game/types';
 
 const ranks: RankDefinition[] = [
@@ -31,9 +31,14 @@ const mkState = (): JojGameState => ({
 });
 
 test('rank seat limit helper returns expected values', () => {
-  assert.equal(rankSeatLimitForPlayerCount(2), 1);
+  assert.equal(rankSeatLimitForPlayerCount(1), 1);
+  assert.equal(rankSeatLimitForPlayerCount(2), 2);
   assert.equal(rankSeatLimitForPlayerCount(3), 2);
-  assert.equal(rankSeatLimitForPlayerCount(5), 3);
+  assert.equal(rankSeatLimitForPlayerCount(4), 3);
+  assert.equal(rankSeatLimitForPlayerCount(5), 4);
+  assert.equal(rankSeatLimitForPlayerCount(6), 4);
+  assert.equal(rankSeatLimitForRank(6, 'recruit', ranks), 6);
+  assert.equal(rankSeatLimitForRank(6, 'soldier', ranks), 4);
 });
 
 test('promoteRank spends cost and upgrades when requirements are met', () => {
@@ -52,7 +57,7 @@ test('promoteRank spends cost and upgrades when requirements are met', () => {
   assert.equal(G.resources['0'].time, 1);
 });
 
-test('promoteRank respects seat limit for 2 players', () => {
+test('promoteRank respects seat limit for 4 players', () => {
   const engine = createRankEngine({
     getActiveRanks: () => ranks,
     hasResources: (row, cost) => (Object.entries(cost) as Array<[ResourceKey, number]>).every(([k, v]) => (row[k] ?? 0) >= (v ?? 0)),
@@ -63,6 +68,72 @@ test('promoteRank respects seat limit for 2 players', () => {
   });
   const G = mkState();
   G.ranks['1'] = 'soldier';
-  const ok = engine.promoteRank(G, '0', 2);
+  G.ranks['2'] = 'soldier';
+  G.ranks['3'] = 'soldier';
+  G.resources['2'] = { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 };
+  G.resources['3'] = { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 };
+  G.players['2'] = { hand: [], rankId: 'soldier', resources: G.resources['2'] };
+  G.players['3'] = { hand: [], rankId: 'soldier', resources: G.resources['3'] };
+  G.hands['2'] = [];
+  G.hands['3'] = [];
+  G.legendaryHands['2'] = [];
+  G.legendaryHands['3'] = [];
+  G.promotedThisTurn['2'] = false;
+  G.promotedThisTurn['3'] = false;
+  G.lyapScandalShieldUntilTurn['2'] = 0;
+  G.lyapScandalShieldUntilTurn['3'] = 0;
+  G.extraHandPlayTokens['2'] = 0;
+  G.extraHandPlayTokens['3'] = 0;
+  G.sukhpayZsuWatchUntilTurn['2'] = 0;
+  G.sukhpayZsuWatchUntilTurn['3'] = 0;
+  G.sukhpayZsuPendingBonus['2'] = false;
+  G.sukhpayZsuPendingBonus['3'] = false;
+  const ok = engine.promoteRank(G, '0', 4);
   assert.equal(ok, false);
+});
+
+test('demoteByOneRankWithSeatCheck allows demotion to recruit even above normal seat limit', () => {
+  const engine = createRankEngine({
+    getActiveRanks: () => ranks,
+    hasResources: (row, cost) => (Object.entries(cost) as Array<[ResourceKey, number]>).every(([k, v]) => (row[k] ?? 0) >= (v ?? 0)),
+    spendResources: () => {},
+    applyResourceDelta: () => {},
+    clampNonNegativeResources: () => {},
+    syncPlayerState: () => {},
+  });
+  const G = mkState();
+  G.resources['2'] = { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 };
+  G.resources['3'] = { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 };
+  G.resources['4'] = { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 };
+  G.players['2'] = { hand: [], rankId: 'recruit', resources: G.resources['2'] };
+  G.players['3'] = { hand: [], rankId: 'recruit', resources: G.resources['3'] };
+  G.players['4'] = { hand: [], rankId: 'soldier', resources: G.resources['4'] };
+  G.hands['2'] = [];
+  G.hands['3'] = [];
+  G.hands['4'] = [];
+  G.legendaryHands['2'] = [];
+  G.legendaryHands['3'] = [];
+  G.legendaryHands['4'] = [];
+  G.ranks['0'] = 'soldier';
+  G.ranks['2'] = 'recruit';
+  G.ranks['3'] = 'recruit';
+  G.ranks['4'] = 'soldier';
+  G.promotedThisTurn['2'] = false;
+  G.promotedThisTurn['3'] = false;
+  G.promotedThisTurn['4'] = false;
+  G.lyapScandalShieldUntilTurn['2'] = 0;
+  G.lyapScandalShieldUntilTurn['3'] = 0;
+  G.lyapScandalShieldUntilTurn['4'] = 0;
+  G.extraHandPlayTokens['2'] = 0;
+  G.extraHandPlayTokens['3'] = 0;
+  G.extraHandPlayTokens['4'] = 0;
+  G.sukhpayZsuWatchUntilTurn['2'] = 0;
+  G.sukhpayZsuWatchUntilTurn['3'] = 0;
+  G.sukhpayZsuWatchUntilTurn['4'] = 0;
+  G.sukhpayZsuPendingBonus['2'] = false;
+  G.sukhpayZsuPendingBonus['3'] = false;
+  G.sukhpayZsuPendingBonus['4'] = false;
+
+  const result = engine.demoteByOneRankWithSeatCheck(G, '4', 5);
+  assert.deepEqual(result, { ok: true, fromRankId: 'soldier', toRankId: 'recruit' });
 });

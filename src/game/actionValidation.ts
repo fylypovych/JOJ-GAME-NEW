@@ -1,4 +1,4 @@
-import { rankSeatLimitForPlayerCount } from './rankEngine';
+import { rankSeatLimitForRank } from './rankEngine';
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from './types';
 
 export type ResourceLabels = Record<ResourceKey, string>;
@@ -57,7 +57,7 @@ export const getPromoteBlockedReason = (args: {
       : `Missing promotion cost for "${nextRank.name}": ${missingCost.join(', ')}`;
   }
   const playerCount = Object.keys(G.players ?? {}).length;
-  const seatLimit = rankSeatLimitForPlayerCount(playerCount);
+  const seatLimit = rankSeatLimitForRank(playerCount, nextRank.id, ranks);
   const occupied = Object.entries(G.ranks ?? {})
     .filter(([pid, rid]) => pid !== playerID && rid === nextRank.id)
     .length;
@@ -110,7 +110,7 @@ export const getVvnzPlayBlockedReason = (args: {
       : `Missing promotion cost for "${targetRank.name}": ${missingCost.join(', ')}`;
   }
   const playerCount = Object.keys(G.players ?? {}).length;
-  const seatLimit = rankSeatLimitForPlayerCount(playerCount);
+  const seatLimit = rankSeatLimitForRank(playerCount, targetRank.id, ranks);
   const occupied = Object.entries(G.ranks ?? {})
     .filter(([pid, rid]) => pid !== playerID && rid === targetRank.id)
     .length;

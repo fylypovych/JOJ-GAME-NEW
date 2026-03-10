@@ -15,7 +15,7 @@ import { cloneCard } from './cloneUtils';
 import { createEffectsEngine } from './effectsEngine';
 import { createJojMoves, enumerateAiMoves } from './moves';
 import { resourceKeys, resourceLabelsUk } from './resourceMeta';
-import { createRankEngine, rankSeatLimitForPlayerCount } from './rankEngine';
+import { createRankEngine, rankSeatLimitForRank } from './rankEngine';
 import { canPlayHandCardAtStage } from './turnRules';
 import { runGameSimulationsWithDeps, type SimulationOptions, type SimulationReport } from './simulation';
 import {
@@ -540,7 +540,7 @@ const canPromoteToSpecificRankWithoutMutation = (
   const occupied = Object.entries(G.ranks)
     .filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id)
     .length;
-  if (occupied >= rankSeatLimitForPlayerCount(playerCount)) return false;
+  if (occupied >= rankSeatLimitForRank(playerCount, targetRank.id, ranks)) return false;
   const playerResources = G.resources[playerID];
   return hasResources(playerResources, targetRank.requirement) && hasResources(playerResources, targetRank.cost);
 };
