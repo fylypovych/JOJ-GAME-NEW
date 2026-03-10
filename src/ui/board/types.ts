@@ -1,8 +1,32 @@
 import type { BoardProps } from 'boardgame.io/react';
-import type { JojGameState, RankDefinition } from '../../game/types';
+import type { JojGameState, RankDefinition, ResourceKey } from '../../game/types';
 import type { Language } from '../i18n';
 
-export type LocalizedBoardProps = BoardProps<JojGameState> & {
+export type ReplacementByTarget = Record<string, ResourceKey[]>;
+
+export type JojMoveApi = {
+  syncPlayerNames?: (names: Record<string, string>) => void;
+  setPlayerName?: (name: string) => void;
+  selectLegendaryLoadout?: (cardIds: string[]) => void;
+  requestEndGameVote?: () => void;
+  respondEndGameVote?: (agree: boolean) => void;
+  sendChat?: (text: string) => void;
+  drawCard: () => void;
+  resolveDrawAutoCard?: (replacementResources?: ResourceKey[], replacementByTarget?: ReplacementByTarget) => void;
+  playCard: (
+    cardId: string,
+    replacementResources?: ResourceKey[],
+    targetPlayerID?: string,
+    replacementByTarget?: ReplacementByTarget,
+  ) => void;
+  playLegendaryCard?: (cardId: string, targetPlayerID?: string, selectedResource?: ResourceKey) => void;
+  discardFromHand?: (cardId: string) => void;
+  promote: () => void;
+  pass: () => void;
+};
+
+export type LocalizedBoardProps = Omit<BoardProps<JojGameState>, 'moves'> & {
+  moves: JojMoveApi;
   lang?: Language;
   playerName?: string;
   knownPlayerNames?: Record<string, string>;

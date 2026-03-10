@@ -41,6 +41,21 @@ test('rank seat limit helper returns expected values', () => {
   assert.equal(rankSeatLimitForRank(6, 'soldier', ranks), 4);
 });
 
+test('rank seat limit helper keeps recruit capacity equal to player count', () => {
+  const cases = [
+    { players: 1, recruit: 1, soldier: 1 },
+    { players: 2, recruit: 2, soldier: 2 },
+    { players: 3, recruit: 3, soldier: 2 },
+    { players: 4, recruit: 4, soldier: 3 },
+    { players: 5, recruit: 5, soldier: 4 },
+    { players: 6, recruit: 6, soldier: 4 },
+  ];
+  cases.forEach(({ players, recruit, soldier }) => {
+    assert.equal(rankSeatLimitForRank(players, 'recruit', ranks), recruit);
+    assert.equal(rankSeatLimitForRank(players, 'soldier', ranks), soldier);
+  });
+});
+
 test('promoteRank spends cost and upgrades when requirements are met', () => {
   const engine = createRankEngine({
     getActiveRanks: () => ranks,

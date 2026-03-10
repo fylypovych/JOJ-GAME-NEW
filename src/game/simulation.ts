@@ -1,4 +1,6 @@
 import type { CardDefinition, GameMode, JojGameState, ResourceKey } from './types';
+import { isCommandCategory } from './cardRules';
+import { withGameStateTransaction } from './gameStateUtils';
 import { createSimulationState } from './simulationSetup';
 import type { SharedGameSetup } from './sharedConfig';
 
@@ -53,7 +55,7 @@ export type SimulationOptions = {
   gameSetup?: Partial<SharedGameSetup>;
 };
 
-type SimulationDeps = {
+export type SimulationDeps = {
   resourceKeys: readonly ResourceKey[];
   shuffle: <T>(items: T[]) => T[];
   cloneCard: (card: CardDefinition) => CardDefinition;
@@ -146,15 +148,18 @@ const isProtectedFromLyapScandal = (G: JojGameState, currentTurn: number, player
   return untilTurn > 0 && currentTurn < untilTurn;
 };
 
-const isCommandCategory = (card: CardDefinition): boolean => {
-  const rawCategory = (card as unknown as { category?: string }).category;
-  return rawCategory === 'COMMAND' || rawCategory === 'DECISION';
-};
-
 const chooseLowestResource = (
   deps: Pick<SimulationDeps, 'resourceKeys'>,
   row: Record<ResourceKey, number>,
 ): ResourceKey => [...deps.resourceKeys].sort((a, b) => (row[a] ?? 0) - (row[b] ?? 0))[0] ?? 'time';
+
+const runSimulationTransaction = (G: JojGameState, run: () => boolean): boolean => {
+  try {
+    return withGameStateTransaction(G, run, (ok) => !ok);
+  } catch {
+    return false;
+  }
+};
 
 const tryPlayLegendaryCards = (
   deps: SimulationDeps,
@@ -171,57 +176,52 @@ const tryPlayLegendaryCards = (
     progressed = false;
     for (let i = 0; i < hand.length; i += 1) {
       const card = hand[i];
-      let playable = true;
+      const played = runSimulationTransaction(G, () => {
+        let playable = true;
 
-      if (card.id === 'legendary-02') {
-        deps.cancelLastLyapOrScandalForPlayer(G, playerID);
-      } else if (card.id === 'legendary-08') {
-        deps.cancelLastScandalForPlayer(G, playerID);
-      } else if (card.id === 'legendary-05') {
-        G.sukhpayZsuWatchUntilTurn[playerID] = currentTurn + playerIDs.length;
-        G.sukhpayZsuPendingBonus[playerID] = true;
-      } else if (card.id === 'legendary-12') {
-        G.lyapScandalShieldUntilTurn[playerID] = currentTurn + playerIDs.length;
-      } else if (card.id === 'legendary-03') {
-        G.extraHandPlayTokens[playerID] = (G.extraHandPlayTokens[playerID] ?? 0) + 1;
-      } else if (card.id === 'legendary-06') {
-        const selected = chooseLowestResource(deps, G.resources[playerID]);
-        G.resources[playerID][selected] = (G.resources[playerID][selected] ?? 0) + 3;
-        playerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
-          G.resources[pid].documents = (G.resources[pid].documents ?? 0) + 1;
-          deps.clampNonNegativeResources(G.resources[pid]);
-          deps.syncPlayerState(G, pid);
-        });
-        deps.clampNonNegativeResources(G.resources[playerID]);
-      } else if (card.id === 'legendary-07') {
-        G.resources[playerID].time = (G.resources[playerID].time ?? 0) + 2;
-        G.resources[playerID].reputation = (G.resources[playerID].reputation ?? 0) + 2;
-        playerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
-          G.resources[pid].reputation = Math.max(0, (G.resources[pid].reputation ?? 0) - 1);
-          deps.clampNonNegativeResources(G.resources[pid]);
-          deps.syncPlayerState(G, pid);
-        });
-        deps.clampNonNegativeResources(G.resources[playerID]);
-      } else if (card.id === 'legendary-09') {
-        const selected = chooseLowestResource(deps, G.resources[playerID]);
-        G.resources[playerID][selected] = Math.max(G.resources[playerID][selected] ?? 0, 3);
-      } else if (card.id === 'legendary-13') {
-        if (!deps.grantSpecificRankIgnoringRequirements(G, playerID, 'senior_lieutenant', playerIDs.length).ok) {
-          playable = false;
+        if (card.id === 'legendary-02') {
+          deps.cancelLastLyapOrScandalForPlayer(G, playerID);
+        } else if (card.id === 'legendary-08') {
+          deps.cancelLastScandalForPlayer(G, playerID);
+        } else if (card.id === 'legendary-05') {
+          G.sukhpayZsuWatchUntilTurn[playerID] = currentTurn + playerIDs.length;
+          G.sukhpayZsuPendingBonus[playerID] = true;
+        } else if (card.id === 'legendary-12') {
+          G.lyapScandalShieldUntilTurn[playerID] = currentTurn + playerIDs.length;
+        } else if (card.id === 'legendary-03') {
+          G.extraHandPlayTokens[playerID] = (G.extraHandPlayTokens[playerID] ?? 0) + 1;
+        } else if (card.id === 'legendary-06') {
+          const selected = chooseLowestResource(deps, G.resources[playerID]);
+          G.resources[playerID][selected] = (G.resources[playerID][selected] ?? 0) + 3;
+          playerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
+            G.resources[pid].documents = (G.resources[pid].documents ?? 0) + 1;
+            deps.clampNonNegativeResources(G.resources[pid]);
+            deps.syncPlayerState(G, pid);
+          });
+          deps.clampNonNegativeResources(G.resources[playerID]);
+        } else if (card.id === 'legendary-07') {
+          G.resources[playerID].time = (G.resources[playerID].time ?? 0) + 2;
+          G.resources[playerID].reputation = (G.resources[playerID].reputation ?? 0) + 2;
+          playerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
+            G.resources[pid].reputation = Math.max(0, (G.resources[pid].reputation ?? 0) - 1);
+            deps.clampNonNegativeResources(G.resources[pid]);
+            deps.syncPlayerState(G, pid);
+          });
+          deps.clampNonNegativeResources(G.resources[playerID]);
+        } else if (card.id === 'legendary-09') {
+          const selected = chooseLowestResource(deps, G.resources[playerID]);
+          G.resources[playerID][selected] = Math.max(G.resources[playerID][selected] ?? 0, 3);
+        } else if (card.id === 'legendary-13') {
+          playable = deps.grantSpecificRankIgnoringRequirements(G, playerID, 'senior_lieutenant', playerIDs.length).ok;
+        } else if (card.id === 'legendary-10') {
+          const target = chooseLyapTarget(deps, G, playerID);
+          playable = Boolean(target && deps.demoteByOneRankWithSeatCheck(G, target, playerIDs.length).ok);
         }
-      } else if (card.id === 'legendary-10') {
-        const target = chooseLyapTarget(deps, G, playerID);
-        if (!target || !deps.demoteByOneRankWithSeatCheck(G, target, playerIDs.length).ok) {
-          playable = false;
-        }
-      }
 
-      if (!playable) continue;
-      try {
-        if (!deps.applyCardEffects(G, playerID, card.effects, [])) continue;
-      } catch {
-        continue;
-      }
+        if (!playable) return false;
+        return deps.applyCardEffects(G, playerID, card.effects, []);
+      });
+      if (!played) continue;
 
       hand.splice(i, 1);
       G.legendaryDiscard.push(card);
@@ -267,29 +267,30 @@ const tryPlayOneHandCardSim = (args: {
       });
       deps.triggerSukhpayZsuOnScandal(G, { turn: currentTurn }, playerID);
     } else if (isCommandCategory(card)) {
-      const replacement = deps.planReplacementResources(G.resources[playerID], card.effects);
-      if (replacement === null) continue;
-      try {
-        const ok = deps.applyCardEffects(G, playerID, card.effects, replacement);
-        if (!ok) continue;
-      } catch {
-        continue;
-      }
-      deps.syncPlayerState(G, playerID);
-      allPlayerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
-        deps.applyCardEffectsSoft(G, pid, card.effects);
-        deps.syncPlayerState(G, pid);
+      const played = runSimulationTransaction(G, () => {
+        const replacement = deps.planReplacementResources(G.resources[playerID], card.effects);
+        if (replacement === null) return false;
+        if (!deps.applyCardEffects(G, playerID, card.effects, replacement)) return false;
+        deps.syncPlayerState(G, playerID);
+        allPlayerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
+          deps.applyCardEffectsSoft(G, pid, card.effects);
+          deps.syncPlayerState(G, pid);
+        });
+        return true;
       });
+      if (!played) continue;
     } else if (card.category === 'VVNZ' && card.grantRank) {
-      const promoted = deps.promoteToSpecificRank(G, playerID, card.grantRank, numPlayers);
-      if (!promoted.ok) continue;
-      try {
+      const played = runSimulationTransaction(G, () => {
+        const targetRankId = card.grantRank;
+        if (!targetRankId) return false;
+        const promoted = deps.promoteToSpecificRank(G, playerID, targetRankId, numPlayers);
+        if (!promoted.ok) return false;
         const ok = deps.applyCardEffects(G, playerID, card.effects, []);
-        if (!ok) continue;
-      } catch {
-        continue;
-      }
-      deps.syncPlayerState(G, playerID);
+        if (!ok) return false;
+        deps.syncPlayerState(G, playerID);
+        return true;
+      });
+      if (!played) continue;
     } else {
       const replacement = deps.planReplacementResources(G.resources[playerID], card.effects);
       if (replacement === null) continue;

@@ -1,21 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from '../game/types';
+import { useMemo, useRef, useState } from 'react';
+import type { CardDefinition, ResourceKey } from '../game/types';
 import { normalizeImagePath } from '../game/imagePaths';
 import { canPlayHandCardAtStage } from '../game/turnRules';
 import { cardTitle, categoryLabel, localizeSystemMessageText, rankLabel, text } from './i18n';
 import { BoardChatPanel, GameCardTile, PilePreview } from './board/components';
+import { isPlayAllowedForCard } from './board/handRules';
 import { buildNextRankHint, getBoardPromoteBlockedReason, getBoardVvnzBlockedReason, getNextRankSeatMeta } from './board/rankHints';
+import { buildReplacementSlots } from './board/replacement';
+import { usePendingSelection } from './board/usePendingSelection';
+import { useBoardV2Sync } from './board/useBoardV2Sync';
 import type { LocalizedBoardProps } from './board/types';
 
 const RESOURCE_ORDER: ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
-
-type PendingSelection =
-  | { type: 'hand-lyap'; cardId: string }
-  | { type: 'hand-scandal'; cardId: string }
-  | { type: 'draw-lyap'; cardId: string }
-  | { type: 'draw-scandal'; cardId: string }
-  | { type: 'legendary-drone'; cardId: string }
-  | { type: 'legendary-water'; cardId: string };
 
 type NoticeKind = 'info' | 'error' | 'success';
 type Notice = { type: NoticeKind; text: string } | null;
@@ -26,69 +22,6 @@ type SidePanelTab = 'events' | 'chat';
 
 const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
   stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
-
-const buildReplacementSlots = (
-  resources: Record<ResourceKey, number>,
-  effects: CardDefinition['effects'],
-): { slots: ResourceKey[]; poolAfterDirect: Record<ResourceKey, number> } => {
-  const tmp = { ...resources };
-  const slots: ResourceKey[] = [];
-  (effects ?? []).forEach((effect) => {
-    if (effect.resource === 'rank' || effect.value >= 0) return;
-    const need = Math.abs(effect.value);
-    const have = Math.max(0, tmp[effect.resource] ?? 0);
-    const direct = Math.min(have, need);
-    tmp[effect.resource] = have - direct;
-    let missing = need - direct;
-    while (missing > 0) {
-      slots.push(effect.resource);
-      slots.push(effect.resource);
-      missing -= 1;
-    }
-  });
-  return { slots, poolAfterDirect: tmp };
-};
-
-const isReplacementPrefixValid = (
-  resources: Record<ResourceKey, number>,
-  effects: CardDefinition['effects'],
-  selected: ResourceKey[],
-): boolean => {
-  const { slots, poolAfterDirect } = buildReplacementSlots(resources, effects);
-  if (selected.length > slots.length) return false;
-  const pool = { ...poolAfterDirect };
-  for (let index = 0; index < selected.length; index += 1) {
-    const forbidden = slots[index];
-    const chosen = selected[index];
-    if (chosen === forbidden) return false;
-    if ((pool[chosen] ?? 0) <= 0) return false;
-    pool[chosen] -= 1;
-  }
-  return true;
-};
-
-const isPlayAllowedForCard = (args: {
-  card: CardDefinition;
-  canPlayHandCard: boolean;
-  resources: Record<ResourceKey, number>;
-  G: JojGameState;
-  playerID: string;
-  sharedRanks: RankDefinition[];
-  resourceLabels: Record<ResourceKey, string>;
-  lang: 'uk' | 'en';
-}) => {
-  if (!args.canPlayHandCard) return false;
-  if (args.card.category !== 'VVNZ') return true;
-  return !getBoardVvnzBlockedReason({
-    card: args.card,
-    G: args.G,
-    playerID: args.playerID,
-    sharedRanks: args.sharedRanks,
-    resources: args.resources,
-    resourceLabels: args.resourceLabels,
-    lang: args.lang,
-  });
-};
 
 export const BoardV2 = ({
   G,
@@ -140,11 +73,6 @@ export const BoardV2 = ({
     : undefined;
   const [chatInput, setChatInput] = useState('');
   const [openPreviewKey, setOpenPreviewKey] = useState<string | null>(null);
-  const [pendingSelection, setPendingSelection] = useState<PendingSelection | null>(null);
-  const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
-  const [selectedResource, setSelectedResource] = useState<ResourceKey | null>(null);
-  const [replacementSelectionsByTarget, setReplacementSelectionsByTarget] = useState<Record<string, ResourceKey[]>>({});
-  const [activeReplacementTargetId, setActiveReplacementTargetId] = useState<string | null>(null);
   const [draftSelection, setDraftSelection] = useState<string[]>([]);
   const [notice, setNotice] = useState<Notice>(null);
   const [gameoverModalClosed, setGameoverModalClosed] = useState<boolean>(false);
@@ -162,94 +90,6 @@ export const BoardV2 = ({
     return name || t.genericPlayer;
   };
 
-  useEffect(() => {
-    if (!G || !ctx) return;
-    onStateChange?.({ G, ctx });
-  }, [G, ctx, onStateChange]);
-
-  useEffect(() => {
-    if (!playerID || !playerName.trim() || typeof moves.setPlayerName !== 'function') return;
-    const trimmed = playerName.trim();
-    if (syncedNameRef.current === trimmed) return;
-    moves.setPlayerName(trimmed);
-    syncedNameRef.current = trimmed;
-  }, [moves, playerID, playerName]);
-
-  useEffect(() => {
-    if (typeof moves.syncPlayerNames !== 'function') return;
-    const entries = Object.entries(knownPlayerNames)
-      .map(([pid, name]) => [pid, name.trim()] as const)
-      .filter(([, name]) => Boolean(name))
-      .sort(([a], [b]) => Number(a) - Number(b));
-    if (!entries.length) return;
-    const signature = JSON.stringify(entries);
-    if (syncedNamesSignatureRef.current === signature) return;
-    moves.syncPlayerNames(Object.fromEntries(entries));
-    syncedNamesSignatureRef.current = signature;
-  }, [knownPlayerNames, moves]);
-
-  useEffect(() => {
-    if (!chatLogRef.current) return;
-    chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
-  }, [G?.chat?.length]);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.target as HTMLElement | null)?.tagName === 'INPUT') return;
-      if (event.key === 'Escape') {
-        setOpenPreviewKey(null);
-        setPendingSelection(null);
-        setSelectedTargetId(null);
-        setSelectedResource(null);
-        return;
-      }
-      if (event.key.toLowerCase() === 'd' && canDraw && typeof moves.drawCard === 'function') {
-        event.preventDefault();
-        moves.drawCard();
-      }
-      if (event.key.toLowerCase() === 'e' && canEndTurn && typeof moves.pass === 'function') {
-        event.preventDefault();
-        moves.pass();
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [canDraw, canEndTurn, moves]);
-
-  useEffect(() => {
-    setPendingSelection(null);
-    setSelectedTargetId(null);
-    setSelectedResource(null);
-    setReplacementSelectionsByTarget({});
-    setActiveReplacementTargetId(null);
-    setDraftSelection([]);
-  }, [ctx?.turn, stage, id]);
-
-  useEffect(() => {
-    const pending = G?.pendingDrawAutoResolution;
-    if (!pending || pending.sourcePlayerID !== id || stage !== 'draw') {
-      if (pendingSelection?.type === 'draw-lyap' || pendingSelection?.type === 'draw-scandal') {
-        setPendingSelection(null);
-        setReplacementSelectionsByTarget({});
-        setActiveReplacementTargetId(null);
-      }
-      return;
-    }
-    const nextType = pending.kind === 'LYAP' ? 'draw-lyap' : 'draw-scandal';
-    if (pendingSelection?.type !== nextType || pendingSelection.cardId !== pending.card.id) {
-      setPendingSelection({ type: nextType, cardId: pending.card.id } as PendingSelection);
-      setSelectedTargetId(null);
-      setSelectedResource(null);
-      setReplacementSelectionsByTarget({});
-      setActiveReplacementTargetId(pending.kind === 'SCANDAL' ? (Object.keys(G?.players ?? {})[0] ?? null) : id);
-      postNotice('info', `${v2.replacementSelection}: ${cardTitle(pending.card.id, pending.card.title, lang)}`);
-    }
-  }, [G?.pendingDrawAutoResolution, G?.players, id, stage, lang]);
-
-  useEffect(() => {
-    setGameoverModalClosed(false);
-  }, [ctx?.gameover]);
-
   const effectLabel = (resource: ResourceKey | 'rank') => (resource === 'rank' ? t.rankResource : resourceLabels[resource]);
   const togglePreview = (key: string) => setOpenPreviewKey((prev) => (prev === key ? null : key));
   const sendChatMessage = () => {
@@ -259,6 +99,80 @@ export const BoardV2 = ({
     setChatInput('');
   };
   const postNotice = (type: NoticeKind, msg: string) => setNotice(msg ? { type, text: msg } : null);
+  const opponentIds = useMemo(
+    () => Object.keys(G?.players ?? {}).filter((pid) => pid !== id),
+    [G?.players, id],
+  );
+
+  const {
+    pendingSelection,
+    setPendingSelection,
+    selectedTargetId,
+    setSelectedTargetId,
+    selectedResource,
+    setSelectedResource,
+    replacementSelectionsByTarget,
+    setReplacementSelectionsByTarget,
+    setActiveReplacementTargetId,
+    currentPendingCard,
+    replacementTargetIds,
+    replacementActiveTargetId,
+    replacementActiveTargetResources,
+    replacementActiveSlots,
+    replacementActiveSelected,
+    requestPlayHandCard,
+    requestPlayLegendaryCard,
+    confirmPendingSelection,
+    clearPendingSelection,
+    appendReplacementResource,
+    undoReplacementResource,
+    activeSelectionNeedsTarget,
+    activeSelectionNeedsResource,
+    activeSelectionNeedsReplacement,
+    pickTargetNotice,
+  } = usePendingSelection({
+    G,
+    ctx,
+    id,
+    hand,
+    legendaryHand,
+    opponentIds,
+    moves,
+    lang,
+    v2,
+    postNotice,
+    playerLabelById,
+    cardTitle,
+  });
+
+  useBoardV2Sync({
+    G,
+    ctx,
+    playerID: playerID ?? undefined,
+    playerName,
+    knownPlayerNames,
+    moves,
+    canDraw,
+    canEndTurn,
+    stage,
+    id,
+    v2,
+    lang,
+    cardTitle,
+    onStateChange,
+    setOpenPreviewKey,
+    setPendingSelection,
+    setSelectedTargetId,
+    setSelectedResource,
+    setReplacementSelectionsByTarget,
+    setActiveReplacementTargetId,
+    setDraftSelection,
+    setGameoverModalClosed,
+    postNotice,
+    syncedNameRef,
+    syncedNamesSignatureRef,
+    chatLogRef,
+  });
 
   const getPromoteBlockedReason = () => {
     if (!G || !resources) return null;
@@ -270,10 +184,6 @@ export const BoardV2 = ({
     return getNextRankSeatMeta({ G, playerID: id, sharedRanks });
   }, [G, id, sharedRanks, resources]);
 
-  const opponentIds = useMemo(
-    () => Object.keys(G?.players ?? {}).filter((pid) => pid !== id),
-    [G?.players, id],
-  );
   const gameoverMeta = (ctx?.gameover ?? null) as { winner?: string; endReason?: string } | null;
   const winnerPlayerID = gameoverMeta?.winner ? String(gameoverMeta.winner) : '';
   const winnerRankId = winnerPlayerID ? (G?.ranks?.[winnerPlayerID] ?? '') : '';
@@ -348,7 +258,7 @@ export const BoardV2 = ({
     ? v2.skipTurn
     : t.endTurn;
 
-  const requestPlayHandCard = (card: CardDefinition) => {
+  const handleHandCardAction = (card: CardDefinition) => {
     if (!canPlayHandCard) {
       postNotice('error', v2.actionUnavailable);
       return;
@@ -358,215 +268,19 @@ export const BoardV2 = ({
       postNotice('error', vvnzReason);
       return;
     }
-    if (card.category === 'LYAP') {
-      setPendingSelection({ type: 'hand-lyap', cardId: card.id });
-      setSelectedTargetId(null);
-      setReplacementSelectionsByTarget({});
-      setActiveReplacementTargetId(null);
-      postNotice('info', `${v2.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
-      return;
-    }
-    if (card.category === 'SCANDAL') {
-      const targets = opponentIds.filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
-      setPendingSelection({ type: 'hand-scandal', cardId: card.id });
-      setSelectedTargetId(null);
-      setReplacementSelectionsByTarget({});
-      setActiveReplacementTargetId(targets[0] ?? null);
-      postNotice('info', `${v2.pickResource}: ${cardTitle(card.id, card.title, lang)}`);
-      return;
-    }
-    moves.playCard(card.id, [], undefined);
-    setNotice(null);
+    requestPlayHandCard(card);
   };
 
-  const requestPlayLegendaryCard = (card: CardDefinition) => {
+  const handleLegendaryCardAction = (card: CardDefinition) => {
     if (typeof moves.playLegendaryCard !== 'function') return;
-    if (card.id === 'legendary-10') {
-      setPendingSelection({ type: 'legendary-drone', cardId: card.id });
-      setSelectedTargetId(null);
-      postNotice('info', `${v2.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
-      return;
-    }
-    if (card.id === 'legendary-09' || card.id === 'legendary-06') {
-      setPendingSelection({ type: 'legendary-water', cardId: card.id });
-      setSelectedResource(null);
-      postNotice('info', `${v2.pickResource}: ${cardTitle(card.id, card.title, lang)}`);
-      return;
-    }
-    moves.playLegendaryCard(card.id, undefined, undefined);
-    setNotice(null);
+    requestPlayLegendaryCard(card);
   };
-
-  const confirmPendingSelection = () => {
-    if (!pendingSelection) return;
-    if (pendingSelection.type === 'hand-lyap') {
-      if (!selectedTargetId) return postNotice('error', v2.targetRequired);
-      const selectedCard = hand.find((card) => card.id === pendingSelection.cardId);
-      if (!selectedCard) return postNotice('error', v2.actionUnavailable);
-      const shielded = Number(G?.lyapScandalShieldUntilTurn?.[selectedTargetId] ?? 0) > Number(ctx?.turn ?? 0);
-      const targetResources = G?.resources?.[selectedTargetId];
-      if (!targetResources) return postNotice('error', v2.actionUnavailable);
-      if (shielded) {
-        moves.playCard(pendingSelection.cardId, [], selectedTargetId);
-      } else {
-        const required = buildReplacementSlots(targetResources, selectedCard.effects).slots.length;
-        const selected = replacementSelectionsByTarget[selectedTargetId] ?? [];
-        if (selected.length !== required) return postNotice('error', v2.replacementIncomplete);
-        if (!isReplacementPrefixValid(targetResources, selectedCard.effects, selected)) {
-          return postNotice('error', v2.replacementInvalid);
-        }
-        moves.playCard(pendingSelection.cardId, selected, selectedTargetId);
-      }
-    }
-    if (pendingSelection.type === 'hand-scandal') {
-      const selectedCard = hand.find((card) => card.id === pendingSelection.cardId);
-      if (!selectedCard) return postNotice('error', v2.actionUnavailable);
-      const targets = opponentIds.filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
-      const replacementByTarget: Record<string, ResourceKey[]> = {};
-      for (const pid of targets) {
-        const targetResources = G?.resources?.[pid];
-        if (!targetResources) continue;
-        const required = buildReplacementSlots(targetResources, selectedCard.effects).slots.length;
-        const selected = replacementSelectionsByTarget[pid] ?? [];
-        if (selected.length !== required) {
-          setActiveReplacementTargetId(pid);
-          return postNotice('error', v2.replacementIncomplete);
-        }
-        if (!isReplacementPrefixValid(targetResources, selectedCard.effects, selected)) {
-          setActiveReplacementTargetId(pid);
-          return postNotice('error', v2.replacementInvalid);
-        }
-        replacementByTarget[pid] = selected;
-      }
-      (moves as any).playCard(pendingSelection.cardId, [], undefined, replacementByTarget);
-    }
-    if (pendingSelection.type === 'draw-lyap') {
-      const pendingCard = G?.pendingDrawAutoResolution?.card;
-      if (!pendingCard) return postNotice('error', v2.actionUnavailable);
-      const targetResources = G?.resources?.[id];
-      if (!targetResources) return postNotice('error', v2.actionUnavailable);
-      const required = buildReplacementSlots(targetResources, pendingCard.effects).slots.length;
-      const selected = replacementSelectionsByTarget[id] ?? [];
-      if (selected.length !== required) return postNotice('error', v2.replacementIncomplete);
-      if (!isReplacementPrefixValid(targetResources, pendingCard.effects, selected)) {
-        return postNotice('error', v2.replacementInvalid);
-      }
-      (moves as any).resolveDrawAutoCard?.(selected, {});
-    }
-    if (pendingSelection.type === 'draw-scandal') {
-      const pendingCard = G?.pendingDrawAutoResolution?.card;
-      if (!pendingCard) return postNotice('error', v2.actionUnavailable);
-      const targets = Object.keys(G?.players ?? {}).filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
-      const replacementByTarget: Record<string, ResourceKey[]> = {};
-      for (const pid of targets) {
-        const targetResources = G?.resources?.[pid];
-        if (!targetResources) continue;
-        const required = buildReplacementSlots(targetResources, pendingCard.effects).slots.length;
-        const selected = replacementSelectionsByTarget[pid] ?? [];
-        if (selected.length !== required) {
-          setActiveReplacementTargetId(pid);
-          return postNotice('error', v2.replacementIncomplete);
-        }
-        if (!isReplacementPrefixValid(targetResources, pendingCard.effects, selected)) {
-          setActiveReplacementTargetId(pid);
-          return postNotice('error', v2.replacementInvalid);
-        }
-        replacementByTarget[pid] = selected;
-      }
-      (moves as any).resolveDrawAutoCard?.([], replacementByTarget);
-    }
-    if (pendingSelection.type === 'legendary-drone') {
-      if (!selectedTargetId) return postNotice('error', v2.targetRequired);
-      moves.playLegendaryCard?.(pendingSelection.cardId, selectedTargetId, undefined);
-    }
-    if (pendingSelection.type === 'legendary-water') {
-      if (!selectedResource) return postNotice('error', v2.resourceRequired);
-      moves.playLegendaryCard?.(pendingSelection.cardId, undefined, selectedResource);
-    }
-    setPendingSelection(null);
-    setSelectedTargetId(null);
-    setSelectedResource(null);
-    setReplacementSelectionsByTarget({});
-    setActiveReplacementTargetId(null);
-    setNotice(null);
-  };
-
-  const currentPendingCard = pendingSelection
-    ? (pendingSelection.type === 'draw-lyap' || pendingSelection.type === 'draw-scandal'
-      ? (G?.pendingDrawAutoResolution?.card ?? null)
-      : [...hand, ...legendaryHand].find((c) => c.id === pendingSelection.cardId))
-    : null;
-  const replacementTargetIds = useMemo(() => {
-    if (!pendingSelection || !currentPendingCard) return [] as string[];
-    if (pendingSelection.type === 'hand-lyap') {
-      if (!selectedTargetId) return [] as string[];
-      const shielded = Number(G?.lyapScandalShieldUntilTurn?.[selectedTargetId] ?? 0) > Number(ctx?.turn ?? 0);
-      return shielded ? [] as string[] : [selectedTargetId];
-    }
-    if (pendingSelection.type === 'hand-scandal') {
-      return opponentIds.filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
-    }
-    if (pendingSelection.type === 'draw-lyap') {
-      const shielded = Number(G?.lyapScandalShieldUntilTurn?.[id] ?? 0) > Number(ctx?.turn ?? 0);
-      return shielded ? [] as string[] : [id];
-    }
-    if (pendingSelection.type === 'draw-scandal') {
-      return Object.keys(G?.players ?? {}).filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
-    }
-    return [] as string[];
-  }, [pendingSelection, currentPendingCard, selectedTargetId, G?.lyapScandalShieldUntilTurn, G?.players, ctx?.turn, opponentIds, id]);
-  const replacementActiveTargetId = (pendingSelection?.type === 'hand-lyap' || pendingSelection?.type === 'draw-lyap')
-    ? ((pendingSelection?.type === 'draw-lyap'
-      ? (replacementTargetIds.includes(id) ? id : null)
-      : (selectedTargetId && replacementTargetIds.includes(selectedTargetId) ? selectedTargetId : null)))
-    : (activeReplacementTargetId && replacementTargetIds.includes(activeReplacementTargetId)
-      ? activeReplacementTargetId
-      : (replacementTargetIds[0] ?? null));
-  const replacementActiveTargetResources = replacementActiveTargetId ? (G?.resources?.[replacementActiveTargetId] ?? null) : null;
-  const replacementActiveSlots = (replacementActiveTargetResources && currentPendingCard)
-    ? buildReplacementSlots(replacementActiveTargetResources, currentPendingCard.effects).slots
-    : [];
-  const replacementActiveSelected = replacementActiveTargetId ? (replacementSelectionsByTarget[replacementActiveTargetId] ?? []) : [];
-  const appendReplacementResource = (resource: ResourceKey) => {
-    if (!replacementActiveTargetId || !replacementActiveTargetResources || !currentPendingCard) return;
-    const next = [...replacementActiveSelected, resource];
-    if (!isReplacementPrefixValid(replacementActiveTargetResources, currentPendingCard.effects, next)) return;
-    if (next.length > replacementActiveSlots.length) return;
-    setReplacementSelectionsByTarget((prev) => ({ ...prev, [replacementActiveTargetId]: next }));
-  };
-  const undoReplacementResource = () => {
-    if (!replacementActiveTargetId) return;
-    const prevSelected = replacementSelectionsByTarget[replacementActiveTargetId] ?? [];
-    if (!prevSelected.length) return;
-    setReplacementSelectionsByTarget((prev) => ({
-      ...prev,
-      [replacementActiveTargetId]: prevSelected.slice(0, -1),
-    }));
-  };
-
-  useEffect(() => {
-    if (pendingSelection?.type !== 'hand-scandal') return;
-    if (replacementTargetIds.length === 0) {
-      setActiveReplacementTargetId(null);
-      return;
-    }
-    if (!activeReplacementTargetId || !replacementTargetIds.includes(activeReplacementTargetId)) {
-      setActiveReplacementTargetId(replacementTargetIds[0]);
-    }
-  }, [pendingSelection, replacementTargetIds, activeReplacementTargetId]);
 
   if (!G || !ctx || !resources) {
     return <section className="board"><p>{t.loading}</p></section>;
   }
 
   const promoteReason = getPromoteBlockedReason();
-  const activeSelectionNeedsTarget = pendingSelection?.type === 'hand-lyap' || pendingSelection?.type === 'legendary-drone';
-  const activeSelectionNeedsResource = pendingSelection?.type === 'legendary-water';
-  const activeSelectionNeedsReplacement =
-    pendingSelection?.type === 'hand-lyap'
-    || pendingSelection?.type === 'hand-scandal'
-    || pendingSelection?.type === 'draw-lyap'
-    || pendingSelection?.type === 'draw-scandal';
   const pendingCost: Partial<Record<ResourceKey, number>> = {};
   const highlightedResources = new Set<ResourceKey>();
   const deficitByResource: Partial<Record<ResourceKey, number>> = {};
@@ -608,8 +322,8 @@ export const BoardV2 = ({
             type="button"
             className="game-ui-v2-header-leave"
             onClick={() => {
-              if (typeof (moves as any).requestEndGameVote !== 'function') return;
-              (moves as any).requestEndGameVote();
+              if (typeof moves.requestEndGameVote !== 'function') return;
+              moves.requestEndGameVote();
             }}
             disabled={endGameVoteActive || Boolean(ctx?.gameover)}
           >
@@ -627,8 +341,8 @@ export const BoardV2 = ({
             </p>
             {!hasVotedAgree ? (
               <div className="game-ui-v2-selection-actions">
-                <button type="button" onClick={() => (moves as any).respondEndGameVote?.(true)}>{v2.agreeEndGame}</button>
-                <button type="button" className="ghost" onClick={() => (moves as any).respondEndGameVote?.(false)}>{v2.declineEndGame}</button>
+                <button type="button" onClick={() => moves.respondEndGameVote?.(true)}>{v2.agreeEndGame}</button>
+                <button type="button" className="ghost" onClick={() => moves.respondEndGameVote?.(false)}>{v2.declineEndGame}</button>
               </div>
             ) : (
               <p className="game-ui-v2-subtle">{v2.endVoteWaiting}</p>
@@ -683,8 +397,8 @@ export const BoardV2 = ({
                 <p className="game-ui-v2-subtle">{v2.selected}: {draftSelection.length}/5</p>
                 <button
                   type="button"
-                  disabled={draftSelection.length !== 5 || typeof (moves as any).selectLegendaryLoadout !== 'function'}
-                  onClick={() => (moves as any).selectLegendaryLoadout?.(draftSelection)}
+                  disabled={draftSelection.length !== 5 || typeof moves.selectLegendaryLoadout !== 'function'}
+                  onClick={() => moves.selectLegendaryLoadout?.(draftSelection)}
                 >
                   {v2.confirmSelection}
                 </button>
@@ -787,7 +501,7 @@ export const BoardV2 = ({
                         className={`game-ui-v2-pick-chip${selectedTargetId === pid ? ' is-selected' : ''}`}
                         onClick={() => {
                           setSelectedTargetId(pid);
-                          postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`);
+                          pickTargetNotice(pid);
                         }}
                       >
                         {playerLabelById(pid)}
@@ -871,12 +585,7 @@ export const BoardV2 = ({
                     type="button"
                     className="ghost"
                     onClick={() => {
-                      setPendingSelection(null);
-                      setSelectedTargetId(null);
-                      setSelectedResource(null);
-                      setReplacementSelectionsByTarget({});
-                      setActiveReplacementTargetId(null);
-                      setNotice(null);
+                      clearPendingSelection();
                     }}
                   >
                     {v2.cancel}
@@ -1018,7 +727,7 @@ export const BoardV2 = ({
                     onTogglePreview={togglePreview}
                     onClosePreview={() => setOpenPreviewKey(null)}
                     actionLabel={v2.play}
-                    onAction={() => requestPlayHandCard(card)}
+                    onAction={() => handleHandCardAction(card)}
                     actionDisabled={!canPlayHandCard}
                     extraAction={canDiscardThisCard ? {
                       label: v2.discard,
@@ -1061,7 +770,7 @@ export const BoardV2 = ({
                       onTogglePreview={togglePreview}
                       onClosePreview={() => setOpenPreviewKey(null)}
                       actionLabel={v2.playLegendary}
-                      onAction={() => requestPlayLegendaryCard(card)}
+                      onAction={() => handleLegendaryCardAction(card)}
                       actionDisabled={typeof moves.playLegendaryCard !== 'function'}
                       effectLabel={effectLabel}
                       badges={badges.length ? badges : undefined}

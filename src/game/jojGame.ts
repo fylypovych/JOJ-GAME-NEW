@@ -13,9 +13,11 @@ import {
 import { appendChat as appendChatBase, getPlayerLabel, nextSystemMessageSeq } from './chatUtils';
 import { cloneCard } from './cloneUtils';
 import { createEffectsEngine } from './effectsEngine';
+import { createSanitizedPlayerView } from './gameStateUtils';
 import { createJojMoves, enumerateAiMoves } from './moves';
 import { resourceKeys, resourceLabelsUk } from './resourceMeta';
 import { createRankEngine, rankSeatLimitForRank } from './rankEngine';
+import { createEmptyGameState, initializePlayerInGameState } from './stateFactory';
 import { canPlayHandCardAtStage } from './turnRules';
 import { runGameSimulationsWithDeps, type SimulationOptions, type SimulationReport } from './simulation';
 import {
@@ -71,7 +73,6 @@ const PLAY_STAGE = 'play';
 const END_STAGE = 'end';
 const IDLE_STAGE = 'idle';
 const CHAT_LIMIT = 200;
-
 const resolveGameMode = (setupData: unknown): GameMode => {
   if (!setupData || typeof setupData !== 'object') return GAME_MODE_STANDARD;
   const rawMode = (setupData as { gameMode?: unknown }).gameMode;
@@ -632,10 +633,9 @@ export const jojGame: Game<JojGameState> = {
     const deck = shuffle(mergedDeckSource.map(cloneCard));
     const hasLegendaryModule = optionalLegendaryCards.length > 0;
 
-    const state: JojGameState = {
+    const state = createEmptyGameState({
       gameMode: effectiveGameMode,
       deck,
-      discard: [],
       legendaryDeck: effectiveGameMode === GAME_MODE_SIMPLIFIED
         ? []
         : !hasLegendaryModule
@@ -643,81 +643,25 @@ export const jojGame: Game<JojGameState> = {
           : effectiveGameMode === GAME_MODE_STANDARD_PLUS
             ? optionalLegendaryCards.map(cloneCard)
             : shuffle(optionalLegendaryCards.map(cloneCard)),
-      legendaryDiscard: [],
-      legendaryDraftCompleted: {},
       deckBackImage: template.deckBackImage,
-      systemMessageSeq: 0,
-      playerNames: {},
-      chat: [],
-      players: {},
-      hands: {},
-      legendaryHands: {},
-      ranks: {},
-      rankImageByPlayer: {},
-      resources: {},
-      promotedThisTurn: {},
-      lyapScandalShieldUntilTurn: {},
-      extraHandPlayTokens: {},
-      sukhpayZsuWatchUntilTurn: {},
-      sukhpayZsuPendingBonus: {},
-      gameStats: {
-        turnsCompleted: 0,
-        resourcesGainedTotal: 0,
-        resourcesLostTotal: 0,
-        resourcesGainedByType: {
-          time: 0,
-          reputation: 0,
-          discipline: 0,
-          documents: 0,
-          tech: 0,
-        },
-        resourcesLostByType: {
-          time: 0,
-          reputation: 0,
-          discipline: 0,
-          documents: 0,
-          tech: 0,
-        },
-        lyapsPlayedOnOthers: 0,
-        scandalsPlayedOnOthers: 0,
-      },
-      noPlayablePassStreak: 0,
-      endGameVote: {
-        active: false,
-        requestedBy: null,
-        votes: {},
-      },
-      pendingDrawAutoResolution: null,
-    };
+    });
 
     players.forEach((playerID) => {
-      state.hands[playerID] = [];
-      state.legendaryHands[playerID] = [];
-      state.ranks[playerID] = getActiveRanks()[0]?.id ?? 'cadet';
-      state.resources[playerID] = {
-        time: 1,
-        reputation: 1,
-        discipline: 1,
-        documents: 1,
-        tech: 1,
-      };
-      applyRankImageForPlayer(state, playerID);
-      state.players[playerID] = {
-        hand: state.hands[playerID],
-        rankId: state.ranks[playerID],
-        resources: state.resources[playerID],
-      };
-      state.promotedThisTurn[playerID] = false;
-      state.lyapScandalShieldUntilTurn[playerID] = 0;
-      state.extraHandPlayTokens[playerID] = 0;
-      state.sukhpayZsuWatchUntilTurn[playerID] = 0;
-      state.sukhpayZsuPendingBonus[playerID] = false;
-      state.legendaryDraftCompleted[playerID] = !hasLegendaryModule || effectiveGameMode === GAME_MODE_STANDARD || effectiveGameMode === GAME_MODE_SIMPLIFIED;
-      state.playerNames[playerID] = '';
-      drawCards(state, playerID, STARTING_HAND_SIZE);
-      if (hasLegendaryModule && effectiveGameMode === GAME_MODE_STANDARD) {
-        drawLegendaryCards(state, playerID, STARTING_LEGENDARY_HAND_SIZE, optionalLegendaryCards);
-      }
+      initializePlayerInGameState({
+        G: state,
+        playerID,
+        playerIndex: Number(playerID),
+        startingRankId: getActiveRanks()[0]?.id ?? 'cadet',
+        startingHandSize: STARTING_HAND_SIZE,
+        startingLegendaryHandSize: STARTING_LEGENDARY_HAND_SIZE,
+        legendaryDraftCompleted: !hasLegendaryModule || effectiveGameMode === GAME_MODE_STANDARD || effectiveGameMode === GAME_MODE_SIMPLIFIED,
+        playerName: '',
+        drawCards,
+        drawLegendaryCards: hasLegendaryModule && effectiveGameMode === GAME_MODE_STANDARD ? drawLegendaryCards : undefined,
+        legendarySourceCards: hasLegendaryModule && effectiveGameMode === GAME_MODE_STANDARD ? optionalLegendaryCards : undefined,
+        syncPlayerState,
+        onBeforeSync: applyRankImageForPlayer,
+      });
     });
 
     return state;
@@ -829,46 +773,7 @@ export const jojGame: Game<JojGameState> = {
   ai: {
     enumerate: enumerateAiMoves({ DRAW_STAGE, END_STAGE }),
   },
-  playerView: ({ G, ctx, playerID }) => {
-    if (!playerID) return G;
-    const filteredHands: JojGameState['hands'] = {};
-    const filteredLegendaryHands: JojGameState['legendaryHands'] = {};
-    Object.entries(G.hands as Record<string, CardDefinition[]>).forEach(([pid, cards]) => {
-      filteredHands[pid] = pid === playerID ? cards : cards.map(({ id, title, category, image, effects, flavor }) => ({
-        id,
-        title,
-        category,
-        image,
-        effects,
-        flavor,
-      }));
-    });
-    Object.entries(G.legendaryHands as Record<string, CardDefinition[]>).forEach(([pid, cards]) => {
-      filteredLegendaryHands[pid] = pid === playerID ? cards : cards.map(({ id, title, category, image, effects, flavor }) => ({
-        id,
-        title,
-        category,
-        image,
-        effects,
-        flavor,
-      }));
-    });
-    const filteredPlayers: JojGameState['players'] = {};
-    Object.entries(G.players).forEach(([pid, state]) => {
-      filteredPlayers[pid] = {
-        ...state,
-        hand: filteredHands[pid],
-      };
-    });
-
-    return {
-      ...G,
-      players: filteredPlayers,
-      hands: filteredHands,
-      legendaryHands: filteredLegendaryHands,
-      deck: ctx.gameover ? G.deck : new Array(G.deck.length).fill({ id: 'hidden', title: 'Hidden', category: 'SUPPORT' }),
-    };
-  },
+  playerView: ({ G, ctx, playerID }) => createSanitizedPlayerView(G, ctx, playerID ?? undefined),
 };
 
 export type JojCtx = Ctx;

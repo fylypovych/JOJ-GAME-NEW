@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runGameSimulationsWithDeps } from '../src/game/simulation';
+import type { SimulationDeps } from '../src/game/simulation';
 import type { CardDefinition, JojGameState, ResourceKey } from '../src/game/types';
 
 const resourceKeys: readonly ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
@@ -41,13 +42,19 @@ test('simulation ends by score after no-progress round when deck is empty', () =
 });
 
 test('simulation report stores deck mode flags', () => {
-  const deps = {
+  const deps: SimulationDeps = {
     resourceKeys,
     shuffle: <T>(items: T[]) => [...items],
     cloneCard: (card: CardDefinition) => ({ ...card, effects: card.effects ? [...card.effects] : undefined }),
     getSharedDeckTemplate: () => ({
       deck: [{ id: 'support-x', title: 'S', category: 'SUPPORT', effects: [{ resource: 'time', value: 1 }] } as CardDefinition],
-      legendaryDeck: [{ id: 'legendary-03', title: 'L', category: 'NEUTRAL', effects: [] } as CardDefinition],
+      legendaryDeck: [{ id: 'legendary-03', title: 'L', category: 'LEGENDARY', effects: [] }],
+      rankTrack: [],
+      modules: [],
+      gameSetup: {
+        optionalMainDeckModuleIds: [],
+        legendaryDeckMode: 'separate',
+      },
     }),
     getActiveRanks: () => [{ id: 'recruit' }, { id: 'soldier', victory: true }],
     getTopRankId: () => 'soldier',
@@ -70,18 +77,18 @@ test('simulation report stores deck mode flags', () => {
     startingLegendaryHandSize: 1,
   };
 
-  const mainOnly = runGameSimulationsWithDeps(deps as any, 2, 1, 40, { useMainDeck: true, useLegendaryDeck: false });
+  const mainOnly = runGameSimulationsWithDeps(deps, 2, 1, 40, { useMainDeck: true, useLegendaryDeck: false });
   assert.equal(mainOnly.input.useMainDeck, true);
   assert.equal(mainOnly.input.useLegendaryDeck, false);
   assert.equal(mainOnly.input.gameMode, 'simplified');
 
-  const bothOff = runGameSimulationsWithDeps(deps as any, 2, 1, 40, { useMainDeck: false, useLegendaryDeck: false });
+  const bothOff = runGameSimulationsWithDeps(deps, 2, 1, 40, { useMainDeck: false, useLegendaryDeck: false });
   assert.equal(bothOff.input.useMainDeck, false);
   assert.equal(bothOff.input.useLegendaryDeck, false);
   assert.equal(bothOff.input.gameMode, 'simplified');
   assert.equal(bothOff.summary.stalled, 0);
 
-  const standardPlus = runGameSimulationsWithDeps(deps as any, 2, 1, 40, { gameMode: 'standard_plus' });
+  const standardPlus = runGameSimulationsWithDeps(deps, 2, 1, 40, { gameMode: 'standard_plus' });
   assert.equal(standardPlus.input.gameMode, 'standard_plus');
   assert.equal(standardPlus.input.useMainDeck, true);
   assert.equal(standardPlus.input.useLegendaryDeck, true);

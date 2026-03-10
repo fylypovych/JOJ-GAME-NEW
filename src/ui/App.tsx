@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { LobbyClient } from 'boardgame.io/client';
-import { Client } from 'boardgame.io/react';
-import { SocketIO } from 'boardgame.io/multiplayer';
 import type { CardDefinition, GameMode, RankDefinition } from '../game/types';
 import {
   addCustomCardToSharedDeckTemplate,
@@ -25,10 +23,9 @@ import {
 } from '../game/jojGame';
 import { AdminPage } from './AdminPage';
 import { useDbAdminTools } from './admin/useDbAdminTools';
-import { Board } from './Board';
-import { BoardV2 } from './BoardV2';
 import type { Language } from './i18n';
 import { defaultLanguage, text } from './i18n';
+import { ADMIN_UI_VARIANT_STORAGE_KEY, GAME_UI_VARIANT_STORAGE_KEY, NetworkClientV1, NetworkClientV2, SERVER_URL } from './app/clientConfig';
 import {
   ADMIN_TOKEN_STORAGE_KEY,
   DEFAULT_SERVER_URL,
@@ -40,7 +37,6 @@ import {
   SHARED_TEMPLATE_STORAGE_KEY,
   type GalleryCategoryFilter,
   galleryCategories,
-  getConfiguredServerUrl,
   normalizeServerUrl,
   parseSession,
   type LobbyMatch,
@@ -58,26 +54,6 @@ import {
 } from './app/sections';
 import { useAdminAuth } from './app/useAdminAuth';
 import { useAdminSnapshot } from './app/useAdminSnapshot';
-
-const SERVER_URL = getConfiguredServerUrl();
-const GAME_UI_VARIANT_STORAGE_KEY = 'joj-game-ui-variant-v1';
-const ADMIN_UI_VARIANT_STORAGE_KEY = 'joj-admin-ui-variant-v1';
-
-const NetworkClientV1 = Client({
-  game: jojGame,
-  board: Board,
-  debug: false,
-  numPlayers: 6,
-  multiplayer: SocketIO({ server: SERVER_URL }),
-});
-
-const NetworkClientV2 = Client({
-  game: jojGame,
-  board: BoardV2,
-  debug: false,
-  numPlayers: 6,
-  multiplayer: SocketIO({ server: SERVER_URL }),
-});
 
 const lobbyClient = new LobbyClient({ server: SERVER_URL });
 

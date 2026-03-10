@@ -1,8 +1,18 @@
 import { text } from '../../i18n';
 import type { Snapshot } from '../types';
-import type { GameMode } from '../../../game/types';
+import type { GameMode, JojGameState } from '../../../game/types';
+import type { SimulationReport } from '../../../game/jojGame';
 
 type T = ReturnType<typeof text>;
+type SnapshotCtx = {
+  currentPlayer?: string;
+  turn?: number;
+  phase?: string;
+  gameover?: { forcedStop?: boolean } | null;
+};
+type ChatEntry = JojGameState['chat'][number];
+type DeckCard = JojGameState['deck'][number];
+type SimulationRankRow = { rankId: string; pct: number; games: number };
 
 export const AdminImportTab = ({
   t, importTarget, setImportTarget, importCategoryMode, setImportCategoryMode, categories,
@@ -75,19 +85,21 @@ export const AdminStateTab = ({
   localizedRankName: (rankId: string) => string;
   onStopGame: () => void;
 }) => {
-  const raw = snapshot?.G as any;
-  const ctx = snapshot?.ctx as any;
-  const players = raw?.players && typeof raw.players === 'object' ? Object.entries(raw.players as Record<string, any>) : [];
-  const chat = Array.isArray(raw?.chat) ? raw.chat : [];
+  const raw = (snapshot?.G ?? null) as Partial<JojGameState> | null;
+  const ctx = (snapshot?.ctx ?? null) as SnapshotCtx | null;
+  const players = raw?.players && typeof raw.players === 'object'
+    ? Object.entries(raw.players)
+    : [];
+  const chat: ChatEntry[] = Array.isArray(raw?.chat) ? raw.chat : [];
   const lastChat = chat.slice(-8);
   const deckCount = Array.isArray(raw?.deck) ? raw.deck.length : 0;
-  const deckCards: any[] = Array.isArray(raw?.deck) ? raw.deck : [];
-  const hiddenDeckCount = deckCards.filter((card: any) => card?.id === 'hidden' || card?.title === 'Hidden').length;
-  const deckCategoryCounts = deckCards.reduce((acc: Record<string, number>, card: any) => {
+  const deckCards: DeckCard[] = Array.isArray(raw?.deck) ? raw.deck : [];
+  const hiddenDeckCount = deckCards.filter((card) => card?.id === 'hidden' || card?.title === 'Hidden').length;
+  const deckCategoryCounts = deckCards.reduce((acc: Record<string, number>, card) => {
     const key = typeof card?.category === 'string' && card.category.trim() ? card.category : 'UNKNOWN';
     acc[key] = (acc[key] ?? 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {});
   const deckCategorySummary = Object.entries(deckCategoryCounts)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([category, count]) => `${category}:${count}`)
@@ -98,11 +110,11 @@ export const AdminStateTab = ({
   const activePlayer = typeof ctx?.currentPlayer === 'string' ? ctx.currentPlayer : null;
   const turn = ctx?.turn ?? '-';
   const phase = ctx?.phase ?? '-';
-  const forcedStopped = Boolean(ctx?.gameover && typeof ctx.gameover === 'object' && (ctx.gameover as any).forcedStop);
-  const playerTag = (msg: any) => (
+  const forcedStopped = Boolean(ctx?.gameover && typeof ctx.gameover === 'object' && ctx.gameover.forcedStop);
+  const playerTag = (msg: ChatEntry) => (
     msg.type === 'system'
       ? t.systemTag
-      : (raw?.playerNames?.[msg.playerID] ?? msg.playerID ?? t.genericPlayer)
+      : (msg.playerID ? (raw?.playerNames?.[msg.playerID] ?? msg.playerID) : t.genericPlayer)
   );
 
   return (
@@ -171,7 +183,7 @@ export const AdminStateTab = ({
             {lastChat.length === 0 ? <p>{t.stateNoMessages}</p> : (
               <div className="admin-deck-list">
                 <ul>
-                  {lastChat.map((msg: any) => (
+                  {lastChat.map((msg) => (
                     <li key={String(msg.id ?? `${msg.createdAt}-${msg.text}`)}>
                       <strong>{playerTag(msg)}</strong>: {String(msg.text ?? '')}
                     </li>
@@ -206,7 +218,7 @@ export const AdminSimulationTab = ({
   setSimulationCount: (value: number) => void;
   simulationRunning: boolean;
   runSimulation: () => void;
-  simulationReport: any;
+  simulationReport: SimulationReport | null;
   simulationError?: string;
   simulationBlockedReason?: string;
   localizedRankName: (rankId: string) => string;
@@ -282,9 +294,9 @@ export const AdminSimulationTab = ({
         <p>{t.gameModeLabel}: {simulationReport.input.gameMode === 'standard_plus' ? t.gameModeStandardPlus : simulationReport.input.gameMode === 'simplified' ? t.gameModeSimplified : t.gameModeStandard}.</p>
         <p>{t.simulationFinishedLabel}: {simulationReport.summary.finished}, {t.simulationStalledLabel}: {simulationReport.summary.stalled}, {t.simulationAverageTurnsLabel}: {simulationReport.summary.avgTurns}.</p>
         <p>{t.simulationRankWinsLabel}: {simulationReport.summary.rankWins}, {t.simulationScoreWinsLabel}: {simulationReport.summary.scoreWins}.</p>
-        <p>{t.simulationTopReachedByPctLabel}: {simulationReport.topReachedRanksByPct.length ? simulationReport.topReachedRanksByPct.map((row: any) => `${localizedRankName(row.rankId)} - ${row.pct}% (${row.games}/${simulationReport.input.simulations})`).join(' | ') : t.simulationNoData}.</p>
-        <p>{t.simulationTopHighestRanksLabel}: {simulationReport.topReachedRanks.length ? simulationReport.topReachedRanks.map((row: any) => `${localizedRankName(row.rankId)} - ${row.pct}% (${row.games}/${simulationReport.input.simulations})`).join(' | ') : t.simulationNoData}.</p>
-        <p>{t.simulationAccumulatedResourcesLabel}: {t.resources.time} {simulationReport.lastGame.winnerResources.time}, {t.resources.reputation} {simulationReport.lastGame.winnerResources.reputation}, {t.resources.discipline} {simulationReport.lastGame.winnerResources.discipline}, {t.resources.documents} {simulationReport.lastGame.winnerResources.documents}, {t.resources.tech} {simulationReport.lastGame.winnerResources.tech}.</p>
+        <p>{t.simulationTopReachedByPctLabel}: {simulationReport.topReachedRanksByPct.length ? simulationReport.topReachedRanksByPct.map((row: SimulationRankRow) => `${localizedRankName(row.rankId)} - ${row.pct}% (${row.games}/${simulationReport.input.simulations})`).join(' | ') : t.simulationNoData}.</p>
+        <p>{t.simulationTopHighestRanksLabel}: {simulationReport.topReachedRanks.length ? simulationReport.topReachedRanks.map((row: SimulationRankRow) => `${localizedRankName(row.rankId)} - ${row.pct}% (${row.games}/${simulationReport.input.simulations})`).join(' | ') : t.simulationNoData}.</p>
+        <p>{t.simulationAccumulatedResourcesLabel}: {t.resources.time} {simulationReport.lastGame.winnerResources.time as number}, {t.resources.reputation} {simulationReport.lastGame.winnerResources.reputation as number}, {t.resources.discipline} {simulationReport.lastGame.winnerResources.discipline as number}, {t.resources.documents} {simulationReport.lastGame.winnerResources.documents as number}, {t.resources.tech} {simulationReport.lastGame.winnerResources.tech as number}.</p>
         <p>{t.simulationTurnsInMatchLabel}: {simulationReport.lastGame.turns}.</p>
         {simulationReport.issues.length ? <pre className="admin-json">{simulationReport.issues.join('\n')}</pre> : null}
       </div>

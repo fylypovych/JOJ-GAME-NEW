@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from '
 import { text } from '../../i18n';
 import type { DeckTarget, LegendaryDeckMode } from '../../../game/jojGame';
 import { normalizeImagePath } from '../../../game/imagePaths';
-import type { CardCategory } from '../../../game/types';
+import type { CardCategory, CardDefinition } from '../../../game/types';
 import { HoverImage } from '../HoverImage';
 
 type T = ReturnType<typeof text>;
@@ -41,9 +41,9 @@ export const AdminDeckTab = ({
   deckStats: { deck: number; discard: number; legendary: number; rankTrack: number };
   sharedDeckTemplate: {
     deckBackImage?: string;
-    deck: any[];
-    legendaryDeck: any[];
-    rankTrack: any[];
+    deck: CardDefinition[];
+    legendaryDeck: CardDefinition[];
+    rankTrack: CardDefinition[];
     gameSetup?: {
       lyapModuleId?: string;
       scandalModuleId?: string;
@@ -63,7 +63,7 @@ export const AdminDeckTab = ({
   onEditCardAt: (target: DeckTarget, index: number) => void;
   onEditCardById: (target: DeckTarget, cardId: string) => void;
   onRemoveCardAt: (target: DeckTarget, index: number) => void;
-  cardCatalog: any[];
+  cardCatalog: CardDefinition[];
   modules: ModuleDef[];
   onSaveModule: (module: ModuleDef) => void;
   onDeleteModule: (moduleId: string) => void;

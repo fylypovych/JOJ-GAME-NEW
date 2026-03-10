@@ -1,0 +1,83 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createEffectsEngine } from '../src/game/effectsEngine';
+import type { JojGameState, ResourceKey } from '../src/game/types';
+
+const makeState = (): JojGameState => ({
+  gameMode: 'standard',
+  deck: [],
+  discard: [],
+  legendaryDeck: [],
+  legendaryDiscard: [],
+  legendaryDraftCompleted: {},
+  systemMessageSeq: 0,
+  playerNames: { '0': '' },
+  chat: [],
+  players: {
+    '0': { hand: [], rankId: 'recruit', resources: { time: 1, reputation: 0, discipline: 3, documents: 1, tech: 0 } },
+  },
+  hands: { '0': [] },
+  legendaryHands: { '0': [] },
+  ranks: { '0': 'recruit' },
+  rankImageByPlayer: {},
+  resources: {
+    '0': { time: 1, reputation: 0, discipline: 3, documents: 1, tech: 0 },
+  },
+  promotedThisTurn: { '0': false },
+  lyapScandalShieldUntilTurn: { '0': 0 },
+  extraHandPlayTokens: { '0': 0 },
+  sukhpayZsuWatchUntilTurn: { '0': 0 },
+  sukhpayZsuPendingBonus: { '0': false },
+  gameStats: {
+    turnsCompleted: 0,
+    resourcesGainedTotal: 0,
+    resourcesLostTotal: 0,
+    resourcesGainedByType: { time: 0, reputation: 0, discipline: 0, documents: 0, tech: 0 },
+    resourcesLostByType: { time: 0, reputation: 0, discipline: 0, documents: 0, tech: 0 },
+    lyapsPlayedOnOthers: 0,
+    scandalsPlayedOnOthers: 0,
+  },
+  noPlayablePassStreak: 0,
+  endGameVote: { active: false, requestedBy: null, votes: {} },
+  pendingDrawAutoResolution: null,
+});
+
+const engine = createEffectsEngine({
+  resourceKeys: ['time', 'reputation', 'discipline', 'documents', 'tech'] as const,
+  getActiveRanks: () => [{ id: 'recruit' }, { id: 'soldier' }, { id: 'captain' }],
+});
+
+test('planReplacementResources spends two other units per missing unit', () => {
+  const plan = engine.planReplacementResources(
+    { time: 1, reputation: 0, discipline: 3, documents: 1, tech: 0 },
+    [{ resource: 'time', value: -2 }],
+  );
+  assert.deepEqual(plan, ['discipline', 'discipline']);
+});
+
+test('applyCardEffects rejects invalid explicit replacement sequence', () => {
+  const G = makeState();
+  const ok = engine.applyCardEffects(
+    G,
+    '0',
+    [{ resource: 'time', value: -2 }],
+    ['discipline'],
+  );
+  assert.equal(ok, false);
+  assert.equal(G.resources['0'].time, 1);
+  assert.equal(G.resources['0'].discipline, 3);
+});
+
+test('applyCardEffectsSoft clamps losses safely when strict resolution fails', () => {
+  const G = makeState();
+  const summary = engine.applyCardEffectsSoft(G, '0', [{ resource: 'reputation', value: -2 }]);
+  assert.equal(G.resources['0'].reputation, 0);
+  assert.equal(summary.resources.reputation ?? 0, 0);
+});
+
+test('applyCardEffects applies rank deltas after resources', () => {
+  const G = makeState();
+  const ok = engine.applyCardEffects(G, '0', [{ resource: 'rank', value: 1 }], []);
+  assert.equal(ok, true);
+  assert.equal(G.ranks['0'], 'soldier');
+});

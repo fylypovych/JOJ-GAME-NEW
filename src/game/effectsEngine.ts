@@ -154,11 +154,11 @@ export const createEffectsEngine = ({
       return true;
     };
 
-    effects.forEach((effect) => {
-      if (effect.resource === 'rank') return;
+    for (const effect of effects) {
+      if (effect.resource === 'rank') continue;
       if (effect.value >= 0) {
         nextResources[effect.resource] += effect.value;
-        return;
+        continue;
       }
       const need = Math.abs(effect.value);
       const have = Math.max(0, nextResources[effect.resource] ?? 0);
@@ -174,7 +174,7 @@ export const createEffectsEngine = ({
         }
         missing -= 1;
       }
-    });
+    }
 
     resourceKeys.forEach((key) => {
       playerResources[key] = nextResources[key];
