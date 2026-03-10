@@ -11,7 +11,6 @@ import {
   getSharedDeckTemplate,
   getSharedDeckTemplateStats,
   importSharedDeckTemplateJson,
-  jojGame,
   removeCardAtFromSharedDeckTemplate,
   runGameSimulations,
   setSharedRanks,

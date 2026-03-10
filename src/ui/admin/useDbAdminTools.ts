@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { ADMIN_DB_CONFIG_STORAGE_KEY, ADMIN_STORAGE_MODE_STORAGE_KEY, createAdminDbApiUrls, dbAdminText, parseStoredAdminDbConfig } from './dbApi';
 import type { AdminDbConfigDraft, AdminStorageMode } from './types';
 import type { Language } from '../i18n';
-
-const ADMIN_STORAGE_MODE_STORAGE_KEY = 'joj-admin-storage-mode-v1';
-const ADMIN_DB_CONFIG_STORAGE_KEY = 'joj-admin-db-config-v1';
 
 type AdminFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -14,37 +12,14 @@ type Args = {
 };
 
 export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
-  const ADMIN_DB_UI_CONFIG_API = `${serverUrl}/api/admin/db/ui-config`;
-  const ADMIN_DB_TEST_CONNECTION_API = `${serverUrl}/api/admin/db/test-connection`;
-  const ADMIN_DB_SCHEMA_API = `${serverUrl}/api/admin/db/schema`;
-  const ADMIN_DB_IMPORT_SCHEMA_API = `${serverUrl}/api/admin/db/import-schema`;
-  const ADMIN_DB_IMPORT_JSON_CONFIG_API = `${serverUrl}/api/admin/db/import-json-config`;
-  const ADMIN_DB_EXPORT_BACKUP_API = `${serverUrl}/api/admin/db/export-backup`;
-  const ADMIN_DB_RESTORE_BACKUP_API = `${serverUrl}/api/admin/db/restore-backup`;
+  const api = createAdminDbApiUrls(serverUrl);
+  const dbText = dbAdminText(lang);
 
   const [adminStorageMode, setAdminStorageMode] = useState<AdminStorageMode>(() => {
     const raw = window.localStorage.getItem(ADMIN_STORAGE_MODE_STORAGE_KEY);
     return raw === 'db' ? 'db' : 'file';
   });
-  const [adminDbConfigDraft, setAdminDbConfigDraft] = useState<AdminDbConfigDraft>(() => {
-    try {
-      const raw = window.localStorage.getItem(ADMIN_DB_CONFIG_STORAGE_KEY);
-      if (!raw) {
-        return { host: '127.0.0.1', port: '5432', database: 'joj_game', user: 'joj_user', password: '', sslMode: 'disable' };
-      }
-      const parsed = JSON.parse(raw) as Partial<AdminDbConfigDraft>;
-      return {
-        host: typeof parsed.host === 'string' ? parsed.host : '127.0.0.1',
-        port: typeof parsed.port === 'string' ? parsed.port : '5432',
-        database: typeof parsed.database === 'string' ? parsed.database : 'joj_game',
-        user: typeof parsed.user === 'string' ? parsed.user : 'joj_user',
-        password: typeof parsed.password === 'string' ? parsed.password : '',
-        sslMode: parsed.sslMode === 'require' ? 'require' : 'disable',
-      };
-    } catch {
-      return { host: '127.0.0.1', port: '5432', database: 'joj_game', user: 'joj_user', password: '', sslMode: 'disable' };
-    }
-  });
+  const [adminDbConfigDraft, setAdminDbConfigDraft] = useState<AdminDbConfigDraft>(() => parseStoredAdminDbConfig(window.localStorage.getItem(ADMIN_DB_CONFIG_STORAGE_KEY)));
 
   const [dbConfigSaveStatus, setDbConfigSaveStatus] = useState<string>('');
   const [dbConnectionTestStatus, setDbConnectionTestStatus] = useState<string>('');
@@ -85,7 +60,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
 
   const saveDbConfigDraft = () => {
     window.localStorage.setItem(ADMIN_DB_CONFIG_STORAGE_KEY, JSON.stringify(adminDbConfigDraft));
-    setDbConfigSaveStatus(lang === 'uk' ? 'Налаштування БД збережено локально у браузері.' : 'DB settings saved locally in the browser.');
+    setDbConfigSaveStatus(dbText.localSave);
     setDbConnectionTestStatus('');
     setDbConnectionTestError('');
   };
@@ -94,7 +69,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
     let cancelled = false;
     const loadServerDbUiConfig = async () => {
       try {
-        const response = await adminFetchRef.current(ADMIN_DB_UI_CONFIG_API);
+        const response = await adminFetchRef.current(api.uiConfig);
         const payload = (await response.json()) as {
           ok?: boolean;
           storageMode?: 'file' | 'db';
@@ -122,12 +97,12 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
     return () => {
       cancelled = true;
     };
-  }, [ADMIN_DB_UI_CONFIG_API]);
+  }, [api.uiConfig]);
 
   useEffect(() => {
     void (async () => {
       try {
-        await adminFetchRef.current(ADMIN_DB_UI_CONFIG_API, {
+        await adminFetchRef.current(api.uiConfig, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -139,13 +114,13 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
         // localStorage still preserves mode on same browser
       }
     })();
-  }, [ADMIN_DB_UI_CONFIG_API, adminStorageMode]);
+  }, [api.uiConfig, adminStorageMode]);
 
   const saveDbConfigDraftAndServer = () => {
     saveDbConfigDraft();
     void (async () => {
       try {
-        await adminFetch(ADMIN_DB_UI_CONFIG_API, {
+        await adminFetch(api.uiConfig, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -153,9 +128,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
             dbConfig: adminDbConfigDraft,
           }),
         });
-        setDbConfigSaveStatus(lang === 'uk'
-          ? 'Налаштування БД збережено (браузер + сервер).'
-          : 'DB settings saved (browser + server).');
+        setDbConfigSaveStatus(dbText.browserAndServerSave);
       } catch {
         // keep local success message if server save failed
       }
@@ -168,19 +141,19 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
     setDbConnectionTestError('');
     setDbConnectionTestRunning(true);
     try {
-      const response = await adminFetch(ADMIN_DB_TEST_CONNECTION_API, {
+      const response = await adminFetch(api.testConnection, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(adminDbConfigDraft),
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
       if (!response.ok || !payload.ok) {
-        setDbConnectionTestError(payload.details ?? payload.error ?? (lang === 'uk' ? 'Не вдалося підключитися до БД.' : 'Failed to connect to database.'));
+        setDbConnectionTestError(payload.details ?? payload.error ?? dbText.connectionFailed);
         return;
       }
-      setDbConnectionTestStatus(payload.message ?? (lang === 'uk' ? 'Підключення до БД успішне.' : 'Database connection successful.'));
+      setDbConnectionTestStatus(payload.message ?? dbText.connectionOk);
     } catch {
-      setDbConnectionTestError(lang === 'uk' ? 'Не вдалося підключитися до БД.' : 'Failed to connect to database.');
+      setDbConnectionTestError(dbText.connectionFailed);
     } finally {
       setDbConnectionTestRunning(false);
     }
@@ -193,16 +166,16 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
     setDbExportSchemaError('');
     setDbExportSchemaRunning(true);
     try {
-      const response = await adminFetch(ADMIN_DB_SCHEMA_API);
+      const response = await adminFetch(api.schema);
       const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; filename?: string; content?: string };
       if (!response.ok || !payload.ok || typeof payload.content !== 'string') {
-        setDbExportSchemaError(payload.details ?? payload.error ?? (lang === 'uk' ? 'Не вдалося експортувати схему БД.' : 'Failed to export DB schema.'));
+        setDbExportSchemaError(payload.details ?? payload.error ?? dbText.exportSchemaFailed);
         return;
       }
       downloadTextFile(payload.filename || 'db.sql', payload.content, 'application/sql;charset=utf-8');
-      setDbExportSchemaStatus(lang === 'uk' ? 'Схему БД експортовано.' : 'DB schema exported.');
+      setDbExportSchemaStatus(dbText.exportSchemaOk);
     } catch {
-      setDbExportSchemaError(lang === 'uk' ? 'Не вдалося експортувати схему БД.' : 'Failed to export DB schema.');
+      setDbExportSchemaError(dbText.exportSchemaFailed);
     } finally {
       setDbExportSchemaRunning(false);
     }
@@ -217,19 +190,19 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
     setDbImportSchemaError('');
     setDbImportSchemaRunning(true);
     try {
-      const response = await adminFetch(ADMIN_DB_IMPORT_SCHEMA_API, {
+      const response = await adminFetch(api.importSchema, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(adminDbConfigDraft),
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
       if (!response.ok || !payload.ok) {
-        setDbImportSchemaError(payload.details ?? payload.error ?? (lang === 'uk' ? 'Не вдалося імпортувати db.sql.' : 'Failed to import db.sql.'));
+        setDbImportSchemaError(payload.details ?? payload.error ?? dbText.importSchemaFailed);
         return;
       }
-      setDbImportSchemaStatus(payload.message ?? (lang === 'uk' ? 'Схему БД імпортовано.' : 'DB schema imported.'));
+      setDbImportSchemaStatus(payload.message ?? dbText.importSchemaOk);
     } catch {
-      setDbImportSchemaError(lang === 'uk' ? 'Не вдалося імпортувати db.sql.' : 'Failed to import db.sql.');
+      setDbImportSchemaError(dbText.importSchemaFailed);
     } finally {
       setDbImportSchemaRunning(false);
     }
@@ -242,19 +215,19 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
     setDbImportJsonConfigError('');
     setDbImportJsonConfigRunning(true);
     try {
-      const response = await adminFetch(ADMIN_DB_IMPORT_JSON_CONFIG_API, {
+      const response = await adminFetch(api.importJsonConfig, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(adminDbConfigDraft),
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
       if (!response.ok || !payload.ok) {
-        setDbImportJsonConfigError(payload.details ?? payload.error ?? (lang === 'uk' ? 'Не вдалося імпортувати JSON-дані в БД.' : 'Failed to import JSON data into DB.'));
+        setDbImportJsonConfigError(payload.details ?? payload.error ?? dbText.importJsonFailed);
         return;
       }
-      setDbImportJsonConfigStatus(payload.message ?? (lang === 'uk' ? 'JSON-дані імпортовано в БД.' : 'JSON data imported into DB.'));
+      setDbImportJsonConfigStatus(payload.message ?? dbText.importJsonOk);
     } catch {
-      setDbImportJsonConfigError(lang === 'uk' ? 'Не вдалося імпортувати JSON-дані в БД.' : 'Failed to import JSON data into DB.');
+      setDbImportJsonConfigError(dbText.importJsonFailed);
     } finally {
       setDbImportJsonConfigRunning(false);
     }
@@ -267,20 +240,20 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
     setDbExportBackupError('');
     setDbExportBackupRunning(true);
     try {
-      const response = await adminFetch(ADMIN_DB_EXPORT_BACKUP_API, {
+      const response = await adminFetch(api.exportBackup, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(adminDbConfigDraft),
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; filename?: string; content?: string };
       if (!response.ok || !payload.ok || typeof payload.content !== 'string') {
-        setDbExportBackupError(payload.details ?? payload.error ?? (lang === 'uk' ? 'Не вдалося експортувати резервну копію БД.' : 'Failed to export DB backup.'));
+        setDbExportBackupError(payload.details ?? payload.error ?? dbText.exportBackupFailed);
         return;
       }
       downloadTextFile(payload.filename || `joj-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.sql`, payload.content, 'application/sql;charset=utf-8');
-      setDbExportBackupStatus(lang === 'uk' ? 'Резервну копію БД експортовано.' : 'DB backup exported.');
+      setDbExportBackupStatus(dbText.exportBackupOk);
     } catch {
-      setDbExportBackupError(lang === 'uk' ? 'Не вдалося експортувати резервну копію БД.' : 'Failed to export DB backup.');
+      setDbExportBackupError(dbText.exportBackupFailed);
     } finally {
       setDbExportBackupRunning(false);
     }
@@ -292,25 +265,25 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
     setDbRestoreBackupStatus('');
     setDbRestoreBackupError('');
     if (!file) {
-      setDbRestoreBackupError(lang === 'uk' ? 'Оберіть .sql файл резервної копії.' : 'Choose a .sql backup file.');
+      setDbRestoreBackupError(dbText.chooseBackup);
       return;
     }
     setDbRestoreBackupRunning(true);
     try {
       const sql = await file.text();
-      const response = await adminFetch(ADMIN_DB_RESTORE_BACKUP_API, {
+      const response = await adminFetch(api.restoreBackup, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...adminDbConfigDraft, filename: file.name, sql }),
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
       if (!response.ok || !payload.ok) {
-        setDbRestoreBackupError(payload.details ?? payload.error ?? (lang === 'uk' ? 'Не вдалося відновити резервну копію БД.' : 'Failed to restore DB backup.'));
+        setDbRestoreBackupError(payload.details ?? payload.error ?? dbText.restoreBackupFailed);
         return;
       }
-      setDbRestoreBackupStatus(payload.message ?? (lang === 'uk' ? 'Резервну копію БД відновлено.' : 'DB backup restored.'));
+      setDbRestoreBackupStatus(payload.message ?? dbText.restoreBackupOk);
     } catch {
-      setDbRestoreBackupError(lang === 'uk' ? 'Не вдалося відновити резервну копію БД.' : 'Failed to restore DB backup.');
+      setDbRestoreBackupError(dbText.restoreBackupFailed);
     } finally {
       setDbRestoreBackupRunning(false);
     }

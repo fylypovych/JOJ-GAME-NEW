@@ -3,6 +3,7 @@ import { GENERAL_RANK_ID, ranks as baseRanks } from './ranks';
 import { cloneCard, cloneRank } from './cloneUtils';
 import { normalizeImagePath } from './imagePaths';
 import { resourceKeys } from './resourceMeta';
+import { importTemplateCardsByCatalogIds, importTemplateCardsByFullRows, isLegendaryDeckOnlyCardId } from './sharedConfigImport';
 import {
   buildTemplateWithDefaults,
   defaultSharedDeckTemplateBase,
@@ -317,39 +318,6 @@ export const exportSharedDeckTemplateJson = (): string => {
   }, null, 2);
 };
 
-const validCategories = new Set<CardDefinition['category']>(['LYAP', 'SCANDAL', 'SUPPORT', 'COMMAND', 'VVNZ', 'LEGENDARY']);
-const isLegendaryDeckOnlyCardId = (id: string) => /^legendary-/i.test(id);
-const validEffectResources = new Set<string>(['time', 'reputation', 'discipline', 'documents', 'tech', 'rank']);
-
-const parseCard = (value: unknown): CardDefinition | null => {
-  if (!value || typeof value !== 'object') return null;
-  const raw = value as Record<string, unknown>;
-  if (typeof raw.id !== 'string' || typeof raw.title !== 'string') return null;
-  if (raw.titleEn !== undefined && typeof raw.titleEn !== 'string') return null;
-  const rawCategory = raw.category === 'DECISION' ? 'COMMAND' : raw.category;
-  if (!validCategories.has(rawCategory as CardDefinition['category'])) return null;
-  const normalizedCategory = rawCategory as CardDefinition['category'];
-  const image = normalizeImagePath(typeof raw.image === 'string' ? raw.image : undefined);
-  let effects: CardDefinition['effects'];
-  if (raw.effects !== undefined) {
-    if (!Array.isArray(raw.effects)) return null;
-    const parsedEffects: NonNullable<CardDefinition['effects']> = [];
-    for (const effect of raw.effects) {
-      if (!effect || typeof effect !== 'object') return null;
-      const row = effect as Record<string, unknown>;
-      if (typeof row.resource !== 'string' || !validEffectResources.has(row.resource)) return null;
-      if (typeof row.value !== 'number') return null;
-      parsedEffects.push({ resource: row.resource as 'rank' | ResourceKey, value: row.value });
-    }
-    effects = parsedEffects;
-  }
-  const flavor = typeof raw.flavor === 'string' ? raw.flavor : undefined;
-  const titleEn = typeof raw.titleEn === 'string' ? raw.titleEn : undefined;
-  const flavorEn = typeof raw.flavorEn === 'string' ? raw.flavorEn : undefined;
-  const grantRank = typeof raw.grantRank === 'string' && raw.grantRank.trim() ? raw.grantRank.trim() : undefined;
-  return { id: raw.id, title: raw.title, titleEn, category: normalizedCategory, image, grantRank, effects, flavor, flavorEn };
-};
-
 export const importSharedDeckTemplateJson = (text: string): { ok: true } | { ok: false; error: string } => {
   let parsed: unknown;
   try {
@@ -365,74 +333,20 @@ export const importSharedDeckTemplateJson = (text: string): { ok: true } | { ok:
   let typedRankTrack: CardDefinition[] = [];
   let typedExtraCatalog: CardDefinition[] = [];
 
-  const importByFullCards = () => {
-    if (!Array.isArray(raw.deck) || !Array.isArray(raw.legendaryDeck)) return { ok: false as const, error: 'Template must contain deck and legendaryDeck arrays' };
-    const deck = raw.deck.map(parseCard);
-    const legendaryDeck = raw.legendaryDeck.map(parseCard);
-    const rankTrack = (Array.isArray(raw.rankTrack) ? raw.rankTrack : []).map(parseCard);
-    if (deck.some((card) => !card) || legendaryDeck.some((card) => !card) || rankTrack.some((card) => !card)) return { ok: false as const, error: 'One or more cards have invalid schema' };
-    typedDeck = (deck as CardDefinition[]).map(cloneCard);
-    typedLegendaryDeck = (legendaryDeck as CardDefinition[]).map(cloneCard);
-    typedRankTrack = (rankTrack as CardDefinition[]).map(cloneCard);
-    if (Array.isArray(raw.catalog)) {
-      const catalogParsed = raw.catalog.map(parseCard);
-      if (catalogParsed.some((card) => !card)) return { ok: false as const, error: 'One or more catalog cards have invalid schema' };
-      const inMain = new Set<string>([
-        ...typedDeck.map((card) => card.id),
-        ...typedLegendaryDeck.map((card) => card.id),
-        ...typedRankTrack.map((card) => card.id),
-      ]);
-      typedExtraCatalog = (catalogParsed as CardDefinition[])
-        .filter((card) => !inMain.has(card.id))
-        .map(cloneCard);
-    }
-    return { ok: true as const };
-  };
-
-  const importByCatalogIds = () => {
-    if (!Array.isArray(raw.catalog) || !Array.isArray(raw.deckIds) || !Array.isArray(raw.legendaryDeckIds)) return { ok: false as const, error: 'Template must contain catalog, deckIds and legendaryDeckIds arrays' };
-    const catalogParsed = raw.catalog.map(parseCard);
-    if (catalogParsed.some((card) => !card)) return { ok: false as const, error: 'One or more catalog cards have invalid schema' };
-    const byId = new Map<string, CardDefinition>();
-    (catalogParsed as CardDefinition[]).forEach((card) => { if (!byId.has(card.id)) byId.set(card.id, cloneCard(card)); });
-    const resolveIds = (ids: unknown[], field: string): CardDefinition[] | null => {
-      const out: CardDefinition[] = [];
-      for (const idRaw of ids) {
-        if (typeof idRaw !== 'string') return null;
-        const card = byId.get(idRaw);
-        if (!card) throw new Error(`Unknown card id in ${field}: ${idRaw}`);
-        out.push(cloneCard(card));
-      }
-      return out;
-    };
-    try {
-      const deck = resolveIds(raw.deckIds as unknown[], 'deckIds');
-      const legendary = resolveIds(raw.legendaryDeckIds as unknown[], 'legendaryDeckIds');
-      const rankTrack = resolveIds(Array.isArray(raw.rankTrackIds) ? raw.rankTrackIds : [], 'rankTrackIds');
-      if (!deck || !legendary || !rankTrack) return { ok: false as const, error: 'Template id arrays must contain strings only' };
-      typedDeck = deck;
-      typedLegendaryDeck = legendary;
-      typedRankTrack = rankTrack;
-      const used = new Set<string>([
-        ...typedDeck.map((card) => card.id),
-        ...typedLegendaryDeck.map((card) => card.id),
-        ...typedRankTrack.map((card) => card.id),
-      ]);
-      typedExtraCatalog = (catalogParsed as CardDefinition[])
-        .filter((card) => !used.has(card.id))
-        .map(cloneCard);
-      return { ok: true as const };
-    } catch (error) {
-      return { ok: false as const, error: String(error instanceof Error ? error.message : error) };
-    }
-  };
-
   if (Array.isArray(raw.catalog) && Array.isArray(raw.deckIds) && Array.isArray(raw.legendaryDeckIds)) {
-    const result = importByCatalogIds();
+    const result = importTemplateCardsByCatalogIds(raw);
     if (!result.ok) return result;
+    typedDeck = result.deck;
+    typedLegendaryDeck = result.legendaryDeck;
+    typedRankTrack = result.rankTrack;
+    typedExtraCatalog = result.extraCatalog;
   } else {
-    const result = importByFullCards();
+    const result = importTemplateCardsByFullRows(raw);
     if (!result.ok) return result;
+    typedDeck = result.deck;
+    typedLegendaryDeck = result.legendaryDeck;
+    typedRankTrack = result.rankTrack;
+    typedExtraCatalog = result.extraCatalog;
   }
 
   typedDeck = typedDeck.filter((card) => !isLegendaryDeckOnlyCardId(card.id));

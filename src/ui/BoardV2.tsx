@@ -2,11 +2,11 @@ import { useMemo, useRef, useState } from 'react';
 import type { CardDefinition, ResourceKey } from '../game/types';
 import { normalizeImagePath } from '../game/imagePaths';
 import { canPlayHandCardAtStage } from '../game/turnRules';
-import { cardTitle, categoryLabel, localizeSystemMessageText, rankLabel, text } from './i18n';
-import { BoardChatPanel, GameCardTile, PilePreview } from './board/components';
+import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
+import { GameCardTile, PilePreview } from './board/components';
 import { isPlayAllowedForCard } from './board/handRules';
 import { buildNextRankHint, getBoardPromoteBlockedReason, getBoardVvnzBlockedReason, getNextRankSeatMeta } from './board/rankHints';
-import { buildReplacementSlots } from './board/replacement';
+import { BoardV2HandSection, BoardV2PlayerOverview, BoardV2SelectionPanel, BoardV2SidePanel } from './board/v2Sections';
 import { usePendingSelection } from './board/usePendingSelection';
 import { useBoardV2Sync } from './board/useBoardV2Sync';
 import type { LocalizedBoardProps } from './board/types';
@@ -477,122 +477,36 @@ export const BoardV2 = ({
               )}
             </div>
             {notice ? <p className={`game-ui-v2-notice is-${notice.type}`}>{notice.text}</p> : null}
-            {pendingSelection ? (
-              <div className="game-ui-v2-selection-panel game-ui-v2-selection-panel-inline">
-                <div>
-                  <p className="game-ui-v2-kicker">
-                    {activeSelectionNeedsTarget
-                      ? v2.pickTarget
-                      : (activeSelectionNeedsReplacement ? v2.replacementSelection : v2.pickResource)}
-                  </p>
-                  <h3>{currentPendingCard ? cardTitle(currentPendingCard.id, currentPendingCard.title, lang) : pendingSelection.cardId}</h3>
-                  <p className="game-ui-v2-subtle">
-                    {activeSelectionNeedsTarget
-                      ? v2.selectableTargetHint
-                      : (activeSelectionNeedsReplacement ? v2.replacementGuide : v2.selectableResourceHint)}
-                  </p>
-                </div>
-                {activeSelectionNeedsTarget ? (
-                  <div className="game-ui-v2-chip-row">
-                    {opponentIds.map((pid) => (
-                      <button
-                        key={`pick-target-${pid}`}
-                        type="button"
-                        className={`game-ui-v2-pick-chip${selectedTargetId === pid ? ' is-selected' : ''}`}
-                        onClick={() => {
-                          setSelectedTargetId(pid);
-                          pickTargetNotice(pid);
-                        }}
-                      >
-                        {playerLabelById(pid)}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                {activeSelectionNeedsReplacement ? (
-                  <>
-                    {replacementTargetIds.length > 0 ? (
-                      <>
-                        <p className="game-ui-v2-subtle">{v2.replacementTarget}</p>
-                        <div className="game-ui-v2-chip-row">
-                          {replacementTargetIds.map((pid) => {
-                            const targetResources = G?.resources?.[pid];
-                            const required = targetResources && currentPendingCard
-                              ? buildReplacementSlots(targetResources, currentPendingCard.effects).slots.length
-                              : 0;
-                            const selected = replacementSelectionsByTarget[pid]?.length ?? 0;
-                            return (
-                              <button
-                                key={`replacement-target-${pid}`}
-                                type="button"
-                                className={`game-ui-v2-pick-chip${replacementActiveTargetId === pid ? ' is-selected' : ''}`}
-                                onClick={() => setActiveReplacementTargetId(pid)}
-                              >
-                                {playerLabelById(pid)} ({selected}/{required})
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {replacementActiveTargetId ? (
-                          <>
-                            <p className="game-ui-v2-subtle">
-                              {v2.replacementProgress}: {replacementActiveSelected.length}/{replacementActiveSlots.length}
-                            </p>
-                            <div className="game-ui-v2-chip-row">
-                              {RESOURCE_ORDER.map((key) => (
-                                <button
-                                  key={`replacement-resource-${key}`}
-                                  type="button"
-                                  className={`game-ui-v2-pick-chip${
-                                    replacementActiveSlots[replacementActiveSelected.length] === key ? ' is-selected' : ''
-                                  }`}
-                                  onClick={() => appendReplacementResource(key)}
-                                >
-                                  {resourceLabels[key]} ({replacementActiveTargetResources?.[key] ?? 0})
-                                </button>
-                              ))}
-                            </div>
-                            <div className="game-ui-v2-selection-actions">
-                              <button type="button" className="ghost" onClick={undoReplacementResource}>
-                                {v2.undoPick}
-                              </button>
-                            </div>
-                          </>
-                        ) : null}
-                      </>
-                    ) : (
-                      <p className="game-ui-v2-subtle">{v2.replacementNotRequired}</p>
-                    )}
-                  </>
-                ) : null}
-                {activeSelectionNeedsResource ? (
-                  <div className="game-ui-v2-chip-row">
-                    {RESOURCE_ORDER.map((key) => (
-                      <button
-                        key={`pick-resource-${key}`}
-                        type="button"
-                        className={`game-ui-v2-pick-chip${selectedResource === key ? ' is-selected' : ''}`}
-                        onClick={() => setSelectedResource(key)}
-                      >
-                        {resourceLabels[key]} ({resources[key] ?? 0})
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                <div className="game-ui-v2-selection-actions">
-                  <button type="button" onClick={confirmPendingSelection}>{v2.confirm}</button>
-                  <button
-                    type="button"
-                    className="ghost"
-                    onClick={() => {
-                      clearPendingSelection();
-                    }}
-                  >
-                    {v2.cancel}
-                  </button>
-                </div>
-              </div>
-            ) : null}
+            <BoardV2SelectionPanel
+              pendingSelection={pendingSelection}
+              activeSelectionNeedsTarget={activeSelectionNeedsTarget}
+              activeSelectionNeedsReplacement={activeSelectionNeedsReplacement}
+              activeSelectionNeedsResource={activeSelectionNeedsResource}
+              currentPendingCard={currentPendingCard}
+              selectedTargetId={selectedTargetId}
+              setSelectedTargetId={setSelectedTargetId}
+              opponentIds={opponentIds}
+              playerLabelById={playerLabelById}
+              v2={v2}
+              lang={lang}
+              replacementTargetIds={replacementTargetIds}
+              G={G}
+              replacementSelectionsByTarget={replacementSelectionsByTarget}
+              replacementActiveTargetId={replacementActiveTargetId}
+              setActiveReplacementTargetId={setActiveReplacementTargetId}
+              replacementActiveSelected={replacementActiveSelected}
+              replacementActiveSlots={replacementActiveSlots}
+              replacementActiveTargetResources={replacementActiveTargetResources}
+              resourceLabels={resourceLabels}
+              appendReplacementResource={appendReplacementResource}
+              undoReplacementResource={undoReplacementResource}
+              selectedResource={selectedResource}
+              setSelectedResource={setSelectedResource}
+              resources={resources}
+              confirmPendingSelection={confirmPendingSelection}
+              clearPendingSelection={clearPendingSelection}
+              pickTargetNotice={pickTargetNotice}
+            />
           </section>
 
           <section className="game-ui-v2-piles">
@@ -630,46 +544,21 @@ export const BoardV2 = ({
               </div>
               <div className="pile">
                 <p>{v2.playersOverview} ({opponentIds.length})</p>
-                <div className="game-ui-v2-players-grid">
-                  {opponentIds.map((pid) => {
-                    const pResources = G.resources?.[pid];
-                    const pRankId = G.ranks?.[pid] ?? '';
-                    const pRank = sharedRanks.find((r) => r.id === pRankId)?.name ?? rankLabel(pRankId, lang);
-                    const active = ctx.currentPlayer === pid;
-                    const selectable = activeSelectionNeedsTarget;
-                    const pMeta = getNextRankSeatMeta({ G, playerID: pid, sharedRanks });
-                    return (
-                      <button
-                        key={`player-${pid}`}
-                        type="button"
-                        className={`game-ui-v2-player-card${active ? ' is-active' : ''}${selectedTargetId === pid ? ' is-selected' : ''}${selectable ? ' is-selectable' : ''}`}
-                        onClick={() => {
-                          if (!selectable) return;
-                          setSelectedTargetId(pid);
-                          postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`);
-                        }}
-                        disabled={!selectable}
-                        title={selectable ? v2.selectableTargetHint : undefined}
-                      >
-                        <div className="game-ui-v2-player-head">
-                          <strong>{playerLabelById(pid)}</strong>
-                          <span>#{pid}</span>
-                        </div>
-                        <div className="game-ui-v2-player-rank">{pRank}</div>
-                        <div className="game-ui-v2-player-badges">
-                          {selectable ? <span className="pill pill-badge">{v2.targetableNow}</span> : null}
-                          {pMeta.seatBlocked ? <span className="pill pill-badge">{v2.seatBlocked}</span> : null}
-                          {(G.lyapScandalShieldUntilTurn?.[pid] ?? 0) > 0 ? <span className="pill pill-badge">{v2.shieldUntil}: {G.lyapScandalShieldUntilTurn?.[pid] ?? 0}</span> : null}
-                        </div>
-                        <div className="game-ui-v2-player-resources">
-                          {RESOURCE_ORDER.map((key) => (
-                            <span key={`${pid}-${key}`}>{resourceLabels[key]}: {pResources?.[key] ?? 0}</span>
-                          ))}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                <BoardV2PlayerOverview
+                  opponentIds={opponentIds}
+                  G={G}
+                  sharedRanks={sharedRanks}
+                  ctxCurrentPlayer={ctx.currentPlayer}
+                  lang={lang}
+                  selectedTargetId={selectedTargetId}
+                  activeSelectionNeedsTarget={activeSelectionNeedsTarget}
+                  setSelectedTargetId={setSelectedTargetId}
+                  postTargetPick={(pid) => postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`)}
+                  playerLabelById={playerLabelById}
+                  resourceLabels={resourceLabels}
+                  v2={v2}
+                  getNextRankSeatMeta={getNextRankSeatMeta}
+                />
               </div>
             </div>
           </section>
@@ -704,81 +593,65 @@ export const BoardV2 = ({
                 </label>
               </div>
             </div>
-            <div className="hand game-ui-v2-hand-grid">
-              {handCardsView.map(({ card, playable }) => {
-                const canDiscardThisCard = mustDiscardOverflow && card.category !== 'LYAP' && card.category !== 'SCANDAL';
-                const needsTarget = card.category === 'LYAP';
+            <BoardV2HandSection
+              title={`${t.yourHand} (${hand.length}/8)`}
+              cards={handCardsView.map(({ card }) => card)}
+              cardImageById={cardImageById}
+              lang={lang}
+              openPreviewKey={openPreviewKey}
+              togglePreview={togglePreview}
+              closePreview={() => setOpenPreviewKey(null)}
+              categoryText={(card) => categoryLabel(card.category, lang)}
+              actionLabel={v2.play}
+              onAction={handleHandCardAction}
+              actionDisabled={() => !canPlayHandCard}
+              effectLabel={effectLabel}
+              badges={(card) => {
+                const playable = handCardsView.find((row) => row.card.id === card.id)?.playable ?? false;
                 const vvnzReason = getBoardVvnzBlockedReason({ card, G, playerID: id, sharedRanks, resources, resourceLabels, lang });
-                const helperText = vvnzReason || (!playable && !canPlayHandCard ? v2.actionUnavailable : undefined);
-                const badges = [
+                return [
                   playable ? v2.canPlayNow : v2.notNow,
-                  ...(needsTarget ? [v2.requiresTarget] : []),
+                  ...(card.category === 'LYAP' ? [v2.requiresTarget] : []),
                   ...(card.category === 'VVNZ' && vvnzReason ? [categoryLabel(card.category, lang)] : []),
                 ];
-                return (
-                  <GameCardTile
-                    key={`v2-hand-${card.id}`}
-                    card={card}
-                    resolvedImage={cardImageById[card.id]}
-                    lang={lang}
-                    categoryText={categoryLabel(card.category, lang)}
-                    openPreviewKey={openPreviewKey}
-                    previewKey={`v2-hand-preview-${card.id}`}
-                    onTogglePreview={togglePreview}
-                    onClosePreview={() => setOpenPreviewKey(null)}
-                    actionLabel={v2.play}
-                    onAction={() => handleHandCardAction(card)}
-                    actionDisabled={!canPlayHandCard}
-                    extraAction={canDiscardThisCard ? {
-                      label: v2.discard,
-                      onClick: () => moves.discardFromHand?.(card.id),
-                      disabled: typeof moves.discardFromHand !== 'function',
-                      className: 'game-card-inline-discard',
-                    } : undefined}
-                    effectLabel={effectLabel}
-                    badges={badges}
-                    helperText={helperText}
-                  />
-                );
-              })}
-            </div>
+              }}
+              helperText={(card) => {
+                const playable = handCardsView.find((row) => row.card.id === card.id)?.playable ?? false;
+                const vvnzReason = getBoardVvnzBlockedReason({ card, G, playerID: id, sharedRanks, resources, resourceLabels, lang });
+                return vvnzReason || (!playable && !canPlayHandCard ? v2.actionUnavailable : undefined);
+              }}
+              extraAction={(card) => {
+                const canDiscardThisCard = mustDiscardOverflow && card.category !== 'LYAP' && card.category !== 'SCANDAL';
+                return canDiscardThisCard ? {
+                  label: v2.discard,
+                  onClick: () => moves.discardFromHand?.(card.id),
+                  disabled: typeof moves.discardFromHand !== 'function',
+                  className: 'game-card-inline-discard',
+                } : undefined;
+              }}
+            />
           </section>
 
           {!isSimplifiedMode ? (
-            <section className="game-ui-v2-hand-section">
-              <div className="game-ui-v2-hand-head">
-                <div>
-                  <h3>{t.legendaryHand} ({legendaryHand.length})</h3>
-                  <p className="game-ui-v2-subtle">{t.legendaryHandHint}</p>
-                </div>
-              </div>
-              <div className="hand game-ui-v2-hand-grid">
-                {legendaryHand.map((card) => {
-                  const badges = [
-                    card.id === 'legendary-10' ? v2.requiresTarget : '',
-                    (card.id === 'legendary-09' || card.id === 'legendary-06') ? v2.requiresResource : '',
-                  ].filter(Boolean);
-                  return (
-                    <GameCardTile
-                      key={`v2-legendary-${card.id}`}
-                      card={card}
-                      resolvedImage={cardImageById[card.id]}
-                      lang={lang}
-                      categoryText={t.legendaryDeckLabel}
-                      openPreviewKey={openPreviewKey}
-                      previewKey={`v2-legendary-preview-${card.id}`}
-                      onTogglePreview={togglePreview}
-                      onClosePreview={() => setOpenPreviewKey(null)}
-                      actionLabel={v2.playLegendary}
-                      onAction={() => handleLegendaryCardAction(card)}
-                      actionDisabled={typeof moves.playLegendaryCard !== 'function'}
-                      effectLabel={effectLabel}
-                      badges={badges.length ? badges : undefined}
-                    />
-                  );
-                })}
-              </div>
-            </section>
+            <BoardV2HandSection
+              title={`${t.legendaryHand} (${legendaryHand.length})`}
+              subtitle={t.legendaryHandHint}
+              cards={legendaryHand}
+              cardImageById={cardImageById}
+              lang={lang}
+              openPreviewKey={openPreviewKey}
+              togglePreview={togglePreview}
+              closePreview={() => setOpenPreviewKey(null)}
+              categoryText={() => t.legendaryDeckLabel}
+              actionLabel={v2.playLegendary}
+              onAction={handleLegendaryCardAction}
+              actionDisabled={() => typeof moves.playLegendaryCard !== 'function'}
+              effectLabel={effectLabel}
+              badges={(card) => [
+                ...(card.id === 'legendary-10' ? [v2.requiresTarget] : []),
+                ...((card.id === 'legendary-09' || card.id === 'legendary-06') ? [v2.requiresResource] : []),
+              ]}
+            />
           ) : null}
 
           {ctx.gameover ? (
@@ -820,43 +693,20 @@ export const BoardV2 = ({
           ) : null}
         </div>
 
-        <aside className="game-ui-v2-side">
-          <section className="game-ui-v2-events game-ui-v2-mobile-tabs">
-            <div className="game-ui-v2-side-tab-row">
-              <button type="button" className={sidePanelTab === 'events' ? 'is-active' : ''} onClick={() => setSidePanelTab('events')}>{v2.openEvents}</button>
-              <button type="button" className={sidePanelTab === 'chat' ? 'is-active' : ''} onClick={() => setSidePanelTab('chat')}>{v2.openChat}</button>
-            </div>
-          </section>
-          <section className={`game-ui-v2-events${sidePanelTab !== 'events' ? ' game-ui-v2-mobile-hidden' : ''}`}>
-            <h3>{v2.recentEvents}</h3>
-            <div className="game-ui-v2-events-list">
-              {latestEvents.map((row) => {
-                const author = row.type === 'system' ? t.systemTag : playerLabelById(row.playerID);
-                return (
-                  <div key={`v2-evt-${row.id}`} className={`game-ui-v2-event-row ${row.type === 'system' ? 'is-system' : ''}`}>
-                    <strong>{author}</strong>
-                    <span>{row.type === 'system' ? localizeSystemMessageText(row.text, lang) : row.text}</span>
-                  </div>
-                );
-              })}
-              {!latestEvents.length ? <p className="game-ui-v2-subtle">{v2.noEventsYet}</p> : null}
-            </div>
-          </section>
-          <section className={sidePanelTab !== 'chat' ? 'game-ui-v2-mobile-hidden' : ''}>
-            <BoardChatPanel
-              chat={G.chat ?? []}
-              chatInput={chatInput}
-              setChatInput={setChatInput}
-            onSend={sendChatMessage}
-            playerLabelById={playerLabelById}
-            t={t}
-            chatLogRef={chatLogRef}
-            includeSystemMessages={false}
-            lang={lang}
-          />
-        </section>
-
-        </aside>
+        <BoardV2SidePanel
+          sidePanelTab={sidePanelTab}
+          setSidePanelTab={setSidePanelTab}
+          v2={v2}
+          latestEvents={latestEvents}
+          t={t}
+          playerLabelById={playerLabelById}
+          lang={lang}
+          G={G}
+          chatInput={chatInput}
+          setChatInput={setChatInput}
+          sendChatMessage={sendChatMessage}
+          chatLogRef={chatLogRef}
+        />
       </div>
 
       <div className="game-ui-v2-mobile-bar" aria-label={v2.mobileActions}>

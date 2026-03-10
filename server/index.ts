@@ -44,11 +44,17 @@ loadEnvFile(envPath);
 const adminToken = (process.env.ADMIN_TOKEN ?? '').trim();
 const disableAdminAuth = /^(1|true|yes)$/i.test((process.env.DISABLE_ADMIN_AUTH ?? '').trim());
 const isAdminAuthEnabled = !disableAdminAuth && adminToken.length > 0;
+const allowInsecureAdmin = /^(1|true|yes)$/i.test((process.env.ALLOW_INSECURE_ADMIN ?? '').trim());
 const storageModeEnv = (process.env.STORAGE_MODE ?? 'file').trim().toLowerCase();
 const sharedConfigStorageMode = (storageModeEnv === 'postgres' || storageModeEnv === 'db') ? 'postgres' : 'file';
 const databaseUrl = (process.env.DATABASE_URL ?? '').trim();
+const nodeEnv = (process.env.NODE_ENV ?? '').trim().toLowerCase();
 
 const logLine = createFileLogger(logsPath);
+
+if (!isAdminAuthEnabled && nodeEnv === 'production' && !allowInsecureAdmin) {
+  throw new Error('Refusing to start with admin auth disabled in production. Set ADMIN_TOKEN or explicitly ALLOW_INSECURE_ADMIN=1.');
+}
 
 const server = Server({
   games: [jojGame],
