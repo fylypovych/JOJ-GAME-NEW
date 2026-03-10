@@ -38,9 +38,6 @@ import {
   galleryCategories,
   normalizeServerUrl,
   parseSession,
-  type LobbyMatch,
-  type Session,
-  type SharedDeckTemplate,
   type UserTab,
 } from './app/model';
 import {
@@ -53,6 +50,8 @@ import {
 } from './app/sections';
 import { useAdminAuth } from './app/useAdminAuth';
 import { useAdminSnapshot } from './app/useAdminSnapshot';
+import { useLobbySession } from './app/useLobbySession';
+import { useSharedConfigSync } from './app/useSharedConfigSync';
 
 const lobbyClient = new LobbyClient({ server: SERVER_URL });
 
@@ -74,18 +73,7 @@ export const App = () => {
   const [roomCapacity, setRoomCapacity] = useState<number>(2);
   const [gameMode, setGameMode] = useState<GameMode>('standard');
   const [selectedOptionalModuleIds, setSelectedOptionalModuleIds] = useState<string[]>(['vvnz_default']);
-  const [matches, setMatches] = useState<LobbyMatch[]>([]);
   const [adminSelectedMatchID, setAdminSelectedMatchID] = useState<string>('');
-  const [session, setSession] = useState<Session | null>(() => parseSession(window.localStorage.getItem(SESSION_STORAGE_KEY)));
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  const [matchesSynced, setMatchesSynced] = useState<boolean>(false);
-
-  const [, setSharedDeckVersion] = useState<number>(0);
-  const [sharedDeckTemplate, setSharedDeckTemplate] = useState<SharedDeckTemplate>(getSharedDeckTemplate);
-  const [cardCatalog, setCardCatalog] = useState<CardDefinition[]>(getCardCatalog);
-  const [sharedRanks, setSharedRanksState] = useState<RankDefinition[]>(getSharedRanks);
-  const [sharedConfigLoaded, setSharedConfigLoaded] = useState<boolean>(false);
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
   const [gameUiVariant, setGameUiVariant] = useState<'v1' | 'v2'>(() => {
     const raw = window.localStorage.getItem(GAME_UI_VARIANT_STORAGE_KEY);
@@ -152,6 +140,56 @@ export const App = () => {
     restoreDbBackup,
     ADMIN_STORAGE_MODE_STORAGE_KEY,
   } = useDbAdminTools({ lang, adminFetch, serverUrl: SERVER_URL });
+  const {
+    sharedDeckTemplate,
+    cardCatalog,
+    sharedRanks,
+    setSharedRanksState,
+    sharedConfigLoaded,
+    refreshSharedDeckTemplate,
+    syncRanksToServer,
+  } = useSharedConfigSync({
+    adminFetch,
+    templateApi: TEMPLATE_API,
+    ranksApi: RANKS_API,
+    sharedTemplateStorageKey: SHARED_TEMPLATE_STORAGE_KEY,
+    ranksStorageKey: RANKS_STORAGE_KEY,
+    getSharedDeckTemplate,
+    getCardCatalog,
+    getSharedRanks,
+    exportSharedDeckTemplateJson,
+    importSharedDeckTemplateJson,
+    setSharedRanks,
+  });
+  const {
+    matches,
+    session,
+    setSession,
+    loading,
+    error,
+    setError,
+    refreshMatches,
+    createRoom,
+    joinRoom,
+    leaveRoom,
+    sessionBroken,
+    roomPlayerNames,
+    canStart,
+  } = useLobbySession({
+    lobbyClient,
+    gameName: GAME_NAME,
+    playerName,
+    roomCapacity,
+    gameMode,
+    selectedOptionalModuleIds,
+    sessionStorageKey: SESSION_STORAGE_KEY,
+    initialSession: parseSession(window.localStorage.getItem(SESSION_STORAGE_KEY)),
+    serverUnavailableText: t.serverUnavailable,
+    enterNameText: t.enterName,
+    roomFullText: t.roomFull,
+    createFailedText: t.createFailed,
+    joinFailedText: t.joinFailed,
+  });
   const sharedDeckStats = getSharedDeckTemplateStats();
   const optionalLobbyModules = useMemo(
     () => (sharedDeckTemplate.modules ?? [])
@@ -198,187 +236,6 @@ export const App = () => {
     setServerUrlDraft(DEFAULT_SERVER_URL);
     window.location.reload();
   };
-  const syncTemplateToServer = async (json: string) => {
-    try {
-      const response = await adminFetch(`${TEMPLATE_API}/import`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ json }),
-      });
-      if (!response.ok) return false;
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const syncRanksToServer = async (ranks: RankDefinition[]) => {
-    try {
-      const response = await adminFetch(RANKS_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ranks }),
-      });
-      return response.ok;
-    } catch {
-      return false;
-    }
-  };
-
-  const loadTemplateFromServer = async (): Promise<boolean> => {
-    try {
-      const response = await fetch(TEMPLATE_API);
-      if (!response.ok) return false;
-      const payload = (await response.json()) as { json?: string };
-      if (typeof payload.json !== 'string') return false;
-      const result = importSharedDeckTemplateJson(payload.json);
-      if (!result.ok) return false;
-      setSharedDeckTemplate(getSharedDeckTemplate());
-      setCardCatalog(getCardCatalog());
-      window.localStorage.setItem(SHARED_TEMPLATE_STORAGE_KEY, exportSharedDeckTemplateJson());
-      setSharedDeckVersion((v) => v + 1);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const loadRanksFromServer = async (): Promise<boolean> => {
-    try {
-      const response = await fetch(RANKS_API);
-      if (!response.ok) return false;
-      const payload = (await response.json()) as { ranks?: RankDefinition[] };
-      if (!Array.isArray(payload.ranks)) return false;
-      if (!setSharedRanks(payload.ranks)) return false;
-      setSharedRanksState(getSharedRanks());
-      window.localStorage.setItem(RANKS_STORAGE_KEY, JSON.stringify(getSharedRanks()));
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const refreshSharedDeckTemplate = (sync = true) => {
-    setSharedDeckTemplate(getSharedDeckTemplate());
-    setCardCatalog(getCardCatalog());
-    const json = exportSharedDeckTemplateJson();
-    window.localStorage.setItem(SHARED_TEMPLATE_STORAGE_KEY, json);
-    setSharedDeckVersion((v) => v + 1);
-    if (sync) {
-      void syncTemplateToServer(json);
-    }
-  };
-
-  const refreshMatches = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const response = (await lobbyClient.listMatches(GAME_NAME)) as { matches: LobbyMatch[] };
-      setMatches(response.matches ?? []);
-      setMatchesSynced(true);
-    } catch {
-      setError(t.serverUnavailable);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createRoom = async () => {
-    const name = playerName.trim();
-    if (!name) {
-      setError(t.enterName);
-      return;
-    }
-    setLoading(true);
-    setError('');
-    try {
-      const result = await lobbyClient.createMatch(GAME_NAME, {
-        numPlayers: Math.max(2, Math.min(6, roomCapacity)),
-        setupData: {
-          gameMode,
-          gameSetup: {
-            optionalMainDeckModuleIds: selectedOptionalModuleIds,
-          },
-        },
-      });
-      const matchID = result.matchID;
-      const joined = await lobbyClient.joinMatch(GAME_NAME, matchID, {
-        playerID: '0',
-        playerName: name,
-      });
-      const nextSession: Session = {
-        matchID,
-        playerID: joined.playerID,
-        credentials: joined.playerCredentials,
-      };
-      setSession(nextSession);
-      window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextSession));
-      await refreshMatches();
-    } catch {
-      setError(t.createFailed);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const joinRoom = async (match: LobbyMatch) => {
-    const name = playerName.trim();
-    if (!name) {
-      setError(t.enterName);
-      return;
-    }
-
-    const freePlayer = match.players.find((player) => !player.name);
-    if (!freePlayer) {
-      setError(t.roomFull);
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    try {
-      const joined = await lobbyClient.joinMatch(GAME_NAME, match.matchID, {
-        playerID: String(freePlayer.id),
-        playerName: name,
-      });
-      const nextSession: Session = {
-        matchID: match.matchID,
-        playerID: joined.playerID,
-        credentials: joined.playerCredentials,
-      };
-      setSession(nextSession);
-      window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextSession));
-      await refreshMatches();
-    } catch {
-      setError(t.joinFailed);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const leaveRoom = async () => {
-    if (!session) return;
-    setLoading(true);
-    setError('');
-    try {
-      await lobbyClient.leaveMatch(GAME_NAME, session.matchID, {
-        playerID: session.playerID,
-        credentials: session.credentials,
-      });
-    } catch {
-      // match may already be gone; continue clearing local session
-    } finally {
-      setSession(null);
-      window.localStorage.removeItem(SESSION_STORAGE_KEY);
-      await refreshMatches();
-      setLoading(false);
-    }
-  };
-
-  const activeMatch = useMemo(
-    () => matches.find((match) => match.matchID === session?.matchID) ?? null,
-    [matches, session?.matchID],
-  );
   const adminMatchID = useMemo(() => {
     if (session?.matchID) return session.matchID;
     if (adminSelectedMatchID && matches.some((m) => m.matchID === adminSelectedMatchID)) return adminSelectedMatchID;
@@ -391,61 +248,6 @@ export const App = () => {
     adminFetch,
     adminMatchStateApi: ADMIN_MATCH_STATE_API,
   });
-  const roomPlayerNames = useMemo<Record<string, string>>(() => {
-    if (!activeMatch) return {};
-    return activeMatch.players.reduce<Record<string, string>>((acc, player) => {
-      const name = player.name?.trim();
-      if (name) acc[String(player.id)] = name;
-      return acc;
-    }, {});
-  }, [activeMatch]);
-
-  const canStart = Boolean(activeMatch && activeMatch.players.every((player) => Boolean(player.name)));
-  const sessionBroken = Boolean(session && matchesSynced && !activeMatch && !loading);
-
-  useEffect(() => {
-    void (async () => {
-      const loadedFromServer = await loadTemplateFromServer();
-      if (!loadedFromServer) {
-        const saved = window.localStorage.getItem(SHARED_TEMPLATE_STORAGE_KEY);
-        if (saved) {
-          const result = importSharedDeckTemplateJson(saved);
-          if (result.ok) {
-            refreshSharedDeckTemplate(false);
-          }
-        }
-      }
-      const loadedRanksFromServer = await loadRanksFromServer();
-      if (!loadedRanksFromServer) {
-        const saved = window.localStorage.getItem(RANKS_STORAGE_KEY);
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved) as RankDefinition[];
-            if (setSharedRanks(parsed)) {
-              setSharedRanksState(getSharedRanks());
-            }
-          } catch {
-            // ignore
-          }
-        }
-      }
-      setSharedConfigLoaded(true);
-    })();
-  }, []);
-
-  useEffect(() => {
-    refreshMatches();
-    const id = window.setInterval(() => {
-      refreshMatches();
-    }, 4000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    if (!sessionBroken) return;
-    setSession(null);
-    window.localStorage.removeItem(SESSION_STORAGE_KEY);
-  }, [sessionBroken]);
 
   useEffect(() => {
     if (session?.matchID) {

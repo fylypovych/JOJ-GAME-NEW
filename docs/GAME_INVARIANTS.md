@@ -19,3 +19,11 @@ These are the guarantees the codebase is expected to preserve.
 15. `stalled-no-cards` ending must remain a valid deterministic fallback.
 16. Rank promotion and demotion must respect seat limits and recruit exception rules.
 17. Admin routes must not run insecurely in production unless explicitly overridden.
+
+## Verification Gates
+
+- `npm run typecheck`
+- `npm test`
+- `npm run test:invariants`
+- `npm run test:config`
+- `npm run test:simulation`

@@ -1,24 +1,20 @@
-import { useMemo, useRef, useState } from 'react';
 import type { CardDefinition, ResourceKey } from '../game/types';
 import { normalizeImagePath } from '../game/imagePaths';
 import { canPlayHandCardAtStage } from '../game/turnRules';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 import { GameCardTile, PilePreview } from './board/components';
-import { isPlayAllowedForCard } from './board/handRules';
 import { buildNextRankHint, getBoardPromoteBlockedReason, getBoardVvnzBlockedReason, getNextRankSeatMeta } from './board/rankHints';
 import { BoardV2HandSection, BoardV2PlayerOverview, BoardV2SelectionPanel, BoardV2SidePanel } from './board/v2Sections';
+import { useBoardV2DerivedState } from './board/useBoardV2DerivedState';
 import { usePendingSelection } from './board/usePendingSelection';
 import { useBoardV2Sync } from './board/useBoardV2Sync';
+import { useBoardV2UiController } from './board/useBoardV2UiController';
 import type { LocalizedBoardProps } from './board/types';
 
 const RESOURCE_ORDER: ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
 
-type NoticeKind = 'info' | 'error' | 'success';
-type Notice = { type: NoticeKind; text: string } | null;
-
 type HandFilter = 'all' | 'playable' | CardDefinition['category'];
 type HandSort = 'default' | 'playable' | 'category' | 'title';
-type SidePanelTab = 'events' | 'chat';
 
 const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
   stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
@@ -71,38 +67,58 @@ export const BoardV2 = ({
   const lastDiscardImage = lastDiscard
     ? (normalizeImagePath(cardImageById[lastDiscard.id]) ?? normalizeImagePath(lastDiscard.image) ?? `/cards/${lastDiscard.id}.png`)
     : undefined;
-  const [chatInput, setChatInput] = useState('');
-  const [openPreviewKey, setOpenPreviewKey] = useState<string | null>(null);
-  const [draftSelection, setDraftSelection] = useState<string[]>([]);
-  const [notice, setNotice] = useState<Notice>(null);
-  const [gameoverModalClosed, setGameoverModalClosed] = useState<boolean>(false);
-  const [handFilter, setHandFilter] = useState<HandFilter>('all');
-  const [handSort, setHandSort] = useState<HandSort>('playable');
   const compactMode = false;
-  const [sidePanelTab, setSidePanelTab] = useState<SidePanelTab>('events');
-  const syncedNameRef = useRef('');
-  const syncedNamesSignatureRef = useRef('');
-  const chatLogRef = useRef<HTMLDivElement | null>(null);
-
-  const playerLabelById = (idValue: string | null | undefined) => {
-    if (!idValue) return t.systemTag;
-    const name = G?.playerNames?.[idValue]?.trim() || knownPlayerNames[idValue]?.trim();
-    return name || t.genericPlayer;
-  };
-
-  const effectLabel = (resource: ResourceKey | 'rank') => (resource === 'rank' ? t.rankResource : resourceLabels[resource]);
-  const togglePreview = (key: string) => setOpenPreviewKey((prev) => (prev === key ? null : key));
-  const sendChatMessage = () => {
-    const msg = chatInput.trim();
-    if (!msg) return;
-    if (typeof moves.sendChat === 'function') moves.sendChat(msg);
-    setChatInput('');
-  };
-  const postNotice = (type: NoticeKind, msg: string) => setNotice(msg ? { type, text: msg } : null);
-  const opponentIds = useMemo(
-    () => Object.keys(G?.players ?? {}).filter((pid) => pid !== id),
-    [G?.players, id],
-  );
+  const {
+    chatInput,
+    setChatInput,
+    openPreviewKey,
+    setOpenPreviewKey,
+    draftSelection,
+    setDraftSelection,
+    notice,
+    gameoverModalClosed,
+    setGameoverModalClosed,
+    handFilter,
+    setHandFilter,
+    handSort,
+    setHandSort,
+    sidePanelTab,
+    setSidePanelTab,
+    syncedNameRef,
+    syncedNamesSignatureRef,
+    chatLogRef,
+    playerLabelById,
+    effectLabel,
+    togglePreview,
+    postNotice,
+    opponentIds,
+    sendChatMessage,
+    handleHandCardAction,
+    handleLegendaryCardAction,
+    handleDraw,
+    handlePromote,
+    handlePass,
+    handleDraftToggle,
+    getHandBadges,
+    getHandHelperText,
+  } = useBoardV2UiController({
+    G,
+    id,
+    knownPlayerNames,
+    playerNames: G?.playerNames,
+    moves,
+    canPlayHandCard,
+    canPlay,
+    canDraw,
+    canEndTurn,
+    resources,
+    sharedRanks,
+    resourceLabels,
+    lang,
+    v2,
+    t,
+    getBoardVvnzBlockedReason,
+  });
 
   const {
     pendingSelection,
@@ -179,102 +195,35 @@ export const BoardV2 = ({
     return getBoardPromoteBlockedReason({ G, playerID: id, sharedRanks, resourceLabels, lang });
   };
 
-  const nextRankMeta = useMemo(() => {
-    if (!G || !resources) return null;
-    return getNextRankSeatMeta({ G, playerID: id, sharedRanks });
-  }, [G, id, sharedRanks, resources]);
-
-  const gameoverMeta = (ctx?.gameover ?? null) as { winner?: string; endReason?: string } | null;
-  const winnerPlayerID = gameoverMeta?.winner ? String(gameoverMeta.winner) : '';
-  const winnerRankId = winnerPlayerID ? (G?.ranks?.[winnerPlayerID] ?? '') : '';
-  const winnerRankName = winnerRankId
-    ? (sharedRanks.find((row) => row.id === winnerRankId)?.name ?? rankLabel(winnerRankId, lang))
-    : '';
-  const latestEvents = (G?.chat ?? [])
-    .filter((row) => row.type === 'system')
-    .slice(-4)
-    .reverse();
   const endGameVote = G?.endGameVote;
   const endGameVoteActive = Boolean(endGameVote?.active) && !ctx?.gameover;
   const requestedByLabel = endGameVote?.requestedBy ? playerLabelById(endGameVote.requestedBy) : '';
   const hasVotedAgree = Boolean(endGameVote?.votes?.[id]);
-
-  const handCardsView = useMemo(() => {
-    const base = hand.map((card, index) => ({ card, index, playable: false }));
-    if (!G || !resources) return base;
-    const withMeta = hand.map((card, index) => {
-      const playable = isPlayAllowedForCard({
-        card,
-        canPlayHandCard,
-        resources,
-        G,
-        playerID: id,
-        sharedRanks,
-        resourceLabels,
-        lang,
-      });
-      return { card, index, playable };
-    });
-    const filtered = withMeta.filter(({ card, playable }) => {
-      if (handFilter === 'all') return true;
-      if (handFilter === 'playable') return playable;
-      return card.category === handFilter;
-    });
-    filtered.sort((a, b) => {
-      if (handSort === 'default') return a.index - b.index;
-      if (handSort === 'playable') {
-        if (a.playable !== b.playable) return a.playable ? -1 : 1;
-        return a.index - b.index;
-      }
-      if (handSort === 'category') {
-        const c = a.card.category.localeCompare(b.card.category);
-        return c || a.index - b.index;
-      }
-      const tA = cardTitle(a.card.id, a.card.title, lang);
-      const tB = cardTitle(b.card.id, b.card.title, lang);
-      return tA.localeCompare(tB) || a.index - b.index;
-    });
-    return filtered;
-  }, [G, resources, hand, canPlayHandCard, id, sharedRanks, resourceLabels, lang, handFilter, handSort]);
-  const hasPlayableHandCard = useMemo(
-    () =>
-      hand.some((card) =>
-        isPlayAllowedForCard({
-          card,
-          canPlayHandCard,
-          resources,
-          G,
-          playerID: id,
-          sharedRanks,
-          resourceLabels,
-          lang,
-        }),
-      ),
-    [G, resources, hand, canPlayHandCard, id, sharedRanks, resourceLabels, lang],
-  );
-  const hasPlayableLegendaryCard = canPlay && typeof moves.playLegendaryCard === 'function' && legendaryHand.length > 0;
-  const shouldShowSkipTurnLabel = (G.deck?.length ?? 0) === 0 && !hasPlayableHandCard && !hasPlayableLegendaryCard;
-  const passButtonLabel = shouldShowSkipTurnLabel
-    ? v2.skipTurn
-    : t.endTurn;
-
-  const handleHandCardAction = (card: CardDefinition) => {
-    if (!canPlayHandCard) {
-      postNotice('error', v2.actionUnavailable);
-      return;
-    }
-    const vvnzReason = resources && G ? getBoardVvnzBlockedReason({ card, G, playerID: id, sharedRanks, resources, resourceLabels, lang }) : null;
-    if (vvnzReason) {
-      postNotice('error', vvnzReason);
-      return;
-    }
-    requestPlayHandCard(card);
-  };
-
-  const handleLegendaryCardAction = (card: CardDefinition) => {
-    if (typeof moves.playLegendaryCard !== 'function') return;
-    requestPlayLegendaryCard(card);
-  };
+  const {
+    nextRankMeta,
+    gameoverMeta,
+    winnerPlayerID,
+    winnerRankName,
+    latestEvents,
+    handCardsView,
+    passButtonLabel,
+  } = useBoardV2DerivedState({
+    G,
+    ctx,
+    id,
+    hand,
+    legendaryHand,
+    canPlay: canPlay && typeof moves.playLegendaryCard === 'function',
+    canPlayHandCard,
+    sharedRanks,
+    resources,
+    resourceLabels,
+    lang,
+    handFilter,
+    handSort,
+    v2,
+    endTurnLabel: t.endTurn,
+  });
 
   if (!G || !ctx || !resources) {
     return <section className="board"><p>{t.loading}</p></section>;
@@ -380,13 +329,7 @@ export const BoardV2 = ({
                       onTogglePreview={togglePreview}
                       onClosePreview={() => setOpenPreviewKey(null)}
                       actionLabel={selected ? v2.remove : v2.select}
-                      onAction={() => {
-                        setDraftSelection((prev) => {
-                          if (prev.includes(card.id)) return prev.filter((idValue) => idValue !== card.id);
-                          if (prev.length >= 5) return prev;
-                          return [...prev, card.id];
-                        });
-                      }}
+                      onAction={() => handleDraftToggle(card.id)}
                       actionDisabled={false}
                       effectLabel={effectLabel}
                     />
@@ -415,17 +358,12 @@ export const BoardV2 = ({
               </div>
               <div className="game-ui-v2-command-buttons">
                 <button type="button" onClick={() => {
-                  if (!canDraw) return postNotice('error', v2.confirmDrawFirst);
-                  moves.drawCard();
-                  setNotice(null);
+                  handleDraw();
                 }} disabled={!canDraw}>{t.draw}</button>
                 <button type="button" onClick={() => {
-                  if (!canPlay) return postNotice('error', v2.actionUnavailable);
-                  if (promoteReason) return postNotice('error', promoteReason);
-                  moves.promote();
-                  setNotice(null);
+                  handlePromote(promoteReason);
                 }} disabled={!canPlay}>{t.promote}</button>
-                <button type="button" onClick={() => { if (!canEndTurn) return; moves.pass(); setNotice(null); }} disabled={!canEndTurn}>{passButtonLabel}</button>
+                <button type="button" onClick={() => { handlePass(moves.pass); }} disabled={!canEndTurn}>{passButtonLabel}</button>
               </div>
             </div>
             <div className="game-ui-v2-resources-grid">
@@ -603,23 +541,11 @@ export const BoardV2 = ({
               closePreview={() => setOpenPreviewKey(null)}
               categoryText={(card) => categoryLabel(card.category, lang)}
               actionLabel={v2.play}
-              onAction={handleHandCardAction}
+              onAction={(card) => handleHandCardAction(card, requestPlayHandCard)}
               actionDisabled={() => !canPlayHandCard}
               effectLabel={effectLabel}
-              badges={(card) => {
-                const playable = handCardsView.find((row) => row.card.id === card.id)?.playable ?? false;
-                const vvnzReason = getBoardVvnzBlockedReason({ card, G, playerID: id, sharedRanks, resources, resourceLabels, lang });
-                return [
-                  playable ? v2.canPlayNow : v2.notNow,
-                  ...(card.category === 'LYAP' ? [v2.requiresTarget] : []),
-                  ...(card.category === 'VVNZ' && vvnzReason ? [categoryLabel(card.category, lang)] : []),
-                ];
-              }}
-              helperText={(card) => {
-                const playable = handCardsView.find((row) => row.card.id === card.id)?.playable ?? false;
-                const vvnzReason = getBoardVvnzBlockedReason({ card, G, playerID: id, sharedRanks, resources, resourceLabels, lang });
-                return vvnzReason || (!playable && !canPlayHandCard ? v2.actionUnavailable : undefined);
-              }}
+              badges={(card) => getHandBadges(card, handCardsView)}
+              helperText={(card) => getHandHelperText(card, handCardsView)}
               extraAction={(card) => {
                 const canDiscardThisCard = mustDiscardOverflow && card.category !== 'LYAP' && card.category !== 'SCANDAL';
                 return canDiscardThisCard ? {
@@ -644,7 +570,7 @@ export const BoardV2 = ({
               closePreview={() => setOpenPreviewKey(null)}
               categoryText={() => t.legendaryDeckLabel}
               actionLabel={v2.playLegendary}
-              onAction={handleLegendaryCardAction}
+              onAction={(card) => handleLegendaryCardAction(card, requestPlayLegendaryCard)}
               actionDisabled={() => typeof moves.playLegendaryCard !== 'function'}
               effectLabel={effectLabel}
               badges={(card) => [

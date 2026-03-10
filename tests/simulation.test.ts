@@ -93,3 +93,81 @@ test('simulation report stores deck mode flags', () => {
   assert.equal(standardPlus.input.useMainDeck, true);
   assert.equal(standardPlus.input.useLegendaryDeck, true);
 });
+
+test('simulation forces simplified mode when legendary deck mode is merged', () => {
+  const deps: SimulationDeps = {
+    resourceKeys,
+    shuffle: <T>(items: T[]) => [...items],
+    cloneCard: (card: CardDefinition) => ({ ...card, effects: card.effects ? [...card.effects] : undefined }),
+    getSharedDeckTemplate: () => ({
+      deck: [{ id: 'support-x', title: 'S', category: 'SUPPORT', effects: [{ resource: 'time', value: 1 }] } as CardDefinition],
+      legendaryDeck: [{ id: 'legendary-03', title: 'L', category: 'LEGENDARY', effects: [] }],
+      rankTrack: [],
+      modules: [],
+      gameSetup: {
+        optionalMainDeckModuleIds: [],
+        legendaryDeckMode: 'merged',
+      },
+    }),
+    getActiveRanks: () => [{ id: 'recruit' }, { id: 'soldier', victory: true }],
+    getTopRankId: () => 'soldier',
+    drawCards: () => {},
+    drawLegendaryCards: () => {},
+    syncPlayerState: () => {},
+    promoteRank: () => false,
+    promoteToSpecificRank: () => ({ ok: false }),
+    grantSpecificRankIgnoringRequirements: () => ({ ok: false }),
+    demoteByOneRankWithSeatCheck: () => ({ ok: false }),
+    triggerSukhpayZsuOnScandal: () => {},
+    cancelLastLyapOrScandalForPlayer: () => ({ canceledCard: null }),
+    cancelLastScandalForPlayer: () => ({ canceledCard: null }),
+    applyCardEffects: () => true,
+    applyCardEffectsSoft: () => ({ resources: {}, rank: 0 }),
+    clampNonNegativeResources: () => {},
+    planReplacementResources: () => [],
+    getWinner: () => undefined,
+    startingHandSize: 0,
+    startingLegendaryHandSize: 0,
+  };
+
+  const report = runGameSimulationsWithDeps(deps, 2, 1, 40, {
+    gameMode: 'standard_plus',
+    gameSetup: { legendaryDeckMode: 'merged' },
+  });
+
+  assert.equal(report.input.gameMode, 'simplified');
+  assert.equal(report.input.useMainDeck, true);
+  assert.equal(report.input.useLegendaryDeck, false);
+});
+
+test('simulation reports seat bias issue when win rates diverge strongly', () => {
+  const deps: SimulationDeps = {
+    resourceKeys,
+    shuffle: <T>(items: T[]) => [...items],
+    cloneCard: (card: CardDefinition) => ({ ...card, effects: card.effects ? [...card.effects] : undefined }),
+    getSharedDeckTemplate: () => ({ deck: [], legendaryDeck: [] }),
+    getActiveRanks: () => [{ id: 'recruit' }, { id: 'soldier', victory: true }],
+    getTopRankId: () => 'soldier',
+    drawCards: () => {},
+    drawLegendaryCards: () => {},
+    syncPlayerState: () => {},
+    promoteRank: () => false,
+    promoteToSpecificRank: () => ({ ok: false }),
+    grantSpecificRankIgnoringRequirements: () => ({ ok: false }),
+    demoteByOneRankWithSeatCheck: () => ({ ok: false }),
+    triggerSukhpayZsuOnScandal: () => {},
+    cancelLastLyapOrScandalForPlayer: () => ({ canceledCard: null }),
+    cancelLastScandalForPlayer: () => ({ canceledCard: null }),
+    applyCardEffects: () => true,
+    applyCardEffectsSoft: () => ({ resources: {}, rank: 0 }),
+    clampNonNegativeResources: () => {},
+    planReplacementResources: () => [],
+    getWinner: (G: JojGameState) => Object.keys(G.players)[0],
+    startingHandSize: 0,
+    startingLegendaryHandSize: 0,
+  };
+
+  const report = runGameSimulationsWithDeps(deps, 2, 10, 40);
+
+  assert.ok(report.issues.some((line) => line.includes('перевага порядку ходу')));
+});

@@ -139,6 +139,7 @@ Notes:
 - DB setup / migration notes: `docs/DB.md`
 - DB cutover / sync runbook: `docs/ops/db-cutover-checklist.md`
 - Firewall / port hardening notes: `docs/ops/deployment-hardening.md`
+- Runtime env / deploy safety policy: `docs/ops/runtime-config-policy.md`
 - Release checklist: `docs/ops/release-checklist.md`
 
 ### PM2 (Example)
