@@ -25,6 +25,47 @@ export const getAdminTokenFromRequest = (ctx: any): string => {
   return typeof xToken === 'string' ? xToken.trim() : '';
 };
 
+export const getCookieValue = (ctx: any, name: string): string => {
+  const raw = ctx?.request?.headers?.cookie;
+  if (typeof raw !== 'string' || !raw.trim()) return '';
+  const match = raw
+    .split(';')
+    .map((row: string) => row.trim())
+    .find((row: string) => row.startsWith(`${name}=`));
+  if (!match) return '';
+  return decodeURIComponent(match.slice(name.length + 1));
+};
+
+export const setCookieHeader = (
+  ctx: any,
+  name: string,
+  value: string,
+  options: {
+    maxAgeSec?: number;
+    httpOnly?: boolean;
+    secure?: boolean;
+    sameSite?: 'Strict' | 'Lax' | 'None';
+    path?: string;
+  } = {},
+) => {
+  const parts = [`${name}=${encodeURIComponent(value)}`];
+  parts.push(`Path=${options.path ?? '/'}`);
+  if (typeof options.maxAgeSec === 'number') parts.push(`Max-Age=${Math.max(0, Math.floor(options.maxAgeSec))}`);
+  if (options.httpOnly !== false) parts.push('HttpOnly');
+  if (options.secure ?? (process.env.NODE_ENV ?? '').trim().toLowerCase() === 'production') parts.push('Secure');
+  parts.push(`SameSite=${options.sameSite ?? 'Lax'}`);
+  const cookieValue = parts.join('; ');
+  if (typeof ctx?.set === 'function') {
+    ctx.set('Set-Cookie', cookieValue);
+    return;
+  }
+  const existing = ctx?.response?.headers?.['Set-Cookie'];
+  const next = Array.isArray(existing) ? [...existing, cookieValue] : existing ? [existing, cookieValue] : [cookieValue];
+  if (!ctx.response) ctx.response = {};
+  if (!ctx.response.headers) ctx.response.headers = {};
+  ctx.response.headers['Set-Cookie'] = next;
+};
+
 export const createRequireAdminAuth = ({
   isAdminAuthEnabled,
   adminToken,
@@ -141,4 +182,3 @@ export const readJsonBodySafe = async ({
     return null;
   }
 };
-

@@ -8,6 +8,14 @@ const createBaseResourceRow = (): Record<ResourceKey, number> => ({
   tech: 1,
 });
 
+const createBasePlayerGameStats = () => ({
+  resourcesGainedTotal: 0,
+  resourcesLostTotal: 0,
+  lyapsPlayedOnOthers: 0,
+  scandalsPlayedOnOthers: 0,
+  turnsTaken: 0,
+});
+
 export const createEmptyGameState = (args: {
   gameMode: GameMode;
   deck: CardDefinition[];
@@ -44,6 +52,7 @@ export const createEmptyGameState = (args: {
     lyapsPlayedOnOthers: 0,
     scandalsPlayedOnOthers: 0,
   },
+  playerGameStats: {},
   noPlayablePassStreak: 0,
   endGameVote: {
     active: false,
@@ -96,6 +105,7 @@ export const initializePlayerInGameState = (args: {
   G.sukhpayZsuWatchUntilTurn[playerID] = 0;
   G.sukhpayZsuPendingBonus[playerID] = false;
   G.legendaryDraftCompleted[playerID] = legendaryDraftCompleted;
+  G.playerGameStats[playerID] = createBasePlayerGameStats();
 
   drawCards(G, playerID, startingHandSize);
   if (drawLegendaryCards && legendarySourceCards && legendarySourceCards.length > 0) {

@@ -1,9 +1,8 @@
-import { baseDeck, legendaryCards } from './cards';
-import { GENERAL_RANK_ID, ranks as baseRanks } from './ranks';
 import { cloneCard, cloneRank } from './cloneUtils';
+import { defaultSharedDeckTemplateSeed, defaultSharedRanksSeed } from './defaultData';
+import { GENERAL_RANK_ID } from './ranks';
 import {
   buildTemplateWithDefaults,
-  defaultSharedDeckTemplateBase,
 } from './sharedConfigHelpers';
 import {
   addCardToSharedDeckTemplateState,
@@ -20,6 +19,7 @@ import {
   updateCardAtInSharedDeckTemplateState,
 } from './sharedConfigTemplate';
 import { isValidRank, normalizeSharedRanks, resolveRandomRankImageFromRanks } from './sharedConfigRanks';
+import { parseImportedRanksPayload, serializeSharedRanksDocument } from './sharedConfigSchema';
 import type { CardCategory, CardDefinition, RankDefinition } from './types';
 
 export type DeckModuleType = 'MAIN_DECK_MODULE' | 'SEPARATE_DECK_MODULE' | 'SYSTEM_MODULE' | 'VISUAL_TRACK_MODULE';
@@ -74,10 +74,10 @@ export type DeckModuleBuildResult = {
   gameSetup: SharedGameSetup;
 };
 
-const defaultSharedDeckTemplate = (): SharedDeckTemplate => buildTemplateWithDefaults(defaultSharedDeckTemplateBase(baseDeck, legendaryCards));
+const defaultSharedDeckTemplate = (): SharedDeckTemplate => buildTemplateWithDefaults(defaultSharedDeckTemplateSeed);
 
 let sharedDeckTemplate: SharedDeckTemplate = defaultSharedDeckTemplate();
-let sharedRanks: SharedRanks = baseRanks.map(cloneRank);
+let sharedRanks: SharedRanks = defaultSharedRanksSeed.map(cloneRank);
 let sharedExtraCatalog: CardDefinition[] = [];
 
 export const getActiveRanks = (): SharedRanks => sharedRanks;
@@ -88,6 +88,8 @@ export const getTopRankId = (): string => {
 
 export const getSharedRanks = (): SharedRanks => sharedRanks.map(cloneRank);
 
+export const exportSharedRanksJson = (): string => JSON.stringify(serializeSharedRanksDocument(sharedRanks), null, 2);
+
 export const setSharedRanks = (next: SharedRanks): boolean => {
   if (!Array.isArray(next) || next.length === 0) return false;
   if (!next.every((rank) => isValidRank(rank))) return false;
@@ -97,10 +99,22 @@ export const setSharedRanks = (next: SharedRanks): boolean => {
   return true;
 };
 
+export const importSharedRanksJson = (text: string): { ok: true } | { ok: false; error: string } => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return { ok: false, error: 'Invalid JSON' };
+  }
+  const ranks = parseImportedRanksPayload(parsed);
+  if (!ranks) return { ok: false, error: 'Invalid ranks schema' };
+  return setSharedRanks(ranks) ? { ok: true } : { ok: false, error: 'Invalid ranks schema' };
+};
+
 export const resolveRandomRankImage = (rankId: string): string | undefined => resolveRandomRankImageFromRanks(sharedRanks, rankId);
 
 export const resetSharedRanks = () => {
-  sharedRanks = baseRanks.map(cloneRank);
+  sharedRanks = defaultSharedRanksSeed.map(cloneRank);
 };
 
 export const getSharedDeckTemplateStats = () => ({

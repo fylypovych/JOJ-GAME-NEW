@@ -69,7 +69,7 @@ export type Session = {
   credentials: string;
 };
 
-export type UserTab = 'games' | 'gallery' | 'rules';
+export type UserTab = 'games' | 'gallery' | 'rules' | 'profile';
 export type GalleryCategoryFilter = CardDefinition['category'] | 'ALL';
 
 export const galleryCategories: CardDefinition['category'][] = [

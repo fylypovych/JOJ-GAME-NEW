@@ -81,3 +81,32 @@ test('applyCardEffects applies rank deltas after resources', () => {
   assert.equal(ok, true);
   assert.equal(G.ranks['0'], 'soldier');
 });
+
+test('applyCardEffects auto-replaces missing resources when no explicit replacement is provided', () => {
+  const G = makeState();
+  const ok = engine.applyCardEffects(
+    G,
+    '0',
+    [{ resource: 'time', value: -2 }],
+  );
+  assert.equal(ok, true);
+  assert.equal(G.resources['0'].time, 0);
+  assert.equal(G.resources['0'].discipline, 1);
+});
+
+test('cancelLastScandalForPlayer reverts last scandal effects for the player', () => {
+  const G = makeState();
+  G.discard.push({
+    id: 'scandal-x',
+    title: 'Scandal X',
+    category: 'SCANDAL',
+    effects: [{ resource: 'documents', value: -1 }],
+  });
+  G.resources['0'].documents = 0;
+
+  const result = engine.cancelLastScandalForPlayer(G, '0');
+
+  assert.equal(result.canceledCard?.id, 'scandal-x');
+  assert.equal(G.resources['0'].documents, 1);
+  assert.equal(result.summary.resources.documents, 1);
+});

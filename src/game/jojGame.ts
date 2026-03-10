@@ -19,7 +19,13 @@ import { resourceKeys, resourceLabelsUk } from './resourceMeta';
 import { createRankEngine, rankSeatLimitForRank } from './rankEngine';
 import { createEmptyGameState, initializePlayerInGameState } from './stateFactory';
 import { canPlayHandCardAtStage } from './turnRules';
-import { runGameSimulationsWithDeps, type SimulationOptions, type SimulationReport } from './simulation';
+import {
+  runGameSimulationsAggregateWithDeps,
+  runGameSimulationsWithDeps,
+  type SimulationAggregate,
+  type SimulationOptions,
+  type SimulationReport,
+} from './simulation';
 import {
   buildDeckModulesFromTemplate,
   getActiveRanks,
@@ -35,10 +41,12 @@ export {
   addCardToSharedDeckTemplate,
   addCustomCardToSharedDeckTemplate,
   exportSharedDeckTemplateJson,
+  exportSharedRanksJson,
   getCardCatalog,
   getSharedDeckTemplate,
   getSharedDeckTemplateStats,
   getSharedRanks,
+  importSharedRanksJson,
   importSharedDeckTemplateJson,
   resetSharedDeckTemplate,
   resetSharedRanks,
@@ -512,10 +520,16 @@ const recordResourceFlowStats = (
       if (delta > 0) {
         G.gameStats.resourcesGainedTotal += delta;
         G.gameStats.resourcesGainedByType[key] = (G.gameStats.resourcesGainedByType[key] ?? 0) + delta;
+        if (G.playerGameStats[pid]) {
+          G.playerGameStats[pid].resourcesGainedTotal = (G.playerGameStats[pid].resourcesGainedTotal ?? 0) + delta;
+        }
       } else if (delta < 0) {
         const abs = Math.abs(delta);
         G.gameStats.resourcesLostTotal += abs;
         G.gameStats.resourcesLostByType[key] = (G.gameStats.resourcesLostByType[key] ?? 0) + abs;
+        if (G.playerGameStats[pid]) {
+          G.playerGameStats[pid].resourcesLostTotal = (G.playerGameStats[pid].resourcesLostTotal ?? 0) + abs;
+        }
       }
     });
   });
@@ -546,13 +560,66 @@ const canPromoteToSpecificRankWithoutMutation = (
   return hasResources(playerResources, targetRank.requirement) && hasResources(playerResources, targetRank.cost);
 };
 
+const canGrantSpecificRankIgnoringRequirementsWithoutMutation = (
+  G: JojGameState,
+  playerID: string,
+  targetRankId: string,
+): boolean => {
+  const ranks = getActiveRanks();
+  const playerCount = Object.keys(G.players ?? {}).length || 2;
+  const currentRankId = G.ranks[playerID];
+  const currentRankIdx = Math.max(0, ranks.findIndex((r) => r.id === currentRankId));
+  const targetRankIdx = ranks.findIndex((r) => r.id === targetRankId);
+  if (targetRankIdx < 0 || targetRankIdx <= currentRankIdx) return false;
+  const targetRank = ranks[targetRankIdx];
+  if (!targetRank) return false;
+  const occupied = Object.entries(G.ranks)
+    .filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id)
+    .length;
+  return occupied < rankSeatLimitForRank(playerCount, targetRank.id, ranks);
+};
+
+const canDemoteAnyOpponentWithoutMutation = (G: JojGameState, sourcePlayerID: string): boolean => {
+  const ranks = getActiveRanks();
+  const playerCount = Object.keys(G.players ?? {}).length || 2;
+  return Object.keys(G.players ?? {}).some((targetPlayerID) => {
+    if (targetPlayerID === sourcePlayerID) return false;
+    const currentRankId = G.ranks[targetPlayerID];
+    const currentRankIdx = ranks.findIndex((r) => r.id === currentRankId);
+    if (currentRankIdx <= 0) return false;
+    const lowerRank = ranks[currentRankIdx - 1];
+    if (!lowerRank) return false;
+    const occupied = Object.entries(G.ranks)
+      .filter(([pid, rankId]) => pid !== targetPlayerID && rankId === lowerRank.id)
+      .length;
+    return occupied < rankSeatLimitForRank(playerCount, lowerRank.id, ranks);
+  });
+};
+
+const canPlayLegendaryCardByInventory = (G: JojGameState, playerID: string, card: CardDefinition): boolean => {
+  if (card.id === 'legendary-10') return canDemoteAnyOpponentWithoutMutation(G, playerID);
+  if (card.id === 'legendary-13') return canGrantSpecificRankIgnoringRequirementsWithoutMutation(G, playerID, 'senior_lieutenant');
+  return true;
+};
+
+const canPlayRegularHandCardByInventory = (G: JojGameState, playerID: string, card: CardDefinition): boolean => {
+  if (card.category === 'VVNZ') {
+    if (!card.grantRank) return true;
+    return canPromoteToSpecificRankWithoutMutation(G, playerID, card.grantRank);
+  }
+  if (card.category === 'LYAP') return Object.keys(G.players ?? {}).some((pid) => pid !== playerID);
+  if (card.category === 'SCANDAL') return Object.keys(G.players ?? {}).some((pid) => pid !== playerID);
+  return buildReplacementPlan(G.resources[playerID], card.effects) !== null;
+};
+
 const hasPlayableCardsByInventory = (G: JojGameState, playerID: string): boolean => {
-  if ((G.legendaryHands[playerID]?.length ?? 0) > 0) return true;
+  const legendaryHand = G.legendaryHands[playerID] ?? [];
+  for (const card of legendaryHand) {
+    if (canPlayLegendaryCardByInventory(G, playerID, card)) return true;
+  }
   const hand = G.hands[playerID] ?? [];
   for (const card of hand) {
-    if (card.category !== 'VVNZ') return true;
-    if (!card.grantRank) return true;
-    if (canPromoteToSpecificRankWithoutMutation(G, playerID, card.grantRank)) return true;
+    if (canPlayRegularHandCardByInventory(G, playerID, card)) return true;
   }
   return false;
 };
@@ -567,7 +634,12 @@ const buildReplacementPlan = (
   resources: Record<ResourceKey, number>,
   effects: CardDefinition['effects'],
 ): ResourceKey[] | null => planReplacementResources(resources, effects);
-export { type SimulationReport } from './simulation';
+export {
+  buildSimulationReportFromAggregate,
+  mergeSimulationAggregates,
+  type SimulationAggregate,
+  type SimulationReport,
+} from './simulation';
 
 export const runGameSimulations = (
   players: number,
@@ -596,6 +668,40 @@ export const runGameSimulations = (
   applyCardEffectsSoft,
   clampNonNegativeResources,
   planReplacementResources: buildReplacementPlan,
+  hasPlayableCardsByInventory,
+  getWinner,
+  startingHandSize: STARTING_HAND_SIZE,
+  startingLegendaryHandSize: STARTING_LEGENDARY_HAND_SIZE,
+}, players, simulations, maxTurns, options);
+
+export const runGameSimulationsAggregate = (
+  players: number,
+  simulations: number,
+  maxTurns = 600,
+  options?: SimulationOptions,
+): SimulationAggregate => runGameSimulationsAggregateWithDeps({
+  resourceKeys,
+  shuffle,
+  cloneCard,
+  getSharedDeckTemplate,
+  getActiveRanks,
+  getTopRankId,
+  drawCards,
+  drawLegendaryCards,
+  syncPlayerState,
+  promoteRank,
+  promoteToSpecificRank,
+  grantSpecificRankIgnoringRequirements,
+  demoteByOneRankWithSeatCheck,
+  triggerSukhpayZsuOnScandal: (G, ctx, sourcePlayerID) =>
+    triggerSukhpayZsuOnScandal(G, ctx as Ctx, sourcePlayerID),
+  cancelLastLyapOrScandalForPlayer,
+  cancelLastScandalForPlayer,
+  applyCardEffects,
+  applyCardEffectsSoft,
+  clampNonNegativeResources,
+  planReplacementResources: buildReplacementPlan,
+  hasPlayableCardsByInventory,
   getWinner,
   startingHandSize: STARTING_HAND_SIZE,
   startingLegendaryHandSize: STARTING_LEGENDARY_HAND_SIZE,
@@ -723,14 +829,23 @@ export const jojGame: Game<JojGameState> = {
     incrementNoPlayablePassStreak: (G) => {
       G.noPlayablePassStreak = (G.noPlayablePassStreak ?? 0) + 1;
     },
-    incrementTurnsCompleted: (G) => {
+    incrementTurnsCompleted: (G, playerID) => {
       G.gameStats.turnsCompleted = (G.gameStats.turnsCompleted ?? 0) + 1;
+      if (playerID && G.playerGameStats[playerID]) {
+        G.playerGameStats[playerID].turnsTaken = (G.playerGameStats[playerID].turnsTaken ?? 0) + 1;
+      }
     },
-    incrementLyapPlayedOnOthers: (G) => {
+    incrementLyapPlayedOnOthers: (G, playerID) => {
       G.gameStats.lyapsPlayedOnOthers = (G.gameStats.lyapsPlayedOnOthers ?? 0) + 1;
+      if (playerID && G.playerGameStats[playerID]) {
+        G.playerGameStats[playerID].lyapsPlayedOnOthers = (G.playerGameStats[playerID].lyapsPlayedOnOthers ?? 0) + 1;
+      }
     },
-    incrementScandalPlayedOnOthers: (G) => {
+    incrementScandalPlayedOnOthers: (G, playerID) => {
       G.gameStats.scandalsPlayedOnOthers = (G.gameStats.scandalsPlayedOnOthers ?? 0) + 1;
+      if (playerID && G.playerGameStats[playerID]) {
+        G.playerGameStats[playerID].scandalsPlayedOnOthers = (G.playerGameStats[playerID].scandalsPlayedOnOthers ?? 0) + 1;
+      }
     },
     resetEndGameVote: (G) => {
       G.endGameVote = { active: false, requestedBy: null, votes: {} };

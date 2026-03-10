@@ -31,6 +31,7 @@ export const AdminDeckTab = ({
   onModuleAction, deckManagerStatus, onStartCreateCardForModule, onEditCardAt,
   onEditCardById,
   onRemoveCardAt,
+  onRemoveCardById,
   cardCatalog,
   modules, onSaveModule, onDeleteModule,
   sharedRanks,
@@ -63,6 +64,7 @@ export const AdminDeckTab = ({
   onEditCardAt: (target: DeckTarget, index: number) => void;
   onEditCardById: (target: DeckTarget, cardId: string) => void;
   onRemoveCardAt: (target: DeckTarget, index: number) => void;
+  onRemoveCardById: (target: DeckTarget, cardId: string) => void;
   cardCatalog: CardDefinition[];
   modules: ModuleDef[];
   onSaveModule: (module: ModuleDef) => void;
@@ -399,7 +401,7 @@ export const AdminDeckTab = ({
                         ) : (
                           <>
                             <button type="button" onClick={() => (index >= 0 ? onEditCardAt(target, index) : onEditCardById(target, card.id))}>{t.editCard}</button>
-                            <button type="button" onClick={() => onRemoveCardAt(target, index)} disabled={index < 0}>{t.removeCard}</button>
+                            <button type="button" onClick={() => (index >= 0 ? onRemoveCardAt(target, index) : onRemoveCardById(target, card.id))}>{t.removeCard}</button>
                           </>
                         )}
                       </span>

@@ -82,6 +82,13 @@ export interface JOJState {
     lyapsPlayedOnOthers: number;
     scandalsPlayedOnOthers: number;
   };
+  playerGameStats: Record<string, {
+    resourcesGainedTotal: number;
+    resourcesLostTotal: number;
+    lyapsPlayedOnOthers: number;
+    scandalsPlayedOnOthers: number;
+    turnsTaken: number;
+  }>;
   noPlayablePassStreak: number;
   endGameVote: {
     active: boolean;

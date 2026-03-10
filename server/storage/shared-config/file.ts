@@ -6,9 +6,9 @@ export const createFileSharedConfigStore = ({
   templatePath,
   ranksPath,
   exportSharedDeckTemplateJson,
+  exportSharedRanksJson,
   importSharedDeckTemplateJson,
-  getSharedRanks,
-  setSharedRanks,
+  importSharedRanksJson,
   resetSharedRanks,
 }: SharedConfigCoreDeps) => {
   const saveTemplateToDisk = async () => {
@@ -18,7 +18,7 @@ export const createFileSharedConfigStore = ({
 
   const saveRanksToDisk = async () => {
     await mkdir(path.dirname(ranksPath), { recursive: true });
-    await writeFile(ranksPath, JSON.stringify(getSharedRanks(), null, 2), 'utf8');
+    await writeFile(ranksPath, exportSharedRanksJson(), 'utf8');
   };
 
   const loadTemplateFromDisk = async () => {
@@ -38,11 +38,10 @@ export const createFileSharedConfigStore = ({
   const loadRanksFromDisk = async () => {
     try {
       const raw = await readFile(ranksPath, 'utf8');
-      const parsed = JSON.parse(raw);
-      const ok = setSharedRanks(parsed);
-      if (!ok) {
+      const result = importSharedRanksJson(raw);
+      if (!result.ok) {
         // eslint-disable-next-line no-console
-        console.warn('[ranks] invalid saved ranks, fallback to default');
+        console.warn(`[ranks] invalid saved ranks, fallback to default: ${result.error}`);
         resetSharedRanks();
         await saveRanksToDisk();
       }
@@ -53,4 +52,3 @@ export const createFileSharedConfigStore = ({
 
   return { saveTemplateToDisk, saveRanksToDisk, loadTemplateFromDisk, loadRanksFromDisk };
 };
-

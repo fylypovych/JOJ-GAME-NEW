@@ -1,5 +1,6 @@
 import { cloneCard } from './cloneUtils';
 import { normalizeImagePath } from './imagePaths';
+import { SHARED_TEMPLATE_SCHEMA_KIND, SHARED_TEMPLATE_SCHEMA_VERSION, unwrapImportedTemplateDocument } from './sharedConfigSchema';
 import { importTemplateCardsByCatalogIds, importTemplateCardsByFullRows, isLegendaryDeckOnlyCardId } from './sharedConfigImport';
 import {
   buildTemplateWithDefaults,
@@ -144,7 +145,8 @@ export const exportSharedDeckTemplateState = (template: SharedDeckTemplate, extr
   const safeTemplate = cloneSharedDeckTemplate(template);
   const catalog = buildCardCatalog(safeTemplate, extraCatalog);
   return JSON.stringify({
-    version: 3,
+    kind: SHARED_TEMPLATE_SCHEMA_KIND,
+    version: SHARED_TEMPLATE_SCHEMA_VERSION,
     catalog,
     deckIds: safeTemplate.deck.map((card) => card.id),
     legendaryDeckIds: safeTemplate.legendaryDeck.map((card) => card.id),
@@ -165,9 +167,9 @@ export const importSharedDeckTemplateState = (text: string): { ok: true; templat
   } catch {
     return { ok: false, error: 'Invalid JSON' };
   }
-  if (!parsed || typeof parsed !== 'object') return { ok: false, error: 'Template must be an object' };
-
-  const raw = parsed as Record<string, unknown>;
+  const document = unwrapImportedTemplateDocument(parsed);
+  if (!document.ok) return document;
+  const raw = document.raw;
   let typedDeck: CardDefinition[] = [];
   let typedLegendaryDeck: CardDefinition[] = [];
   let typedRankTrack: CardDefinition[] = [];

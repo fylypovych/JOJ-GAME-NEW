@@ -1,12 +1,11 @@
 import type { CardDefinition, ResourceKey } from '../game/types';
-import { normalizeImagePath } from '../game/imagePaths';
-import { canPlayHandCardAtStage } from '../game/turnRules';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 import { GameCardTile, PilePreview } from './board/components';
 import { buildNextRankHint, getBoardPromoteBlockedReason, getBoardVvnzBlockedReason, getNextRankSeatMeta } from './board/rankHints';
 import { BoardV2HandSection, BoardV2PlayerOverview, BoardV2SelectionPanel, BoardV2SidePanel } from './board/v2Sections';
 import { useBoardV2DerivedState } from './board/useBoardV2DerivedState';
 import { usePendingSelection } from './board/usePendingSelection';
+import { useBoardV2StageState } from './board/useBoardV2StageState';
 import { useBoardV2Sync } from './board/useBoardV2Sync';
 import { useBoardV2UiController } from './board/useBoardV2UiController';
 import type { LocalizedBoardProps } from './board/types';
@@ -37,36 +36,44 @@ export const BoardV2 = ({
   const v2 = t.v2;
 
   const id = playerID ?? '0';
-  const isSimplifiedMode = G?.gameMode === 'simplified';
-  const hand = G?.hands?.[id] ?? [];
-  const legendaryHand = isSimplifiedMode ? [] : (G?.legendaryHands?.[id] ?? []);
-  const legendaryDraftPool = G?.legendaryDeck ?? [];
-  const draftPending = G?.gameMode === 'standard_plus'
-    && Object.keys(G?.players ?? {}).some((pid) => G?.legendaryDraftCompleted?.[pid] !== true);
-  const myDraftDone = G?.legendaryDraftCompleted?.[id] === true;
-  const resources = G?.resources?.[id];
-  const rankId = G?.ranks?.[id];
-  const currentRank = sharedRanks.find((row) => row.id === (rankId ?? ''));
-  const rankName = currentRank?.name ?? rankLabel(rankId ?? '', lang);
-  const rankImage = normalizeImagePath(G?.rankImageByPlayer?.[id])
-    ?? normalizeImagePath(currentRank?.imageVariants?.[0])
-    ?? normalizeImagePath(currentRank?.image);
   const resourceLabels: Record<ResourceKey, string> = t.resources;
-  const isCurrentPlayer = ctx?.currentPlayer === id;
-  const stage = ctx?.activePlayers?.[id] as string | undefined;
-  const hasPendingDrawAuto = Boolean(G?.pendingDrawAutoResolution && G.pendingDrawAutoResolution.sourcePlayerID === id);
-  const canDraw = isCurrentPlayer && !draftPending && stage === 'draw' && !hasPendingDrawAuto;
-  const canPlay = isCurrentPlayer && !draftPending && (stage === 'play' || stage === 'end');
-  const canEndTurn = isCurrentPlayer && !draftPending && (stage === 'play' || stage === 'end');
-  const extraHandPlayTokens = G?.extraHandPlayTokens?.[id] ?? 0;
-  const canPlayHandCard = canPlayHandCardAtStage({ isCurrentPlayer, stage, extraHandPlayTokens });
-  const handOverflow = Math.max(0, hand.length - 8);
-  const mustDiscardOverflow = isCurrentPlayer && handOverflow > 0 && (stage === 'play' || stage === 'end');
-  const deckBackImage = G?.deckBackImage ? normalizeImagePath(G.deckBackImage) : undefined;
-  const lastDiscard = G?.discard?.length ? G.discard[G.discard.length - 1] : null;
-  const lastDiscardImage = lastDiscard
-    ? (normalizeImagePath(cardImageById[lastDiscard.id]) ?? normalizeImagePath(lastDiscard.image) ?? `/cards/${lastDiscard.id}.png`)
-    : undefined;
+  const {
+    isSimplifiedMode,
+    hand,
+    legendaryHand,
+    legendaryDraftPool,
+    draftPending,
+    myDraftDone,
+    resources,
+    rankId,
+    rankName: rawRankName,
+    rankImage,
+    isCurrentPlayer,
+    stage,
+    canDraw,
+    canPlay,
+    canEndTurn,
+    canPlayHandCard,
+    handOverflow,
+    mustDiscardOverflow,
+    deckBackImage,
+    lastDiscard,
+    lastDiscardImage,
+  } = useBoardV2StageState({
+    G,
+    ctx,
+    playerID: id,
+    sharedRanks,
+    cardImageById,
+  });
+  const rankName = rawRankName || rankLabel(rankId ?? '', lang);
+  const safeResources: Record<ResourceKey, number> = resources ?? {
+    time: 0,
+    reputation: 0,
+    discipline: 0,
+    documents: 0,
+    tech: 0,
+  };
   const compactMode = false;
   const {
     chatInput,
@@ -111,7 +118,7 @@ export const BoardV2 = ({
     canPlay,
     canDraw,
     canEndTurn,
-    resources,
+    resources: safeResources,
     sharedRanks,
     resourceLabels,
     lang,
@@ -216,7 +223,7 @@ export const BoardV2 = ({
     canPlay: canPlay && typeof moves.playLegendaryCard === 'function',
     canPlayHandCard,
     sharedRanks,
-    resources,
+    resources: safeResources,
     resourceLabels,
     lang,
     handFilter,

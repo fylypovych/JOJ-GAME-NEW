@@ -12,7 +12,9 @@ export const useSharedConfigSync = (args: {
   getCardCatalog: () => CardDefinition[];
   getSharedRanks: () => RankDefinition[];
   exportSharedDeckTemplateJson: () => string;
+  exportSharedRanksJson: () => string;
   importSharedDeckTemplateJson: (json: string) => { ok: true } | { ok: false; error: string };
+  importSharedRanksJson: (json: string) => { ok: true } | { ok: false; error: string };
   setSharedRanks: (ranks: RankDefinition[]) => boolean;
 }) => {
   const {
@@ -25,7 +27,9 @@ export const useSharedConfigSync = (args: {
     getCardCatalog,
     getSharedRanks,
     exportSharedDeckTemplateJson,
+    exportSharedRanksJson,
     importSharedDeckTemplateJson,
+    importSharedRanksJson,
     setSharedRanks,
   } = args;
   const [, setSharedDeckVersion] = useState(0);
@@ -96,7 +100,7 @@ export const useSharedConfigSync = (args: {
       if (!setSharedRanks(payload.ranks)) return false;
       const nextRanks = getSharedRanks();
       setSharedRanksState(nextRanks);
-      window.localStorage.setItem(ranksStorageKey, JSON.stringify(nextRanks));
+      window.localStorage.setItem(ranksStorageKey, exportSharedRanksJson());
       return true;
     } catch {
       return false;
@@ -117,12 +121,8 @@ export const useSharedConfigSync = (args: {
       if (!loadedRanksFromServer) {
         const saved = window.localStorage.getItem(ranksStorageKey);
         if (saved) {
-          try {
-            const parsed = JSON.parse(saved) as RankDefinition[];
-            if (setSharedRanks(parsed)) setSharedRanksState(getSharedRanks());
-          } catch {
-            // ignore local parse failure
-          }
+          const result = importSharedRanksJson(saved);
+          if (result.ok) setSharedRanksState(getSharedRanks());
         }
       }
       setSharedConfigLoaded(true);

@@ -23,6 +23,9 @@ export const useLobbySession = (args: {
   roomFullText: string;
   createFailedText: string;
   joinFailedText: string;
+  onSessionEstablished?: (session: Session, playerName: string) => Promise<void> | void;
+  createOwnedSession?: (args: { numPlayers: number; setupData: unknown; playerName: string }) => Promise<Session>;
+  joinOwnedSession?: (args: { matchID: string; playerID: string; playerName: string }) => Promise<Session>;
 }) => {
   const {
     lobbyClient,
@@ -38,6 +41,9 @@ export const useLobbySession = (args: {
     roomFullText,
     createFailedText,
     joinFailedText,
+    onSessionEstablished,
+    createOwnedSession,
+    joinOwnedSession,
   } = args;
   const [matches, setMatches] = useState<LobbyMatch[]>([]);
   const [session, setSession] = useState<Session | null>(initialSession);
@@ -68,24 +74,36 @@ export const useLobbySession = (args: {
     setLoading(true);
     setError('');
     try {
-      const result = await lobbyClient.createMatch(gameName, {
-        numPlayers: Math.max(2, Math.min(6, roomCapacity)),
-        setupData: {
-          gameMode,
-          gameSetup: { optionalMainDeckModuleIds: selectedOptionalModuleIds },
-        },
-      });
-      const joined = await lobbyClient.joinMatch(gameName, result.matchID, {
-        playerID: '0',
-        playerName: name,
-      });
-      const nextSession: Session = {
-        matchID: result.matchID,
-        playerID: joined.playerID,
-        credentials: joined.playerCredentials,
-      };
+      const nextSession: Session = createOwnedSession
+        ? await createOwnedSession({
+          numPlayers: Math.max(2, Math.min(6, roomCapacity)),
+          setupData: {
+            gameMode,
+            gameSetup: { optionalMainDeckModuleIds: selectedOptionalModuleIds },
+          },
+          playerName: name,
+        })
+        : await (async () => {
+          const result = await lobbyClient.createMatch(gameName, {
+            numPlayers: Math.max(2, Math.min(6, roomCapacity)),
+            setupData: {
+              gameMode,
+              gameSetup: { optionalMainDeckModuleIds: selectedOptionalModuleIds },
+            },
+          });
+          const joined = await lobbyClient.joinMatch(gameName, result.matchID, {
+            playerID: '0',
+            playerName: name,
+          });
+          return {
+            matchID: result.matchID,
+            playerID: joined.playerID,
+            credentials: joined.playerCredentials,
+          };
+        })();
       setSession(nextSession);
       window.localStorage.setItem(sessionStorageKey, JSON.stringify(nextSession));
+      await onSessionEstablished?.(nextSession, name);
       await refreshMatches();
     } catch {
       setError(createFailedText);
@@ -108,17 +126,26 @@ export const useLobbySession = (args: {
     setLoading(true);
     setError('');
     try {
-      const joined = await lobbyClient.joinMatch(gameName, match.matchID, {
-        playerID: String(freePlayer.id),
-        playerName: name,
-      });
-      const nextSession: Session = {
-        matchID: match.matchID,
-        playerID: joined.playerID,
-        credentials: joined.playerCredentials,
-      };
+      const nextSession: Session = joinOwnedSession
+        ? await joinOwnedSession({
+          matchID: match.matchID,
+          playerID: String(freePlayer.id),
+          playerName: name,
+        })
+        : await (async () => {
+          const joined = await lobbyClient.joinMatch(gameName, match.matchID, {
+            playerID: String(freePlayer.id),
+            playerName: name,
+          });
+          return {
+            matchID: match.matchID,
+            playerID: joined.playerID,
+            credentials: joined.playerCredentials,
+          };
+        })();
       setSession(nextSession);
       window.localStorage.setItem(sessionStorageKey, JSON.stringify(nextSession));
+      await onSessionEstablished?.(nextSession, name);
       await refreshMatches();
     } catch {
       setError(joinFailedText);

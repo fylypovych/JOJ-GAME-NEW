@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { LobbyClient } from 'boardgame.io/client';
 import type { CardDefinition, GameMode, RankDefinition } from '../game/types';
 import {
@@ -6,10 +6,12 @@ import {
   addCardToSharedDeckTemplate,
   type DeckTarget,
   exportSharedDeckTemplateJson,
+  exportSharedRanksJson,
   getCardCatalog,
   getSharedRanks,
   getSharedDeckTemplate,
   getSharedDeckTemplateStats,
+  importSharedRanksJson,
   importSharedDeckTemplateJson,
   removeCardAtFromSharedDeckTemplate,
   runGameSimulations,
@@ -20,11 +22,10 @@ import {
   shuffleSharedDeckTemplate,
   updateCardAtInSharedDeckTemplate,
 } from '../game/jojGame';
-import { AdminPage } from './AdminPage';
 import { useDbAdminTools } from './admin/useDbAdminTools';
 import type { Language } from './i18n';
 import { defaultLanguage, text } from './i18n';
-import { ADMIN_UI_VARIANT_STORAGE_KEY, GAME_UI_VARIANT_STORAGE_KEY, NetworkClientV1, NetworkClientV2, SERVER_URL } from './app/clientConfig';
+import { ADMIN_UI_VARIANT_STORAGE_KEY, GAME_UI_VARIANT_STORAGE_KEY, SERVER_URL } from './app/clientConfig';
 import {
   ADMIN_TOKEN_STORAGE_KEY,
   DEFAULT_SERVER_URL,
@@ -45,6 +46,7 @@ import {
   AdminAuthCard,
   GallerySection,
   LobbySection,
+  ProfileSection,
   RulesSection,
   UserTabs,
 } from './app/sections';
@@ -52,8 +54,12 @@ import { useAdminAuth } from './app/useAdminAuth';
 import { useAdminSnapshot } from './app/useAdminSnapshot';
 import { useLobbySession } from './app/useLobbySession';
 import { useSharedConfigSync } from './app/useSharedConfigSync';
+import { useUserAccount } from './app/useUserAccount';
 
 const lobbyClient = new LobbyClient({ server: SERVER_URL });
+const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
+const NetworkClientV1 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV1 })));
+const NetworkClientV2 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV2 })));
 
 const TEMPLATE_API = `${SERVER_URL}/api/shared-deck-template`;
 const RANKS_API = `${SERVER_URL}/api/shared-ranks`;
@@ -84,8 +90,50 @@ export const App = () => {
     return raw === 'v2' ? 'v2' : 'v1';
   });
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
+  const [loginDraft, setLoginDraft] = useState({ login: '', password: '' });
+  const [registerDraft, setRegisterDraft] = useState({ username: '', email: '', password: '', displayName: '' });
+  const [profileDraft, setProfileDraft] = useState({
+    displayName: '',
+    bio: '',
+    avatarUrl: '',
+    profilePublic: true,
+    showStatsPublic: true,
+    showRecentMatchesPublic: false,
+  });
+  const [passwordDraft, setPasswordDraft] = useState({ currentPassword: '', nextPassword: '' });
+  const [resetRequestDraft, setResetRequestDraft] = useState({ login: '' });
+  const [resetPasswordDraft, setResetPasswordDraft] = useState({ token: '', nextPassword: '' });
+  const [publicProfileLookup, setPublicProfileLookup] = useState('');
   const [serverUrlDraft, setServerUrlDraft] = useState<string>(() => window.localStorage.getItem(SERVER_URL_STORAGE_KEY) ?? SERVER_URL);
   const t = text(lang);
+  const {
+    user,
+    stats: userStats,
+    sessions: userSessions,
+    loading: userLoading,
+    busy: userBusy,
+    error: userError,
+    resetTokenPreview,
+    resetTokenExpiresAt,
+    publicProfile,
+    publicProfileLoading,
+    publicProfileError,
+    setError: setUserError,
+    register: registerUser,
+    login: loginUser,
+    logout: logoutUser,
+    updateProfile: updateUserProfile,
+    changePassword,
+    requestPasswordReset,
+    resetPassword,
+    refreshSessions,
+    logoutAllSessions,
+    logoutSession,
+    createAndJoinOwnedMatch,
+    joinOwnedMatch,
+    fetchPublicProfile,
+    bindMatchSession,
+  } = useUserAccount({ serverUrl: SERVER_URL, lang });
   const {
     adminToken,
     setAdminToken,
@@ -158,7 +206,9 @@ export const App = () => {
     getCardCatalog,
     getSharedRanks,
     exportSharedDeckTemplateJson,
+    exportSharedRanksJson,
     importSharedDeckTemplateJson,
+    importSharedRanksJson,
     setSharedRanks,
   });
   const {
@@ -189,6 +239,24 @@ export const App = () => {
     roomFullText: t.roomFull,
     createFailedText: t.createFailed,
     joinFailedText: t.joinFailed,
+    createOwnedSession: user ? ({ numPlayers, setupData, playerName: nextPlayerName }) => createAndJoinOwnedMatch({
+      gameName: GAME_NAME,
+      numPlayers,
+      setupData,
+      playerName: nextPlayerName,
+    }) : undefined,
+    joinOwnedSession: user ? ({ matchID, playerID, playerName: nextPlayerName }) => joinOwnedMatch({
+      gameName: GAME_NAME,
+      matchID,
+      playerID,
+      playerName: nextPlayerName,
+    }) : undefined,
+    onSessionEstablished: (nextSession, nextPlayerName) => bindMatchSession({
+      matchID: nextSession.matchID,
+      playerID: nextSession.playerID,
+      credentials: nextSession.credentials,
+      playerName: nextPlayerName,
+    }),
   });
   const sharedDeckStats = getSharedDeckTemplateStats();
   const optionalLobbyModules = useMemo(
@@ -248,6 +316,28 @@ export const App = () => {
     adminFetch,
     adminMatchStateApi: ADMIN_MATCH_STATE_API,
   });
+
+  useEffect(() => {
+    if (!user) return;
+    setProfileDraft({
+      displayName: user.displayName ?? '',
+      bio: user.bio ?? '',
+      avatarUrl: user.avatarUrl ?? '',
+      profilePublic: user.profilePublic !== false,
+      showStatsPublic: user.showStatsPublic !== false,
+      showRecentMatchesPublic: user.showRecentMatchesPublic === true,
+    });
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || !session?.matchID || !session?.playerID) return;
+    void bindMatchSession({
+      matchID: session.matchID,
+      playerID: session.playerID,
+      credentials: session.credentials,
+      playerName,
+    });
+  }, [user, session?.matchID, session?.playerID, session?.credentials, playerName]);
 
   useEffect(() => {
     if (session?.matchID) {
@@ -395,31 +485,96 @@ export const App = () => {
 
       <div style={{ display: !isAdminRoute && activeUserTab === 'games' && session && canStart ? 'block' : 'none' }}>
         {session ? (
-          (gameUiVariant === 'v2' ? <NetworkClientV2
-            key={`${session.matchID}:${session.playerID}:v2`}
-            matchID={session.matchID}
-            playerID={session.playerID}
-            credentials={session.credentials}
-            lang={lang}
-            playerName={playerName}
-            knownPlayerNames={roomPlayerNames}
-            sharedRanks={sharedRanks}
-            cardImageById={cardImageById}
-            roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
-            onLeaveRoom={() => { void leaveRoom(); }}
-          /> : <NetworkClientV1
-            key={`${session.matchID}:${session.playerID}`}
-            matchID={session.matchID}
-            playerID={session.playerID}
-            credentials={session.credentials}
-            lang={lang}
-            playerName={playerName}
-            knownPlayerNames={roomPlayerNames}
-            sharedRanks={sharedRanks}
-            cardImageById={cardImageById}
-          />)
+          <Suspense fallback={<p>{t.loading}</p>}>
+            {gameUiVariant === 'v2' ? <NetworkClientV2
+              key={`${session.matchID}:${session.playerID}:v2`}
+              matchID={session.matchID}
+              playerID={session.playerID}
+              credentials={session.credentials}
+              lang={lang}
+              playerName={playerName}
+              knownPlayerNames={roomPlayerNames}
+              sharedRanks={sharedRanks}
+              cardImageById={cardImageById}
+              roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
+              onLeaveRoom={() => { void leaveRoom(); }}
+            /> : <NetworkClientV1
+              key={`${session.matchID}:${session.playerID}`}
+              matchID={session.matchID}
+              playerID={session.playerID}
+              credentials={session.credentials}
+              lang={lang}
+              playerName={playerName}
+              knownPlayerNames={roomPlayerNames}
+              sharedRanks={sharedRanks}
+              cardImageById={cardImageById}
+            />}
+          </Suspense>
         ) : null}
       </div>
+
+      {!isAdminRoute && activeUserTab === 'profile' ? (
+        <ProfileSection
+          t={t}
+          user={user}
+          stats={userStats}
+          loading={userLoading}
+          busy={userBusy}
+          error={userError}
+          loginDraft={loginDraft}
+          setLoginDraft={setLoginDraft}
+          registerDraft={registerDraft}
+          setRegisterDraft={setRegisterDraft}
+          onLogin={() => {
+            void loginUser(loginDraft).catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
+          }}
+          onRegister={() => {
+            void registerUser(registerDraft).catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
+          }}
+          onLogout={() => {
+            void logoutUser().catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
+          }}
+          profileDraft={profileDraft}
+          setProfileDraft={setProfileDraft}
+          onSaveProfile={() => {
+            void updateUserProfile({ ...profileDraft, preferredLang: lang }).catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
+          }}
+          passwordDraft={passwordDraft}
+          setPasswordDraft={setPasswordDraft}
+          onChangePassword={() => {
+            void changePassword(passwordDraft)
+              .then(() => setPasswordDraft({ currentPassword: '', nextPassword: '' }))
+              .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
+          }}
+          resetRequestDraft={resetRequestDraft}
+          setResetRequestDraft={setResetRequestDraft}
+          onRequestPasswordReset={() => {
+            void requestPasswordReset(resetRequestDraft.login)
+              .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
+          }}
+          resetPasswordDraft={resetPasswordDraft}
+          setResetPasswordDraft={setResetPasswordDraft}
+          onResetPassword={() => {
+            void resetPassword(resetPasswordDraft)
+              .then(() => setResetPasswordDraft({ token: '', nextPassword: '' }))
+              .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
+          }}
+          resetTokenPreview={resetTokenPreview}
+          resetTokenExpiresAt={resetTokenExpiresAt}
+          sessions={userSessions}
+          publicProfileLookup={publicProfileLookup}
+          setPublicProfileLookup={setPublicProfileLookup}
+          publicProfile={publicProfile}
+          publicProfileLoading={publicProfileLoading}
+          publicProfileError={publicProfileError}
+          onFetchPublicProfile={() => {
+            void fetchPublicProfile(publicProfileLookup).catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
+          }}
+          onRefreshSessions={() => { void refreshSessions().catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
+          onLogoutAllSessions={() => { void logoutAllSessions().catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
+          onLogoutSession={(sessionId) => { void logoutSession(sessionId).catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
+        />
+      ) : null}
 
       {!isAdminRoute && activeUserTab === 'gallery' ? (
         <GallerySection
@@ -439,7 +594,8 @@ export const App = () => {
       ) : null}
 
       {isAdminRoute && adminAuthorized ? (
-        <AdminPage
+        <Suspense fallback={<p>{t.loading}</p>}>
+          <AdminPage
           uiVariant={adminUiVariant}
           lang={lang}
           adminToken={adminToken}
@@ -585,7 +741,7 @@ export const App = () => {
             if (!ok) return false;
             const normalized = getSharedRanks();
             setSharedRanksState(normalized);
-            window.localStorage.setItem(RANKS_STORAGE_KEY, JSON.stringify(normalized));
+            window.localStorage.setItem(RANKS_STORAGE_KEY, exportSharedRanksJson());
             void syncRanksToServer(normalized);
             return true;
           }}
@@ -593,7 +749,7 @@ export const App = () => {
             resetSharedRanks();
             const normalized = getSharedRanks();
             setSharedRanksState(normalized);
-            window.localStorage.setItem(RANKS_STORAGE_KEY, JSON.stringify(normalized));
+            window.localStorage.setItem(RANKS_STORAGE_KEY, exportSharedRanksJson());
             void adminFetch(`${RANKS_API}/reset`, { method: 'POST' });
           }}
           onStopGame={async (matchID: string) => {
@@ -625,9 +781,10 @@ export const App = () => {
             }
           }}
           onRunSimulations={(players: number, simulations: number, options) =>
-            runGameSimulations(players, simulations, 600, options)
+            runGameSimulations(players, simulations, 0, options)
           }
-        />
+          />
+        </Suspense>
       ) : null}
     </main>
   );

@@ -5,6 +5,8 @@ import type { GameMode } from '../../game/types';
 import type { Language } from '../i18n';
 import { cardFlavor, cardTitleWithOverride, categoryLabel, text } from '../i18n';
 import type { GalleryCategoryFilter, LobbyMatch, UserTab } from './model';
+import type { AuthUser, PublicUserProfile, UserStats } from './useUserAccount';
+import type { UserSession } from './useUserAccount';
 
 type T = ReturnType<typeof text>;
 
@@ -75,6 +77,9 @@ export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v1' 
     </button>
     <button type="button" onClick={() => setActiveUserTab('rules')} disabled={activeUserTab === 'rules'}>
       {t.userTabRules}
+    </button>
+    <button type="button" onClick={() => setActiveUserTab('profile')} disabled={activeUserTab === 'profile'}>
+      {t.userTabProfile}
     </button>
   </p>
 );
@@ -250,6 +255,282 @@ export const ActiveSessionSection = ({
     <button type="button" onClick={leaveRoom} disabled={loading}>
       {t.leaveRoom}
     </button>
+  </section>
+);
+
+export const ProfileSection = ({
+  t,
+  user,
+  stats,
+  loading,
+  busy,
+  error,
+  loginDraft,
+  setLoginDraft,
+  registerDraft,
+  setRegisterDraft,
+  onLogin,
+  onRegister,
+  onLogout,
+  profileDraft,
+  setProfileDraft,
+  onSaveProfile,
+  passwordDraft,
+  setPasswordDraft,
+  onChangePassword,
+  resetRequestDraft,
+  setResetRequestDraft,
+  onRequestPasswordReset,
+  resetPasswordDraft,
+  setResetPasswordDraft,
+  onResetPassword,
+  resetTokenPreview,
+  resetTokenExpiresAt,
+  sessions,
+  publicProfileLookup,
+  setPublicProfileLookup,
+  publicProfile,
+  publicProfileLoading,
+  publicProfileError,
+  onFetchPublicProfile,
+  onRefreshSessions,
+  onLogoutAllSessions,
+  onLogoutSession,
+}: {
+  t: T;
+  user: AuthUser | null;
+  stats: UserStats | null;
+  loading: boolean;
+  busy: boolean;
+  error: string;
+  loginDraft: { login: string; password: string };
+  setLoginDraft: (value: { login: string; password: string }) => void;
+  registerDraft: { username: string; email: string; password: string; displayName: string };
+  setRegisterDraft: (value: { username: string; email: string; password: string; displayName: string }) => void;
+  onLogin: () => void;
+  onRegister: () => void;
+  onLogout: () => void;
+  profileDraft: {
+    displayName: string;
+    bio: string;
+    avatarUrl: string;
+    profilePublic: boolean;
+    showStatsPublic: boolean;
+    showRecentMatchesPublic: boolean;
+  };
+  setProfileDraft: (value: {
+    displayName: string;
+    bio: string;
+    avatarUrl: string;
+    profilePublic: boolean;
+    showStatsPublic: boolean;
+    showRecentMatchesPublic: boolean;
+  }) => void;
+  onSaveProfile: () => void;
+  passwordDraft: { currentPassword: string; nextPassword: string };
+  setPasswordDraft: (value: { currentPassword: string; nextPassword: string }) => void;
+  onChangePassword: () => void;
+  resetRequestDraft: { login: string };
+  setResetRequestDraft: (value: { login: string }) => void;
+  onRequestPasswordReset: () => void;
+  resetPasswordDraft: { token: string; nextPassword: string };
+  setResetPasswordDraft: (value: { token: string; nextPassword: string }) => void;
+  onResetPassword: () => void;
+  resetTokenPreview: string;
+  resetTokenExpiresAt: string;
+  sessions: UserSession[];
+  publicProfileLookup: string;
+  setPublicProfileLookup: (value: string) => void;
+  publicProfile: PublicUserProfile | null;
+  publicProfileLoading: boolean;
+  publicProfileError: string;
+  onFetchPublicProfile: () => void;
+  onRefreshSessions: () => void;
+  onLogoutAllSessions: () => void;
+  onLogoutSession: (sessionId: string) => void;
+}) => (
+  <section className="board">
+    <h2>{t.userTabProfile}</h2>
+    {loading ? <p>{t.loadingRooms}</p> : null}
+    {error ? <p className="admin-error">{error}</p> : null}
+    {!user ? (
+      <div className="lobby-layout">
+        <div className="lobby-col">
+          <h3>{t.userLoginTitle}</h3>
+          <p>
+            <input
+              value={loginDraft.login}
+              onChange={(e) => setLoginDraft({ ...loginDraft, login: e.target.value })}
+              placeholder={t.userLoginPlaceholder}
+            />
+          </p>
+          <p>
+            <input
+              type="password"
+              value={loginDraft.password}
+              onChange={(e) => setLoginDraft({ ...loginDraft, password: e.target.value })}
+              placeholder={t.userPasswordLabel}
+            />
+          </p>
+          <button type="button" onClick={onLogin} disabled={busy}>{t.userLoginButton}</button>
+          <h3>{t.userPasswordResetTitle}</h3>
+          <p>
+            <input
+              value={resetRequestDraft.login}
+              onChange={(e) => setResetRequestDraft({ login: e.target.value })}
+              placeholder={t.userLoginPlaceholder}
+            />
+          </p>
+          <p><button type="button" onClick={onRequestPasswordReset} disabled={busy}>{t.userPasswordResetRequestButton}</button></p>
+          <p>
+            <input
+              value={resetPasswordDraft.token}
+              onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, token: e.target.value })}
+              placeholder={t.userResetTokenLabel}
+            />
+          </p>
+          <p>
+            <input
+              type="password"
+              value={resetPasswordDraft.nextPassword}
+              onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, nextPassword: e.target.value })}
+              placeholder={t.userNewPasswordLabel}
+            />
+          </p>
+          <p><button type="button" onClick={onResetPassword} disabled={busy}>{t.userPasswordResetApplyButton}</button></p>
+          {resetTokenPreview ? <p>{t.userResetTokenPreview}: <code>{resetTokenPreview}</code></p> : null}
+          {resetTokenExpiresAt ? <p>{t.userResetTokenExpiresAt}: {new Date(resetTokenExpiresAt).toLocaleString()}</p> : null}
+        </div>
+        <div className="lobby-col">
+          <h3>{t.userRegisterTitle}</h3>
+          <p><input value={registerDraft.username} onChange={(e) => setRegisterDraft({ ...registerDraft, username: e.target.value })} placeholder={t.userUsernameLabel} /></p>
+          <p><input value={registerDraft.displayName} onChange={(e) => setRegisterDraft({ ...registerDraft, displayName: e.target.value })} placeholder={t.userDisplayNameLabel} /></p>
+          <p><input value={registerDraft.email} onChange={(e) => setRegisterDraft({ ...registerDraft, email: e.target.value })} placeholder={t.userEmailLabel} /></p>
+          <p><input type="password" value={registerDraft.password} onChange={(e) => setRegisterDraft({ ...registerDraft, password: e.target.value })} placeholder={t.userPasswordLabel} /></p>
+          <button type="button" onClick={onRegister} disabled={busy}>{t.userRegisterButton}</button>
+        </div>
+        <div className="lobby-col">
+          <h3>{t.userPublicProfileTitle}</h3>
+          <p>{t.userPublicProfileHint}</p>
+          <p>
+            <input
+              value={publicProfileLookup}
+              onChange={(e) => setPublicProfileLookup(e.target.value)}
+              placeholder={t.userPublicProfileLookupPlaceholder}
+            />
+          </p>
+          <p><button type="button" onClick={onFetchPublicProfile} disabled={publicProfileLoading}>{t.userPublicProfileLookupButton}</button></p>
+          {publicProfileError ? <p className="admin-error">{publicProfileError}</p> : null}
+          {!publicProfile ? null : (
+            <>
+              <p><strong>{publicProfile.user.displayName}</strong> @{publicProfile.user.username}</p>
+              {publicProfile.user.bio ? <p>{publicProfile.user.bio}</p> : null}
+              {publicProfile.stats ? (
+                <ul>
+                  <li>{t.userStatMatchesFinished}: {publicProfile.stats.matchesFinished}</li>
+                  <li>{t.userStatWins}: {publicProfile.stats.wins}</li>
+                  <li>{t.userStatWinRate}: {publicProfile.stats.winRatePct}%</li>
+                  <li>{t.userStatBestRank}: {publicProfile.stats.bestRankName}</li>
+                </ul>
+              ) : <p>{t.userPublicProfileStatsHidden}</p>}
+            </>
+          )}
+        </div>
+      </div>
+    ) : (
+      <>
+        <p>{t.userSignedInAs}: <strong>{user.displayName}</strong> (@{user.username})</p>
+        <p className="admin-controls">
+          <button type="button" onClick={onSaveProfile} disabled={busy}>{t.userSaveProfileButton}</button>
+          <button type="button" onClick={onLogout} disabled={busy}>{t.userLogoutButton}</button>
+        </p>
+        <div className="lobby-layout">
+          <div className="lobby-col">
+            <h3>{t.userProfileTitle}</h3>
+            <p><input value={profileDraft.displayName} onChange={(e) => setProfileDraft({ ...profileDraft, displayName: e.target.value })} placeholder={t.userDisplayNameLabel} /></p>
+            <p><input value={profileDraft.avatarUrl} onChange={(e) => setProfileDraft({ ...profileDraft, avatarUrl: e.target.value })} placeholder={t.userAvatarUrlLabel} /></p>
+            <p><textarea className="admin-textarea" value={profileDraft.bio} onChange={(e) => setProfileDraft({ ...profileDraft, bio: e.target.value })} /></p>
+            <p><label><input type="checkbox" checked={profileDraft.profilePublic} onChange={(e) => setProfileDraft({ ...profileDraft, profilePublic: e.target.checked })} /> {t.userProfilePublicLabel}</label></p>
+            <p><label><input type="checkbox" checked={profileDraft.showStatsPublic} onChange={(e) => setProfileDraft({ ...profileDraft, showStatsPublic: e.target.checked })} /> {t.userShowStatsPublicLabel}</label></p>
+            <p><label><input type="checkbox" checked={profileDraft.showRecentMatchesPublic} onChange={(e) => setProfileDraft({ ...profileDraft, showRecentMatchesPublic: e.target.checked })} /> {t.userShowRecentMatchesPublicLabel}</label></p>
+            <h3>{t.userChangePasswordTitle}</h3>
+            <p><input type="password" value={passwordDraft.currentPassword} onChange={(e) => setPasswordDraft({ ...passwordDraft, currentPassword: e.target.value })} placeholder={t.userCurrentPasswordLabel} /></p>
+            <p><input type="password" value={passwordDraft.nextPassword} onChange={(e) => setPasswordDraft({ ...passwordDraft, nextPassword: e.target.value })} placeholder={t.userNewPasswordLabel} /></p>
+            <p><button type="button" onClick={onChangePassword} disabled={busy}>{t.userChangePasswordButton}</button></p>
+            <h3>{t.userSessionsTitle}</h3>
+            <p className="admin-controls">
+              <button type="button" onClick={onRefreshSessions} disabled={busy}>{t.refreshRooms}</button>
+              <button type="button" onClick={onLogoutAllSessions} disabled={busy}>{t.userLogoutAllSessionsButton}</button>
+            </p>
+            {sessions.length === 0 ? <p>{t.simulationNoData}</p> : (
+              <ul>
+                {sessions.map((session) => (
+                  <li key={session.id}>
+                    {new Date(session.lastSeenAt).toLocaleString()} | {session.sourceIp ?? '-'} | {(session.userAgent ?? '-').slice(0, 48)}
+                    {' '}
+                    <button type="button" onClick={() => onLogoutSession(session.id)} disabled={busy}>{t.userLogoutSessionButton}</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="lobby-col">
+            <h3>{t.userStatsTitle}</h3>
+            {!stats ? <p>{t.simulationNoData}</p> : (
+              <ul>
+                <li>{t.userStatMatchesLinked}: {stats.matchesLinked}</li>
+                <li>{t.userStatMatchesFinished}: {stats.matchesFinished}</li>
+                <li>{t.userStatWins}: {stats.wins}</li>
+                <li>{t.userStatWinRate}: {stats.winRatePct}%</li>
+                <li>{t.userStatAvgTurns}: {stats.avgTurns}</li>
+                <li>{t.userStatBestRank}: {stats.bestRankName}</li>
+                <li>{t.userStatResourcesGained}: {stats.resourcesGainedTotal}</li>
+                <li>{t.userStatResourcesLost}: {stats.resourcesLostTotal}</li>
+                <li>{t.userStatLyaps}: {stats.lyapsPlayedOnOthers}</li>
+                <li>{t.userStatScandals}: {stats.scandalsPlayedOnOthers}</li>
+              </ul>
+            )}
+            <h3>{t.userPublicProfileTitle}</h3>
+            <p>{t.userPublicProfileHint}</p>
+            <p>
+              <input
+                value={publicProfileLookup}
+                onChange={(e) => setPublicProfileLookup(e.target.value)}
+                placeholder={t.userPublicProfileLookupPlaceholder}
+              />
+            </p>
+            <p><button type="button" onClick={onFetchPublicProfile} disabled={publicProfileLoading}>{t.userPublicProfileLookupButton}</button></p>
+            {publicProfileError ? <p className="admin-error">{publicProfileError}</p> : null}
+            {!publicProfile ? null : (
+              <>
+                <p><strong>{publicProfile.user.displayName}</strong> @{publicProfile.user.username}</p>
+                {publicProfile.user.bio ? <p>{publicProfile.user.bio}</p> : null}
+                {publicProfile.stats ? (
+                  <ul>
+                    <li>{t.userStatMatchesFinished}: {publicProfile.stats.matchesFinished}</li>
+                    <li>{t.userStatWins}: {publicProfile.stats.wins}</li>
+                    <li>{t.userStatWinRate}: {publicProfile.stats.winRatePct}%</li>
+                    <li>{t.userStatBestRank}: {publicProfile.stats.bestRankName}</li>
+                  </ul>
+                ) : <p>{t.userPublicProfileStatsHidden}</p>}
+                {publicProfile.recentMatches.length > 0 ? (
+                  <>
+                    <h4>{t.userPublicProfileRecentMatchesTitle}</h4>
+                    <ul>
+                      {publicProfile.recentMatches.map((match) => (
+                        <li key={`public-profile-match-${match.matchId}-${match.playerId}`}>
+                          <code>{match.matchId}</code> / {match.playerId} / {match.playerName ?? '-'}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
+              </>
+            )}
+          </div>
+        </div>
+      </>
+    )}
   </section>
 );
 

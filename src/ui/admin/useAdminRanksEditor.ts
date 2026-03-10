@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { parseImportedRanksPayload, serializeSharedRanksDocument } from '../../game/sharedConfigSchema';
 import type { RankDefinition } from '../../game/types';
 import { cloneEditableRanks } from './helpers';
 
@@ -38,12 +39,12 @@ export const useAdminRanksEditor = ({
     cost: {},
     bonus: {},
   });
-  const [ranksJson, setRanksJson] = useState<string>(() => JSON.stringify(sharedRanks, null, 2));
+  const [ranksJson, setRanksJson] = useState<string>(() => JSON.stringify(serializeSharedRanksDocument(sharedRanks), null, 2));
   const [ranksImportError, setRanksImportError] = useState<string>('');
   const [ranksImportStatus, setRanksImportStatus] = useState<string>('');
 
   useEffect(() => {
-    setRanksJson(JSON.stringify(sharedRanks, null, 2));
+    setRanksJson(JSON.stringify(serializeSharedRanksDocument(sharedRanks), null, 2));
     setEditableRanks(cloneEditableRanks(sharedRanks));
   }, [sharedRanks]);
 
@@ -174,7 +175,7 @@ export const useAdminRanksEditor = ({
   };
 
   const exportRanksToFile = () => {
-    const json = JSON.stringify(editableRanks, null, 2);
+    const json = JSON.stringify(serializeSharedRanksDocument(editableRanks), null, 2);
     const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -199,16 +200,17 @@ export const useAdminRanksEditor = ({
       setRanksImportError(t.invalidJson);
       return;
     }
-    if (!Array.isArray(parsed)) {
+    const ranks = parseImportedRanksPayload(parsed);
+    if (!ranks) {
       setRanksImportError(t.ranksJsonArrayError);
       return;
     }
-    const ok = onUpdateRanks(parsed as RankDefinition[]);
+    const ok = onUpdateRanks(ranks);
     if (!ok) {
       setRanksImportError(t.ranksSchemaError);
       return;
     }
-    setRanksImportStatus(`${t.ranksImportSuccess} ${parsed.length}.`);
+    setRanksImportStatus(`${t.ranksImportSuccess} ${ranks.length}.`);
   };
 
   const importRanksFromFile = (file: File | null) => {

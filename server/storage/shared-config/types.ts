@@ -4,9 +4,9 @@ export type SharedConfigStoreDeps = {
   templatePath: string;
   ranksPath: string;
   exportSharedDeckTemplateJson: () => string;
+  exportSharedRanksJson: () => string;
   importSharedDeckTemplateJson: (text: string) => { ok: true } | { ok: false; error: string };
-  getSharedRanks: () => unknown;
-  setSharedRanks: (value: any) => boolean;
+  importSharedRanksJson: (text: string) => { ok: true } | { ok: false; error: string };
   resetSharedRanks: () => void;
   storageMode?: 'file' | 'postgres';
   databaseUrl?: string;
@@ -26,5 +26,5 @@ export type SharedConfigStore = {
 
 export type SharedConfigCoreDeps = Pick<
   SharedConfigStoreDeps,
-  'templatePath' | 'ranksPath' | 'exportSharedDeckTemplateJson' | 'importSharedDeckTemplateJson' | 'getSharedRanks' | 'setSharedRanks' | 'resetSharedRanks'
+  'templatePath' | 'ranksPath' | 'exportSharedDeckTemplateJson' | 'exportSharedRanksJson' | 'importSharedDeckTemplateJson' | 'importSharedRanksJson' | 'resetSharedRanks'
 >;

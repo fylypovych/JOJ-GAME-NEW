@@ -71,8 +71,9 @@ export const passHandler = (d: JojMovesDeps, args: MoveArgs) => {
   if (isDrawAutoResolutionPending(args.G)) return d.INVALID_MOVE;
   if (![d.PLAY_STAGE, d.END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return d.INVALID_MOVE;
   if ((args.G.hands[playerID]?.length ?? 0) > d.HAND_LIMIT) return d.INVALID_MOVE;
-  if ((args.G.deck?.length ?? 0) === 0 && d.hasPlayableCardsByInventory(args.G, playerID)) return d.INVALID_MOVE;
-  d.incrementTurnsCompleted(args.G);
+  if ((args.G.deck?.length ?? 0) > 0) return d.INVALID_MOVE;
+  if (d.hasPlayableCardsByInventory(args.G, playerID)) return d.INVALID_MOVE;
+  d.incrementTurnsCompleted(args.G, playerID);
   if (d.shouldCountNoPlayablePass(args.G, playerID)) d.incrementNoPlayablePassStreak(args.G);
   else d.resetNoPlayablePassStreak(args.G);
   args.events?.endTurn?.();

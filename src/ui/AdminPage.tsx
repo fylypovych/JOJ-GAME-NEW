@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { DeckTarget } from '../game/jojGame';
+import { SHARED_TEMPLATE_SCHEMA_KIND, SHARED_TEMPLATE_SCHEMA_VERSION, serializeSharedRanksDocument } from '../game/sharedConfigSchema';
 import { rankLabel } from './i18n';
 import { text } from './i18n';
 import { optimizeBlobForUpload } from './admin/imageUpload';
@@ -30,6 +31,7 @@ import {
   AdminSimulationTab,
   AdminStateTab,
   AdminTabButtons,
+  AdminUsersTab,
 } from './admin/tabs';
 
 export const AdminPage = ({
@@ -97,7 +99,7 @@ export const AdminPage = ({
   onUpdateRanks,
   onResetRanks,
   onStopGame,
-  onRunSimulations,
+  onRunSimulations: _onRunSimulations,
 }: AdminPageProps) => {
   const t = text(lang);
   const localizedRankName = (rankId: string) =>
@@ -107,6 +109,75 @@ export const AdminPage = ({
   const [restartingServer, setRestartingServer] = useState<boolean>(false);
   const [adminActionError, setAdminActionError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<AdminTab>('matches');
+  const [adminUsers, setAdminUsers] = useState<Array<{
+    id: string;
+    username: string;
+    email: string | null;
+    displayName: string;
+    status: 'active' | 'disabled';
+    createdAt: string;
+    lastLoginAt: string | null;
+    linkedMatches: number;
+    finishedMatches: number;
+  }>>([]);
+  const [adminUsersLoading, setAdminUsersLoading] = useState(false);
+  const [adminUsersError, setAdminUsersError] = useState('');
+  const [adminUserSearch, setAdminUserSearch] = useState('');
+  const [selectedAdminUserId, setSelectedAdminUserId] = useState('');
+  const [selectedAdminUserDetail, setSelectedAdminUserDetail] = useState<null | {
+    user: {
+      id: string;
+      username: string;
+      email: string | null;
+      displayName: string;
+      avatarUrl: string | null;
+      bio: string;
+      preferredLang: 'uk' | 'en';
+      createdAt: string;
+      lastLoginAt: string | null;
+      status: 'active' | 'disabled';
+    };
+    stats: {
+      matchesLinked: number;
+      matchesFinished: number;
+      wins: number;
+      winRatePct: number;
+      avgTurns: number;
+      bestRankName: string;
+      resourcesGainedTotal: number;
+      resourcesLostTotal: number;
+      lyapsPlayedOnOthers: number;
+      scandalsPlayedOnOthers: number;
+    };
+    sessions: Array<{
+      id: string;
+      createdAt: string;
+      lastSeenAt: string;
+      expiresAt: string;
+      sourceIp: string | null;
+      userAgent: string | null;
+    }>;
+    linkedMatches: Array<{
+      matchId: string;
+      playerId: string;
+      playerName: string | null;
+      linkedAt: string;
+    }>;
+    persistedMatches: Array<{
+      matchId: string;
+      playerId: string;
+      playerName: string | null;
+      winnerPlayerId: string | null;
+      endReason: string | null;
+      turnsCompleted: number;
+      finalRankId: string;
+      resourcesGainedTotal: number;
+      resourcesLostTotal: number;
+      linkedAt: string;
+    }>;
+  }>(null);
+  const [adminResetTokenPreview, setAdminResetTokenPreview] = useState('');
+  const [adminResetTokenExpiresAt, setAdminResetTokenExpiresAt] = useState('');
   const optionalSimulationModules = useMemo(
     () => (sharedDeckTemplate.modules ?? [])
       .filter((module) => module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
@@ -116,6 +187,24 @@ export const AdminPage = ({
         alwaysOn: module.category === 'VVNZ',
       })),
     [sharedDeckTemplate.modules],
+  );
+  const simulationTemplateJson = useMemo(() => JSON.stringify({
+    kind: SHARED_TEMPLATE_SCHEMA_KIND,
+    version: SHARED_TEMPLATE_SCHEMA_VERSION,
+    catalog: cardCatalog,
+    deckIds: sharedDeckTemplate.deck.map((card) => card.id),
+    legendaryDeckIds: sharedDeckTemplate.legendaryDeck.map((card) => card.id),
+    rankTrackIds: sharedDeckTemplate.rankTrack.map((card) => card.id),
+    deck: sharedDeckTemplate.deck,
+    legendaryDeck: sharedDeckTemplate.legendaryDeck,
+    rankTrack: sharedDeckTemplate.rankTrack,
+    deckBackImage: sharedDeckTemplate.deckBackImage,
+    modules: sharedDeckTemplate.modules,
+    gameSetup: sharedDeckTemplate.gameSetup,
+  }), [cardCatalog, sharedDeckTemplate]);
+  const simulationRanksJson = useMemo(
+    () => JSON.stringify(serializeSharedRanksDocument(sharedRanks)),
+    [sharedRanks],
   );
   const {
     simulationPlayers,
@@ -129,10 +218,15 @@ export const AdminPage = ({
     simulationReport,
     simulationRunning,
     simulationError,
+    simulationProgressPct,
+    simulationProgressCompleted,
+    simulationProgressTotal,
+    simulationCurrentMatch,
+    simulationCurrentTurn,
+    simulationCurrentMaxTurns,
     simulationBlockedReason,
     runSimulation,
   } = useAdminSimulation({
-    onRunSimulations,
     optionalModules: optionalSimulationModules,
     configSignature: JSON.stringify({
       loaded: sharedConfigLoaded,
@@ -143,6 +237,8 @@ export const AdminPage = ({
     blockedReason: sharedConfigLoaded
       ? ''
       : t.simulationBlockedByConfig,
+    templateJson: simulationTemplateJson,
+    ranksJson: simulationRanksJson,
   });
   const {
     applyTemplateUpdate,
@@ -190,6 +286,13 @@ export const AdminPage = ({
     stateStopGameFailed: t.stateStopGameFailed,
     stateStopGameSuccess: t.stateStopGameSuccess,
   });
+  const adminJsonFetch = (url: string, init?: RequestInit) => fetch(url, {
+    ...init,
+    headers: {
+      ...(adminHeaders ?? {}),
+      ...(init?.headers ?? {}),
+    },
+  });
 
   const {
     gitStatus,
@@ -217,6 +320,7 @@ export const AdminPage = ({
     openCardEditorById,
     startCreateCardForModule,
     removeCardAtFromEditor,
+    removeCardByIdFromEditor,
     inlineEditor,
   } = useAdminCardEditor({
     lang,
@@ -276,6 +380,147 @@ export const AdminPage = ({
     setGitActionLog,
     setImagePreviewNonce,
   });
+
+  const loadAdminUsers = async () => {
+    setAdminUsersLoading(true);
+    setAdminUsersError('');
+    try {
+      const suffix = adminUserSearch.trim() ? `?search=${encodeURIComponent(adminUserSearch.trim())}` : '';
+      const response = await adminJsonFetch(`${serverUrl}/api/admin/users${suffix}`);
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        error?: string;
+        users?: typeof adminUsers;
+      };
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || 'Failed to load users');
+      }
+      setAdminUsers(payload.users ?? []);
+    } catch (error) {
+      setAdminUsersError(String(error instanceof Error ? error.message : error));
+    } finally {
+      setAdminUsersLoading(false);
+    }
+  };
+
+  const loadAdminUserDetail = async (userId: string) => {
+    setSelectedAdminUserId(userId);
+    setSelectedAdminUserDetail(null);
+    setAdminResetTokenPreview('');
+    setAdminResetTokenExpiresAt('');
+    if (!userId) return;
+    setAdminUsersLoading(true);
+    setAdminUsersError('');
+    try {
+      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/detail?userId=${encodeURIComponent(userId)}`);
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        error?: string;
+        detail?: typeof selectedAdminUserDetail;
+      };
+      if (!response.ok || !payload.ok || !payload.detail) {
+        throw new Error(payload.error || 'Failed to load user detail');
+      }
+      setSelectedAdminUserDetail(payload.detail);
+    } catch (error) {
+      setAdminUsersError(String(error instanceof Error ? error.message : error));
+    } finally {
+      setAdminUsersLoading(false);
+    }
+  };
+
+  const updateAdminUserStatus = async (status: 'active' | 'disabled') => {
+    if (!selectedAdminUserId) return;
+    setAdminUsersLoading(true);
+    setAdminUsersError('');
+    try {
+      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedAdminUserId, status }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string };
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to update user status');
+      await loadAdminUsers();
+      await loadAdminUserDetail(selectedAdminUserId);
+    } catch (error) {
+      setAdminUsersError(String(error instanceof Error ? error.message : error));
+    } finally {
+      setAdminUsersLoading(false);
+    }
+  };
+
+  const issueAdminResetToken = async () => {
+    const login = selectedAdminUserDetail?.user.username?.trim();
+    if (!login) return;
+    setAdminUsersLoading(true);
+    setAdminUsersError('');
+    try {
+      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/request-password-reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login }),
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        error?: string;
+        resetTokenPreview?: string | null;
+        resetTokenExpiresAt?: string | null;
+      };
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to issue reset token');
+      setAdminResetTokenPreview(String(payload.resetTokenPreview ?? ''));
+      setAdminResetTokenExpiresAt(String(payload.resetTokenExpiresAt ?? ''));
+    } catch (error) {
+      setAdminUsersError(String(error instanceof Error ? error.message : error));
+    } finally {
+      setAdminUsersLoading(false);
+    }
+  };
+
+  const logoutAdminUserSession = async (sessionId: string) => {
+    if (!sessionId || !selectedAdminUserId) return;
+    setAdminUsersLoading(true);
+    setAdminUsersError('');
+    try {
+      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/logout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string };
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to revoke session');
+      await loadAdminUserDetail(selectedAdminUserId);
+    } catch (error) {
+      setAdminUsersError(String(error instanceof Error ? error.message : error));
+    } finally {
+      setAdminUsersLoading(false);
+    }
+  };
+
+  const logoutAllAdminUserSessions = async () => {
+    if (!selectedAdminUserId) return;
+    setAdminUsersLoading(true);
+    setAdminUsersError('');
+    try {
+      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/logout-all`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedAdminUserId }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string };
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to revoke all sessions');
+      await loadAdminUserDetail(selectedAdminUserId);
+    } catch (error) {
+      setAdminUsersError(String(error instanceof Error ? error.message : error));
+    } finally {
+      setAdminUsersLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'users' || adminUsers.length > 0 || adminUsersLoading) return;
+    void loadAdminUsers();
+  }, [activeTab]);
   return (
     <section className={`board admin-panel${uiVariant === 'v2' ? ' board-v2-panel' : ''}`}>
       <h2>{t.adminTitle}</h2>
@@ -359,6 +604,26 @@ export const AdminPage = ({
           dbRestoreBackupRunning={dbRestoreBackupRunning}
         />
       ) : null}
+      {activeTab === 'users' ? (
+        <AdminUsersTab
+          t={t}
+          userSearch={adminUserSearch}
+          setUserSearch={setAdminUserSearch}
+          onSearch={() => { void loadAdminUsers(); }}
+          users={adminUsers}
+          selectedUserId={selectedAdminUserId}
+          onSelectUserId={(value) => { void loadAdminUserDetail(value); }}
+          selectedUserDetail={selectedAdminUserDetail}
+          loading={adminUsersLoading}
+          error={adminUsersError}
+          onSetStatus={(status) => { void updateAdminUserStatus(status); }}
+          onIssueResetToken={() => { void issueAdminResetToken(); }}
+          onLogoutAllSessions={() => { void logoutAllAdminUserSessions(); }}
+          onLogoutUserSession={(sessionId) => { void logoutAdminUserSession(sessionId); }}
+          resetTokenPreview={adminResetTokenPreview}
+          resetTokenExpiresAt={adminResetTokenExpiresAt}
+        />
+      ) : null}
 
       {activeTab === 'deck' ? (
         <AdminDeckTab
@@ -375,6 +640,7 @@ export const AdminPage = ({
           onEditCardAt={openCardEditorAt}
           onEditCardById={openCardEditorById}
           onRemoveCardAt={removeCardAtFromEditor}
+          onRemoveCardById={removeCardByIdFromEditor}
           cardCatalog={cardCatalog}
           modules={deckModules}
           onSaveModule={saveDeckModule}
@@ -456,6 +722,12 @@ export const AdminPage = ({
           simulationOptionalModuleIds={simulationOptionalModuleIds}
           setSimulationOptionalModuleIds={setSimulationOptionalModuleIds}
           simulationRunning={simulationRunning}
+          simulationProgressPct={simulationProgressPct}
+          simulationProgressCompleted={simulationProgressCompleted}
+          simulationProgressTotal={simulationProgressTotal}
+          simulationCurrentMatch={simulationCurrentMatch}
+          simulationCurrentTurn={simulationCurrentTurn}
+          simulationCurrentMaxTurns={simulationCurrentMaxTurns}
           runSimulation={runSimulation}
           simulationReport={simulationReport}
           simulationError={simulationError}

@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from './types';
 import { registerAdminDbToolRoutes } from '../services/admin-db-tools';
+import type { UserStore } from '../services/user-store';
 
 type CmdResult = { ok: true; stdout: string; stderr: string } | { ok: false; error: string };
 type RunGit = (args: string[]) => Promise<CmdResult>;
@@ -55,6 +56,7 @@ type AdminRoutesDeps = {
     password?: string;
     sslMode?: 'disable' | 'require';
   }) => Promise<void>;
+  userStore?: UserStore | null;
 };
 
 export const registerAdminRoutes = ({
@@ -74,6 +76,7 @@ export const registerAdminRoutes = ({
   dbSchemaPath,
   adminDbUiConfigPath,
   importJsonConfigToDb,
+  userStore,
 }: AdminRoutesDeps) => {
   router.get('/api/health', (ctx: RouteCtx) => {
     ctx.body = {
@@ -89,6 +92,126 @@ export const registerAdminRoutes = ({
   router.get('/api/admin/verify', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/verify'))) return;
     ctx.body = { ok: true, adminAuthEnabled: isAdminAuthEnabled };
+  });
+
+  router.get('/api/admin/users', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/users'))) return;
+    if (!userStore) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    const search = typeof ctx?.query?.search === 'string' ? ctx.query.search : '';
+    const users = await userStore.listUsersAdmin(search);
+    ctx.body = { ok: true, users };
+  });
+
+  router.get('/api/admin/users/detail', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/users/detail'))) return;
+    if (!userStore) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    const userId = typeof ctx?.query?.userId === 'string' ? ctx.query.userId.trim() : '';
+    if (!userId) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing userId' };
+      return;
+    }
+    const detail = await userStore.getAdminUserDetail(userId);
+    if (!detail) {
+      ctx.status = 404;
+      ctx.body = { ok: false, error: 'User not found' };
+      return;
+    }
+    ctx.body = { ok: true, detail };
+  });
+
+  router.post('/api/admin/users/status', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/users/status'))) return;
+    if (!userStore) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/users/status', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const userId = String(body.userId ?? '').trim();
+    const status = body.status === 'disabled' ? 'disabled' : 'active';
+    if (!userId) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing userId' };
+      return;
+    }
+    const updated = await userStore.updateUserStatus(userId, status);
+    if (!updated) {
+      ctx.status = 404;
+      ctx.body = { ok: false, error: 'User not found' };
+      return;
+    }
+    ctx.body = { ok: true, user: updated };
+  });
+
+  router.post('/api/admin/users/request-password-reset', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/users/request-password-reset'))) return;
+    if (!userStore) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/users/request-password-reset', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const login = String(body.login ?? '').trim();
+    if (!login) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing login' };
+      return;
+    }
+    const result = await userStore.createPasswordResetToken(login);
+    ctx.body = {
+      ok: true,
+      resetTokenPreview: result?.token ?? null,
+      resetTokenExpiresAt: result?.expiresAt ?? null,
+    };
+  });
+
+  router.post('/api/admin/users/logout-session', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/users/logout-session'))) return;
+    if (!userStore) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/users/logout-session', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const sessionId = String(body.sessionId ?? '').trim();
+    if (!sessionId) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing sessionId' };
+      return;
+    }
+    await userStore.deleteSessionById(sessionId);
+    ctx.body = { ok: true };
+  });
+
+  router.post('/api/admin/users/logout-all', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/users/logout-all'))) return;
+    if (!userStore) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/users/logout-all', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const userId = String(body.userId ?? '').trim();
+    if (!userId) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing userId' };
+      return;
+    }
+    await userStore.deleteAllSessionsForUser(userId);
+    ctx.body = { ok: true };
   });
   registerAdminDbToolRoutes({
     router,

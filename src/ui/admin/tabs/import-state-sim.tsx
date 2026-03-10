@@ -206,7 +206,7 @@ export const AdminStateTab = ({
 
 export const AdminSimulationTab = ({
   t, lang: _lang, simulationPlayers, setSimulationPlayers, simulationCount, setSimulationCount,
-  simulationRunning, runSimulation, simulationReport, simulationError, simulationBlockedReason, localizedRankName,
+  simulationRunning, simulationProgressPct, simulationProgressCompleted, simulationProgressTotal, simulationCurrentMatch, simulationCurrentTurn, simulationCurrentMaxTurns, runSimulation, simulationReport, simulationError, simulationBlockedReason, localizedRankName,
   simulationGameMode, setSimulationGameMode,
   simulationOptionalModules, simulationOptionalModuleIds, setSimulationOptionalModuleIds,
 }: {
@@ -217,6 +217,12 @@ export const AdminSimulationTab = ({
   simulationCount: number;
   setSimulationCount: (value: number) => void;
   simulationRunning: boolean;
+  simulationProgressPct: number;
+  simulationProgressCompleted: number;
+  simulationProgressTotal: number;
+  simulationCurrentMatch: number;
+  simulationCurrentTurn: number;
+  simulationCurrentMaxTurns: number;
   runSimulation: () => void;
   simulationReport: SimulationReport | null;
   simulationError?: string;
@@ -287,6 +293,12 @@ export const AdminSimulationTab = ({
     </p>
     {simulationBlockedReason ? <p className="admin-info">{simulationBlockedReason}</p> : null}
     {simulationError ? <p className="admin-error">{simulationError}</p> : null}
+    {simulationRunning ? (
+      <p className="admin-info">
+        {t.simulationRunning} {simulationProgressPct}% ({simulationProgressCompleted}/{simulationProgressTotal || simulationCount})
+        {` | матч ${Math.max(1, simulationCurrentMatch)}/${simulationProgressTotal || simulationCount}, хід ${simulationCurrentTurn}/${simulationCurrentMaxTurns}`}
+      </p>
+    ) : null}
     <h4>{t.simulationReport}</h4>
     {!simulationReport ? <p>{t.simulationNoReport}</p> : (
       <div>

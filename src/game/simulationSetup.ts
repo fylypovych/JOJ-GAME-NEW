@@ -96,3 +96,14 @@ export const createSimulationState = (
 
   return G;
 };
+
+export const calculateSimulationTurnLimit = (G: JojGameState, playerCount: number): number => {
+  const totalCards =
+    (G.deck?.length ?? 0)
+    + (G.legendaryDeck?.length ?? 0)
+    + Object.values(G.hands ?? {}).reduce((sum, hand) => sum + (hand?.length ?? 0), 0)
+    + Object.values(G.legendaryHands ?? {}).reduce((sum, hand) => sum + (hand?.length ?? 0), 0)
+    + (G.discard?.length ?? 0)
+    + (G.legendaryDiscard?.length ?? 0);
+  return Math.max(10, Math.ceil(totalCards / Math.max(1, playerCount)) + 10);
+};

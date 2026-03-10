@@ -286,6 +286,92 @@ CREATE TABLE IF NOT EXISTS backup_registry (
 
 CREATE INDEX IF NOT EXISTS idx_backup_registry_created_at ON backup_registry (created_at DESC);
 
+CREATE TABLE IF NOT EXISTS app_users (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  username text NOT NULL UNIQUE,
+  email text UNIQUE,
+  password_hash text NOT NULL,
+  password_salt text NOT NULL,
+  status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'disabled')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  last_login_at timestamptz
+);
+
+CREATE TABLE IF NOT EXISTS user_profiles (
+  user_id uuid PRIMARY KEY REFERENCES app_users(id) ON DELETE CASCADE,
+  display_name text NOT NULL,
+  avatar_url text,
+  bio text NOT NULL DEFAULT '',
+  preferred_lang text NOT NULL DEFAULT 'uk' CHECK (preferred_lang IN ('uk', 'en')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+  token_hash text NOT NULL UNIQUE,
+  expires_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  last_seen_at timestamptz NOT NULL DEFAULT now(),
+  source_ip text,
+  user_agent text
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions (expires_at);
+
+CREATE TABLE IF NOT EXISTS user_password_reset_tokens (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+  token_hash text NOT NULL UNIQUE,
+  expires_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  consumed_at timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_password_reset_tokens_user_id ON user_password_reset_tokens (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_password_reset_tokens_expires_at ON user_password_reset_tokens (expires_at);
+
+CREATE TABLE IF NOT EXISTS user_match_links (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+  match_id text NOT NULL,
+  player_id text NOT NULL,
+  player_name text,
+  linked_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, match_id, player_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_match_links_user_id ON user_match_links (user_id, linked_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_match_links_match_id ON user_match_links (match_id);
+
+CREATE TABLE IF NOT EXISTS persisted_match_results (
+  match_id text PRIMARY KEY,
+  winner_player_id text,
+  end_reason text,
+  turns_completed integer NOT NULL DEFAULT 0,
+  persisted_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS persisted_match_participants (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  match_id text NOT NULL REFERENCES persisted_match_results(match_id) ON DELETE CASCADE,
+  player_id text NOT NULL,
+  player_name text,
+  final_rank_id text NOT NULL,
+  final_resources jsonb NOT NULL DEFAULT '{}'::jsonb,
+  resources_gained_total integer NOT NULL DEFAULT 0,
+  resources_lost_total integer NOT NULL DEFAULT 0,
+  lyaps_played_on_others integer NOT NULL DEFAULT 0,
+  scandals_played_on_others integer NOT NULL DEFAULT 0,
+  turns_taken integer NOT NULL DEFAULT 0,
+  UNIQUE (match_id, player_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_persisted_match_participants_match_id ON persisted_match_participants (match_id);
+
 INSERT INTO app_settings (key, value, updated_by)
 VALUES
   ('storage_mode', '{"mode":"file"}'::jsonb, 'bootstrap'),

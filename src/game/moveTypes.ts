@@ -103,14 +103,17 @@ export type JojMovesDeps = {
   legendaryTexts: typeof LegendaryTexts;
   clampNonNegativeResources: (resources: Record<ResourceKey, number>) => void;
   snapshotResourcesForStats: (G: JojGameState) => Record<string, Record<ResourceKey, number>>;
-  recordResourceFlowStats: (G: JojGameState, before: Record<string, Record<ResourceKey, number>>) => void;
+  recordResourceFlowStats: (
+    G: JojGameState,
+    before: Record<string, Record<ResourceKey, number>>,
+  ) => void;
   resetNoPlayablePassStreak: (G: JojGameState) => void;
   shouldCountNoPlayablePass: (G: JojGameState, playerID: string) => boolean;
   hasPlayableCardsByInventory: (G: JojGameState, playerID: string) => boolean;
   incrementNoPlayablePassStreak: (G: JojGameState) => void;
-  incrementTurnsCompleted: (G: JojGameState) => void;
-  incrementLyapPlayedOnOthers: (G: JojGameState) => void;
-  incrementScandalPlayedOnOthers: (G: JojGameState) => void;
+  incrementTurnsCompleted: (G: JojGameState, playerID: string) => void;
+  incrementLyapPlayedOnOthers: (G: JojGameState, playerID: string) => void;
+  incrementScandalPlayedOnOthers: (G: JojGameState, playerID: string) => void;
   resetEndGameVote: (G: JojGameState) => void;
   computeShieldUntilNextOwnTurn: (ctx: Pick<MoveCtx, 'currentPlayer' | 'playOrder' | 'turn'>, playerID: string) => number;
   cancelLastLyapOrScandalForPlayer: (G: JojGameState, playerID: string) => { canceledCard?: CardDefinition | null; summary: EffectSummary };

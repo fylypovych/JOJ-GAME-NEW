@@ -27,3 +27,9 @@ These are the guarantees the codebase is expected to preserve.
 - `npm run test:invariants`
 - `npm run test:config`
 - `npm run test:simulation`
+
+## Config Contracts
+
+- Shared deck template exports use a versioned `joj-shared-deck-template` document.
+- Shared ranks exports use a versioned `joj-shared-ranks` document.
+- Runtime import paths remain backward-compatible with legacy unversioned JSON arrays/objects.

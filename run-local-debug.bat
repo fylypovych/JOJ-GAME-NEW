@@ -37,14 +37,16 @@ if not exist "node_modules" (
 if not defined FRONTEND_ORIGIN (
   set "FRONTEND_ORIGIN=http://localhost:5173"
 )
-set "ADMIN_TOKEN="
-set "DISABLE_ADMIN_AUTH=1"
 
 echo [JOJ] Starting local debug servers...
 echo [JOJ] Web:    http://localhost:5173
 echo [JOJ] Admin:  http://localhost:5173/admin
 echo [JOJ] Server: http://localhost:8000/api/health
-echo [JOJ] Admin auth: disabled for local debug (ADMIN_TOKEN cleared)
+if defined ADMIN_TOKEN (
+  echo [JOJ] Admin auth: enabled from current environment
+) else (
+  echo [JOJ] Admin auth: will be resolved by server from .env or current environment
+)
 echo.
 echo [JOJ] Press Ctrl+C to stop.
 echo.

@@ -19,9 +19,9 @@ export const createPostgresSharedConfigStore = (
 ) => {
   const {
     exportSharedDeckTemplateJson,
+    exportSharedRanksJson,
     importSharedDeckTemplateJson,
-    getSharedRanks,
-    setSharedRanks,
+    importSharedRanksJson,
   } = deps;
 
   const saveTemplateToPostgresWithUrl = async (targetDatabaseUrl: string) => {
@@ -78,8 +78,9 @@ COMMIT;`;
 
   const saveRanksToPostgresWithUrl = async (targetDatabaseUrl: string) => {
     if (!targetDatabaseUrl) throw new Error('DATABASE_URL is required for postgres sync');
-    const ranksRaw = getSharedRanks();
-    const ranks = Array.isArray(ranksRaw) ? ranksRaw : [];
+    const ranksPayload = exportSharedRanksJson();
+    const parsedPayload = JSON.parse(ranksPayload) as { ranks?: unknown[] };
+    const ranks = Array.isArray(parsedPayload.ranks) ? parsedPayload.ranks : [];
     const rows: string[] = [];
     ranks.forEach((rank, index) => {
       const row = (rank && typeof rank === 'object') ? (rank as Record<string, unknown>) : {};
@@ -107,7 +108,7 @@ COMMIT;`;
     const sql = `
 BEGIN;
 INSERT INTO rank_sets (rank_set_key, title, payload, is_active)
-VALUES ('shared-default', 'Shared Ranks', ${sqlJson(ranks)}, true)
+VALUES ('shared-default', 'Shared Ranks', ${sqlJson(parsedPayload)}, true)
 ON CONFLICT (rank_set_key) DO UPDATE
 SET title = EXCLUDED.title,
     payload = EXCLUDED.payload,
@@ -166,8 +167,8 @@ LIMIT 1;`;
     } catch (error) {
       throw new Error(`invalid ranks JSON in postgres: ${String(error)}`);
     }
-    const ok = setSharedRanks(parsed);
-    if (!ok) throw new Error('invalid ranks schema in postgres payload');
+    const importResult = importSharedRanksJson(JSON.stringify(parsed));
+    if (!importResult.ok) throw new Error(`invalid ranks schema in postgres payload: ${importResult.error}`);
   };
 
   const syncCurrentJsonToPostgres = async (draft?: PostgresConnDraft) => {
@@ -185,4 +186,3 @@ LIMIT 1;`;
     syncCurrentJsonToPostgres,
   };
 };
-

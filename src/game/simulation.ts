@@ -1,7 +1,7 @@
 import type { CardDefinition, GameMode, JojGameState, ResourceKey } from './types';
 import { isCommandCategory } from './cardRules';
 import { withGameStateTransaction } from './gameStateUtils';
-import { createSimulationState } from './simulationSetup';
+import { calculateSimulationTurnLimit, createSimulationState } from './simulationSetup';
 import type { SharedGameSetup } from './sharedConfig';
 
 export type SimulationReport = {
@@ -48,11 +48,36 @@ export type SimulationReport = {
   issues: string[];
 };
 
+export type SimulationAggregate = {
+  input: SimulationReport['input'];
+  generatedAt: string;
+  rankOrder: string[];
+  wins: Record<string, number>;
+  rankReached: Record<string, number>;
+  highestRankReachedByGame: Record<string, number>;
+  totalTurns: number;
+  stalled: number;
+  rankWins: number;
+  scoreWins: number;
+  passesTotal: number;
+  deckDepletionTotal: number;
+  deckDepletionKnown: number;
+  lastGame: SimulationReport['lastGame'];
+};
+
 export type SimulationOptions = {
   useMainDeck?: boolean;
   useLegendaryDeck?: boolean;
   gameMode?: GameMode;
   gameSetup?: Partial<SharedGameSetup>;
+  onProgress?: (completed: number, total: number) => void;
+  onStatus?: (status: {
+    completed: number;
+    total: number;
+    currentMatch: number;
+    turnsInCurrentMatch: number;
+    maxTurns: number;
+  }) => void;
 };
 
 export type SimulationDeps = {
@@ -124,9 +149,213 @@ export type SimulationDeps = {
     resources: Record<ResourceKey, number>,
     effects: CardDefinition['effects'],
   ) => ResourceKey[] | null;
+  hasPlayableCardsByInventory: (G: JojGameState, playerID: string) => boolean;
   getWinner: (G: JojGameState) => string | undefined;
   startingHandSize: number;
   startingLegendaryHandSize: number;
+};
+
+type SimulationMatchResult = {
+  winner: string;
+  turns: number;
+  stalled: boolean;
+  deckDepletionTurn: number;
+  wonByRank: boolean;
+  passes: number;
+  reachedRanks: Record<string, string>;
+  finalResources: Record<string, Record<ResourceKey, number>>;
+};
+
+const createEmptySimulationAggregate = (args: {
+  players: number;
+  simulations: number;
+  maxTurns: number;
+  useMainDeck: boolean;
+  useLegendaryDeck: boolean;
+  gameMode: GameMode;
+  rankOrder: string[];
+}): SimulationAggregate => ({
+  input: {
+    players: args.players,
+    simulations: args.simulations,
+    maxTurns: args.maxTurns,
+    useMainDeck: args.useMainDeck,
+    useLegendaryDeck: args.useLegendaryDeck,
+    gameMode: args.gameMode,
+  },
+  generatedAt: new Date().toISOString(),
+  rankOrder: [...args.rankOrder],
+  wins: {},
+  rankReached: {},
+  highestRankReachedByGame: {},
+  totalTurns: 0,
+  stalled: 0,
+  rankWins: 0,
+  scoreWins: 0,
+  passesTotal: 0,
+  deckDepletionTotal: 0,
+  deckDepletionKnown: 0,
+  lastGame: {
+    winnerPlayerID: '0',
+    winnerRankId: args.rankOrder[0] ?? 'cadet',
+    winnerResources: { time: 0, reputation: 0, discipline: 0, documents: 0, tech: 0 },
+    turns: 0,
+  },
+});
+
+const recordSimulationResult = (
+  aggregate: SimulationAggregate,
+  result: SimulationMatchResult,
+) => {
+  aggregate.wins[result.winner] = (aggregate.wins[result.winner] ?? 0) + 1;
+  aggregate.totalTurns += result.turns;
+  aggregate.passesTotal += result.passes;
+  if (result.stalled) aggregate.stalled += 1;
+  if (result.wonByRank) aggregate.rankWins += 1;
+  else aggregate.scoreWins += 1;
+  if (result.deckDepletionTurn >= 0) {
+    aggregate.deckDepletionTotal += result.deckDepletionTurn;
+    aggregate.deckDepletionKnown += 1;
+  }
+  Object.values(result.reachedRanks).forEach((rankId) => {
+    aggregate.rankReached[rankId] = (aggregate.rankReached[rankId] ?? 0) + 1;
+  });
+  const highest = Object.values(result.reachedRanks)
+    .map((rankId) => ({ rankId, idx: aggregate.rankOrder.indexOf(rankId) }))
+    .sort((a, b) => b.idx - a.idx)[0];
+  if (highest?.rankId) {
+    aggregate.highestRankReachedByGame[highest.rankId] = (aggregate.highestRankReachedByGame[highest.rankId] ?? 0) + 1;
+  }
+  aggregate.lastGame = {
+    winnerPlayerID: result.winner,
+    winnerRankId: result.reachedRanks[result.winner] ?? (aggregate.rankOrder[0] ?? 'cadet'),
+    winnerResources: { ...result.finalResources[result.winner] },
+    turns: result.turns,
+  };
+};
+
+export const buildSimulationReportFromAggregate = (aggregate: SimulationAggregate): SimulationReport => {
+  const { input } = aggregate;
+  const clampedSims = Math.max(1, input.simulations);
+  const topReachedRanks = Object.entries(aggregate.highestRankReachedByGame)
+    .map(([rankId, games]) => ({
+      rankId,
+      games,
+      pct: Number(((games / clampedSims) * 100).toFixed(2)),
+      idx: aggregate.rankOrder.indexOf(rankId),
+    }))
+    .sort((a, b) => b.idx - a.idx || b.games - a.games)
+    .slice(0, 3)
+    .map(({ rankId, games, pct }) => ({ rankId, games, pct }));
+  const topReachedRanksByPct = Object.entries(aggregate.highestRankReachedByGame)
+    .map(([rankId, games]) => ({
+      rankId,
+      games,
+      pct: Number(((games / clampedSims) * 100).toFixed(2)),
+      idx: aggregate.rankOrder.indexOf(rankId),
+    }))
+    .sort((a, b) => b.games - a.games || b.pct - a.pct || b.idx - a.idx)
+    .slice(0, 3)
+    .map(({ rankId, games, pct }) => ({ rankId, games, pct }));
+
+  const seatWinRates = Array.from({ length: input.players }, (_, i) => String(i)).map((playerID) => {
+    const seatWins = aggregate.wins[playerID] ?? 0;
+    return {
+      playerID,
+      wins: seatWins,
+      winRatePct: Number(((seatWins / clampedSims) * 100).toFixed(2)),
+    };
+  });
+
+  const issues: string[] = [];
+  if (aggregate.stalled > 0) {
+    issues.push(
+      `Виявлено ${aggregate.stalled} зациклених/довгих матчів із ${clampedSims} (ліміт ${input.maxTurns} ходів).`,
+    );
+  }
+  const bestSeat = [...seatWinRates].sort((a, b) => b.winRatePct - a.winRatePct)[0];
+  const worstSeat = [...seatWinRates].sort((a, b) => a.winRatePct - b.winRatePct)[0];
+  if (bestSeat && worstSeat && bestSeat.winRatePct - worstSeat.winRatePct >= 12) {
+    issues.push(
+      `Можлива перевага порядку ходу: seat ${bestSeat.playerID} (${bestSeat.winRatePct}%) vs seat ${worstSeat.playerID} (${worstSeat.winRatePct}%).`,
+    );
+  }
+  if (aggregate.rankWins === 0) {
+    issues.push('У симуляціях не зафіксовано перемог через звання Генерала (можливо завеликі вимоги або замалий темп ресурсів).');
+  }
+
+  return {
+    input,
+    generatedAt: aggregate.generatedAt,
+    summary: {
+      finished: clampedSims - aggregate.stalled,
+      stalled: aggregate.stalled,
+      avgTurns: Number((aggregate.totalTurns / clampedSims).toFixed(2)),
+      avgDeckDepletionTurn: Number(
+        (aggregate.deckDepletionKnown > 0 ? aggregate.deckDepletionTotal / aggregate.deckDepletionKnown : 0).toFixed(2),
+      ),
+      rankWins: aggregate.rankWins,
+      scoreWins: aggregate.scoreWins,
+      avgPassesPerGame: Number((aggregate.passesTotal / clampedSims).toFixed(2)),
+    },
+    seatWinRates,
+    rankReached: { ...aggregate.rankReached },
+    topReachedRanks,
+    topReachedRanksByPct,
+    lastGame: {
+      ...aggregate.lastGame,
+      winnerResources: { ...aggregate.lastGame.winnerResources },
+    },
+    issues,
+  };
+};
+
+export const mergeSimulationAggregates = (aggregates: SimulationAggregate[]): SimulationAggregate => {
+  const base = aggregates[0];
+  if (!base) {
+    return createEmptySimulationAggregate({
+      players: 2,
+      simulations: 1,
+      maxTurns: 600,
+      useMainDeck: true,
+      useLegendaryDeck: true,
+      gameMode: 'standard',
+      rankOrder: [],
+    });
+  }
+  const merged = createEmptySimulationAggregate({
+    players: base.input.players,
+    simulations: aggregates.reduce((sum, aggregate) => sum + aggregate.input.simulations, 0),
+    maxTurns: base.input.maxTurns,
+    useMainDeck: base.input.useMainDeck,
+    useLegendaryDeck: base.input.useLegendaryDeck,
+    gameMode: base.input.gameMode,
+    rankOrder: base.rankOrder,
+  });
+  merged.generatedAt = new Date().toISOString();
+  for (const aggregate of aggregates) {
+    Object.entries(aggregate.wins).forEach(([playerID, wins]) => {
+      merged.wins[playerID] = (merged.wins[playerID] ?? 0) + wins;
+    });
+    Object.entries(aggregate.rankReached).forEach(([rankId, count]) => {
+      merged.rankReached[rankId] = (merged.rankReached[rankId] ?? 0) + count;
+    });
+    Object.entries(aggregate.highestRankReachedByGame).forEach(([rankId, count]) => {
+      merged.highestRankReachedByGame[rankId] = (merged.highestRankReachedByGame[rankId] ?? 0) + count;
+    });
+    merged.totalTurns += aggregate.totalTurns;
+    merged.stalled += aggregate.stalled;
+    merged.rankWins += aggregate.rankWins;
+    merged.scoreWins += aggregate.scoreWins;
+    merged.passesTotal += aggregate.passesTotal;
+    merged.deckDepletionTotal += aggregate.deckDepletionTotal;
+    merged.deckDepletionKnown += aggregate.deckDepletionKnown;
+    merged.lastGame = {
+      ...aggregate.lastGame,
+      winnerResources: { ...aggregate.lastGame.winnerResources },
+    };
+  }
+  return merged;
 };
 
 const chooseLyapTarget = (
@@ -315,6 +544,7 @@ const simulateSingleMatch = (
   deps: SimulationDeps,
   numPlayers: number,
   maxTurns: number,
+  options?: Pick<SimulationOptions, 'onStatus'> & { currentMatch?: number; totalMatches?: number },
 ): {
   winner: string;
   turns: number;
@@ -328,7 +558,7 @@ const simulateSingleMatch = (
   useMainDeck: true,
   useLegendaryDeck: true,
   gameMode: 'standard',
-});
+}, options);
 
 export const runGameSimulationsWithDeps = (
   deps: SimulationDeps,
@@ -337,9 +567,20 @@ export const runGameSimulationsWithDeps = (
   maxTurns = 600,
   options: SimulationOptions = {},
 ): SimulationReport => {
+  return buildSimulationReportFromAggregate(
+    runGameSimulationsAggregateWithDeps(deps, players, simulations, maxTurns, options),
+  );
+};
+
+export const runGameSimulationsAggregateWithDeps = (
+  deps: SimulationDeps,
+  players: number,
+  simulations: number,
+  _maxTurns = 600,
+  options: SimulationOptions = {},
+): SimulationAggregate => {
   const clampedPlayers = Math.max(2, Math.min(6, Math.floor(players || 2)));
   const clampedSims = Math.max(1, Math.min(5000, Math.floor(simulations || 1)));
-  const clampedMaxTurns = Math.max(20, Math.min(4000, Math.floor(maxTurns || 600)));
   const requestedMode: GameMode | null = options.gameMode ?? null;
   const templateLegendaryMode = deps.getSharedDeckTemplate().gameSetup?.legendaryDeckMode ?? 'separate';
   const resolvedLegendaryMode = options.gameSetup?.legendaryDeckMode ?? templateLegendaryMode;
@@ -350,136 +591,53 @@ export const runGameSimulationsWithDeps = (
   const useLegendaryDeck = mode
     ? mode !== 'simplified'
     : options.useLegendaryDeck !== false;
-  const wins: Record<string, number> = {};
-  const rankReached: Record<string, number> = {};
-  let totalTurns = 0;
-  let stalled = 0;
-  let rankWins = 0;
-  let scoreWins = 0;
-  let passesTotal = 0;
-  let deckDepletionTotal = 0;
-  let deckDepletionKnown = 0;
-  const highestRankReachedByGame: Record<string, number> = {};
-  let lastGame: SimulationReport['lastGame'] = {
-    winnerPlayerID: '0',
-    winnerRankId: deps.getActiveRanks()[0]?.id ?? 'cadet',
-    winnerResources: { time: 0, reputation: 0, discipline: 0, documents: 0, tech: 0 },
-    turns: 0,
-  };
+  const activeRanks = deps.getActiveRanks();
+  const previewPlayerIDs = Array.from({ length: clampedPlayers }, (_, i) => String(i));
+  const previewState = createSimulationState(deps, previewPlayerIDs, {
+    useMainDeck,
+    useLegendaryDeck,
+    gameMode: mode ?? undefined,
+    gameSetup: options.gameSetup,
+  });
+  const resolvedMaxTurns = calculateSimulationTurnLimit(previewState, clampedPlayers);
+  const aggregate = createEmptySimulationAggregate({
+    players: clampedPlayers,
+    simulations: clampedSims,
+    maxTurns: resolvedMaxTurns,
+    useMainDeck,
+    useLegendaryDeck,
+    gameMode: mode ?? (useLegendaryDeck ? 'standard' : 'simplified'),
+    rankOrder: activeRanks.map((rank) => rank.id),
+  });
 
   for (let i = 0; i < clampedSims; i += 1) {
+    options.onStatus?.({
+      completed: i,
+      total: clampedSims,
+      currentMatch: i + 1,
+      turnsInCurrentMatch: 0,
+      maxTurns: resolvedMaxTurns,
+    });
     const result = (!mode && useMainDeck && useLegendaryDeck && !options.gameSetup)
-      ? simulateSingleMatch(deps, clampedPlayers, clampedMaxTurns)
-      : simulateSingleMatchWithOptions(deps, clampedPlayers, clampedMaxTurns, {
+      ? simulateSingleMatch(deps, clampedPlayers, resolvedMaxTurns, {
+        onStatus: options.onStatus,
+        currentMatch: i + 1,
+        totalMatches: clampedSims,
+      })
+      : simulateSingleMatchWithOptions(deps, clampedPlayers, resolvedMaxTurns, {
         useMainDeck,
         useLegendaryDeck,
         gameMode: mode ?? undefined,
         gameSetup: options.gameSetup,
+      }, {
+        onStatus: options.onStatus,
+        currentMatch: i + 1,
+        totalMatches: clampedSims,
       });
-    wins[result.winner] = (wins[result.winner] ?? 0) + 1;
-    totalTurns += result.turns;
-    passesTotal += result.passes;
-    if (result.stalled) stalled += 1;
-    if (result.wonByRank) rankWins += 1;
-    else scoreWins += 1;
-    if (result.deckDepletionTurn >= 0) {
-      deckDepletionTotal += result.deckDepletionTurn;
-      deckDepletionKnown += 1;
-    }
-    Object.values(result.reachedRanks).forEach((rankId) => {
-      rankReached[rankId] = (rankReached[rankId] ?? 0) + 1;
-    });
-    const activeRanks = deps.getActiveRanks();
-    const highest = Object.values(result.reachedRanks)
-      .map((rankId) => ({ rankId, idx: activeRanks.findIndex((r) => r.id === rankId) }))
-      .sort((a, b) => b.idx - a.idx)[0];
-    if (highest?.rankId) {
-      highestRankReachedByGame[highest.rankId] = (highestRankReachedByGame[highest.rankId] ?? 0) + 1;
-    }
-    lastGame = {
-      winnerPlayerID: result.winner,
-      winnerRankId: result.reachedRanks[result.winner] ?? (deps.getActiveRanks()[0]?.id ?? 'cadet'),
-      winnerResources: { ...result.finalResources[result.winner] },
-      turns: result.turns,
-    };
+    recordSimulationResult(aggregate, result);
+    options.onProgress?.(i + 1, clampedSims);
   }
-
-  const activeRanks = deps.getActiveRanks();
-  const topReachedRanks = Object.entries(highestRankReachedByGame)
-    .map(([rankId, games]) => ({
-      rankId,
-      games,
-      pct: Number(((games / clampedSims) * 100).toFixed(2)),
-      idx: activeRanks.findIndex((r) => r.id === rankId),
-    }))
-    .sort((a, b) => b.idx - a.idx || b.games - a.games)
-    .slice(0, 3)
-    .map(({ rankId, games, pct }) => ({ rankId, games, pct }));
-  const topReachedRanksByPct = Object.entries(highestRankReachedByGame)
-    .map(([rankId, games]) => ({
-      rankId,
-      games,
-      pct: Number(((games / clampedSims) * 100).toFixed(2)),
-      idx: activeRanks.findIndex((r) => r.id === rankId),
-    }))
-    .sort((a, b) => b.games - a.games || b.pct - a.pct || b.idx - a.idx)
-    .slice(0, 3)
-    .map(({ rankId, games, pct }) => ({ rankId, games, pct }));
-
-  const seatWinRates = Array.from({ length: clampedPlayers }, (_, i) => String(i)).map((playerID) => {
-    const seatWins = wins[playerID] ?? 0;
-    return {
-      playerID,
-      wins: seatWins,
-      winRatePct: Number(((seatWins / clampedSims) * 100).toFixed(2)),
-    };
-  });
-
-  const issues: string[] = [];
-  if (stalled > 0) {
-    issues.push(
-      `Виявлено ${stalled} зациклених/довгих матчів із ${clampedSims} (ліміт ${clampedMaxTurns} ходів).`,
-    );
-  }
-  const bestSeat = [...seatWinRates].sort((a, b) => b.winRatePct - a.winRatePct)[0];
-  const worstSeat = [...seatWinRates].sort((a, b) => a.winRatePct - b.winRatePct)[0];
-  if (bestSeat && worstSeat && bestSeat.winRatePct - worstSeat.winRatePct >= 12) {
-    issues.push(
-      `Можлива перевага порядку ходу: seat ${bestSeat.playerID} (${bestSeat.winRatePct}%) vs seat ${worstSeat.playerID} (${worstSeat.winRatePct}%).`,
-    );
-  }
-  if (rankWins === 0) {
-    issues.push('У симуляціях не зафіксовано перемог через звання Генерала (можливо завеликі вимоги або замалий темп ресурсів).');
-  }
-
-  return {
-    input: {
-      players: clampedPlayers,
-      simulations: clampedSims,
-      maxTurns: clampedMaxTurns,
-      useMainDeck,
-      useLegendaryDeck,
-      gameMode: mode ?? (useLegendaryDeck ? 'standard' : 'simplified'),
-    },
-    generatedAt: new Date().toISOString(),
-    summary: {
-      finished: clampedSims - stalled,
-      stalled,
-      avgTurns: Number((totalTurns / clampedSims).toFixed(2)),
-      avgDeckDepletionTurn: Number(
-        (deckDepletionKnown > 0 ? deckDepletionTotal / deckDepletionKnown : 0).toFixed(2),
-      ),
-      rankWins,
-      scoreWins,
-      avgPassesPerGame: Number((passesTotal / clampedSims).toFixed(2)),
-    },
-    seatWinRates,
-    rankReached,
-    topReachedRanks,
-    topReachedRanksByPct,
-    lastGame,
-    issues,
-  };
+  return aggregate;
 };
 
 const simulateSingleMatchWithOptions = (
@@ -487,11 +645,12 @@ const simulateSingleMatchWithOptions = (
   numPlayers: number,
   maxTurns: number,
   options: { useMainDeck: boolean; useLegendaryDeck: boolean; gameMode?: GameMode; gameSetup?: Partial<SharedGameSetup> },
+  progress?: Pick<SimulationOptions, 'onStatus'> & { currentMatch?: number; totalMatches?: number },
 ) => {
   const playerIDs = Array.from({ length: numPlayers }, (_, i) => String(i));
   const G = createSimulationState(deps, playerIDs, options);
 
-  return simulateFromPreparedState(deps, G, playerIDs, numPlayers, maxTurns);
+  return simulateFromPreparedState(deps, G, playerIDs, numPlayers, maxTurns, progress);
 };
 
 const simulateFromPreparedState = (
@@ -500,6 +659,7 @@ const simulateFromPreparedState = (
   playerIDs: string[],
   numPlayers: number,
   maxTurns: number,
+  progress?: Pick<SimulationOptions, 'onStatus'> & { currentMatch?: number; totalMatches?: number },
 ): {
   winner: string;
   turns: number;
@@ -515,6 +675,7 @@ const simulateFromPreparedState = (
   let deckDepletionTurn = G.deck.length === 0 ? 0 : -1;
   let passes = 0;
   let deadTurnsAfterDeckEmpty = 0;
+  const progressEveryTurns = 10;
   const tryPromoteOnce = (pid: string) => deps.promoteRank(G, pid, numPlayers);
   const scoreWinner = () => Object.entries(G.resources)
     .sort(([, a], [, b]) => deps.resourceKeys.reduce((sum, key) => sum + (b[key] - a[key]), 0))
@@ -522,6 +683,18 @@ const simulateFromPreparedState = (
 
   while (turns < maxTurns) {
     const currentTurn = turns + 1;
+    if (
+      progress?.onStatus
+      && (turns === 0 || currentTurn % progressEveryTurns === 0)
+    ) {
+      progress.onStatus({
+        completed: Math.max(0, (progress.currentMatch ?? 1) - 1),
+        total: progress.totalMatches ?? 1,
+        currentMatch: progress.currentMatch ?? 1,
+        turnsInCurrentMatch: currentTurn,
+        maxTurns,
+      });
+    }
     const playerID = playerIDs[currentIdx];
     const hand = G.hands[playerID];
     let stage: 'play' | 'end' = 'play';
@@ -577,7 +750,7 @@ const simulateFromPreparedState = (
         played = true;
         progressedThisTurn = true;
       }
-      if (!played) passes += 1;
+      if (!played && G.deck.length === 0 && !deps.hasPlayableCardsByInventory(G, playerID)) passes += 1;
     } else {
       let acted = false;
       let promotedThisTurn = tryPromoteOnce(playerID);
@@ -604,7 +777,7 @@ const simulateFromPreparedState = (
         acted = true;
         progressedThisTurn = true;
       }
-      if (!acted) passes += 1;
+      if (!acted && G.deck.length === 0 && !deps.hasPlayableCardsByInventory(G, playerID)) passes += 1;
     }
 
     turns += 1;

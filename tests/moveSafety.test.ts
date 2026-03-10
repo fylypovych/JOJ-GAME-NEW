@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createJojMoves } from '../src/game/moves';
-import { drawCardHandler, playCardHandler, playLegendaryCardHandler, resolveDrawAutoCardHandler } from '../src/game/moveHandlers';
+import { drawCardHandler, passHandler, playCardHandler, playLegendaryCardHandler, resolveDrawAutoCardHandler } from '../src/game/moveHandlers';
 import type { JojMovesDeps, MoveArgs } from '../src/game/moveTypes';
 import type { CardDefinition, JojGameState, ResourceKey } from '../src/game/types';
 
@@ -317,4 +317,41 @@ test('playLegendaryCardHandler rolls back special effects when card effects fail
   assert.equal(G.extraHandPlayTokens['0'], 0);
   assert.equal(G.legendaryHands['0'].length, 1);
   assert.equal(G.legendaryDiscard.length, 0);
+});
+
+test('passHandler rejects pass while deck still has cards', () => {
+  const G = makeState();
+  G.deck = [{ id: 'support-x', title: 'Support', category: 'SUPPORT', effects: [{ resource: 'time', value: 1 }] }];
+  const args: MoveArgs = {
+    G,
+    ctx: { currentPlayer: '0', activePlayers: { '0': 'play' } },
+    playerID: '0',
+    events: { endTurn: () => undefined },
+  };
+
+  const result = passHandler(makeDeps(), args);
+
+  assert.equal(result, 'INVALID_MOVE');
+});
+
+test('passHandler allows pass only when deck is empty and no playable cards remain', () => {
+  const G = makeState();
+  G.deck = [];
+  G.hands['0'] = [{ id: 'vvnz-down', title: 'VVNZ', category: 'VVNZ', grantRank: 'junior_lieutenant', effects: [] }];
+  G.players['0'].hand = G.hands['0'];
+  let ended = false;
+  const args: MoveArgs = {
+    G,
+    ctx: { currentPlayer: '0', activePlayers: { '0': 'play' } },
+    playerID: '0',
+    events: { endTurn: () => { ended = true; } },
+  };
+
+  const result = passHandler(makeDeps({
+    hasPlayableCardsByInventory: () => false,
+    shouldCountNoPlayablePass: () => true,
+  }), args);
+
+  assert.equal(result, undefined);
+  assert.equal(ended, true);
 });

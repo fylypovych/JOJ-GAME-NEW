@@ -68,6 +68,7 @@ copy .env.example .env
 
 - Shared deck template: `database/shared-deck-template.json`
 - Shared ranks: `database/shared-ranks.json`
+- Both shared JSON configs support versioned documents and backward-compatible legacy imports.
 - Match storage (boardgame.io FlatFile DB): `database/matches/`
 - Server logs: `logs/server.log`
 

@@ -1,18 +1,27 @@
 import { createRequire } from 'node:module';
+import net from 'node:net';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createPostgresPool } from './db/postgres';
+import { runSqlMigrations } from './db/migrations';
 import { loadEnvFile } from './env';
 import { createFileLogger } from './file-logger';
 import { autoStashRuntimeNoise, createCommandRunners, getGitUpdateStatus } from './git-utils';
 import { createRateLimiter, createRequireAdminAuth, readJsonBodySafe } from './request-utils';
 import { registerAdminRoutes } from './routes/admin';
+import { registerAuthRoutes } from './routes/auth';
 import { registerSharedRoutes } from './routes/shared';
 import { registerUploadRoutes } from './routes/uploads';
+import { registerUserLobbyRoutes } from './routes/user-lobby';
+import { createUserStore } from './services/user-store';
 import { createSharedConfigStore } from './storage/shared-config';
 import {
   exportSharedDeckTemplateJson,
+  exportSharedRanksJson,
   getSharedRanks,
   getSharedDeckTemplateStats,
+  importSharedRanksJson,
   importSharedDeckTemplateJson,
   jojGame,
   resetSharedRanks,
@@ -46,7 +55,7 @@ const disableAdminAuth = /^(1|true|yes)$/i.test((process.env.DISABLE_ADMIN_AUTH 
 const isAdminAuthEnabled = !disableAdminAuth && adminToken.length > 0;
 const allowInsecureAdmin = /^(1|true|yes)$/i.test((process.env.ALLOW_INSECURE_ADMIN ?? '').trim());
 const storageModeEnv = (process.env.STORAGE_MODE ?? 'file').trim().toLowerCase();
-const sharedConfigStorageMode = (storageModeEnv === 'postgres' || storageModeEnv === 'db') ? 'postgres' : 'file';
+const requestedSharedConfigStorageMode = (storageModeEnv === 'postgres' || storageModeEnv === 'db') ? 'postgres' : 'file';
 const databaseUrl = (process.env.DATABASE_URL ?? '').trim();
 const nodeEnv = (process.env.NODE_ENV ?? '').trim().toLowerCase();
 
@@ -56,10 +65,12 @@ if (!isAdminAuthEnabled && nodeEnv === 'production' && !allowInsecureAdmin) {
   throw new Error('Refusing to start with admin auth disabled in production. Set ADMIN_TOKEN or explicitly ALLOW_INSECURE_ADMIN=1.');
 }
 
+const matchDb = new FlatFile({ dir: matchesDbDir, logging: false });
+
 const server = Server({
   games: [jojGame],
   origins: [process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173'],
-  db: new FlatFile({ dir: matchesDbDir, logging: false }),
+  db: matchDb,
 });
 const router = (server as { router?: any }).router;
 const templatePath = path.resolve(appRootDir, 'database', 'shared-deck-template.json');
@@ -68,81 +79,160 @@ const uploadsDir = path.resolve(appRootDir, 'public', 'cards');
 const repoDir = appRootDir;
 const devRestartTouchPath = path.resolve(appRootDir, 'server', 'restart.touch');
 const dbSchemaPath = path.resolve(appRootDir, 'db', 'schema', 'db.sql');
+const dbMigrationsDir = path.resolve(appRootDir, 'db', 'migrations');
 const adminDbUiConfigPath = path.resolve(appRootDir, 'database', 'admin-db-ui-config.json');
 
 const requireAdminAuth = createRequireAdminAuth({ isAdminAuthEnabled, adminToken, logLine });
 const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });
 const { runGit, runShellCommand, spawnDetachedShell } = createCommandRunners(repoDir);
-const {
-  saveTemplate,
-  saveRanks,
-  loadTemplate,
-  loadRanks,
-  syncCurrentJsonToPostgres,
-} = createSharedConfigStore({
-  templatePath,
-  ranksPath,
-  exportSharedDeckTemplateJson,
-  importSharedDeckTemplateJson,
-  getSharedRanks,
-  setSharedRanks,
-  resetSharedRanks,
-  storageMode: sharedConfigStorageMode,
-  databaseUrl,
-});
 
-if (router) {
-  registerAdminRoutes({
-    router,
-    requireAdminAuth,
-    enforceRateLimit,
-    readJsonBodySafe,
-    logLine,
-    JSON_BODY_LIMIT,
-    getGitUpdateStatus,
-    autoStashRuntimeNoise,
-    runGit,
-    runShellCommand,
-    spawnDetachedShell,
-    isAdminAuthEnabled,
-    devRestartTouchPath,
-    dbSchemaPath,
-    adminDbUiConfigPath,
-    importJsonConfigToDb: syncCurrentJsonToPostgres,
+const hasPsqlCli = () => {
+  const probe = spawnSync('psql', ['--version'], { stdio: 'ignore', windowsHide: true });
+  return !probe.error;
+};
+
+const isPortAvailable = (targetPort: number) => new Promise<boolean>((resolve) => {
+  const probe = net.createServer();
+  probe.once('error', (error: NodeJS.ErrnoException) => {
+    if (error.code === 'EADDRINUSE') resolve(false);
+    else resolve(false);
   });
-  registerSharedRoutes({
-    router,
-    requireAdminAuth,
-    enforceRateLimit,
-    readJsonBodySafe,
-    logLine,
-    JSON_BODY_LIMIT,
-    LARGE_JSON_BODY_LIMIT,
-    exportSharedDeckTemplateJson,
-    getSharedDeckTemplateStats,
-    getSharedRanks,
-    setSharedRanks,
-    resetSharedRanks,
-    importSharedDeckTemplateJson,
-    resetSharedDeckTemplate,
-    saveRanksToDisk: saveRanks,
-    saveTemplateToDisk: saveTemplate,
+  probe.once('listening', () => {
+    probe.close(() => resolve(true));
   });
-  registerUploadRoutes({
-    router,
-    requireAdminAuth,
-    enforceRateLimit,
-    readJsonBodySafe,
-    logLine,
-    JSON_BODY_LIMIT,
-    IMAGE_UPLOAD_BODY_LIMIT,
-    uploadsDir,
-  });
-}
+  probe.listen(targetPort);
+});
 
 const port = Number(process.env.PORT ?? 8000);
 
 void (async () => {
+  let sharedConfigStorageMode: 'file' | 'postgres' = requestedSharedConfigStorageMode;
+  let userPool = null as ReturnType<typeof createPostgresPool> | null;
+  let userStore = null as ReturnType<typeof createUserStore> | null;
+  let postgresAvailableForApp = false;
+
+  if (databaseUrl) {
+    try {
+      userPool = createPostgresPool(databaseUrl);
+      await runSqlMigrations(userPool, dbMigrationsDir);
+      userStore = createUserStore(userPool);
+      await userStore.ensureSchema();
+      await userStore.deleteExpiredSessions();
+      postgresAvailableForApp = true;
+      await logLine('INFO', 'user auth/profile schema ready');
+      setInterval(async () => {
+        if (!userStore) return;
+        try {
+          const pendingMatchIds = await userStore.listPendingPersistMatchIds();
+          for (const matchId of pendingMatchIds) {
+            const fetched = await (matchDb as { fetch?: (matchID: string, opts: { state?: boolean; metadata?: boolean }) => Promise<{ state?: unknown } | null> }).fetch?.(matchId, {
+              state: true,
+              metadata: true,
+            });
+            await userStore.persistMatchResultIfFinished(matchId, (fetched?.state ?? null) as never);
+          }
+        } catch (error) {
+          await logLine('WARN', `user match persistence sweep failed: ${String(error instanceof Error ? error.message : error)}`);
+        }
+      }, 60_000).unref?.();
+    } catch (error) {
+      userPool = null;
+      userStore = null;
+      await logLine('WARN', `user auth/profile module disabled (postgres unavailable): ${String(error instanceof Error ? error.message : error)}`);
+    }
+  } else {
+    await logLine('WARN', 'user auth/profile module disabled (DATABASE_URL is empty)');
+  }
+
+  if (sharedConfigStorageMode === 'postgres') {
+    if (!databaseUrl || !postgresAvailableForApp) {
+      sharedConfigStorageMode = 'file';
+      await logLine('WARN', 'shared config postgres mode disabled: postgres is unavailable, falling back to file storage');
+    } else if (!hasPsqlCli()) {
+      sharedConfigStorageMode = 'file';
+      await logLine('WARN', 'shared config postgres mode disabled: psql CLI is not installed, falling back to file storage');
+    }
+  }
+
+  const {
+    saveTemplate,
+    saveRanks,
+    loadTemplate,
+    loadRanks,
+    syncCurrentJsonToPostgres,
+  } = createSharedConfigStore({
+    templatePath,
+    ranksPath,
+    exportSharedDeckTemplateJson,
+    exportSharedRanksJson,
+    importSharedDeckTemplateJson,
+    importSharedRanksJson,
+    resetSharedRanks,
+    storageMode: sharedConfigStorageMode,
+    databaseUrl,
+  });
+
+  if (router) {
+    registerAuthRoutes({
+      router,
+      userStore,
+      logLine,
+      jsonBodyLimit: JSON_BODY_LIMIT,
+    });
+    registerUserLobbyRoutes({
+      router,
+      userStore,
+      logLine,
+      jsonBodyLimit: JSON_BODY_LIMIT,
+    });
+    registerAdminRoutes({
+      router,
+      requireAdminAuth,
+      enforceRateLimit,
+      readJsonBodySafe,
+      logLine,
+      JSON_BODY_LIMIT,
+      getGitUpdateStatus,
+      autoStashRuntimeNoise,
+      runGit,
+      runShellCommand,
+      spawnDetachedShell,
+      isAdminAuthEnabled,
+      devRestartTouchPath,
+      dbSchemaPath,
+      adminDbUiConfigPath,
+      importJsonConfigToDb: syncCurrentJsonToPostgres,
+      userStore,
+    });
+    registerSharedRoutes({
+      router,
+      requireAdminAuth,
+      enforceRateLimit,
+      readJsonBodySafe,
+      logLine,
+      JSON_BODY_LIMIT,
+      LARGE_JSON_BODY_LIMIT,
+      exportSharedDeckTemplateJson,
+      getSharedDeckTemplateStats,
+      getSharedRanks,
+      setSharedRanks,
+      resetSharedRanks,
+      importSharedDeckTemplateJson,
+      resetSharedDeckTemplate,
+      saveRanksToDisk: saveRanks,
+      saveTemplateToDisk: saveTemplate,
+    });
+    registerUploadRoutes({
+      router,
+      requireAdminAuth,
+      enforceRateLimit,
+      readJsonBodySafe,
+      logLine,
+      JSON_BODY_LIMIT,
+      IMAGE_UPLOAD_BODY_LIMIT,
+      uploadsDir,
+    });
+  }
   await loadTemplate();
   await loadRanks();
   await logLine(
@@ -150,6 +240,11 @@ void (async () => {
     isAdminAuthEnabled ? 'admin auth enabled (ADMIN_TOKEN set)' : 'admin auth disabled (ADMIN_TOKEN is empty)',
   );
   await logLine('INFO', `shared config storage mode=${sharedConfigStorageMode}`);
+  const portFree = await isPortAvailable(port);
+  if (!portFree) {
+    await logLine('ERROR', `server port ${port} is already in use; stop the other process or change PORT`);
+    return;
+  }
   server.run(port, () => {
     void logLine('INFO', `boardgame.io server running at http://localhost:${port}`);
   });

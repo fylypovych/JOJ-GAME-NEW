@@ -15,7 +15,7 @@ export const handleLyapPlay = (args: {
 }) => {
   const { d, moveArgs, playerID, card, targetPlayerID, replacementResources, invalidMove } = args;
   if (!targetPlayerID || targetPlayerID === playerID || !(targetPlayerID in moveArgs.G.players)) return invalidMove();
-  d.incrementLyapPlayedOnOthers(moveArgs.G);
+  d.incrementLyapPlayedOnOthers(moveArgs.G, playerID);
   const protectedTarget = d.isProtectedFromLyapScandal(moveArgs.G, moveArgs.ctx, targetPlayerID);
   let summary = { resources: {}, rank: 0 };
   if (!protectedTarget) {
@@ -50,7 +50,7 @@ export const handleScandalPlay = (args: {
   invalidMove: () => 'INVALID_MOVE';
 }) => {
   const { d, moveArgs, playerID, card, replacementByTarget, allPlayerIDs, invalidMove } = args;
-  d.incrementScandalPlayedOnOthers(moveArgs.G);
+  d.incrementScandalPlayedOnOthers(moveArgs.G, playerID);
   const targetSummaries: string[] = [];
   let invalidScandalReplacement = false;
   allPlayerIDs.filter((pid) => pid !== playerID).forEach((pid) => {

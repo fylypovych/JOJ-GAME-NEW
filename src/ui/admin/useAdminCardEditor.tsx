@@ -257,6 +257,31 @@ export const useAdminCardEditor = ({
     }
   };
 
+  const removeCardByIdFromEditor = (target: DeckTarget, cardId: string) => {
+    const card = sharedDeckTemplate[target]?.find((row) => row.id === cardId)
+      ?? cardCatalog.find((row) => row.id === cardId);
+    if (!card) return;
+    const ok = applyTemplateUpdate((nextTemplate) => {
+      nextTemplate[target] = nextTemplate[target].filter((row) => row.id !== cardId);
+      nextTemplate.modules = (nextTemplate.modules ?? []).map((module) => (
+        module.cardIds.includes(cardId)
+          ? {
+            ...module,
+            cardIds: module.cardIds.filter((id) => id !== cardId),
+            cardCount: Math.max(0, module.cardIds.filter((id) => id !== cardId).length),
+          }
+          : module
+      ));
+      nextTemplate.catalog = (nextTemplate.catalog ?? []).filter((row) => row.id !== cardId);
+    });
+    if (!ok) return;
+    if (editOriginalCardId === cardId) {
+      setEditIndex(-1);
+      setCreateCardModuleId('');
+      setEditOriginalCardId('');
+    }
+  };
+
   const uploadDataUrl = async (filename: string, dataUrl: string, cardId?: string): Promise<string | null> => {
     const { path, error } = await uploadAdminImageDataUrl({
       serverUrl,
@@ -349,6 +374,7 @@ export const useAdminCardEditor = ({
     openCardEditorById,
     startCreateCardForModule,
     removeCardAtFromEditor,
+    removeCardByIdFromEditor,
     inlineEditor,
     withCacheBust,
   };
