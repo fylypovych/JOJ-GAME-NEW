@@ -91,6 +91,7 @@ type LobbySectionProps = {
   t: T;
   playerName: string;
   fallbackPlayerName?: string;
+  authenticatedUser?: boolean;
   setPlayerName: (value: string) => void;
   roomCapacity: number;
   setRoomCapacity: (value: number) => void;
@@ -106,6 +107,7 @@ type LobbySectionProps = {
   error: string;
   matches: LobbyMatch[];
   joinRoom: (match: LobbyMatch) => void;
+  spectateRoom: (match: LobbyMatch) => void;
   optionalModules: Array<{ id: string; name: string; alwaysOn: boolean }>;
   selectedOptionalModuleIds: string[];
   setSelectedOptionalModuleIds: (ids: string[]) => void;
@@ -116,6 +118,7 @@ export const LobbySection = ({
   t,
   playerName,
   fallbackPlayerName,
+  authenticatedUser = false,
   setPlayerName,
   roomCapacity,
   setRoomCapacity,
@@ -131,6 +134,7 @@ export const LobbySection = ({
   error,
   matches,
   joinRoom,
+  spectateRoom,
   optionalModules,
   selectedOptionalModuleIds,
   setSelectedOptionalModuleIds,
@@ -172,6 +176,13 @@ export const LobbySection = ({
                 disabled={!effectivePlayerName || loading || !hasFree}
               >
                 {t.joinRoom}
+              </button>{' '}
+              <button
+                type="button"
+                onClick={() => spectateRoom(match)}
+                disabled={loading}
+              >
+                {t.spectateRoom}
               </button>
             </p>
           );
@@ -179,14 +190,20 @@ export const LobbySection = ({
       </div>
       <div className="lobby-col">
         <h3>{t.roomCreateTitle}</h3>
-        <p>
-          {t.playerName}:{' '}
-          <input
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
-            placeholder={t.playerNamePlaceholder}
-          />
-        </p>
+        {authenticatedUser ? (
+          <p>
+            {t.joinedAs}: <strong>{effectivePlayerName || '-'}</strong>
+          </p>
+        ) : (
+          <p>
+            {t.playerName}:{' '}
+            <input
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              placeholder={t.playerNamePlaceholder}
+            />
+          </p>
+        )}
         <p>{t.roomCapacity}:</p>
         <p className="admin-controls">
           {[2, 3, 4, 5, 6].map((size) => (
@@ -268,7 +285,7 @@ export const LobbySection = ({
 
 type ActiveSessionSectionProps = {
   t: T;
-  session: { matchID: string; playerID: string };
+  session: { matchID: string; playerID?: string; spectator?: boolean };
   playerName: string;
   sessionBroken: boolean;
   canStart: boolean;
@@ -292,7 +309,9 @@ export const ActiveSessionSection = ({
       {t.activeRoom}: {session.matchID}
     </h2>
     <p>
-      {t.joinedAs}: {playerName || '-'} (#{session.playerID})
+      {session.spectator
+        ? `${t.spectatorMode}: ${t.spectatorJoinedLabel}`
+        : `${t.joinedAs}: ${playerName || '-'} (#${session.playerID})`}
     </p>
     {sessionBroken ? <p>{t.noRooms}</p> : null}
     {!sessionBroken && !canStart ? <p>{t.waitingForPlayers}</p> : null}

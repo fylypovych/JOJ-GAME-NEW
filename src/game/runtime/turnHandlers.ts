@@ -64,6 +64,20 @@ export const promoteHandler = (d: JojMovesDeps, args: MoveArgs) => {
   return undefined;
 };
 
+export const endTurnHandler = (d: JojMovesDeps, args: MoveArgs) => {
+  const playerID = args.playerID;
+  if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
+  if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
+  if (isDrawAutoResolutionPending(args.G)) return d.INVALID_MOVE;
+  if (![d.PLAY_STAGE, d.END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return d.INVALID_MOVE;
+  if ((args.G.hands[playerID]?.length ?? 0) > d.HAND_LIMIT) return d.INVALID_MOVE;
+  d.incrementTurnsCompleted(args.G, playerID);
+  d.resetNoPlayablePassStreak(args.G);
+  d.resetEndGameVote(args.G);
+  args.events?.endTurn?.();
+  return undefined;
+};
+
 export const passHandler = (d: JojMovesDeps, args: MoveArgs) => {
   const playerID = args.playerID;
   if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;

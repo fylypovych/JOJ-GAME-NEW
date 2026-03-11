@@ -82,7 +82,7 @@ export const useBoardV2Sync = (args: {
       }
       if (event.key.toLowerCase() === 'e' && args.canEndTurn) {
         event.preventDefault();
-        args.moves.pass();
+        args.moves.endTurn?.();
       }
     };
     window.addEventListener('keydown', onKeyDown);

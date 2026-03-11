@@ -83,8 +83,9 @@ export type Snapshot = {
 
 export type Session = {
   matchID: string;
-  playerID: string;
-  credentials: string;
+  playerID?: string;
+  credentials?: string;
+  spectator?: boolean;
 };
 
 export type UserTab = 'games' | 'gallery' | 'rules' | 'profile' | 'statistics';
@@ -104,14 +105,13 @@ export const parseSession = (raw: string | null): Session | null => {
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (
-      typeof parsed.matchID === 'string' &&
-      typeof parsed.playerID === 'string' &&
-      typeof parsed.credentials === 'string'
+      typeof parsed.matchID === 'string'
     ) {
       return {
         matchID: parsed.matchID,
-        playerID: parsed.playerID,
-        credentials: parsed.credentials,
+        playerID: typeof parsed.playerID === 'string' ? parsed.playerID : undefined,
+        credentials: typeof parsed.credentials === 'string' ? parsed.credentials : undefined,
+        spectator: parsed.spectator === true,
       };
     }
   } catch {

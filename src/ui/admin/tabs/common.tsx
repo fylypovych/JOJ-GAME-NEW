@@ -37,6 +37,7 @@ export const AdminMatchesTab = ({
   onResetMatch,
   onDeleteMatch,
   canDelete,
+  deletingMatch,
 }: {
   t: T;
   matchIds: string[];
@@ -48,6 +49,7 @@ export const AdminMatchesTab = ({
   onResetMatch: () => void;
   onDeleteMatch: () => void;
   canDelete: boolean;
+  deletingMatch: boolean;
 }) => (
   <>
     <p>{t.matches}: {matchesCount}</p>
@@ -65,7 +67,9 @@ export const AdminMatchesTab = ({
     <p className="admin-controls">
       <button type="button" onClick={onCreateMatch}>{t.createMatch}</button>
       <button type="button" onClick={onResetMatch}>{t.resetMatch}</button>
-      <button type="button" onClick={onDeleteMatch} disabled={!canDelete}>{t.deleteMatch}</button>
+      <button type="button" onClick={onDeleteMatch} disabled={!canDelete || deletingMatch}>
+        {deletingMatch ? `${t.deleteMatch}...` : t.deleteMatch}
+      </button>
     </p>
   </>
 );

@@ -3,6 +3,7 @@ import type { JojGameState } from './types';
 import {
   discardFromHandHandler,
   drawCardHandler,
+  endTurnHandler,
   isDrawAutoResolutionPending,
   isLegendaryDraftPending,
   passHandler,
@@ -17,6 +18,31 @@ import type { ResourceKey } from './types';
 export type { MoveArgs, MoveCtx, MoveEvents, JojMovesDeps, ReplacementByTarget } from './moveTypes';
 
 export const createJojMoves = (d: JojMovesDeps) => ({
+  requestEndGameVote: (args: MoveArgs) => {
+    const playerID = args.playerID;
+    if (!playerID || !(playerID in args.G.players)) return d.INVALID_MOVE;
+    if (args.G.endGameVote?.active) return d.INVALID_MOVE;
+    const votes: Record<string, boolean> = { [playerID]: true };
+    Object.keys(args.G.botPlayers ?? {}).forEach((pid) => {
+      if (pid in args.G.players) votes[pid] = true;
+    });
+    args.G.endGameVote = { active: true, requestedBy: playerID, votes };
+    return undefined;
+  },
+  respondEndGameVote: (args: MoveArgs, agree: boolean) => {
+    const playerID = args.playerID;
+    if (!playerID || !(playerID in args.G.players)) return d.INVALID_MOVE;
+    if (!args.G.endGameVote?.active) return d.INVALID_MOVE;
+    if (!agree) {
+      d.resetEndGameVote(args.G);
+      return undefined;
+    }
+    args.G.endGameVote.votes[playerID] = true;
+    Object.keys(args.G.botPlayers ?? {}).forEach((pid) => {
+      if (pid in args.G.players) args.G.endGameVote.votes[pid] = true;
+    });
+    return undefined;
+  },
   syncPlayerNames: (args: MoveArgs, names: Record<string, string>) => {
     const playerID = args.playerID;
     if (!playerID || !(playerID in args.G.players)) return d.INVALID_MOVE;
@@ -53,24 +79,6 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     d.syncPlayerState(args.G, playerID);
     return undefined;
   },
-  requestEndGameVote: (args: MoveArgs) => {
-    const playerID = args.playerID;
-    if (!playerID || !(playerID in args.G.players)) return d.INVALID_MOVE;
-    if (args.G.endGameVote?.active) return d.INVALID_MOVE;
-    args.G.endGameVote = { active: true, requestedBy: playerID, votes: { [playerID]: true } };
-    return undefined;
-  },
-  respondEndGameVote: (args: MoveArgs, agree: boolean) => {
-    const playerID = args.playerID;
-    if (!playerID || !(playerID in args.G.players)) return d.INVALID_MOVE;
-    if (!args.G.endGameVote?.active) return d.INVALID_MOVE;
-    if (!agree) {
-      d.resetEndGameVote(args.G);
-      return undefined;
-    }
-    args.G.endGameVote.votes[playerID] = true;
-    return undefined;
-  },
   sendChat: (args: MoveArgs, text: string) => {
     const playerID = args.playerID;
     if (!playerID) return d.INVALID_MOVE;
@@ -96,6 +104,7 @@ export const createJojMoves = (d: JojMovesDeps) => ({
     playLegendaryCardHandler(d, args, cardId, targetPlayerID, selectedResource),
   discardFromHand: (args: MoveArgs, cardId: string) => discardFromHandHandler(d, args, cardId),
   promote: (args: MoveArgs) => promoteHandler(d, args),
+  endTurn: (args: MoveArgs) => endTurnHandler(d, args),
   pass: (args: MoveArgs) => passHandler(d, args),
 });
 
@@ -107,6 +116,7 @@ export const enumerateAiMoves = (deps: {
   if (isLegendaryDraftPending(G) || isDrawAutoResolutionPending(G)) return [];
   const stage = ctx.activePlayers?.[playerID];
   if (stage === deps.DRAW_STAGE) return [{ move: 'drawCard' }];
-  if (stage === deps.END_STAGE || stage === 'play') return [{ move: 'pass' }];
+  if ((stage === deps.END_STAGE || stage === 'play') && (G.deck?.length ?? 0) === 0) return [{ move: 'pass' }];
+  if (stage === deps.END_STAGE || stage === 'play') return [{ move: 'endTurn' }];
   return [];
 };

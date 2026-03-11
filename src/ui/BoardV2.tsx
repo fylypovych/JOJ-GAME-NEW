@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import type { CardDefinition, ResourceKey } from '../game/types';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 import { GameCardTile, PilePreview } from './board/components';
@@ -19,8 +20,8 @@ const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
   stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
 
 export const BoardV2 = ({
-  G,
-  ctx,
+  G: incomingG,
+  ctx: incomingCtx,
   moves,
   playerID,
   lang = 'uk',
@@ -34,8 +35,66 @@ export const BoardV2 = ({
 }: LocalizedBoardProps) => {
   const t = text(lang);
   const v2 = t.v2;
+  const BOT_TURN_DELAY_MS = 850;
+  const [renderSnapshot, setRenderSnapshot] = useState(() => ({
+    G: incomingG,
+    ctx: incomingCtx,
+  }));
+  const snapshotQueueRef = useRef<Array<{ G: typeof incomingG; ctx: typeof incomingCtx }>>([]);
+  const processingQueueRef = useRef(false);
+  const lastSnapshotSignatureRef = useRef('');
+  const delayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const id = playerID ?? '0';
+  useEffect(() => {
+    return () => {
+      if (delayTimerRef.current) clearTimeout(delayTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const currentPlayer = incomingCtx?.currentPlayer ?? '';
+    const stage = currentPlayer ? incomingCtx?.activePlayers?.[currentPlayer] ?? '' : '';
+    const signature = [
+      incomingCtx?.turn ?? '',
+      currentPlayer,
+      stage,
+      incomingG?.chat?.length ?? '',
+      incomingG?.discard?.length ?? '',
+      incomingG?.deck?.length ?? '',
+      playerID ? incomingG?.hands?.[playerID]?.length ?? '' : '',
+    ].join('|');
+    if (lastSnapshotSignatureRef.current === signature) return;
+    lastSnapshotSignatureRef.current = signature;
+    snapshotQueueRef.current.push({ G: incomingG, ctx: incomingCtx });
+    const processQueue = () => {
+      if (processingQueueRef.current) return;
+      const nextSnapshot = snapshotQueueRef.current.shift();
+      if (!nextSnapshot) return;
+      processingQueueRef.current = true;
+      const nextCurrentPlayer = nextSnapshot.ctx?.currentPlayer ?? '';
+      const shouldDelay = Boolean(nextCurrentPlayer && nextSnapshot.G?.botPlayers?.[nextCurrentPlayer]);
+      const finish = () => {
+        setRenderSnapshot(nextSnapshot);
+        processingQueueRef.current = false;
+        if (snapshotQueueRef.current.length) processQueue();
+      };
+      if (shouldDelay) {
+        delayTimerRef.current = setTimeout(() => {
+          delayTimerRef.current = null;
+          finish();
+        }, BOT_TURN_DELAY_MS);
+      } else {
+        finish();
+      }
+    };
+    processQueue();
+  }, [incomingG, incomingCtx, playerID]);
+
+  const G = renderSnapshot.G;
+  const ctx = renderSnapshot.ctx;
+
+  const id = playerID ?? '';
+  const seatConnectionMissing = Boolean(roomMeta?.playerID) && !playerID;
   const resourceLabels: Record<ResourceKey, string> = t.resources;
   const {
     isSimplifiedMode,
@@ -213,6 +272,7 @@ export const BoardV2 = ({
     winnerRankName,
     latestEvents,
     handCardsView,
+    shouldShowSkipTurnLabel,
     passButtonLabel,
   } = useBoardV2DerivedState({
     G,
@@ -262,10 +322,15 @@ export const BoardV2 = ({
           {roomMeta ? (
             <div className="game-ui-v2-room-meta">
               <p className="game-ui-v2-subtle">{v2.activeRoom}: <strong>{roomMeta.matchID}</strong></p>
-              <p className="game-ui-v2-subtle">{v2.joinedAs}: {playerName || '-'} (#{roomMeta.playerID})</p>
+              <p className="game-ui-v2-subtle">
+                {roomMeta.playerID ? `${v2.joinedAs}: ${playerName || '-'} (#${roomMeta.playerID})` : `${v2.spectatorMode}: ${playerName || '-'}`}
+              </p>
             </div>
           ) : null}
           {currentStageFocus ? <p className="game-ui-v2-subtle game-ui-v2-stage-focus">{currentStageFocus}</p> : null}
+          {seatConnectionMissing ? (
+            <p className="admin-error">{t.seatConnectionMissing}</p>
+          ) : null}
         </div>
         <div className="game-ui-v2-header-actions">
           <span className="game-ui-v2-badge">{stageLabel(stage, t)}</span>
@@ -370,7 +435,7 @@ export const BoardV2 = ({
                 <button type="button" onClick={() => {
                   handlePromote(promoteReason);
                 }} disabled={!canPlay}>{t.promote}</button>
-                <button type="button" onClick={() => { handlePass(moves.pass); }} disabled={!canEndTurn}>{passButtonLabel}</button>
+                <button type="button" onClick={() => { handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn); }} disabled={!canEndTurn}>{passButtonLabel}</button>
               </div>
             </div>
             <div className="game-ui-v2-resources-grid">
@@ -645,7 +710,7 @@ export const BoardV2 = ({
       <div className="game-ui-v2-mobile-bar" aria-label={v2.mobileActions}>
         <button type="button" onClick={() => canDraw && moves.drawCard()} disabled={!canDraw}>{t.draw}</button>
         <button type="button" onClick={() => { if (!canPlay || promoteReason) return; moves.promote(); }} disabled={!canPlay || Boolean(promoteReason)}>{t.promote}</button>
-        <button type="button" onClick={() => canEndTurn && moves.pass()} disabled={!canEndTurn}>{passButtonLabel}</button>
+        <button type="button" onClick={() => canEndTurn && (shouldShowSkipTurnLabel ? moves.pass() : moves.endTurn?.())} disabled={!canEndTurn}>{passButtonLabel}</button>
       </div>
     </section>
   );

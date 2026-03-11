@@ -22,6 +22,7 @@ export type JojMoveApi = {
   playLegendaryCard?: (cardId: string, targetPlayerID?: string, selectedResource?: ResourceKey) => void;
   discardFromHand?: (cardId: string) => void;
   promote: () => void;
+  endTurn?: () => void;
   pass: () => void;
 };
 
@@ -34,7 +35,7 @@ export type LocalizedBoardProps = Omit<BoardProps<JojGameState>, 'moves'> & {
   cardImageById?: Record<string, string>;
   roomMeta?: {
     matchID: string;
-    playerID: string;
+    playerID?: string;
   };
   onLeaveRoom?: () => void;
   onStateChange?: (payload: {

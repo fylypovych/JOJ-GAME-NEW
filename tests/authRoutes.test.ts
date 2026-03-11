@@ -235,7 +235,7 @@ test('profile me requires auth cookie and returns stats', async () => {
   assert.equal((ctx.body as { stats: { wins: number } }).stats.wins, 1);
 });
 
-test('link-match rejects mismatched player name', async () => {
+test('link-match accepts mismatched player name and binds using canonical match state', async () => {
   const { router, postHandlers } = makeRouter();
   registerAuthRoutes({
     router,
@@ -267,7 +267,7 @@ test('link-match rejects mismatched player name', async () => {
     },
   };
   await handler?.(ctx);
-  assert.equal(ctx.status, 400);
+  assert.equal((ctx.body as { ok: boolean }).ok, true);
 });
 
 test('bind-session-match verifies boardgame credentials', async () => {

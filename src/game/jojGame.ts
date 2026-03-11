@@ -872,6 +872,13 @@ export const jojGame: Game<JojGameState> = {
       totalPlayers: players.length,
       botSetup,
     });
+    if (hasLegendaryModule && effectiveGameMode === GAME_MODE_STANDARD_PLUS) {
+      Object.keys(state.botPlayers ?? {}).forEach((playerID) => {
+        state.legendaryHands[playerID] = shuffle(optionalLegendaryCards.map(cloneCard)).slice(0, STARTING_LEGENDARY_HAND_SIZE);
+        state.legendaryDraftCompleted[playerID] = true;
+        syncPlayerState(state, playerID);
+      });
+    }
 
     return state;
   },

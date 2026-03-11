@@ -345,11 +345,6 @@ export const registerAuthRoutes = (args: {
     const verified = await getVerifiedMatchParticipant(ctx, matchId, playerId);
     if (!verified) return;
     const { state, knownPlayerName } = verified;
-    if (playerName && knownPlayerName && playerName !== knownPlayerName) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: 'Player name does not match current match state.' };
-      return;
-    }
     await store.linkUserToMatch({
       userId: user.id,
       matchId,
@@ -383,11 +378,6 @@ export const registerAuthRoutes = (args: {
     if (!metadataPlayer?.credentials || metadataPlayer.credentials !== credentials) {
       ctx.status = 403;
       ctx.body = { ok: false, error: 'Invalid match credentials.' };
-      return;
-    }
-    if (playerName && knownPlayerName && playerName !== knownPlayerName) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: 'Player name does not match current match state.' };
       return;
     }
     await store.linkUserToMatch({

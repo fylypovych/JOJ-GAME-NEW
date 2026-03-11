@@ -105,6 +105,7 @@ export type AdminPageProps = {
   onCreateMatch: () => void;
   onResetMatch: () => void;
   onDeleteMatch: () => void;
+  deletingMatch: boolean;
   onResetAll: () => void;
   onRestartServer: () => Promise<boolean>;
   onShuffleDeck: () => void;

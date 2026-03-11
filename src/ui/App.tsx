@@ -98,6 +98,7 @@ export const App = () => {
     return raw === 'v2' ? 'v2' : 'v1';
   });
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
+  const [deletingAdminMatch, setDeletingAdminMatch] = useState(false);
   const [loginDraft, setLoginDraft] = useState({ login: '', password: '' });
   const [registerDraft, setRegisterDraft] = useState({ username: '', email: '', password: '', displayName: '' });
   const [profileDraft, setProfileDraft] = useState({
@@ -136,8 +137,6 @@ export const App = () => {
     refreshSessions,
     logoutAllSessions,
     logoutSession,
-    createAndJoinOwnedMatch,
-    joinOwnedMatch,
     bindMatchSession,
   } = useUserAccount({ serverUrl: SERVER_URL, lang });
   const {
@@ -229,6 +228,7 @@ export const App = () => {
     refreshMatches,
     createRoom,
     joinRoom,
+    spectateRoom,
     leaveRoom,
     sessionBroken,
     roomPlayerNames,
@@ -250,24 +250,15 @@ export const App = () => {
     roomFullText: t.roomFull,
     createFailedText: t.createFailed,
     joinFailedText: t.joinFailed,
-    createOwnedSession: user ? ({ numPlayers, setupData, playerName: nextPlayerName }) => createAndJoinOwnedMatch({
-      gameName: GAME_NAME,
-      numPlayers,
-      setupData,
-      playerName: nextPlayerName,
-    }) : undefined,
-    joinOwnedSession: user ? ({ matchID, playerID, playerName: nextPlayerName }) => joinOwnedMatch({
-      gameName: GAME_NAME,
-      matchID,
-      playerID,
-      playerName: nextPlayerName,
-    }) : undefined,
-    onSessionEstablished: (nextSession, nextPlayerName) => bindMatchSession({
-      matchID: nextSession.matchID,
-      playerID: nextSession.playerID,
-      credentials: nextSession.credentials,
-      playerName: nextPlayerName,
-    }),
+    onSessionEstablished: (nextSession, nextPlayerName) => {
+      if (!nextSession.playerID || !nextSession.credentials) return;
+      return bindMatchSession({
+        matchID: nextSession.matchID,
+        playerID: nextSession.playerID,
+        credentials: nextSession.credentials,
+        playerName: nextPlayerName,
+      });
+    },
   });
   const sharedDeckStats = getSharedDeckTemplateStats();
   const optionalLobbyModules = useMemo(
@@ -344,22 +335,31 @@ export const App = () => {
   }, [user]);
 
   useEffect(() => {
-    if (!user) return;
-    if (playerName.trim()) return;
-    const nextPlayerName = user.displayName?.trim() || user.username?.trim() || '';
-    if (!nextPlayerName) return;
-    setPlayerName(nextPlayerName);
-  }, [user, playerName]);
+    if (user || profileScreen !== 'login' || activeUserTab !== 'profile') {
+      setAuthErrorModal('');
+    }
+  }, [user, profileScreen, activeUserTab]);
 
   useEffect(() => {
-    if (!user || !session?.matchID || !session?.playerID) return;
+    if (!user) return;
+    const nextPlayerName = user.displayName?.trim() || user.username?.trim() || '';
+    if (!nextPlayerName) return;
+    if (playerName === nextPlayerName) return;
+    setPlayerName(nextPlayerName);
+  }, [user?.displayName, user?.username]);
+
+  const resolvedUserPlayerName = user?.displayName?.trim() || user?.username?.trim() || '';
+
+  useEffect(() => {
+    if (!user || !session?.matchID || !session?.playerID || !session.credentials) return;
+    if (resolvedUserPlayerName && playerName.trim() === resolvedUserPlayerName) return;
     void bindMatchSession({
       matchID: session.matchID,
       playerID: session.playerID,
       credentials: session.credentials,
-      playerName,
+      playerName: resolvedUserPlayerName || playerName,
     });
-  }, [user, session?.matchID, session?.playerID, session?.credentials, playerName]);
+  }, [user, session?.matchID, session?.playerID, session?.credentials, resolvedUserPlayerName, playerName]);
 
   useEffect(() => {
     if (session?.matchID) {
@@ -474,6 +474,7 @@ export const App = () => {
           t={t}
           playerName={playerName}
           fallbackPlayerName={user?.displayName?.trim() || user?.username?.trim() || ''}
+          authenticatedUser={Boolean(user)}
           setPlayerName={setPlayerName}
           roomCapacity={roomCapacity}
           setRoomCapacity={setRoomCapacity}
@@ -489,6 +490,7 @@ export const App = () => {
           error={error}
           matches={matches}
           joinRoom={(match) => { void joinRoom(match); }}
+          spectateRoom={(match) => { void spectateRoom(match); }}
           optionalModules={optionalLobbyModules}
           selectedOptionalModuleIds={selectedOptionalModuleIds}
           setSelectedOptionalModuleIds={setSelectedOptionalModuleIds}
@@ -513,24 +515,24 @@ export const App = () => {
         {session ? (
           <Suspense fallback={<p>{t.loading}</p>}>
             {gameUiVariant === 'v2' ? <NetworkClientV2
-              key={`${session.matchID}:${session.playerID}:v2`}
+              key={`${session.matchID}:${session.playerID ?? 'spectator'}:v2`}
               matchID={session.matchID}
               playerID={session.playerID}
               credentials={session.credentials}
               lang={lang}
-              playerName={playerName}
+              playerName={session.spectator ? t.spectatorJoinedLabel : playerName}
               knownPlayerNames={roomPlayerNames}
               sharedRanks={sharedRanks}
               cardImageById={cardImageById}
               roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
               onLeaveRoom={() => { void leaveRoom(); }}
             /> : <NetworkClientV1
-              key={`${session.matchID}:${session.playerID}`}
+              key={`${session.matchID}:${session.playerID ?? 'spectator'}`}
               matchID={session.matchID}
               playerID={session.playerID}
               credentials={session.credentials}
               lang={lang}
-              playerName={playerName}
+              playerName={session.spectator ? t.spectatorJoinedLabel : playerName}
               knownPlayerNames={roomPlayerNames}
               sharedRanks={sharedRanks}
               cardImageById={cardImageById}
@@ -579,7 +581,11 @@ export const App = () => {
           onSaveProfile={() => {
             setProfileNotice('');
             void updateUserProfile({ ...profileDraft, preferredLang: lang })
-              .then(() => setProfileNotice(t.userProfileSaved))
+              .then(() => {
+                const nextPlayerName = profileDraft.displayName.trim() || user?.username?.trim() || '';
+                if (nextPlayerName) setPlayerName(nextPlayerName);
+                setProfileNotice(t.userProfileSaved);
+              })
               .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
           }}
           passwordDraft={passwordDraft}
@@ -749,18 +755,23 @@ export const App = () => {
             })();
           }}
           onDeleteMatch={() => {
-            if (!adminMatchID) return;
+            if (!adminMatchID || deletingAdminMatch) return;
             void (async () => {
+              setDeletingAdminMatch(true);
               try {
                 const response = await adminFetch(`${ADMIN_MATCH_DELETE_API}?matchID=${encodeURIComponent(adminMatchID)}`, { method: 'POST' });
                 if (!response.ok) return;
                 setSnapshot(null);
+                setAdminSelectedMatchID('');
                 await refreshMatches();
               } catch {
                 // ignore UI toast for now
+              } finally {
+                setDeletingAdminMatch(false);
               }
             })();
           }}
+          deletingMatch={deletingAdminMatch}
           onResetAll={() => {
             window.localStorage.removeItem(SESSION_STORAGE_KEY);
             window.localStorage.removeItem(PLAYER_NAME_STORAGE_KEY);
@@ -867,7 +878,7 @@ export const App = () => {
       {!isAdminRoute ? (
         <AuthErrorModal
           t={t}
-          open={Boolean(authErrorModal)}
+          open={!user && activeUserTab === 'profile' && profileScreen === 'login' && Boolean(authErrorModal)}
           error={authErrorModal}
           onClose={() => setAuthErrorModal('')}
           onOpenReset={() => {

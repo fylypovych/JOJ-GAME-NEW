@@ -99,6 +99,24 @@ test('getVvnzPlayBlockedReason reports target rank not higher', () => {
   assert.match(reason ?? '', /вже не нижче/);
 });
 
+test('getVvnzPlayBlockedReason checks only target rank resources', () => {
+  const G = makeState({
+    resources: {
+      '0': { time: 2, reputation: 7, discipline: 5, documents: 0, tech: 0 },
+      '1': { time: 2, reputation: 2, discipline: 2, documents: 0, tech: 0 },
+    },
+  });
+  const reason = getVvnzPlayBlockedReason({
+    card: { category: 'VVNZ', grantRank: 'senior_sergeant' },
+    G,
+    playerID: '0',
+    ranks,
+    resourceLabels: labels,
+    lang: 'uk',
+  });
+  assert.equal(reason, null);
+});
+
 test('getPromoteBlockedReason reports already promoted this turn', () => {
   const G = makeState({
     promotedThisTurn: { '0': true, '1': false },

@@ -169,6 +169,52 @@ const buildDrawResolutionPlan = (d: BotEngineDeps, G: JojGameState, playerID: st
   };
 };
 
+const forceResolvePendingForBot = (d: BotEngineDeps, G: JojGameState, playerID: string, ctx: BotTurnContext['ctx']) => {
+  const pending = G.pendingDrawAutoResolution;
+  if (!pending || pending.sourcePlayerID !== playerID) return false;
+  const beforeResources = d.snapshotResourcesForStats(G);
+  const card = pending.card;
+  if (pending.kind === 'LYAP') {
+    const summary = d.isProtectedFromLyapScandal(G, ctx, playerID)
+      ? { resources: {}, rank: 0 }
+      : d.applyCardEffectsSoft(G, playerID, card.effects);
+    const seq = d.nextSystemMessageSeq(G);
+    d.appendChat(G, {
+      type: 'system',
+      text: d.buildLyapSystemMessage(seq, d.getPlayerLabel(G, playerID), card, summary),
+    });
+    d.syncPlayerState(G, playerID);
+    G.discard.push(card);
+    G.pendingDrawAutoResolution = null;
+    d.recordResourceFlowStats(G, beforeResources);
+    d.resetNoPlayablePassStreak(G);
+    d.resetEndGameVote(G);
+    return true;
+  }
+  const targetSummaries: string[] = [];
+  Object.keys(G.players ?? {}).forEach((pid) => {
+    if (d.isProtectedFromLyapScandal(G, ctx, pid)) {
+      targetSummaries.push(`${d.getPlayerLabel(G, pid)}: щит від Грамоти (без змін)`);
+      return;
+    }
+    const summary = d.applyCardEffectsSoft(G, pid, card.effects);
+    targetSummaries.push(`${d.getPlayerLabel(G, pid)}: ${d.effectSummaryToText(summary)}`);
+    d.syncPlayerState(G, pid);
+  });
+  d.triggerSukhpayZsuOnScandal(G, ctx, playerID);
+  const seq = d.nextSystemMessageSeq(G);
+  d.appendChat(G, {
+    type: 'system',
+    text: d.buildScandalSystemMessage(seq, d.getPlayerLabel(G, playerID), card, targetSummaries),
+  });
+  G.discard.push(card);
+  G.pendingDrawAutoResolution = null;
+  d.recordResourceFlowStats(G, beforeResources);
+  d.resetNoPlayablePassStreak(G);
+  d.resetEndGameVote(G);
+  return true;
+};
+
 const buildBotPlans = (d: BotEngineDeps, G: JojGameState, playerID: string, difficulty: BotDifficulty): BotPlan[] => {
   const plans: BotPlan[] = [];
   if (!G.promotedThisTurn[playerID]) {
@@ -293,6 +339,11 @@ export const createBotEngine = (d: BotEngineDeps) => ({
       if (stage === d.END_STAGE && (G.extraHandPlayTokens[playerID] ?? 0) <= 0 && !G.pendingDrawAutoResolution) {
         endedTurn = true;
       }
+    }
+
+    if (G.pendingDrawAutoResolution?.sourcePlayerID === playerID) {
+      forceResolvePendingForBot(d, G, playerID, ctx);
+      endedTurn = true;
     }
 
     return true;

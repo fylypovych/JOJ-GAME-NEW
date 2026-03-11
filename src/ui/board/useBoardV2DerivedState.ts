@@ -30,7 +30,7 @@ export const useBoardV2DerivedState = (args: {
   const winnerRankName = winnerRankId
     ? (sharedRanks.find((row) => row.id === winnerRankId)?.name ?? rankLabel(winnerRankId, lang))
     : '';
-  const latestEvents = (G?.chat ?? []).filter((row) => row.type === 'system').slice(-4).reverse();
+  const latestEvents = (G?.chat ?? []).filter((row) => row.type === 'system').reverse();
 
   const handCardsView = useMemo(() => {
     const withMeta = hand.map((card, index) => ({

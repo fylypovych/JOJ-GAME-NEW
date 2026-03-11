@@ -86,6 +86,7 @@ export const AdminPage = ({
   onCreateMatch,
   onResetMatch,
   onDeleteMatch,
+  deletingMatch,
   onResetAll,
   onRestartServer,
   onShuffleDeck: _onShuffleDeck,
@@ -772,6 +773,7 @@ export const AdminPage = ({
           onResetMatch={onResetMatch}
           onDeleteMatch={onDeleteMatch}
           canDelete={matches.length > 0}
+          deletingMatch={deletingMatch}
         />
       ) : null}
 

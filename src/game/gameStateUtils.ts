@@ -8,7 +8,12 @@ export const HIDDEN_CARD: Pick<CardDefinition, 'id' | 'title' | 'category'> = {
 
 export const cloneGameState = <T,>(value: T): T => {
   if (typeof globalThis.structuredClone === 'function') {
-    return globalThis.structuredClone(value);
+    try {
+      return globalThis.structuredClone(value);
+    } catch {
+      // boardgame.io client state can carry non-cloneable internals during optimistic updates
+      // while the game state itself remains JSON-safe.
+    }
   }
   return JSON.parse(JSON.stringify(value)) as T;
 };

@@ -58,6 +58,12 @@ export const useLobbySession = (args: {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [matchesSynced, setMatchesSynced] = useState(false);
+  const resolveLobbyPlayerName = () => {
+    const profileName = fallbackPlayerName?.trim() || '';
+    const localName = playerName.trim();
+    if (createOwnedSession || joinOwnedSession) return profileName || localName;
+    return localName || profileName;
+  };
 
   const refreshMatches = async () => {
     setLoading(true);
@@ -92,7 +98,7 @@ export const useLobbySession = (args: {
   };
 
   const createRoom = async () => {
-    const name = playerName.trim() || fallbackPlayerName?.trim() || '';
+    const name = resolveLobbyPlayerName();
     if (!name) {
       setError(enterNameText);
       return;
@@ -119,11 +125,11 @@ export const useLobbySession = (args: {
               bots: botSetup,
             },
           });
-          await autoJoinBots(result.matchID, Math.max(2, Math.min(6, roomCapacity)));
           const joined = await lobbyClient.joinMatch(gameName, result.matchID, {
             playerID: '0',
             playerName: name,
           });
+          await autoJoinBots(result.matchID, Math.max(2, Math.min(6, roomCapacity)));
           return {
             matchID: result.matchID,
             playerID: joined.playerID,
@@ -134,15 +140,16 @@ export const useLobbySession = (args: {
       window.localStorage.setItem(sessionStorageKey, JSON.stringify(nextSession));
       await onSessionEstablished?.(nextSession, name);
       await refreshMatches();
-    } catch {
-      setError(createFailedText);
+    } catch (nextError) {
+      const message = String(nextError instanceof Error ? nextError.message : nextError).trim();
+      setError(message || createFailedText);
     } finally {
       setLoading(false);
     }
   };
 
   const joinRoom = async (match: LobbyMatch) => {
-    const name = playerName.trim() || fallbackPlayerName?.trim() || '';
+    const name = resolveLobbyPlayerName();
     if (!name) {
       setError(enterNameText);
       return;
@@ -176,8 +183,28 @@ export const useLobbySession = (args: {
       window.localStorage.setItem(sessionStorageKey, JSON.stringify(nextSession));
       await onSessionEstablished?.(nextSession, name);
       await refreshMatches();
-    } catch {
-      setError(joinFailedText);
+    } catch (nextError) {
+      const message = String(nextError instanceof Error ? nextError.message : nextError).trim();
+      setError(message || joinFailedText);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const spectateRoom = async (match: LobbyMatch) => {
+    setLoading(true);
+    setError('');
+    try {
+      const nextSession: Session = {
+        matchID: match.matchID,
+        spectator: true,
+      };
+      setSession(nextSession);
+      window.localStorage.setItem(sessionStorageKey, JSON.stringify(nextSession));
+      await refreshMatches();
+    } catch (nextError) {
+      const message = String(nextError instanceof Error ? nextError.message : nextError).trim();
+      setError(message || joinFailedText);
     } finally {
       setLoading(false);
     }
@@ -188,10 +215,12 @@ export const useLobbySession = (args: {
     setLoading(true);
     setError('');
     try {
-      await lobbyClient.leaveMatch(gameName, session.matchID, {
-        playerID: session.playerID,
-        credentials: session.credentials,
-      });
+      if (session.playerID && session.credentials) {
+        await lobbyClient.leaveMatch(gameName, session.matchID, {
+          playerID: session.playerID,
+          credentials: session.credentials,
+        });
+      }
     } catch {
       // ignore, local cleanup still needed
     } finally {
@@ -215,7 +244,10 @@ export const useLobbySession = (args: {
       return acc;
     }, {});
   }, [activeMatch]);
-  const canStart = Boolean(activeMatch && activeMatch.players.every((player) => Boolean(player.name)));
+  const canStart = Boolean(
+    (activeMatch && activeMatch.players.every((player) => Boolean(player.name)))
+    || (session?.spectator && activeMatch),
+  );
 
   useEffect(() => {
     void refreshMatches();
@@ -240,6 +272,7 @@ export const useLobbySession = (args: {
     refreshMatches,
     createRoom,
     joinRoom,
+    spectateRoom,
     leaveRoom,
     activeMatch,
     sessionBroken,

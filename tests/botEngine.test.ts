@@ -12,6 +12,7 @@ import {
   promoteHandler,
   resolveDrawAutoCardHandler,
 } from '../src/game/moveHandlers';
+import { createJojMoves } from '../src/game/moves';
 
 const makeState = (): JojGameState => ({
   gameMode: 'standard',
@@ -151,6 +152,22 @@ test('jojGame setup attaches bot players from setupData', () => {
   assert.match(state.playerNames['2'], /Bot Normal 2/);
 });
 
+test('jojGame setup auto-completes legendary draft for bot players in standard plus', () => {
+  const state = jojGame.setup?.(
+    { ctx: { playOrder: ['0', '1', '2'], currentPlayer: '0' } as never },
+    {
+      gameMode: 'standard_plus',
+      bots: { count: 2, difficulty: 'easy' },
+      gameSetup: { optionalMainDeckModuleIds: ['vvnz_default'] },
+    },
+  ) as JojGameState;
+
+  assert.equal(state.legendaryDraftCompleted['1'], true);
+  assert.equal(state.legendaryDraftCompleted['2'], true);
+  assert.equal(state.legendaryHands['1'].length, 5);
+  assert.equal(state.legendaryHands['2'].length, 5);
+});
+
 test('bot engine plays a support card from hand', () => {
   const G = makeState();
   G.hands['1'] = [{
@@ -184,4 +201,66 @@ test('bot engine plays a support card from hand', () => {
   assert.equal(G.hands['1'].length, 0);
   assert.equal(G.discard.length, 1);
   assert.equal(G.resources['1'].reputation, 3);
+});
+
+test('end game vote auto-adds bot approvals', () => {
+  const G = makeState();
+  G.players['2'] = { hand: [], rankId: 'recruit', resources: { time: 1, reputation: 1, discipline: 1, documents: 1, tech: 1 } };
+  G.hands['2'] = [];
+  G.legendaryHands['2'] = [];
+  G.ranks['2'] = 'recruit';
+  G.resources['2'] = { time: 1, reputation: 1, discipline: 1, documents: 1, tech: 1 };
+  G.promotedThisTurn['2'] = false;
+  G.lyapScandalShieldUntilTurn['2'] = 0;
+  G.extraHandPlayTokens['2'] = 0;
+  G.sukhpayZsuWatchUntilTurn['2'] = 0;
+  G.sukhpayZsuPendingBonus['2'] = false;
+  G.playerGameStats['2'] = { resourcesGainedTotal: 0, resourcesLostTotal: 0, lyapsPlayedOnOthers: 0, scandalsPlayedOnOthers: 0, turnsTaken: 0 };
+  G.playerNames['2'] = 'Bot Easy 2';
+  G.botPlayers['2'] = { difficulty: 'easy', name: 'Bot Easy 2' };
+
+  const moves = createJojMoves(makeDeps());
+  const requestResult = moves.requestEndGameVote({ G, ctx: { currentPlayer: '0', activePlayers: { '0': 'play' } } as never, playerID: '0' });
+
+  assert.equal(requestResult, undefined);
+  assert.deepEqual(G.endGameVote.votes, { '0': true, '1': true, '2': true });
+});
+
+test('bot engine force-resolves pending draw auto state before ending turn', () => {
+  const G = makeState();
+  G.pendingDrawAutoResolution = {
+    kind: 'LYAP',
+    sourcePlayerID: '1',
+    card: {
+      id: 'lyap-1',
+      title: 'Lyap',
+      category: 'LYAP',
+      effects: [{ resource: 'reputation', value: -5 }],
+    },
+  };
+
+  const deps = makeDeps({
+    planReplacementResources: () => null as never,
+  });
+  const engine = createBotEngine({
+    ...deps,
+    drawCardHandler,
+    resolveDrawAutoCardHandler,
+    playCardHandler,
+    playLegendaryCardHandler,
+    promoteHandler,
+    passHandler,
+    planReplacementResources: () => null,
+  });
+
+  const acted = engine.playTurn({
+    G,
+    ctx: { currentPlayer: '1', activePlayers: { '1': 'draw' }, numPlayers: 2, playOrder: ['0', '1'], turn: 1 },
+    playerID: '1',
+    initialStage: 'draw',
+  });
+
+  assert.equal(acted, true);
+  assert.equal(G.pendingDrawAutoResolution, null);
+  assert.equal(G.discard.length, 1);
 });

@@ -536,6 +536,7 @@ export const registerAdminRoutes = ({
     }
 
     const dbCandidate = ctx?.db ?? ctx?.app?.context?.db;
+    const dbFetch = (dbCandidate as { fetch?: unknown } | undefined)?.fetch;
     const dbWipe = (dbCandidate as { wipe?: unknown } | undefined)?.wipe;
     if (!dbCandidate || typeof dbWipe !== 'function') {
       ctx.status = 500;
@@ -543,6 +544,13 @@ export const registerAdminRoutes = ({
       return;
     }
     const db = dbCandidate as MatchDbLike;
+    const fetched = typeof dbFetch === 'function'
+      ? await db.fetch(matchID, { state: true, metadata: true })
+      : null;
+    if (!fetched?.state && !fetched?.metadata) {
+      ctx.body = { ok: true, matchID, deleted: false, missing: true };
+      return;
+    }
 
     await db.wipe?.(matchID);
     await logLine('WARN', `admin deleted match matchID=${matchID}`);

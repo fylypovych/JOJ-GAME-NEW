@@ -66,6 +66,31 @@ if (!isAdminAuthEnabled && nodeEnv === 'production' && !allowInsecureAdmin) {
 }
 
 const matchDb = new FlatFile({ dir: matchesDbDir, logging: false });
+const rawMatchDb = matchDb as {
+  games?: { keys?: () => Promise<unknown[]> };
+  listMatches?: (...args: unknown[]) => Promise<unknown>;
+};
+if (rawMatchDb.games && typeof rawMatchDb.games.keys === 'function') {
+  const originalKeys = rawMatchDb.games.keys.bind(rawMatchDb.games);
+  rawMatchDb.games.keys = async () => {
+    const keys = await originalKeys();
+    return Array.isArray(keys) ? keys.filter((key): key is string => typeof key === 'string' && key.length > 0) : [];
+  };
+}
+if (typeof rawMatchDb.listMatches === 'function') {
+  const originalListMatches = rawMatchDb.listMatches.bind(rawMatchDb);
+  rawMatchDb.listMatches = async (...args: unknown[]) => {
+    try {
+      return await originalListMatches(...args);
+    } catch (error) {
+      if (error instanceof TypeError && String(error.message).includes('endsWith')) {
+        await logLine('WARN', `matchDb listMatches recovered from invalid key entry: ${error.message}`);
+        return [];
+      }
+      throw error;
+    }
+  };
+}
 
 const server = Server({
   games: [jojGame],

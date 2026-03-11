@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createJojMoves } from '../src/game/moves';
-import { drawCardHandler, passHandler, playCardHandler, playLegendaryCardHandler, resolveDrawAutoCardHandler } from '../src/game/moveHandlers';
+import { drawCardHandler, endTurnHandler, passHandler, playCardHandler, playLegendaryCardHandler, resolveDrawAutoCardHandler } from '../src/game/moveHandlers';
 import type { JojMovesDeps, MoveArgs } from '../src/game/moveTypes';
 import type { CardDefinition, JojGameState, ResourceKey } from '../src/game/types';
 
@@ -332,6 +332,23 @@ test('passHandler rejects pass while deck still has cards', () => {
   const result = passHandler(makeDeps(), args);
 
   assert.equal(result, 'INVALID_MOVE');
+});
+
+test('endTurnHandler allows normal end turn while deck still has cards', () => {
+  const G = makeState();
+  G.deck = [{ id: 'support-x', title: 'Support', category: 'SUPPORT', effects: [{ resource: 'time', value: 1 }] }];
+  let ended = false;
+  const args: MoveArgs = {
+    G,
+    ctx: { currentPlayer: '0', activePlayers: { '0': 'play' } },
+    playerID: '0',
+    events: { endTurn: () => { ended = true; } },
+  };
+
+  const result = endTurnHandler(makeDeps(), args);
+
+  assert.equal(result, undefined);
+  assert.equal(ended, true);
 });
 
 test('passHandler allows pass only when deck is empty and no playable cards remain', () => {

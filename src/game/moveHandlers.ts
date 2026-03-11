@@ -11,6 +11,7 @@ export {
 export { playCardHandler } from './runtime/playHandlers';
 export {
   discardFromHandHandler,
+  endTurnHandler,
   passHandler,
   promoteHandler,
 } from './runtime/turnHandlers';

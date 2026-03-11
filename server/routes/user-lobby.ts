@@ -53,9 +53,6 @@ const verifiedBind = async (args: {
   if (!metadataPlayer?.credentials || metadataPlayer.credentials !== credentials) {
     throw new Error('Invalid match credentials.');
   }
-  if (playerName && knownPlayerName && playerName !== knownPlayerName) {
-    throw new Error('Player name does not match current match state.');
-  }
   await userStore.linkUserToMatch({
     userId,
     matchId,

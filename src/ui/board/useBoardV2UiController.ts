@@ -118,9 +118,9 @@ export const useBoardV2UiController = (args: {
     setNotice(null);
   };
 
-  const handlePass = (pass: () => void) => {
+  const handlePass = (endTurn?: () => void) => {
     if (!canEndTurn) return;
-    pass();
+    endTurn?.();
     setNotice(null);
   };
 
