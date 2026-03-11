@@ -10,6 +10,12 @@ export type CardCategory =
   | 'LEGENDARY';
 
 export type GameMode = 'standard' | 'standard_plus' | 'simplified';
+export type BotDifficulty = 'easy' | 'normal' | 'hard';
+
+export interface BotPlayerConfig {
+  difficulty: BotDifficulty;
+  name: string;
+}
 
 export interface PlayerState {
   hand: Card[];
@@ -55,6 +61,7 @@ export interface JOJState {
   deckBackImage?: string;
   systemMessageSeq: number;
   playerNames: Record<string, string>;
+  botPlayers: Record<string, BotPlayerConfig>;
   chat: Array<{
     id: string;
     type: 'player' | 'system';

@@ -106,13 +106,30 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
   const profileBase = `${serverUrl}/api/profile`;
   const userLobbyBase = `${serverUrl}/api/user-lobby`;
 
+  const applyPayloadCsrf = (payload: unknown) => {
+    const nextCsrf = (payload as { csrfToken?: string })?.csrfToken;
+    if (typeof nextCsrf === 'string' && nextCsrf.trim()) setCsrfToken(nextCsrf);
+  };
+
+  const ensureCsrfToken = async () => {
+    if (csrfToken.trim()) return csrfToken;
+    const response = await fetch(`${authBase}/me`, { credentials: 'include' });
+    const payload = await response.json().catch(() => ({}));
+    applyPayloadCsrf(payload);
+    const nextCsrf = typeof (payload as { csrfToken?: string }).csrfToken === 'string'
+      ? String((payload as { csrfToken?: string }).csrfToken)
+      : '';
+    return nextCsrf;
+  };
+
   const postJsonWithCsrf = async (url: string, body?: unknown) => {
+  const token = await ensureCsrfToken();
   const response = await fetch(url, {
     method: 'POST',
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+      ...(token ? { 'x-csrf-token': token } : {}),
     },
     body: body ? JSON.stringify(body) : '{}',
   });
@@ -120,8 +137,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
   if (!response.ok) {
     throw new Error(String((payload as { error?: string }).error ?? 'Request failed'));
   }
-  const nextCsrf = (payload as { csrfToken?: string }).csrfToken;
-  if (typeof nextCsrf === 'string') setCsrfToken(nextCsrf);
+  applyPayloadCsrf(payload);
   return payload as Record<string, unknown>;
 };
 
@@ -130,17 +146,18 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     try {
       const meResponse = await fetch(`${authBase}/me`, { credentials: 'include' });
       const mePayload = await meResponse.json().catch(() => ({}));
-      const nextCsrf = (mePayload as { csrfToken?: string }).csrfToken;
-      if (typeof nextCsrf === 'string') setCsrfToken(nextCsrf);
+      applyPayloadCsrf(mePayload);
       const nextUser = (mePayload as { user?: AuthUser | null }).user ?? null;
       setUser(nextUser);
       if (nextUser) {
         const profileResponse = await fetch(`${profileBase}/me`, { credentials: 'include' });
         const profilePayload = await profileResponse.json().catch(() => ({}));
+        applyPayloadCsrf(profilePayload);
         setStats((profilePayload as { stats?: UserStats | null }).stats ?? null);
         setAwards((profilePayload as { awards?: UserAward[] }).awards ?? []);
         const sessionsResponse = await fetch(`${profileBase}/sessions`, { credentials: 'include' });
         const sessionsPayload = await sessionsResponse.json().catch(() => ({}));
+        applyPayloadCsrf(sessionsPayload);
         setSessions((sessionsPayload as { sessions?: UserSession[] }).sessions ?? []);
       } else {
         setStats(null);
@@ -189,11 +206,14 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     try {
       await postJsonWithCsrf(`${authBase}/logout`);
       setUser(null);
-     setStats(null);
-     setSessions([]);
+      setStats(null);
+      setSessions([]);
       setAwards([]);
+      setPublicProfile(null);
+      setPublicProfileError('');
       setError('');
       setCsrfToken('');
+      await refreshUser();
     } finally {
       setBusy(false);
     }

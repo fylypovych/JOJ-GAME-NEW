@@ -31,6 +31,7 @@ export const createEmptyGameState = (args: {
   deckBackImage: args.deckBackImage,
   systemMessageSeq: 0,
   playerNames: {},
+  botPlayers: {},
   chat: [],
   players: {},
   hands: {},

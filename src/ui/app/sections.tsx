@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition } from '../../game/types';
-import type { GameMode } from '../../game/types';
+import type { BotDifficulty, GameMode } from '../../game/types';
 import type { Language } from '../i18n';
 import { cardFlavor, cardTitleWithOverride, categoryLabel, text } from '../i18n';
 import type { GalleryCategoryFilter, LobbyMatch, UserTab } from './model';
@@ -90,11 +90,16 @@ export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v1' 
 type LobbySectionProps = {
   t: T;
   playerName: string;
+  fallbackPlayerName?: string;
   setPlayerName: (value: string) => void;
   roomCapacity: number;
   setRoomCapacity: (value: number) => void;
   gameMode: GameMode;
   setGameMode: (value: GameMode) => void;
+  createWithBots: boolean;
+  setCreateWithBots: (value: boolean) => void;
+  botDifficulty: BotDifficulty;
+  setBotDifficulty: (value: BotDifficulty) => void;
   createRoom: () => void;
   refreshMatches: () => void;
   loading: boolean;
@@ -110,11 +115,16 @@ type LobbySectionProps = {
 export const LobbySection = ({
   t,
   playerName,
+  fallbackPlayerName,
   setPlayerName,
   roomCapacity,
   setRoomCapacity,
   gameMode,
   setGameMode,
+  createWithBots,
+  setCreateWithBots,
+  botDifficulty,
+  setBotDifficulty,
   createRoom,
   refreshMatches,
   loading,
@@ -134,6 +144,7 @@ export const LobbySection = ({
     }
     setSelectedOptionalModuleIds([...selectedOptionalModuleIds, id]);
   };
+  const effectivePlayerName = playerName.trim() || fallbackPlayerName?.trim() || '';
 
   return (
   <section className={`board${uiVariant === 'v2' ? ' board-v2-panel' : ''}`}>
@@ -158,7 +169,7 @@ export const LobbySection = ({
               <button
                 type="button"
                 onClick={() => joinRoom(match)}
-                disabled={!playerName.trim() || loading || !hasFree}
+                disabled={!effectivePlayerName || loading || !hasFree}
               >
                 {t.joinRoom}
               </button>
@@ -213,8 +224,38 @@ export const LobbySection = ({
             );
           })}
         </p>
+        <p>{t.roomBotsLabel}:</p>
         <p className="admin-controls">
-          <button type="button" onClick={createRoom} disabled={!playerName.trim() || loading}>
+          <button type="button" aria-pressed={!createWithBots} onClick={() => setCreateWithBots(false)}>
+            {!createWithBots ? '✓ ' : ''}{t.roomBotsOff}
+          </button>
+          <button type="button" aria-pressed={createWithBots} onClick={() => setCreateWithBots(true)}>
+            {createWithBots ? '✓ ' : ''}{t.roomBotsFill}
+          </button>
+        </p>
+        {createWithBots ? (
+          <>
+            <p>{t.roomBotDifficultyLabel}:</p>
+            <p className="admin-controls">
+              {[
+                { id: 'easy', label: t.botDifficultyEasy },
+                { id: 'normal', label: t.botDifficultyNormal },
+                { id: 'hard', label: t.botDifficultyHard },
+              ].map((difficulty) => (
+                <button
+                  key={`bot-difficulty-${difficulty.id}`}
+                  type="button"
+                  aria-pressed={botDifficulty === difficulty.id}
+                  onClick={() => setBotDifficulty(difficulty.id as BotDifficulty)}
+                >
+                  {botDifficulty === difficulty.id ? '✓ ' : ''}{difficulty.label}
+                </button>
+              ))}
+            </p>
+          </>
+        ) : null}
+        <p className="admin-controls">
+          <button type="button" onClick={createRoom} disabled={!effectivePlayerName || loading}>
             {t.createRoom}
           </button>
         </p>

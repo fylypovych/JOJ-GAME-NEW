@@ -14,6 +14,16 @@ import { appendChat as appendChatBase, getPlayerLabel, nextSystemMessageSeq } fr
 import { cloneCard } from './cloneUtils';
 import { createEffectsEngine } from './effectsEngine';
 import { createSanitizedPlayerView } from './gameStateUtils';
+import { createBotEngine, attachBotsToGameState, isBotPlayer } from './bot-engine/engine';
+import { normalizeBotSetup } from './bot-engine/config';
+import {
+  drawCardHandler,
+  passHandler,
+  playCardHandler,
+  playLegendaryCardHandler,
+  promoteHandler,
+  resolveDrawAutoCardHandler,
+} from './moveHandlers';
 import { createJojMoves, enumerateAiMoves } from './moves';
 import { resourceKeys, resourceLabelsUk } from './resourceMeta';
 import { createRankEngine, rankSeatLimitForRank } from './rankEngine';
@@ -138,6 +148,11 @@ const resolveSetupOverride = (setupData: unknown): Partial<SharedGameSetup> => {
   const mode = raw.legendaryDeckMode;
   if (mode === 'merged' || mode === 'separate') out.legendaryDeckMode = mode as LegendaryDeckMode;
   return out;
+};
+
+const resolveBotSetup = (setupData: unknown, totalPlayers: number) => {
+  if (!setupData || typeof setupData !== 'object') return null;
+  return normalizeBotSetup((setupData as { bots?: unknown }).bots, totalPlayers);
 };
 
 
@@ -707,6 +722,87 @@ export const runGameSimulationsAggregate = (
   startingLegendaryHandSize: STARTING_LEGENDARY_HAND_SIZE,
 }, players, simulations, maxTurns, options);
 
+const botEngine = createBotEngine({
+  INVALID_MOVE,
+  DRAW_STAGE,
+  PLAY_STAGE,
+  END_STAGE,
+  HAND_LIMIT,
+  resourceKeys,
+  resourceLabelsUk,
+  canPlayHandCardAtStage,
+  appendChat,
+  nextSystemMessageSeq,
+  getPlayerLabel,
+  syncPlayerState,
+  isProtectedFromLyapScandal,
+  triggerSukhpayZsuOnScandal,
+  applyCardEffects,
+  applyCardEffectsSoft,
+  getReplacementUnitsForCard,
+  summarizeAppliedDiff,
+  effectSummaryToText,
+  resourceDeltaToText,
+  categoryLabelUk,
+  cardFlavorSnippet,
+  rankNameById,
+  buildLyapSystemMessage,
+  buildScandalSystemMessage,
+  buildSupportSystemMessage,
+  buildPlayedLyapSystemMessage,
+  buildPlayedScandalSystemMessage,
+  buildPlayedDecisionSystemMessage,
+  buildVvnzRankSystemMessage,
+  buildPromotionSystemMessage,
+  buildLegendaryPlayedMessageText,
+  legendaryTexts,
+  clampNonNegativeResources,
+  snapshotResourcesForStats: snapshotResourceTotals,
+  recordResourceFlowStats,
+  resetNoPlayablePassStreak,
+  shouldCountNoPlayablePass,
+  hasPlayableCardsByInventory,
+  incrementNoPlayablePassStreak: (G) => {
+    G.noPlayablePassStreak = (G.noPlayablePassStreak ?? 0) + 1;
+  },
+  incrementTurnsCompleted: (G, playerID) => {
+    G.gameStats.turnsCompleted = (G.gameStats.turnsCompleted ?? 0) + 1;
+    if (playerID && G.playerGameStats[playerID]) {
+      G.playerGameStats[playerID].turnsTaken = (G.playerGameStats[playerID].turnsTaken ?? 0) + 1;
+    }
+  },
+  incrementLyapPlayedOnOthers: (G, playerID) => {
+    G.gameStats.lyapsPlayedOnOthers = (G.gameStats.lyapsPlayedOnOthers ?? 0) + 1;
+    if (playerID && G.playerGameStats[playerID]) {
+      G.playerGameStats[playerID].lyapsPlayedOnOthers = (G.playerGameStats[playerID].lyapsPlayedOnOthers ?? 0) + 1;
+    }
+  },
+  incrementScandalPlayedOnOthers: (G, playerID) => {
+    G.gameStats.scandalsPlayedOnOthers = (G.gameStats.scandalsPlayedOnOthers ?? 0) + 1;
+    if (playerID && G.playerGameStats[playerID]) {
+      G.playerGameStats[playerID].scandalsPlayedOnOthers = (G.playerGameStats[playerID].scandalsPlayedOnOthers ?? 0) + 1;
+    }
+  },
+  resetEndGameVote: (G) => {
+    G.endGameVote = { active: false, requestedBy: null, votes: {} };
+  },
+  computeShieldUntilNextOwnTurn,
+  cancelLastLyapOrScandalForPlayer,
+  cancelLastScandalForPlayer,
+  promoteToSpecificRank,
+  grantSpecificRankIgnoringRequirements,
+  demoteByOneRankWithSeatCheck,
+  promoteRank,
+  getActiveRanks,
+  drawCardHandler,
+  resolveDrawAutoCardHandler,
+  playCardHandler,
+  playLegendaryCardHandler,
+  promoteHandler,
+  passHandler,
+  planReplacementResources: buildReplacementPlan,
+});
+
 export const jojGame: Game<JojGameState> = {
   name: 'joj-game',
   minPlayers: 2,
@@ -716,6 +812,7 @@ export const jojGame: Game<JojGameState> = {
     const template = getSharedDeckTemplate();
     const requestedGameMode = resolveGameMode(setupData);
     const setupOverride = resolveSetupOverride(setupData);
+    const botSetup = resolveBotSetup(setupData, players.length);
     const legacyEnabledModules = resolveLegacyEnabledModules(setupData);
     const deckModules = buildDeckModulesFromTemplate(template, setupOverride);
     let optionalMainDeckCards: CardDefinition[] = deckModules.gameSetup.optionalMainDeckModuleIds
@@ -770,6 +867,12 @@ export const jojGame: Game<JojGameState> = {
       });
     });
 
+    attachBotsToGameState({
+      G: state,
+      totalPlayers: players.length,
+      botSetup,
+    });
+
     return state;
   },
   turn: {
@@ -783,6 +886,22 @@ export const jojGame: Game<JojGameState> = {
         value[pid] = IDLE_STAGE;
       });
       value[ctx.currentPlayer] = G.deck.length > 0 ? DRAW_STAGE : PLAY_STAGE;
+      if (isBotPlayer(G, ctx.currentPlayer)) {
+        botEngine.playTurn({
+          G,
+          ctx: {
+            currentPlayer: ctx.currentPlayer,
+            activePlayers: value,
+            numPlayers: ctx.numPlayers,
+            playOrder: ctx.playOrder,
+            turn: ctx.turn,
+          },
+          playerID: ctx.currentPlayer,
+          initialStage: value[ctx.currentPlayer],
+        });
+        events?.endTurn?.();
+        return;
+      }
       events?.setActivePlayers({ value });
     },
   },

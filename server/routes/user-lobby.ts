@@ -1,4 +1,5 @@
 import { readJsonBodySafe } from '../request-utils';
+import { createBotPlayerName, getBotSeatIds, normalizeBotSetup } from '../../src/game/bot-engine/config';
 import type { LogLine, RouteCtx, RouterLike } from './types';
 import type { UserStore } from '../services/user-store';
 import { requireUserAuth, requireUserCsrf } from '../services/user-auth';
@@ -93,6 +94,7 @@ export const registerUserLobbyRoutes = (args: {
       return;
     }
     try {
+      const botSetup = normalizeBotSetup((setupData as { bots?: unknown } | null | undefined)?.bots, numPlayers);
       const base = getSelfServerBaseUrl();
       const createdResponse = await fetch(`${base}/games/${encodeURIComponent(gameName)}/create`, {
         method: 'POST',
@@ -116,6 +118,22 @@ export const registerUserLobbyRoutes = (args: {
       }
       const playerID = String((joinedPayload as { playerID?: string }).playerID ?? '0');
       const credentials = String((joinedPayload as { playerCredentials?: string }).playerCredentials ?? '');
+      if (botSetup) {
+        for (const [index, botPlayerID] of getBotSeatIds(numPlayers, botSetup.count).entries()) {
+          const botJoinResponse = await fetch(`${base}/games/${encodeURIComponent(gameName)}/${encodeURIComponent(matchID)}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              playerID: botPlayerID,
+              playerName: createBotPlayerName({ difficulty: botSetup.difficulty, seatIndex: index + 1 }),
+            }),
+          });
+          if (!botJoinResponse.ok) {
+            const botPayload = await botJoinResponse.json().catch(() => ({}));
+            throw new Error(String((botPayload as { error?: string }).error ?? 'Failed to join bot seat.'));
+          }
+        }
+      }
       await verifiedBind({
         ctx,
         userStore,

@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { LobbyClient } from 'boardgame.io/client';
-import type { CardDefinition, GameMode, RankDefinition } from '../game/types';
+import type { BotDifficulty, CardDefinition, GameMode, RankDefinition } from '../game/types';
 import {
   addCustomCardToSharedDeckTemplate,
   addCardToSharedDeckTemplate,
@@ -82,6 +82,8 @@ export const App = () => {
   const [playerName, setPlayerName] = useState<string>(() => window.localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ?? '');
   const [roomCapacity, setRoomCapacity] = useState<number>(2);
   const [gameMode, setGameMode] = useState<GameMode>('standard');
+  const [createWithBots, setCreateWithBots] = useState(false);
+  const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('easy');
   const [selectedOptionalModuleIds, setSelectedOptionalModuleIds] = useState<string[]>(['vvnz_default']);
   const [adminSelectedMatchID, setAdminSelectedMatchID] = useState<string>('');
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
@@ -235,9 +237,12 @@ export const App = () => {
     lobbyClient,
     gameName: GAME_NAME,
     playerName,
+    fallbackPlayerName: user?.displayName?.trim() || user?.username?.trim() || '',
     roomCapacity,
     gameMode,
     selectedOptionalModuleIds,
+    createWithBots,
+    botDifficulty,
     sessionStorageKey: SESSION_STORAGE_KEY,
     initialSession: parseSession(window.localStorage.getItem(SESSION_STORAGE_KEY)),
     serverUnavailableText: t.serverUnavailable,
@@ -468,11 +473,16 @@ export const App = () => {
         <LobbySection
           t={t}
           playerName={playerName}
+          fallbackPlayerName={user?.displayName?.trim() || user?.username?.trim() || ''}
           setPlayerName={setPlayerName}
           roomCapacity={roomCapacity}
           setRoomCapacity={setRoomCapacity}
           gameMode={gameMode}
           setGameMode={setGameMode}
+          createWithBots={createWithBots}
+          setCreateWithBots={setCreateWithBots}
+          botDifficulty={botDifficulty}
+          setBotDifficulty={setBotDifficulty}
           createRoom={() => { void createRoom(); }}
           refreshMatches={() => { void refreshMatches(); }}
           loading={loading}
@@ -543,6 +553,7 @@ export const App = () => {
             setProfileNotice('');
             void loginUser(loginDraft)
               .then(() => {
+                setPlayerName((prev) => prev.trim() ? prev : loginDraft.login.trim());
                 setAuthErrorModal('');
                 setProfileNotice(t.userLoginSuccess);
               })
@@ -553,7 +564,15 @@ export const App = () => {
               });
           }}
           onLogout={() => {
-            void logoutUser().catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
+            setProfileNotice('');
+            void logoutUser()
+              .then(() => {
+                setProfileScreen('login');
+                setAuthErrorModal('');
+                setLoginDraft({ login: '', password: '' });
+                setProfileNotice(t.userLogoutSuccess ?? '');
+              })
+              .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
           }}
           profileDraft={profileDraft}
           setProfileDraft={setProfileDraft}

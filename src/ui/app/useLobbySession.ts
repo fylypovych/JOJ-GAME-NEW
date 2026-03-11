@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createBotPlayerName, getBotSeatIds } from '../../game/bot-engine/config';
 import type { GameMode } from '../../game/types';
+import type { BotDifficulty } from '../../game/types';
 import type { LobbyMatch, Session } from './model';
 
 type LobbyClientLike = {
@@ -16,6 +18,9 @@ export const useLobbySession = (args: {
   roomCapacity: number;
   gameMode: GameMode;
   selectedOptionalModuleIds: string[];
+  fallbackPlayerName?: string;
+  createWithBots: boolean;
+  botDifficulty: BotDifficulty;
   sessionStorageKey: string;
   initialSession: Session | null;
   serverUnavailableText: string;
@@ -34,6 +39,9 @@ export const useLobbySession = (args: {
     roomCapacity,
     gameMode,
     selectedOptionalModuleIds,
+    fallbackPlayerName,
+    createWithBots,
+    botDifficulty,
     sessionStorageKey,
     initialSession,
     serverUnavailableText,
@@ -65,8 +73,26 @@ export const useLobbySession = (args: {
     }
   };
 
+  const botSetup = createWithBots
+    ? {
+      count: Math.max(0, Math.min(5, roomCapacity - 1)),
+      difficulty: botDifficulty,
+    }
+    : null;
+
+  const autoJoinBots = async (matchID: string, totalPlayers: number) => {
+    if (!botSetup || botSetup.count <= 0) return;
+    const seatIds = getBotSeatIds(totalPlayers, botSetup.count);
+    for (const [index, playerID] of seatIds.entries()) {
+      await lobbyClient.joinMatch(gameName, matchID, {
+        playerID,
+        playerName: createBotPlayerName({ difficulty: botSetup.difficulty, seatIndex: index + 1 }),
+      });
+    }
+  };
+
   const createRoom = async () => {
-    const name = playerName.trim();
+    const name = playerName.trim() || fallbackPlayerName?.trim() || '';
     if (!name) {
       setError(enterNameText);
       return;
@@ -80,6 +106,7 @@ export const useLobbySession = (args: {
           setupData: {
             gameMode,
             gameSetup: { optionalMainDeckModuleIds: selectedOptionalModuleIds },
+            bots: botSetup,
           },
           playerName: name,
         })
@@ -89,8 +116,10 @@ export const useLobbySession = (args: {
             setupData: {
               gameMode,
               gameSetup: { optionalMainDeckModuleIds: selectedOptionalModuleIds },
+              bots: botSetup,
             },
           });
+          await autoJoinBots(result.matchID, Math.max(2, Math.min(6, roomCapacity)));
           const joined = await lobbyClient.joinMatch(gameName, result.matchID, {
             playerID: '0',
             playerName: name,
@@ -113,7 +142,7 @@ export const useLobbySession = (args: {
   };
 
   const joinRoom = async (match: LobbyMatch) => {
-    const name = playerName.trim();
+    const name = playerName.trim() || fallbackPlayerName?.trim() || '';
     if (!name) {
       setError(enterNameText);
       return;
