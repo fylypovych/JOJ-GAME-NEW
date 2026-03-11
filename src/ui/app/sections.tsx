@@ -32,33 +32,37 @@ export const AdminAuthCard = ({
   onSignIn,
   onSignOut,
   adminAuthError,
-}: AdminAuthCardProps) => (
-  <section className="board admin-auth-card">
-    <h2>{t.adminLoginTitle}</h2>
-    <p>{adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminLoginHint}</p>
-    <p>
-      {t.serverUrlLabel}: <code>{serverUrl}</code>
-    </p>
-    <p className="admin-auth-form">
-      <label>
-        {t.adminTokenLabel}:{' '}
-        <input
-          type="password"
-          value={adminTokenDraft}
-          onChange={(e) => setAdminTokenDraft(e.target.value)}
-          placeholder="ADMIN_TOKEN"
-        />
-      </label>{' '}
-      <button type="button" onClick={onSignIn} disabled={adminAuthChecking}>
-        {adminAuthChecking ? t.adminAuthChecking : t.adminSignIn}
-      </button>{' '}
-      <button type="button" onClick={onSignOut}>
-        {t.adminSignOut}
-      </button>
-    </p>
-    {adminAuthError ? <p className="admin-error">{adminAuthError}</p> : null}
-  </section>
-);
+}: AdminAuthCardProps) => {
+  const adminHintText = adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminLoginHint;
+
+  return (
+    <section className="board admin-auth-card">
+      <h2>{t.adminLoginTitle}</h2>
+      <p>{adminHintText}</p>
+      <p>
+        {t.serverUrlLabel}: <code>{serverUrl}</code>
+      </p>
+      <p className="admin-auth-form">
+        <label>
+          {t.adminTokenLabel}:{' '}
+          <input
+            type="password"
+            value={adminTokenDraft}
+            onChange={(e) => setAdminTokenDraft(e.target.value)}
+            placeholder="ADMIN_TOKEN"
+          />
+        </label>{' '}
+        <button type="button" onClick={onSignIn} disabled={adminAuthChecking}>
+          {adminAuthChecking ? t.adminAuthChecking : t.adminSignIn}
+        </button>{' '}
+        <button type="button" onClick={onSignOut}>
+          {t.adminSignOut}
+        </button>
+      </p>
+      {adminAuthError ? <p className="admin-error">{adminAuthError}</p> : null}
+    </section>
+  );
+};
 
 type UserTabsProps = {
   t: T;
@@ -534,8 +538,6 @@ export const PasswordResetSection = ({
   resetPasswordDraft,
   setResetPasswordDraft,
   onResetPassword,
-  resetTokenPreview,
-  resetTokenExpiresAt,
   onBackToLogin,
 }: {
   t: T;
@@ -547,8 +549,6 @@ export const PasswordResetSection = ({
   resetPasswordDraft: { token: string; nextPassword: string };
   setResetPasswordDraft: (value: { token: string; nextPassword: string }) => void;
   onResetPassword: () => void;
-  resetTokenPreview: string;
-  resetTokenExpiresAt: string;
   onBackToLogin: () => void;
 }) => (
   <section className="board">
@@ -562,8 +562,6 @@ export const PasswordResetSection = ({
           <button type="button" onClick={onRequestPasswordReset} disabled={busy}>{t.userPasswordResetRequestButton}</button>
           <button type="button" onClick={onBackToLogin} disabled={busy}>{t.userGoToLoginButton}</button>
         </p>
-        {resetTokenPreview ? <p>{t.userResetTokenPreview}: <code>{resetTokenPreview}</code></p> : null}
-        {resetTokenExpiresAt ? <p>{t.userResetTokenExpiresAt}: {new Date(resetTokenExpiresAt).toLocaleString()}</p> : null}
       </div>
       <div className="lobby-col">
         <h3>{t.userPasswordResetApplyButton}</h3>

@@ -69,6 +69,14 @@ type AdminUserDetail = {
   }>;
 };
 
+const ADMIN_USERS_ERRORS = {
+  loadUsers: 'Failed to load users',
+  loadUserDetail: 'Failed to load user detail',
+  mutate: 'Request failed',
+  createUser: 'Failed to create user',
+  startPasswordReset: 'Failed to start password reset',
+} as const;
+
 export const useAdminUsers = (args: {
   serverUrl: string;
   adminJsonFetch: AdminJsonFetch;
@@ -80,8 +88,6 @@ export const useAdminUsers = (args: {
   const [adminUserSearch, setAdminUserSearch] = useState('');
   const [selectedAdminUserId, setSelectedAdminUserId] = useState('');
   const [selectedAdminUserDetail, setSelectedAdminUserDetail] = useState<AdminUserDetail | null>(null);
-  const [adminResetTokenPreview, setAdminResetTokenPreview] = useState('');
-  const [adminResetTokenExpiresAt, setAdminResetTokenExpiresAt] = useState('');
   const [adminCreateUserDraft, setAdminCreateUserDraft] = useState({
     username: '',
     displayName: '',
@@ -105,7 +111,7 @@ export const useAdminUsers = (args: {
       const suffix = adminUserSearch.trim() ? `?search=${encodeURIComponent(adminUserSearch.trim())}` : '';
       const response = await adminJsonFetch(`${serverUrl}/api/admin/users${suffix}`);
       const payload = (await response.json()) as { ok?: boolean; error?: string; users?: AdminUserListItem[] };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to load users');
+      if (!response.ok || !payload.ok) throw new Error(payload.error || ADMIN_USERS_ERRORS.loadUsers);
       setAdminUsers(payload.users ?? []);
     } catch (error) {
       setAdminUsersError(String(error instanceof Error ? error.message : error));
@@ -117,15 +123,13 @@ export const useAdminUsers = (args: {
   const loadAdminUserDetail = async (userId: string) => {
     setSelectedAdminUserId(userId);
     setSelectedAdminUserDetail(null);
-    setAdminResetTokenPreview('');
-    setAdminResetTokenExpiresAt('');
     if (!userId) return;
     setAdminUsersLoading(true);
     setAdminUsersError('');
     try {
       const response = await adminJsonFetch(`${serverUrl}/api/admin/users/detail?userId=${encodeURIComponent(userId)}`);
       const payload = (await response.json()) as { ok?: boolean; error?: string; detail?: AdminUserDetail };
-      if (!response.ok || !payload.ok || !payload.detail) throw new Error(payload.error || 'Failed to load user detail');
+      if (!response.ok || !payload.ok || !payload.detail) throw new Error(payload.error || ADMIN_USERS_ERRORS.loadUserDetail);
       setSelectedAdminUserDetail(payload.detail);
       setAdminEditUserDraft({
         username: payload.detail.user.username ?? '',
@@ -153,7 +157,7 @@ export const useAdminUsers = (args: {
         body: JSON.stringify(body),
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Request failed');
+      if (!response.ok || !payload.ok) throw new Error(payload.error || ADMIN_USERS_ERRORS.mutate);
       if (reloadList) await loadAdminUsers();
       await loadAdminUserDetail(selectedAdminUserId);
     } catch (error) {
@@ -173,7 +177,7 @@ export const useAdminUsers = (args: {
         body: JSON.stringify(adminCreateUserDraft),
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string; user?: { id?: string } };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to create user');
+      if (!response.ok || !payload.ok) throw new Error(payload.error || ADMIN_USERS_ERRORS.createUser);
       setAdminCreateUserDraft({ username: '', displayName: '', email: '', password: '', role: 'user' });
       await loadAdminUsers();
       if (typeof payload.user?.id === 'string') await loadAdminUserDetail(payload.user.id);
@@ -184,7 +188,7 @@ export const useAdminUsers = (args: {
     }
   };
 
-  const issueAdminResetToken = async () => {
+  const requestAdminPasswordReset = async () => {
     const login = selectedAdminUserDetail?.user.username?.trim();
     if (!login) return;
     setAdminUsersLoading(true);
@@ -195,15 +199,8 @@ export const useAdminUsers = (args: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ login }),
       });
-      const payload = (await response.json()) as {
-        ok?: boolean;
-        error?: string;
-        resetTokenPreview?: string | null;
-        resetTokenExpiresAt?: string | null;
-      };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to issue reset token');
-      setAdminResetTokenPreview(String(payload.resetTokenPreview ?? ''));
-      setAdminResetTokenExpiresAt(String(payload.resetTokenExpiresAt ?? ''));
+      const payload = (await response.json()) as { ok?: boolean; error?: string };
+      if (!response.ok || !payload.ok) throw new Error(payload.error || ADMIN_USERS_ERRORS.startPasswordReset);
     } catch (error) {
       setAdminUsersError(String(error instanceof Error ? error.message : error));
     } finally {
@@ -219,8 +216,6 @@ export const useAdminUsers = (args: {
     setAdminUserSearch,
     selectedAdminUserId,
     selectedAdminUserDetail,
-    adminResetTokenPreview,
-    adminResetTokenExpiresAt,
     adminCreateUserDraft,
     setAdminCreateUserDraft,
     adminEditUserDraft,
@@ -238,6 +233,6 @@ export const useAdminUsers = (args: {
     logoutAllAdminUserSessions: () =>
       mutateSelectedUser(`${serverUrl}/api/admin/users/logout-all`, { userId: selectedAdminUserId }, false),
     createAdminUser,
-    issueAdminResetToken,
+    requestAdminPasswordReset,
   };
 };

@@ -7,36 +7,41 @@ import type { CardDefinition, JojGameState, ResourceKey } from '../src/game/type
 
 const resourceKeys: readonly ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
 
+const cloneCard = (card: CardDefinition) => ({ ...card, effects: card.effects ? [...card.effects] : undefined });
+
+const createBaseDeps = (overrides: Partial<SimulationDeps> = {}): SimulationDeps => ({
+  resourceKeys,
+  shuffle: <T>(items: T[]) => [...items],
+  cloneCard,
+  getSharedDeckTemplate: () => ({ deck: [], legendaryDeck: [] }),
+  getActiveRanks: () => [{ id: 'recruit' }, { id: 'soldier', victory: true }],
+  getTopRankId: () => 'soldier',
+  drawCards: () => {},
+  drawLegendaryCards: () => {},
+  syncPlayerState: () => {},
+  promoteRank: () => false,
+  promoteToSpecificRank: () => ({ ok: false }),
+  grantSpecificRankIgnoringRequirements: () => ({ ok: false }),
+  demoteByOneRankWithSeatCheck: () => ({ ok: false }),
+  triggerSukhpayZsuOnScandal: () => {},
+  cancelLastLyapOrScandalForPlayer: () => ({ canceledCard: null }),
+  cancelLastScandalForPlayer: () => ({ canceledCard: null }),
+  applyCardEffects: () => true,
+  applyCardEffectsSoft: () => ({ resources: {}, rank: 0 }),
+  clampNonNegativeResources: () => {},
+  planReplacementResources: () => [],
+  hasPlayableCardsByInventory: () => false,
+  getWinner: () => undefined,
+  startingHandSize: 0,
+  startingLegendaryHandSize: 0,
+  ...overrides,
+});
+
 test('simulation ends by score after no-progress round when deck is empty', () => {
-  const report = runGameSimulationsWithDeps({
-    resourceKeys,
-    shuffle: <T>(items: T[]) => [...items],
-    cloneCard: (card: CardDefinition) => ({ ...card, effects: card.effects ? [...card.effects] : undefined }),
-    getSharedDeckTemplate: () => ({ deck: [], legendaryDeck: [] }),
-    getActiveRanks: () => [
-      { id: 'recruit' },
-      { id: 'soldier' },
-    ],
-    getTopRankId: () => 'soldier',
-    drawCards: () => {},
-    drawLegendaryCards: () => {},
-    syncPlayerState: () => {},
-    promoteRank: () => false,
-    promoteToSpecificRank: () => ({ ok: false }),
-    grantSpecificRankIgnoringRequirements: () => ({ ok: false }),
-    demoteByOneRankWithSeatCheck: () => ({ ok: false }),
-    triggerSukhpayZsuOnScandal: () => {},
-    cancelLastLyapOrScandalForPlayer: () => ({ canceledCard: null }),
-    cancelLastScandalForPlayer: () => ({ canceledCard: null }),
-    applyCardEffects: () => true,
-    applyCardEffectsSoft: () => ({ resources: {}, rank: 0 }),
-    clampNonNegativeResources: () => {},
-    planReplacementResources: () => [],
-    hasPlayableCardsByInventory: () => false,
+  const report = runGameSimulationsWithDeps(createBaseDeps({
+    getActiveRanks: () => [{ id: 'recruit' }, { id: 'soldier' }],
     getWinner: (_G: JojGameState) => undefined,
-    startingHandSize: 0,
-    startingLegendaryHandSize: 0,
-  }, 2, 1, 600);
+  }), 2, 1, 600);
 
   assert.equal(report.summary.stalled, 0);
   assert.ok(report.summary.avgTurns <= 3, `expected quick finish, got ${report.summary.avgTurns}`);
@@ -44,10 +49,7 @@ test('simulation ends by score after no-progress round when deck is empty', () =
 });
 
 test('simulation report stores deck mode flags', () => {
-  const deps: SimulationDeps = {
-    resourceKeys,
-    shuffle: <T>(items: T[]) => [...items],
-    cloneCard: (card: CardDefinition) => ({ ...card, effects: card.effects ? [...card.effects] : undefined }),
+  const deps = createBaseDeps({
     getSharedDeckTemplate: () => ({
       deck: [{ id: 'support-x', title: 'S', category: 'SUPPORT', effects: [{ resource: 'time', value: 1 }] } as CardDefinition],
       legendaryDeck: [{ id: 'legendary-03', title: 'L', category: 'LEGENDARY', effects: [] }],
@@ -58,27 +60,12 @@ test('simulation report stores deck mode flags', () => {
         legendaryDeckMode: 'separate',
       },
     }),
-    getActiveRanks: () => [{ id: 'recruit' }, { id: 'soldier', victory: true }],
-    getTopRankId: () => 'soldier',
     drawCards: (G: JojGameState, pid: string, amount: number) => { for (let i = 0; i < amount && G.deck.length; i += 1) G.hands[pid].push(G.deck.pop() as CardDefinition); },
     drawLegendaryCards: (G: JojGameState, pid: string, amount: number) => { for (let i = 0; i < amount && G.legendaryDeck.length; i += 1) G.legendaryHands[pid].push(G.legendaryDeck.pop() as CardDefinition); },
     syncPlayerState: (G: JojGameState, pid: string) => { G.players[pid].hand = G.hands[pid]; G.players[pid].rankId = G.ranks[pid]; G.players[pid].resources = G.resources[pid]; },
-    promoteRank: () => false,
-    promoteToSpecificRank: () => ({ ok: false }),
-    grantSpecificRankIgnoringRequirements: () => ({ ok: false }),
-    demoteByOneRankWithSeatCheck: () => ({ ok: false }),
-    triggerSukhpayZsuOnScandal: () => {},
-    cancelLastLyapOrScandalForPlayer: () => ({ canceledCard: null }),
-    cancelLastScandalForPlayer: () => ({ canceledCard: null }),
-    applyCardEffects: () => true,
-    applyCardEffectsSoft: () => ({ resources: {}, rank: 0 }),
-    clampNonNegativeResources: () => {},
-    planReplacementResources: () => [],
-    hasPlayableCardsByInventory: () => false,
-    getWinner: () => undefined,
     startingHandSize: 1,
     startingLegendaryHandSize: 1,
-  };
+  });
 
   const mainOnly = runGameSimulationsWithDeps(deps, 2, 1, 40, { useMainDeck: true, useLegendaryDeck: false });
   assert.equal(mainOnly.input.useMainDeck, true);
@@ -98,10 +85,7 @@ test('simulation report stores deck mode flags', () => {
 });
 
 test('simulation forces simplified mode when legendary deck mode is merged', () => {
-  const deps: SimulationDeps = {
-    resourceKeys,
-    shuffle: <T>(items: T[]) => [...items],
-    cloneCard: (card: CardDefinition) => ({ ...card, effects: card.effects ? [...card.effects] : undefined }),
+  const deps = createBaseDeps({
     getSharedDeckTemplate: () => ({
       deck: [{ id: 'support-x', title: 'S', category: 'SUPPORT', effects: [{ resource: 'time', value: 1 }] } as CardDefinition],
       legendaryDeck: [{ id: 'legendary-03', title: 'L', category: 'LEGENDARY', effects: [] }],
@@ -112,27 +96,7 @@ test('simulation forces simplified mode when legendary deck mode is merged', () 
         legendaryDeckMode: 'merged',
       },
     }),
-    getActiveRanks: () => [{ id: 'recruit' }, { id: 'soldier', victory: true }],
-    getTopRankId: () => 'soldier',
-    drawCards: () => {},
-    drawLegendaryCards: () => {},
-    syncPlayerState: () => {},
-    promoteRank: () => false,
-    promoteToSpecificRank: () => ({ ok: false }),
-    grantSpecificRankIgnoringRequirements: () => ({ ok: false }),
-    demoteByOneRankWithSeatCheck: () => ({ ok: false }),
-    triggerSukhpayZsuOnScandal: () => {},
-    cancelLastLyapOrScandalForPlayer: () => ({ canceledCard: null }),
-    cancelLastScandalForPlayer: () => ({ canceledCard: null }),
-    applyCardEffects: () => true,
-    applyCardEffectsSoft: () => ({ resources: {}, rank: 0 }),
-    clampNonNegativeResources: () => {},
-    planReplacementResources: () => [],
-    hasPlayableCardsByInventory: () => false,
-    getWinner: () => undefined,
-    startingHandSize: 0,
-    startingLegendaryHandSize: 0,
-  };
+  });
 
   const report = runGameSimulationsWithDeps(deps, 2, 1, 40, {
     gameMode: 'standard_plus',
@@ -145,32 +109,9 @@ test('simulation forces simplified mode when legendary deck mode is merged', () 
 });
 
 test('simulation reports seat bias issue when win rates diverge strongly', () => {
-  const deps: SimulationDeps = {
-    resourceKeys,
-    shuffle: <T>(items: T[]) => [...items],
-    cloneCard: (card: CardDefinition) => ({ ...card, effects: card.effects ? [...card.effects] : undefined }),
-    getSharedDeckTemplate: () => ({ deck: [], legendaryDeck: [] }),
-    getActiveRanks: () => [{ id: 'recruit' }, { id: 'soldier', victory: true }],
-    getTopRankId: () => 'soldier',
-    drawCards: () => {},
-    drawLegendaryCards: () => {},
-    syncPlayerState: () => {},
-    promoteRank: () => false,
-    promoteToSpecificRank: () => ({ ok: false }),
-    grantSpecificRankIgnoringRequirements: () => ({ ok: false }),
-    demoteByOneRankWithSeatCheck: () => ({ ok: false }),
-    triggerSukhpayZsuOnScandal: () => {},
-    cancelLastLyapOrScandalForPlayer: () => ({ canceledCard: null }),
-    cancelLastScandalForPlayer: () => ({ canceledCard: null }),
-    applyCardEffects: () => true,
-    applyCardEffectsSoft: () => ({ resources: {}, rank: 0 }),
-    clampNonNegativeResources: () => {},
-    planReplacementResources: () => [],
-    hasPlayableCardsByInventory: () => false,
+  const deps = createBaseDeps({
     getWinner: (G: JojGameState) => Object.keys(G.players)[0],
-    startingHandSize: 0,
-    startingLegendaryHandSize: 0,
-  };
+  });
 
   const report = runGameSimulationsWithDeps(deps, 2, 10, 40);
 
@@ -178,32 +119,9 @@ test('simulation reports seat bias issue when win rates diverge strongly', () =>
 });
 
 test('simulation reports missing rank wins when nobody can reach top rank', () => {
-  const deps: SimulationDeps = {
-    resourceKeys,
-    shuffle: <T>(items: T[]) => [...items],
-    cloneCard: (card: CardDefinition) => ({ ...card, effects: card.effects ? [...card.effects] : undefined }),
-    getSharedDeckTemplate: () => ({ deck: [], legendaryDeck: [] }),
-    getActiveRanks: () => [{ id: 'recruit' }, { id: 'soldier', victory: true }],
-    getTopRankId: () => 'soldier',
-    drawCards: () => {},
-    drawLegendaryCards: () => {},
-    syncPlayerState: () => {},
-    promoteRank: () => false,
-    promoteToSpecificRank: () => ({ ok: false }),
-    grantSpecificRankIgnoringRequirements: () => ({ ok: false }),
-    demoteByOneRankWithSeatCheck: () => ({ ok: false }),
-    triggerSukhpayZsuOnScandal: () => {},
-    cancelLastLyapOrScandalForPlayer: () => ({ canceledCard: null }),
-    cancelLastScandalForPlayer: () => ({ canceledCard: null }),
-    applyCardEffects: () => true,
-    applyCardEffectsSoft: () => ({ resources: {}, rank: 0 }),
-    clampNonNegativeResources: () => {},
-    planReplacementResources: () => [],
-    hasPlayableCardsByInventory: () => false,
+  const deps = createBaseDeps({
     getWinner: (G: JojGameState) => Object.keys(G.players)[0],
-    startingHandSize: 0,
-    startingLegendaryHandSize: 0,
-  };
+  });
 
   const report = runGameSimulationsWithDeps(deps, 2, 3, 40);
 
@@ -212,32 +130,7 @@ test('simulation reports missing rank wins when nobody can reach top rank', () =
 });
 
 test('simulation tracks average passes when no hand plays happen', () => {
-  const deps: SimulationDeps = {
-    resourceKeys,
-    shuffle: <T>(items: T[]) => [...items],
-    cloneCard: (card: CardDefinition) => ({ ...card, effects: card.effects ? [...card.effects] : undefined }),
-    getSharedDeckTemplate: () => ({ deck: [], legendaryDeck: [] }),
-    getActiveRanks: () => [{ id: 'recruit' }, { id: 'soldier', victory: true }],
-    getTopRankId: () => 'soldier',
-    drawCards: () => {},
-    drawLegendaryCards: () => {},
-    syncPlayerState: () => {},
-    promoteRank: () => false,
-    promoteToSpecificRank: () => ({ ok: false }),
-    grantSpecificRankIgnoringRequirements: () => ({ ok: false }),
-    demoteByOneRankWithSeatCheck: () => ({ ok: false }),
-    triggerSukhpayZsuOnScandal: () => {},
-    cancelLastLyapOrScandalForPlayer: () => ({ canceledCard: null }),
-    cancelLastScandalForPlayer: () => ({ canceledCard: null }),
-    applyCardEffects: () => true,
-    applyCardEffectsSoft: () => ({ resources: {}, rank: 0 }),
-    clampNonNegativeResources: () => {},
-    planReplacementResources: () => [],
-    hasPlayableCardsByInventory: () => false,
-    getWinner: () => undefined,
-    startingHandSize: 0,
-    startingLegendaryHandSize: 0,
-  };
+  const deps = createBaseDeps();
 
   const report = runGameSimulationsWithDeps(deps, 2, 1, 40);
 

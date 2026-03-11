@@ -130,8 +130,6 @@ export const App = () => {
     loading: userLoading,
     busy: userBusy,
     error: userError,
-    resetTokenPreview,
-    resetTokenExpiresAt,
     setError: setUserError,
     register: registerUser,
     login: loginUser,
@@ -635,8 +633,6 @@ export const App = () => {
               .then(() => setResetPasswordDraft({ token: '', nextPassword: '' }))
               .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
           }}
-          resetTokenPreview={resetTokenPreview}
-          resetTokenExpiresAt={resetTokenExpiresAt}
           onBackToLogin={() => setProfileScreen('login')}
         />
       ) : null}

@@ -66,25 +66,9 @@ export type UserAward = {
   awardedAt: string | null;
 };
 
-export type PublicUserProfile = {
-  user: {
-    username: string;
-    displayName: string;
-    avatarUrl: string | null;
-    bio: string;
-    showStatsPublic: boolean;
-    showRecentMatchesPublic: boolean;
-    createdAt: string;
-  };
-  stats: UserStats | null;
-  awards?: UserAward[];
-  recentMatches: Array<{
-    matchId: string;
-    playerId: string;
-    playerName: string | null;
-    linkedAt: string;
-  }>;
-};
+const USER_ACCOUNT_ERRORS = {
+  genericRequest: 'Request failed',
+} as const;
 
 export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) => {
   const { serverUrl, lang } = args;
@@ -96,11 +80,6 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
   const [csrfToken, setCsrfToken] = useState('');
   const [sessions, setSessions] = useState<UserSession[]>([]);
   const [awards, setAwards] = useState<UserAward[]>([]);
-  const [resetTokenPreview, setResetTokenPreview] = useState<string>('');
-  const [resetTokenExpiresAt, setResetTokenExpiresAt] = useState<string>('');
-  const [publicProfile, setPublicProfile] = useState<PublicUserProfile | null>(null);
-  const [publicProfileLoading, setPublicProfileLoading] = useState(false);
-  const [publicProfileError, setPublicProfileError] = useState('');
 
   const authBase = `${serverUrl}/api/auth`;
   const profileBase = `${serverUrl}/api/profile`;
@@ -123,23 +102,23 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
   };
 
   const postJsonWithCsrf = async (url: string, body?: unknown) => {
-  const token = await ensureCsrfToken();
-  const response = await fetch(url, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { 'x-csrf-token': token } : {}),
-    },
-    body: body ? JSON.stringify(body) : '{}',
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(String((payload as { error?: string }).error ?? 'Request failed'));
-  }
-  applyPayloadCsrf(payload);
-  return payload as Record<string, unknown>;
-};
+    const token = await ensureCsrfToken();
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'x-csrf-token': token } : {}),
+      },
+      body: body ? JSON.stringify(body) : '{}',
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(String((payload as { error?: string }).error ?? USER_ACCOUNT_ERRORS.genericRequest));
+    }
+    applyPayloadCsrf(payload);
+    return payload as Record<string, unknown>;
+  };
 
   const refreshUser = async () => {
     setLoading(true);
@@ -209,8 +188,6 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
       setStats(null);
       setSessions([]);
       setAwards([]);
-      setPublicProfile(null);
-      setPublicProfileError('');
       setError('');
       setCsrfToken('');
       await refreshUser();
@@ -239,15 +216,6 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     }
   };
 
-  const linkMatch = async (input: { matchID: string; playerID: string; playerName?: string }) => {
-    if (!user) return;
-    try {
-      await postJsonWithCsrf(`${profileBase}/link-match`, input);
-    } catch {
-      // keep linking best-effort to avoid breaking room join flow
-    }
-  };
-
   const bindMatchSession = async (input: { matchID: string; playerID: string; credentials: string; playerName?: string }) => {
     if (!user) return;
     try {
@@ -270,9 +238,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
   const requestPasswordReset = async (login: string) => {
     setBusy(true);
     try {
-      const payload = await postJsonWithCsrf(`${authBase}/request-password-reset`, { login });
-      setResetTokenPreview(String((payload as { resetTokenPreview?: string | null }).resetTokenPreview ?? ''));
-      setResetTokenExpiresAt(String((payload as { resetTokenExpiresAt?: string | null }).resetTokenExpiresAt ?? ''));
+      await postJsonWithCsrf(`${authBase}/request-password-reset`, { login });
     } finally {
       setBusy(false);
     }
@@ -282,8 +248,6 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     setBusy(true);
     try {
       await postJsonWithCsrf(`${authBase}/reset-password`, input);
-      setResetTokenPreview('');
-      setResetTokenExpiresAt('');
       await refreshUser();
     } finally {
       setBusy(false);
@@ -297,6 +261,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     }
     const response = await fetch(`${profileBase}/sessions`, { credentials: 'include' });
     const payload = await response.json().catch(() => ({}));
+    applyPayloadCsrf(payload);
     setSessions((payload as { sessions?: UserSession[] }).sessions ?? []);
   };
 
@@ -307,6 +272,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
       setUser(null);
       setStats(null);
       setSessions([]);
+      setAwards([]);
       setError('');
       setCsrfToken('');
     } finally {
@@ -344,53 +310,14 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     return (payload as { session: { matchID: string; playerID: string; credentials: string } }).session;
   };
 
-  const fetchPublicProfile = async (username: string) => {
-    const normalized = username.trim();
-    if (!normalized) {
-      setPublicProfile(null);
-      setPublicProfileError('');
-      return null;
-    }
-    setPublicProfileLoading(true);
-    setPublicProfileError('');
-    try {
-      const response = await fetch(`${serverUrl}/api/users/profile?username=${encodeURIComponent(normalized)}`, {
-        credentials: 'include',
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok || !(payload as { ok?: boolean }).ok) {
-        throw new Error(String((payload as { error?: string }).error ?? 'Request failed'));
-      }
-      const nextProfile = payload as PublicUserProfile & { ok: true };
-      setPublicProfile({
-        user: nextProfile.user,
-        stats: nextProfile.stats ?? null,
-        recentMatches: nextProfile.recentMatches ?? [],
-      });
-      return nextProfile;
-    } catch (nextError) {
-      const message = String(nextError instanceof Error ? nextError.message : nextError);
-      setPublicProfile(null);
-      setPublicProfileError(message);
-      throw nextError;
-    } finally {
-      setPublicProfileLoading(false);
-    }
-  };
-
   return {
     user,
-   stats,
+    stats,
     awards,
     sessions,
     loading,
     busy,
     error,
-    resetTokenPreview,
-    resetTokenExpiresAt,
-    publicProfile,
-    publicProfileLoading,
-    publicProfileError,
     setError,
     refreshUser,
     refreshSessions,
@@ -405,8 +332,6 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     logoutSession,
     createAndJoinOwnedMatch,
     joinOwnedMatch,
-    fetchPublicProfile,
-    linkMatch,
     bindMatchSession,
   };
 };

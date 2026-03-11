@@ -83,9 +83,6 @@ const HAND_LIMIT = 8;
 const GAME_MODE_STANDARD: GameMode = 'standard';
 const GAME_MODE_STANDARD_PLUS: GameMode = 'standard_plus';
 const GAME_MODE_SIMPLIFIED: GameMode = 'simplified';
-const MODULE_VVNZ = 'vvnz' as const;
-const MODULE_LEGENDARY = 'legendary' as const;
-type OptionalModuleId = typeof MODULE_VVNZ | typeof MODULE_LEGENDARY;
 const DRAW_STAGE = 'draw';
 const PLAY_STAGE = 'play';
 const END_STAGE = 'end';
@@ -107,19 +104,6 @@ const normalizeGameModeByLegendaryMode = (
   // Merged legendary deck is logically equivalent to simplified legendary flow:
   // no separate legendary hand and no legendary draft phase.
   return GAME_MODE_SIMPLIFIED;
-};
-
-const resolveLegacyEnabledModules = (setupData: unknown): Set<OptionalModuleId> | null => {
-  if (!setupData || typeof setupData !== 'object') return null;
-  const raw = (setupData as { modules?: unknown }).modules;
-  if (!Array.isArray(raw)) return null;
-  const out = new Set<OptionalModuleId>();
-  raw.forEach((value) => {
-    const normalized = String(value ?? '').trim().toLowerCase();
-    if (normalized === MODULE_VVNZ) out.add(MODULE_VVNZ);
-    if (normalized === MODULE_LEGENDARY) out.add(MODULE_LEGENDARY);
-  });
-  return out;
 };
 
 const resolveSetupOverride = (setupData: unknown): Partial<SharedGameSetup> => {
@@ -813,17 +797,10 @@ export const jojGame: Game<JojGameState> = {
     const requestedGameMode = resolveGameMode(setupData);
     const setupOverride = resolveSetupOverride(setupData);
     const botSetup = resolveBotSetup(setupData, players.length);
-    const legacyEnabledModules = resolveLegacyEnabledModules(setupData);
     const deckModules = buildDeckModulesFromTemplate(template, setupOverride);
     let optionalMainDeckCards: CardDefinition[] = deckModules.gameSetup.optionalMainDeckModuleIds
       .flatMap((moduleId) => (deckModules.optionalMainDeckModules[moduleId] ?? []).map(cloneCard));
-    if (legacyEnabledModules && !legacyEnabledModules.has(MODULE_VVNZ)) {
-      optionalMainDeckCards = optionalMainDeckCards.filter((card) => card.category !== 'VVNZ');
-    }
     let optionalLegendaryCards: CardDefinition[] = deckModules.legendaryDeck.map(cloneCard);
-    if (legacyEnabledModules && !legacyEnabledModules.has(MODULE_LEGENDARY)) {
-      optionalLegendaryCards = [];
-    }
     const mergedLegendaryMode = deckModules.gameSetup.legendaryDeckMode === 'merged';
     const effectiveGameMode = normalizeGameModeByLegendaryMode(
       requestedGameMode,

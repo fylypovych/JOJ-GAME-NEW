@@ -21,6 +21,10 @@ type Params = {
   uploadDataUrl: (filename: string, dataUrl: string, cardId?: string) => Promise<string | null>;
 };
 
+const createAdminRanksEditorErrors = (lang: 'uk' | 'en') => ({
+  processImageFile: lang === 'uk' ? 'Не вдалося обробити файл зображення' : 'Failed to process image file',
+});
+
 export const useAdminRanksEditor = ({
   lang,
   t,
@@ -29,6 +33,7 @@ export const useAdminRanksEditor = ({
   optimizeBlobForUpload,
   uploadDataUrl,
 }: Params) => {
+  const rankEditorErrors = createAdminRanksEditorErrors(lang);
   const [editableRanks, setEditableRanks] = useState<RankDefinition[]>(() => cloneEditableRanks(sharedRanks));
   const [rankDraft, setRankDraft] = useState<RankDefinition>({
     id: '',
@@ -64,7 +69,7 @@ export const useAdminRanksEditor = ({
     if (!file) return;
     const optimized = await optimizeBlobForUpload(file, file.name, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
     if (!optimized) {
-      setRanksImportError(lang === 'uk' ? 'Не вдалося обробити файл зображення' : 'Failed to process image file');
+      setRanksImportError(rankEditorErrors.processImageFile);
       return;
     }
     const path = await uploadDataUrl(optimized.filename, optimized.dataUrl, rankId || 'rank');
@@ -78,7 +83,7 @@ export const useAdminRanksEditor = ({
     if (!file) return;
     const optimized = await optimizeBlobForUpload(file, file.name, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
     if (!optimized) {
-      setRanksImportError(lang === 'uk' ? 'Не вдалося обробити файл зображення' : 'Failed to process image file');
+      setRanksImportError(rankEditorErrors.processImageFile);
       return;
     }
     const path = await uploadDataUrl(optimized.filename, optimized.dataUrl, `${rankId || 'rank'}-variant`);
@@ -95,7 +100,7 @@ export const useAdminRanksEditor = ({
     if (!file) return;
     const optimized = await optimizeBlobForUpload(file, file.name, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
     if (!optimized) {
-      setRanksImportError(lang === 'uk' ? 'Не вдалося обробити файл зображення' : 'Failed to process image file');
+      setRanksImportError(rankEditorErrors.processImageFile);
       return;
     }
     const path = await uploadDataUrl(optimized.filename, optimized.dataUrl, rankDraft.id || 'rank-draft');
@@ -109,7 +114,7 @@ export const useAdminRanksEditor = ({
     if (!file) return;
     const optimized = await optimizeBlobForUpload(file, file.name, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
     if (!optimized) {
-      setRanksImportError(lang === 'uk' ? 'Не вдалося обробити файл зображення' : 'Failed to process image file');
+      setRanksImportError(rankEditorErrors.processImageFile);
       return;
     }
     const path = await uploadDataUrl(optimized.filename, optimized.dataUrl, `${rankDraft.id || 'rank-draft'}-variant`);

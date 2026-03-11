@@ -5,6 +5,29 @@ import type { RouteCtx, RouterLike } from '../server/routes/types';
 
 type Handler = (ctx: RouteCtx) => unknown;
 
+const TEST_USER = {
+  id: 'u1',
+  username: 'tester',
+  email: 't@example.com',
+  role: 'user' as const,
+  displayName: 'Tester',
+  avatarUrl: null,
+  bio: '',
+  preferredLang: 'uk' as const,
+  profilePublic: true,
+  showStatsPublic: true,
+  showRecentMatchesPublic: false,
+  createdAt: new Date().toISOString(),
+  lastLoginAt: null,
+};
+
+const makeSameOriginCsrfHeaders = (cookie = 'joj_user_csrf=csrf-token') => ({
+  cookie,
+  'x-csrf-token': 'csrf-token',
+  host: 'localhost:8000',
+  origin: 'http://localhost:8000',
+});
+
 const makeRouter = () => {
   const getHandlers = new Map<string, Handler>();
   const postHandlers = new Map<string, Handler>();
@@ -17,88 +40,18 @@ const makeRouter = () => {
 
 const baseStore = () => ({
   ensureSchema: async () => undefined,
-  createUser: async () => ({
-    id: 'u1',
-    username: 'tester',
-    email: 't@example.com',
-    role: 'user' as const,
-    displayName: 'Tester',
-    avatarUrl: null,
-    bio: '',
-    preferredLang: 'uk' as const,
-    profilePublic: true,
-    showStatsPublic: true,
-    showRecentMatchesPublic: false,
-    createdAt: new Date().toISOString(),
-    lastLoginAt: null,
-  }),
-  authenticateUser: async () => ({
-    id: 'u1',
-    username: 'tester',
-    email: 't@example.com',
-    role: 'user' as const,
-    displayName: 'Tester',
-    avatarUrl: null,
-    bio: '',
-    preferredLang: 'uk' as const,
-    profilePublic: true,
-    showStatsPublic: true,
-    showRecentMatchesPublic: false,
-    createdAt: new Date().toISOString(),
-    lastLoginAt: null,
-  }),
+  createUser: async () => ({ ...TEST_USER }),
+  authenticateUser: async () => ({ ...TEST_USER }),
   createSession: async () => ({ token: 'session-token', expiresAt: new Date().toISOString() }),
   getUserById: async () => null,
-  getUserBySessionToken: async (token: string) => token === 'session-token' ? ({
-    id: 'u1',
-    username: 'tester',
-    email: 't@example.com',
-    role: 'user' as const,
-    displayName: 'Tester',
-    avatarUrl: null,
-    bio: '',
-    preferredLang: 'uk' as const,
-    profilePublic: true,
-    showStatsPublic: true,
-    showRecentMatchesPublic: false,
-    createdAt: new Date().toISOString(),
-    lastLoginAt: null,
-  }) : null,
+  getUserBySessionToken: async (token: string) => token === 'session-token' ? { ...TEST_USER } : null,
   deleteSession: async () => undefined,
   deleteAllSessionsForUser: async () => undefined,
   deleteExpiredSessions: async () => undefined,
-  updateProfile: async () => ({
-    id: 'u1',
-    username: 'tester',
-    email: 't@example.com',
-    role: 'user' as const,
-    displayName: 'Tester 2',
-    avatarUrl: null,
-    bio: 'bio',
-    preferredLang: 'uk' as const,
-    profilePublic: true,
-    showStatsPublic: true,
-    showRecentMatchesPublic: false,
-    createdAt: new Date().toISOString(),
-    lastLoginAt: null,
-  }),
+  updateProfile: async () => ({ ...TEST_USER, displayName: 'Tester 2', bio: 'bio' }),
   changePassword: async () => undefined,
   createPasswordResetToken: async () => ({ token: 'reset-token', expiresAt: new Date().toISOString(), userId: 'u1' }),
-  resetPasswordWithToken: async () => ({
-    id: 'u1',
-    username: 'tester',
-    email: 't@example.com',
-    role: 'user' as const,
-    displayName: 'Tester',
-    avatarUrl: null,
-    bio: '',
-    preferredLang: 'uk' as const,
-    profilePublic: true,
-    showStatsPublic: true,
-    showRecentMatchesPublic: false,
-    createdAt: new Date().toISOString(),
-    lastLoginAt: null,
-  }),
+  resetPasswordWithToken: async () => ({ ...TEST_USER }),
   getPublicUserByUsername: async (username: string) => username === 'tester' ? ({
     username: 'tester',
     displayName: 'Tester',
@@ -188,12 +141,7 @@ test('auth register sets cookie and returns user', async () => {
         password: 'password123',
         displayName: 'Tester',
       },
-      headers: {
-        cookie: 'joj_user_csrf=csrf-token',
-        'x-csrf-token': 'csrf-token',
-        host: 'localhost:8000',
-        origin: 'http://localhost:8000',
-      },
+      headers: makeSameOriginCsrfHeaders(),
     },
     response: { headers: {} } as never,
   };
@@ -235,46 +183,6 @@ test('profile me requires auth cookie and returns stats', async () => {
   assert.equal((ctx.body as { stats: { wins: number } }).stats.wins, 1);
 });
 
-test('link-match requires verified boardgame credentials', async () => {
-  const { router, postHandlers } = makeRouter();
-  registerAuthRoutes({
-    router,
-    userStore: baseStore(),
-    logLine: async () => undefined,
-    jsonBodyLimit: 10_000,
-  });
-  const handler = postHandlers.get('/api/profile/link-match');
-  assert.ok(handler);
-  const ctx: RouteCtx = {
-    request: {
-      headers: {
-        cookie: 'joj_user_session=session-token; joj_user_csrf=csrf-token',
-        'x-csrf-token': 'csrf-token',
-        host: 'localhost:8000',
-        origin: 'http://localhost:8000',
-      },
-      body: { matchID: 'm1', playerID: '0', playerName: 'Wrong' },
-    },
-    db: {
-      fetch: async () => ({
-        state: {
-          G: {
-            ranks: { '0': 'soldier' },
-            playerNames: { '0': 'Tester' },
-          },
-        },
-        metadata: {
-          players: {
-            '0': { id: '0', name: 'Tester', credentials: 'secret-0' },
-          },
-        },
-      }),
-    },
-  };
-  await handler?.(ctx);
-  assert.equal(ctx.status, 400);
-});
-
 test('bind-session-match verifies boardgame credentials', async () => {
   const { router, postHandlers } = makeRouter();
   registerAuthRoutes({
@@ -288,10 +196,7 @@ test('bind-session-match verifies boardgame credentials', async () => {
   const ctx: RouteCtx = {
     request: {
       headers: {
-        cookie: 'joj_user_session=session-token; joj_user_csrf=csrf-token',
-        'x-csrf-token': 'csrf-token',
-        host: 'localhost:8000',
-        origin: 'http://localhost:8000',
+        ...makeSameOriginCsrfHeaders('joj_user_session=session-token; joj_user_csrf=csrf-token'),
       },
       body: { matchID: 'm1', playerID: '0', playerName: 'Tester', credentials: 'secret-0' },
     },
@@ -328,10 +233,7 @@ test('bind-session-match rejects invalid boardgame credentials', async () => {
   const ctx: RouteCtx = {
     request: {
       headers: {
-        cookie: 'joj_user_session=session-token; joj_user_csrf=csrf-token',
-        'x-csrf-token': 'csrf-token',
-        host: 'localhost:8000',
-        origin: 'http://localhost:8000',
+        ...makeSameOriginCsrfHeaders('joj_user_session=session-token; joj_user_csrf=csrf-token'),
       },
       body: { matchID: 'm1', playerID: '0', playerName: 'Tester', credentials: 'wrong-secret' },
     },
@@ -410,12 +312,7 @@ test('request-password-reset does not expose reset token in response', async () 
   const ctx: RouteCtx = {
     request: {
       body: { login: 'tester' },
-      headers: {
-        cookie: 'joj_user_csrf=csrf-token',
-        'x-csrf-token': 'csrf-token',
-        host: 'localhost:8000',
-        origin: 'http://localhost:8000',
-      },
+      headers: makeSameOriginCsrfHeaders(),
     },
     response: { headers: {} } as never,
   };
@@ -459,12 +356,7 @@ test('logout-session accepts authenticated session removal request', async () =>
   const ctx: RouteCtx = {
     request: {
       body: { sessionId: 's1' },
-      headers: {
-        cookie: 'joj_user_session=session-token; joj_user_csrf=csrf-token',
-        'x-csrf-token': 'csrf-token',
-        host: 'localhost:8000',
-        origin: 'http://localhost:8000',
-      },
+      headers: makeSameOriginCsrfHeaders('joj_user_session=session-token; joj_user_csrf=csrf-token'),
     },
     response: { headers: {} } as never,
   };

@@ -227,11 +227,25 @@ export const constantTimeEquals = (left: string, right: string): boolean => {
   return timingSafeEqual(a, b);
 };
 
-export const publicUserColumns = `
+export const userColumns = `
   u.id,
   u.username,
   u.email,
   u.role,
+  COALESCE(p.display_name, u.username) AS "displayName",
+  p.avatar_url AS "avatarUrl",
+  COALESCE(p.bio, '') AS bio,
+  COALESCE(p.preferred_lang, 'uk') AS "preferredLang",
+  COALESCE(p.profile_public, true) AS "profilePublic",
+  COALESCE(p.show_stats_public, true) AS "showStatsPublic",
+  COALESCE(p.show_recent_matches_public, false) AS "showRecentMatchesPublic",
+  u.created_at AS "createdAt",
+  u.last_login_at AS "lastLoginAt"
+`;
+
+export const publicUserColumns = `
+  u.id,
+  u.username,
   COALESCE(p.display_name, u.username) AS "displayName",
   p.avatar_url AS "avatarUrl",
   COALESCE(p.bio, '') AS bio,

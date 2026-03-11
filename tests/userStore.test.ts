@@ -29,9 +29,17 @@ const makeStore = async () => {
   return { store, pool };
 };
 
-test('user-store creates users, authenticates them and exposes privacy-aware public profiles', async () => {
+const withStore = async (run: (store: Awaited<ReturnType<typeof makeStore>>['store']) => Promise<void>) => {
   const { store, pool } = await makeStore();
   try {
+    await run(store);
+  } finally {
+    await pool.end();
+  }
+};
+
+test('user-store creates users, authenticates them and exposes privacy-aware public profiles', async () => {
+  await withStore(async (store) => {
     const user = await store.createUser({
       username: 'Tester_1',
       email: 'tester@example.com',
@@ -64,14 +72,11 @@ test('user-store creates users, authenticates them and exposes privacy-aware pub
     assert.equal(publicProfile?.user.displayName, 'Tester Prime');
     assert.equal(publicProfile?.stats, null);
     assert.deepEqual(publicProfile?.recentMatches, []);
-  } finally {
-    await pool.end();
-  }
+  });
 });
 
 test('user-store reset tokens invalidate previous sessions and allow password reset', async () => {
-  const { store, pool } = await makeStore();
-  try {
+  await withStore(async (store) => {
     const user = await store.createUser({
       username: 'reset_me',
       password: 'password123',
@@ -94,14 +99,11 @@ test('user-store reset tokens invalidate previous sessions and allow password re
     assert.equal(await store.getUserBySessionToken(secondSession.token), null);
     assert.equal(await store.authenticateUser('reset_me', 'password123'), null);
     assert.ok(await store.authenticateUser('reset_me', 'new-password-123'));
-  } finally {
-    await pool.end();
-  }
+  });
 });
 
 test('user-store persists finished matches and exposes admin detail aggregates', async () => {
-  const { store, pool } = await makeStore();
-  try {
+  await withStore(async (store) => {
     const user = await store.createUser({
       username: 'stats_user',
       password: 'password123',
@@ -145,14 +147,11 @@ test('user-store persists finished matches and exposes admin detail aggregates',
     assert.equal(detail?.persistedMatches.length, 1);
     assert.equal(detail?.persistedMatches[0]?.finalRankId, 'captain');
     assert.equal(detail?.persistedMatches[0]?.winnerPlayerId, '0');
-  } finally {
-    await pool.end();
-  }
+  });
 });
 
 test('user-store unlocks awards from aggregated statistics', async () => {
-  const { store, pool } = await makeStore();
-  try {
+  await withStore(async (store) => {
     const user = await store.createUser({
       username: 'award_user',
       password: 'password123',
@@ -181,17 +180,12 @@ test('user-store unlocks awards from aggregated statistics', async () => {
     assert.ok(awards.some((award) => award.key === 'resources_gained_100' && award.awarded));
     assert.ok(awards.some((award) => award.key === 'lyaps_10' && award.awarded));
     assert.ok(awards.some((award) => award.key === 'best_rank_captain' && award.awarded));
-  } finally {
-    await pool.end();
-  }
+  });
 });
 
 test('user-store does not create a default administrator implicitly', async () => {
-  const { store, pool } = await makeStore();
-  try {
+  await withStore(async (store) => {
     assert.equal(await store.authenticateUser('admin', 'admin'), null);
     assert.equal(await store.getPublicProfileByUsername('admin'), null);
-  } finally {
-    await pool.end();
-  }
+  });
 });

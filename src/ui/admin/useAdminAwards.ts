@@ -17,6 +17,12 @@ type AdminAward = {
   sortOrder: number;
 };
 
+const ADMIN_AWARDS_ERRORS = {
+  loadAwards: 'Failed to load awards',
+  saveAward: 'Failed to save award',
+  deleteAward: 'Failed to delete award',
+} as const;
+
 export const useAdminAwards = (args: {
   serverUrl: string;
   adminJsonFetch: AdminJsonFetch;
@@ -47,7 +53,7 @@ export const useAdminAwards = (args: {
     try {
       const response = await adminJsonFetch(`${serverUrl}/api/admin/awards`);
       const payload = (await response.json()) as { ok?: boolean; error?: string; awards?: AdminAward[] };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to load awards');
+      if (!response.ok || !payload.ok) throw new Error(payload.error || ADMIN_AWARDS_ERRORS.loadAwards);
       setAdminAwards(payload.awards ?? []);
     } catch (error) {
       setAdminAwardsError(String(error instanceof Error ? error.message : error));
@@ -115,7 +121,7 @@ export const useAdminAwards = (args: {
         }),
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string; awards?: AdminAward[] };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to save award');
+      if (!response.ok || !payload.ok) throw new Error(payload.error || ADMIN_AWARDS_ERRORS.saveAward);
       setAdminAwards(payload.awards ?? []);
       if (adminAwardDraft.id) selectAdminAward(adminAwardDraft.id);
     } catch (error) {
@@ -136,7 +142,7 @@ export const useAdminAwards = (args: {
         body: JSON.stringify({ awardId: adminAwardDraft.id }),
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string; awards?: AdminAward[] };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to delete award');
+      if (!response.ok || !payload.ok) throw new Error(payload.error || ADMIN_AWARDS_ERRORS.deleteAward);
       setAdminAwards(payload.awards ?? []);
       selectAdminAward('');
     } catch (error) {

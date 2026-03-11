@@ -237,8 +237,6 @@ export const AdminPage = ({
     setAdminUserSearch,
     selectedAdminUserId,
     selectedAdminUserDetail,
-    adminResetTokenPreview,
-    adminResetTokenExpiresAt,
     adminCreateUserDraft,
     setAdminCreateUserDraft,
     adminEditUserDraft,
@@ -251,7 +249,7 @@ export const AdminPage = ({
     logoutAdminUserSession,
     logoutAllAdminUserSessions,
     createAdminUser,
-    issueAdminResetToken,
+    requestAdminPasswordReset,
   } = useAdminUsers({ serverUrl, adminJsonFetch });
   const {
     adminAwards,
@@ -465,11 +463,9 @@ export const AdminPage = ({
           createDraft={adminCreateUserDraft}
           setCreateDraft={setAdminCreateUserDraft}
           onCreateUser={() => { void createAdminUser(); }}
-          onIssueResetToken={() => { void issueAdminResetToken(); }}
+          onRequestPasswordReset={() => { void requestAdminPasswordReset(); }}
           onLogoutAllSessions={() => { void logoutAllAdminUserSessions(); }}
           onLogoutUserSession={(sessionId) => { void logoutAdminUserSession(sessionId); }}
-          resetTokenPreview={adminResetTokenPreview}
-          resetTokenExpiresAt={adminResetTokenExpiresAt}
         />
       ) : null}
       {activeTab === 'awards' ? (

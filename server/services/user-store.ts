@@ -7,7 +7,7 @@ import {
   DEFAULT_AWARD_DEFINITIONS,
   normalizeEmail,
   normalizeUsername,
-  publicUserColumns,
+  userColumns,
   RESET_TOKEN_TTL_MS,
   SESSION_TTL_MS,
   USERNAME_RE,
@@ -186,7 +186,7 @@ export const createUserStore = (pool: Pool) => {
 
   const getUserById = async (userId: string): Promise<UserRecord | null> => {
     const result = await pool.query<UserRecord>(`
-      SELECT ${publicUserColumns}
+      SELECT ${userColumns}
       FROM app_users u
       LEFT JOIN user_profiles p ON p.user_id = u.id
       WHERE u.id = $1
@@ -197,7 +197,7 @@ export const createUserStore = (pool: Pool) => {
 
   const getUserWithStatusById = async (userId: string): Promise<(UserRecord & { status: 'active' | 'disabled' }) | null> => {
     const result = await pool.query<UserRecord & { status: 'active' | 'disabled' }>(`
-      SELECT ${publicUserColumns}, u.status
+      SELECT ${userColumns}, u.status
       FROM app_users u
       LEFT JOIN user_profiles p ON p.user_id = u.id
       WHERE u.id = $1

@@ -88,11 +88,9 @@ export const AdminUsersTab = ({
   createDraft,
   setCreateDraft,
   onCreateUser,
-  onIssueResetToken,
+  onRequestPasswordReset,
   onLogoutAllSessions,
   onLogoutUserSession,
-  resetTokenPreview,
-  resetTokenExpiresAt,
 }: {
   t: T;
   userSearch: string;
@@ -138,11 +136,9 @@ export const AdminUsersTab = ({
     role: 'user' | 'administrator';
   }) => void;
   onCreateUser: () => void;
-  onIssueResetToken: () => void;
+  onRequestPasswordReset: () => void;
   onLogoutAllSessions: () => void;
   onLogoutUserSession: (sessionId: string) => void;
-  resetTokenPreview: string;
-  resetTokenExpiresAt: string;
 }) => (
   <>
     <h3>{t.adminUsersTitle}</h3>
@@ -241,11 +237,9 @@ export const AdminUsersTab = ({
               <button type="button" onClick={() => onSetStatus('disabled')} disabled={loading || selectedUserDetail.user.status === 'disabled'}>{t.adminUsersDisable}</button>
               <button type="button" onClick={() => onSetRole('user')} disabled={loading || selectedUserDetail.user.role === 'user'}>{t.userRoleUser}</button>
               <button type="button" onClick={() => onSetRole('administrator')} disabled={loading || selectedUserDetail.user.role === 'administrator'}>{t.userRoleAdministrator}</button>
-              <button type="button" onClick={onIssueResetToken} disabled={loading}>{t.adminUsersIssueResetToken}</button>
+              <button type="button" onClick={onRequestPasswordReset} disabled={loading}>{t.adminUsersIssueResetToken}</button>
               <button type="button" onClick={onLogoutAllSessions} disabled={loading}>{t.adminUsersLogoutAllSessions}</button>
             </p>
-            {resetTokenPreview ? <p>{t.userResetTokenPreview}: <code>{resetTokenPreview}</code></p> : null}
-            {resetTokenExpiresAt ? <p>{t.userResetTokenExpiresAt}: {new Date(resetTokenExpiresAt).toLocaleString()}</p> : null}
             <h5>{t.userStatsTitle}</h5>
             <ul>
               <li>{t.userStatMatchesLinked}: {selectedUserDetail.stats.matchesLinked}</li>

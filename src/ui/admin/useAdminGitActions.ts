@@ -9,12 +9,19 @@ type UseAdminGitActionsParams = {
   setAdminActionError: (value: string) => void;
 };
 
+const createGitActionErrors = (lang: Language) => ({
+  checkUpdates: lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates',
+  updateFiles: lang === 'uk' ? 'Не вдалося оновити файли' : 'Failed to update files',
+  deployProject: lang === 'uk' ? 'Не вдалося оновити/зібрати проект' : 'Failed to update/build project',
+});
+
 export const useAdminGitActions = ({
   lang,
   serverUrl,
   adminHeaders,
   setAdminActionError,
 }: UseAdminGitActionsParams) => {
+  const gitActionErrors = createGitActionErrors(lang);
   const [gitStatus, setGitStatus] = useState<GitUpdateStatus | null>(null);
   const [gitStatusLoading, setGitStatusLoading] = useState<boolean>(false);
   const [gitUpdateRunning, setGitUpdateRunning] = useState<boolean>(false);
@@ -48,7 +55,7 @@ export const useAdminGitActions = ({
       const payload = (await response.json()) as ({ ok?: boolean; error?: string; details?: string } & Partial<GitUpdateStatus>);
       if (!response.ok || !payload.ok) {
         if (!silentDuringExpectedRestart) {
-          setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates'));
+          setAdminActionError(payload.error ?? gitActionErrors.checkUpdates);
           setGitActionLog(payload.details ?? payload.error ?? '');
         }
         return;
@@ -72,7 +79,7 @@ export const useAdminGitActions = ({
       }
     } catch {
       if (!silentDuringExpectedRestart) {
-        setAdminActionError(lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates');
+        setAdminActionError(gitActionErrors.checkUpdates);
         setGitActionLog('');
       }
     } finally {
@@ -100,7 +107,7 @@ export const useAdminGitActions = ({
         details?: string;
       };
       if (!response.ok || !payload.ok) {
-        setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося оновити файли' : 'Failed to update files'));
+        setAdminActionError(payload.error ?? gitActionErrors.updateFiles);
         setGitActionLog(payload.details ?? payload.error ?? '');
         return;
       }
@@ -113,7 +120,7 @@ export const useAdminGitActions = ({
             : (lang === 'uk' ? 'Оновлення відсутні' : 'Already up to date')),
       );
     } catch {
-      setAdminActionError(lang === 'uk' ? 'Не вдалося оновити файли' : 'Failed to update files');
+      setAdminActionError(gitActionErrors.updateFiles);
       setGitActionLog('');
     } finally {
       setGitUpdateRunning(false);
@@ -139,7 +146,7 @@ export const useAdminGitActions = ({
         details?: string;
       };
       if (!response.ok || !payload.ok) {
-        setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося оновити/зібрати проект' : 'Failed to update/build project'));
+        setAdminActionError(payload.error ?? gitActionErrors.deployProject);
         setGitActionLog(payload.details ?? payload.error ?? '');
         return;
       }
@@ -172,7 +179,7 @@ export const useAdminGitActions = ({
         deployRecoveryTimersRef.current.push(timerId);
       });
     } catch {
-      setAdminActionError(lang === 'uk' ? 'Не вдалося оновити/зібрати проект' : 'Failed to update/build project');
+      setAdminActionError(gitActionErrors.deployProject);
       setGitActionLog('');
     } finally {
       setGitDeployRunning(false);

@@ -324,41 +324,6 @@ export const registerAuthRoutes = (args: {
     ctx.body = { ok: true, csrfToken: issueUserCsrfToken(ctx) };
   });
 
-  router.post('/api/profile/link-match', async (ctx: RouteCtx) => {
-    if (!requireUserStore(ctx)) return;
-    const store = getStore();
-    if (!requireUserCsrf(ctx)) return;
-    const user = await requireUserAuth(ctx, store);
-    if (!user) return;
-    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/profile/link-match', maxBytes: jsonBodyLimit, logLine });
-    if (!body) return;
-    const matchId = String(body.matchID ?? '').trim();
-    const playerId = String(body.playerID ?? '').trim();
-    const credentials = String(body.credentials ?? '').trim();
-    const playerName = typeof body.playerName === 'string' ? body.playerName.trim() : '';
-    if (!matchId || !playerId || !credentials) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: 'Missing matchID, playerID or credentials.' };
-      return;
-    }
-    const verified = await getVerifiedMatchParticipant(ctx, matchId, playerId);
-    if (!verified) return;
-    const { state, knownPlayerName, metadataPlayer } = verified;
-    if (!metadataPlayer?.credentials || metadataPlayer.credentials !== credentials) {
-      ctx.status = 403;
-      ctx.body = { ok: false, error: 'Invalid match credentials.' };
-      return;
-    }
-    await store.linkUserToMatch({
-      userId: user.id,
-      matchId,
-      playerId,
-      playerName: knownPlayerName || playerName || undefined,
-    });
-    await store.persistMatchResultIfFinished(matchId, state ?? null);
-    ctx.body = { ok: true };
-  });
-
   router.post('/api/profile/bind-session-match', async (ctx: RouteCtx) => {
     if (!requireUserStore(ctx)) return;
     const store = getStore();

@@ -1,5 +1,7 @@
 @echo off
 setlocal
+set "NO_PAUSE=0"
+if /I "%~1"=="--no-pause" set "NO_PAUSE=1"
 
 cd /d "%~dp0"
 
@@ -25,5 +27,5 @@ timeout /t 2 /nobreak >nul
 
 echo.
 echo [JOJ] Cleanup finished.
-pause
+if "%NO_PAUSE%"=="0" pause
 exit /b 0

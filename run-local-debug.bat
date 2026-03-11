@@ -42,15 +42,7 @@ if not defined ALLOW_IN_MEMORY_USER_STORE (
 )
 
 echo [JOJ] Cleaning up old local debug listeners on ports 5173 and 8000...
-for %%P in (5173 8000) do (
-  for /f "tokens=5" %%I in ('netstat -ano ^| findstr /R /C:":%%P .*LISTENING"') do (
-    echo [JOJ] taskkill /PID %%I on port %%P
-    taskkill /PID %%I /F >nul 2>nul
-  )
-)
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$ports = @(5173,8000); $listenerIds = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $ports -contains $_.LocalPort } | Select-Object -ExpandProperty OwningProcess -Unique; foreach ($procId in $listenerIds) { try { Stop-Process -Id $procId -Force -ErrorAction Stop; Write-Host ('[JOJ] Stopped listener PID=' + $procId) } catch {} }; $projectPath = [regex]::Escape((Get-Location).Path); $nodeProcIds = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^(node|npm|npx)(\\.exe)?$' -and $_.CommandLine -match $projectPath } | Select-Object -ExpandProperty ProcessId -Unique; foreach ($procId in $nodeProcIds) { try { Stop-Process -Id $procId -Force -ErrorAction Stop; Write-Host ('[JOJ] Stopped project PID=' + $procId) } catch {} }"
-timeout /t 2 /nobreak >nul
+call "%~dp0kill-local-game-processes.bat" --no-pause >nul
 
 echo [JOJ] Starting local debug servers...
 echo [JOJ] Web:    http://localhost:5173

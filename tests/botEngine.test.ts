@@ -87,6 +87,7 @@ const makeDeps = (overrides: Partial<JojMovesDeps> = {}): JojMovesDeps => ({
     return true;
   },
   applyCardEffectsSoft: () => ({ resources: {}, rank: 0 }),
+  planReplacementResources: () => [],
   getReplacementUnitsForCard: () => 0,
   summarizeAppliedDiff: () => ({ resources: {}, rank: 0 }),
   effectSummaryToText: () => 'ok',
@@ -140,6 +141,40 @@ const makeDeps = (overrides: Partial<JojMovesDeps> = {}): JojMovesDeps => ({
   ...overrides,
 });
 
+const makeBotEngine = (deps: JojMovesDeps) => createBotEngine({
+  ...deps,
+  drawCardHandler,
+  resolveDrawAutoCardHandler,
+  playCardHandler,
+  playLegendaryCardHandler,
+  promoteHandler,
+  passHandler,
+  planReplacementResources: deps.planReplacementResources,
+});
+
+const addBotSeat = (G: JojGameState, playerID: string, name: string, difficulty: 'easy' | 'normal' | 'hard' = 'easy') => {
+  const baseResources = { time: 1, reputation: 1, discipline: 1, documents: 1, tech: 1 };
+  G.players[playerID] = { hand: [], rankId: 'recruit', resources: { ...baseResources } };
+  G.hands[playerID] = [];
+  G.legendaryHands[playerID] = [];
+  G.ranks[playerID] = 'recruit';
+  G.resources[playerID] = { ...baseResources };
+  G.promotedThisTurn[playerID] = false;
+  G.lyapScandalShieldUntilTurn[playerID] = 0;
+  G.extraHandPlayTokens[playerID] = 0;
+  G.sukhpayZsuWatchUntilTurn[playerID] = 0;
+  G.sukhpayZsuPendingBonus[playerID] = false;
+  G.playerGameStats[playerID] = {
+    resourcesGainedTotal: 0,
+    resourcesLostTotal: 0,
+    lyapsPlayedOnOthers: 0,
+    scandalsPlayedOnOthers: 0,
+    turnsTaken: 0,
+  };
+  G.playerNames[playerID] = name;
+  G.botPlayers[playerID] = { difficulty, name };
+};
+
 test('jojGame setup attaches bot players from setupData', () => {
   const state = jojGame.setup?.(
     { ctx: { playOrder: ['0', '1', '2'], currentPlayer: '0' } as never },
@@ -179,16 +214,7 @@ test('bot engine plays a support card from hand', () => {
   G.players['1'].hand = G.hands['1'];
 
   const deps = makeDeps();
-  const engine = createBotEngine({
-    ...deps,
-    drawCardHandler,
-    resolveDrawAutoCardHandler,
-    playCardHandler,
-    playLegendaryCardHandler,
-    promoteHandler,
-    passHandler,
-    planReplacementResources: () => [],
-  });
+  const engine = makeBotEngine(deps);
 
   const acted = engine.playTurn({
     G,
@@ -205,19 +231,7 @@ test('bot engine plays a support card from hand', () => {
 
 test('end game vote auto-adds bot approvals', () => {
   const G = makeState();
-  G.players['2'] = { hand: [], rankId: 'recruit', resources: { time: 1, reputation: 1, discipline: 1, documents: 1, tech: 1 } };
-  G.hands['2'] = [];
-  G.legendaryHands['2'] = [];
-  G.ranks['2'] = 'recruit';
-  G.resources['2'] = { time: 1, reputation: 1, discipline: 1, documents: 1, tech: 1 };
-  G.promotedThisTurn['2'] = false;
-  G.lyapScandalShieldUntilTurn['2'] = 0;
-  G.extraHandPlayTokens['2'] = 0;
-  G.sukhpayZsuWatchUntilTurn['2'] = 0;
-  G.sukhpayZsuPendingBonus['2'] = false;
-  G.playerGameStats['2'] = { resourcesGainedTotal: 0, resourcesLostTotal: 0, lyapsPlayedOnOthers: 0, scandalsPlayedOnOthers: 0, turnsTaken: 0 };
-  G.playerNames['2'] = 'Bot Easy 2';
-  G.botPlayers['2'] = { difficulty: 'easy', name: 'Bot Easy 2' };
+  addBotSeat(G, '2', 'Bot Easy 2');
 
   const moves = createJojMoves(makeDeps());
   const requestResult = moves.requestEndGameVote({ G, ctx: { currentPlayer: '0', activePlayers: { '0': 'play' } } as never, playerID: '0' });
@@ -242,16 +256,7 @@ test('bot engine force-resolves pending draw auto state before ending turn', () 
   const deps = makeDeps({
     planReplacementResources: () => null as never,
   });
-  const engine = createBotEngine({
-    ...deps,
-    drawCardHandler,
-    resolveDrawAutoCardHandler,
-    playCardHandler,
-    playLegendaryCardHandler,
-    promoteHandler,
-    passHandler,
-    planReplacementResources: () => null,
-  });
+  const engine = makeBotEngine(deps);
 
   const acted = engine.playTurn({
     G,

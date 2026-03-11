@@ -27,6 +27,13 @@ type Params = {
   cropQuality: number;
 };
 
+const createAdminImageToolErrors = (lang: 'uk' | 'en') => ({
+  loadCurrentImage: lang === 'uk' ? 'Не вдалося завантажити поточне зображення' : 'Failed to load current image',
+  readImage: lang === 'uk' ? 'Не вдалося прочитати зображення' : 'Failed to read image',
+  processImage: lang === 'uk' ? 'Не вдалося обробити зображення' : 'Failed to process image',
+  readImageFile: lang === 'uk' ? 'Не вдалося прочитати файл зображення' : 'Failed to read image file',
+});
+
 export const useAdminImageTools = ({
   lang,
   editCard,
@@ -41,6 +48,7 @@ export const useAdminImageTools = ({
   getAspectLockedCropRect,
   cropQuality,
 }: Params) => {
+  const imageToolErrors = createAdminImageToolErrors(lang);
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null);
   const cropPreviewRef = useRef<HTMLCanvasElement | null>(null);
   const cropObjectUrlRef = useRef<string | null>(null);
@@ -104,7 +112,7 @@ export const useAdminImageTools = ({
     try {
       const response = await fetch(src);
       if (!response.ok) {
-        setEditError(lang === 'uk' ? 'Не вдалося завантажити поточне зображення' : 'Failed to load current image');
+        setEditError(imageToolErrors.loadCurrentImage);
         return;
       }
       const blob = await response.blob();
@@ -124,7 +132,7 @@ export const useAdminImageTools = ({
       });
       setEditError('');
     } catch {
-      setEditError(lang === 'uk' ? 'Не вдалося завантажити поточне зображення' : 'Failed to load current image');
+      setEditError(imageToolErrors.loadCurrentImage);
     }
   };
 
@@ -133,7 +141,7 @@ export const useAdminImageTools = ({
     const optimized = await optimizeBlobForUpload(cropDraft.sourceBlob, cropDraft.filename);
     const dataUrl = optimized?.dataUrl ?? (await blobToDataUrl(cropDraft.sourceBlob));
     if (!dataUrl) {
-      setEditError(lang === 'uk' ? 'Не вдалося прочитати зображення' : 'Failed to read image');
+      setEditError(imageToolErrors.readImage);
       return;
     }
     const path = await uploadDataUrl(optimized?.filename ?? cropDraft.filename, dataUrl);
@@ -153,7 +161,7 @@ export const useAdminImageTools = ({
       image.src = cropDraft.sourceUrl;
     });
     if (!loaded) {
-      setEditError(lang === 'uk' ? 'Не вдалося обробити зображення' : 'Failed to process image');
+      setEditError(imageToolErrors.processImage);
       return;
     }
 
@@ -163,7 +171,7 @@ export const useAdminImageTools = ({
     canvas.height = sh;
     const ctx = canvas.getContext('2d');
     if (!ctx) {
-      setEditError(lang === 'uk' ? 'Не вдалося обробити зображення' : 'Failed to process image');
+      setEditError(imageToolErrors.processImage);
       return;
     }
     ctx.drawImage(image, sx, sy, sw, sh, 0, 0, sw, sh);
@@ -193,7 +201,7 @@ export const useAdminImageTools = ({
     const optimized = await optimizeBlobForUpload(file, file.name, { maxWidth: 1600, maxHeight: 2400, quality: 0.85 });
     const dataUrl = optimized?.dataUrl ?? (await blobToDataUrl(file));
     if (!dataUrl) {
-      setEditError(lang === 'uk' ? 'Не вдалося прочитати файл зображення' : 'Failed to read image file');
+      setEditError(imageToolErrors.readImageFile);
       return;
     }
     const path = await uploadDataUrl(optimized?.filename ?? file.name, dataUrl, 'deck-back');
