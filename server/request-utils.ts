@@ -55,29 +55,47 @@ export const setCookieHeader = (
   if (options.secure ?? (process.env.NODE_ENV ?? '').trim().toLowerCase() === 'production') parts.push('Secure');
   parts.push(`SameSite=${options.sameSite ?? 'Lax'}`);
   const cookieValue = parts.join('; ');
-  if (typeof ctx?.set === 'function') {
-    ctx.set('Set-Cookie', cookieValue);
+  const appendCookie = () => {
+    const existing = ctx?.response?.headers?.['Set-Cookie'];
+    const next = Array.isArray(existing) ? [...existing, cookieValue] : existing ? [existing, cookieValue] : [cookieValue];
+    if (!ctx.response) ctx.response = {};
+    if (!ctx.response.headers) ctx.response.headers = {};
+    ctx.response.headers['Set-Cookie'] = next;
+  };
+  if (typeof ctx?.append === 'function') {
+    ctx.append('Set-Cookie', cookieValue);
+    appendCookie();
     return;
   }
-  const existing = ctx?.response?.headers?.['Set-Cookie'];
-  const next = Array.isArray(existing) ? [...existing, cookieValue] : existing ? [existing, cookieValue] : [cookieValue];
-  if (!ctx.response) ctx.response = {};
-  if (!ctx.response.headers) ctx.response.headers = {};
-  ctx.response.headers['Set-Cookie'] = next;
+  if (typeof ctx?.set === 'function') {
+    appendCookie();
+    ctx.set('Set-Cookie', ctx.response.headers['Set-Cookie']);
+    return;
+  }
+  appendCookie();
 };
 
 export const createRequireAdminAuth = ({
-  isAdminAuthEnabled,
+  isAdminAuthEnabled: _isAdminAuthEnabled,
   adminToken,
   logLine,
+  getUserStore,
 }: {
   isAdminAuthEnabled: boolean;
   adminToken: string;
   logLine: LogLine;
+  getUserStore?: () => { getUserBySessionToken: (token: string) => Promise<{ role?: string } | null> } | null;
 }) => async (ctx: any, routeLabel: string): Promise<boolean> => {
-  if (!isAdminAuthEnabled) return true;
   const token = getAdminTokenFromRequest(ctx);
-  if (token === adminToken) return true;
+  if (adminToken && token === adminToken) return true;
+  const userStore = getUserStore?.() ?? null;
+  if (userStore) {
+    const sessionToken = getCookieValue(ctx, 'joj_user_session');
+    if (sessionToken) {
+      const user = await userStore.getUserBySessionToken(sessionToken);
+      if (user?.role === 'administrator') return true;
+    }
+  }
   ctx.status = 401;
   ctx.body = { ok: false, error: 'Unauthorized' };
   await logLine('WARN', `unauthorized route=${routeLabel} ip=${getClientIp(ctx)}`);

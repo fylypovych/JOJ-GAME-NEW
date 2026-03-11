@@ -26,6 +26,17 @@ export const requireUserAuth = async (
   return null;
 };
 
+export const requireAdministrator = async (
+  ctx: RouteCtx,
+  userStore: UserStore,
+) => {
+  const user = await getCurrentUserFromRequest(ctx, userStore);
+  if (user?.role === 'administrator') return user;
+  ctx.status = 401;
+  ctx.body = { ok: false, error: 'Unauthorized' };
+  return null;
+};
+
 export const clearUserSessionCookie = (ctx: RouteCtx) => {
   setCookieHeader(ctx, USER_SESSION_COOKIE, '', { maxAgeSec: 0, httpOnly: true, sameSite: 'Lax' });
 };
@@ -47,7 +58,27 @@ export const requireUserCsrf = (ctx: RouteCtx) => {
     : '';
   const origin = typeof ctx?.request?.headers?.origin === 'string' ? String(ctx.request.headers.origin) : '';
   const host = typeof ctx?.request?.headers?.host === 'string' ? String(ctx.request.headers.host) : '';
-  const sameOrigin = !origin || !host || origin.includes(host);
+  let sameOrigin = !origin || !host;
+  if (!sameOrigin) {
+    try {
+      const originUrl = new URL(origin);
+      const frontendOrigins = Array.from(new Set([
+        (process.env.FRONTEND_ORIGIN ?? '').trim(),
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:4173',
+        'http://127.0.0.1:4173',
+      ].filter(Boolean)));
+      const frontendUrls = frontendOrigins.map((value) => new URL(value));
+      const requestHostName = host.split(':')[0]?.trim().toLowerCase();
+      const originHostName = originUrl.hostname.trim().toLowerCase();
+      sameOrigin =
+        originHostName === requestHostName ||
+        frontendUrls.some((frontendUrl) => originUrl.origin === frontendUrl.origin);
+    } catch {
+      sameOrigin = false;
+    }
+  }
   if (cookieToken && headerToken && cookieToken === headerToken && sameOrigin) return true;
   ctx.status = 403;
   ctx.body = { ok: false, error: 'CSRF validation failed.' };

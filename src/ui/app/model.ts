@@ -28,6 +28,24 @@ export const getConfiguredServerUrl = () => {
   const saved = normalizeServerUrl(window.localStorage.getItem(SERVER_URL_STORAGE_KEY) ?? '');
   if (!saved) return DEFAULT_SERVER_URL;
 
+  if (isBrowserLocalAddress()) {
+    try {
+      const parsedSaved = new URL(saved);
+      const parsedDefault = new URL(DEFAULT_SERVER_URL);
+      const sameLocalTarget =
+        isLocalHostName(parsedSaved.hostname) &&
+        parsedSaved.protocol === parsedDefault.protocol &&
+        parsedSaved.port === parsedDefault.port;
+      if (!sameLocalTarget) {
+        window.localStorage.setItem(SERVER_URL_STORAGE_KEY, DEFAULT_SERVER_URL);
+        return DEFAULT_SERVER_URL;
+      }
+    } catch {
+      window.localStorage.setItem(SERVER_URL_STORAGE_KEY, DEFAULT_SERVER_URL);
+      return DEFAULT_SERVER_URL;
+    }
+  }
+
   // Migrate legacy local dev URLs when the app is opened from a public HTTPS domain.
   if (window.location.protocol === 'https:' && !isBrowserLocalAddress()) {
     if (isLikelyLocalServerUrl(saved) || saved.startsWith('http://')) {
@@ -69,7 +87,7 @@ export type Session = {
   credentials: string;
 };
 
-export type UserTab = 'games' | 'gallery' | 'rules' | 'profile';
+export type UserTab = 'games' | 'gallery' | 'rules' | 'profile' | 'statistics';
 export type GalleryCategoryFilter = CardDefinition['category'] | 'ALL';
 
 export const galleryCategories: CardDefinition['category'][] = [

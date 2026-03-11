@@ -153,6 +153,16 @@ button:disabled {
   margin: 0;
 }
 
+.auth-shell {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.auth-card {
+  width: min(420px, 100%);
+}
+
 @media (max-width: 900px) {
   .lobby-layout {
     grid-template-columns: 1fr;

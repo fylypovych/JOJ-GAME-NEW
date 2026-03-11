@@ -44,10 +44,14 @@ import {
 import {
   ActiveSessionSection,
   AdminAuthCard,
+  AuthErrorModal,
   GallerySection,
   LobbySection,
+  PasswordResetSection,
   ProfileSection,
+  RegisterSection,
   RulesSection,
+  StatisticsSection,
   UserTabs,
 } from './app/sections';
 import { useAdminAuth } from './app/useAdminAuth';
@@ -81,6 +85,8 @@ export const App = () => {
   const [selectedOptionalModuleIds, setSelectedOptionalModuleIds] = useState<string[]>(['vvnz_default']);
   const [adminSelectedMatchID, setAdminSelectedMatchID] = useState<string>('');
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
+  const [profileScreen, setProfileScreen] = useState<'login' | 'register' | 'reset'>('login');
+  const [authErrorModal, setAuthErrorModal] = useState('');
   const [gameUiVariant, setGameUiVariant] = useState<'v1' | 'v2'>(() => {
     const raw = window.localStorage.getItem(GAME_UI_VARIANT_STORAGE_KEY);
     return raw === 'v2' ? 'v2' : 'v1';
@@ -94,30 +100,29 @@ export const App = () => {
   const [registerDraft, setRegisterDraft] = useState({ username: '', email: '', password: '', displayName: '' });
   const [profileDraft, setProfileDraft] = useState({
     displayName: '',
+    email: '',
     bio: '',
     avatarUrl: '',
     profilePublic: true,
     showStatsPublic: true,
     showRecentMatchesPublic: false,
   });
+  const [profileNotice, setProfileNotice] = useState('');
   const [passwordDraft, setPasswordDraft] = useState({ currentPassword: '', nextPassword: '' });
   const [resetRequestDraft, setResetRequestDraft] = useState({ login: '' });
   const [resetPasswordDraft, setResetPasswordDraft] = useState({ token: '', nextPassword: '' });
-  const [publicProfileLookup, setPublicProfileLookup] = useState('');
   const [serverUrlDraft, setServerUrlDraft] = useState<string>(() => window.localStorage.getItem(SERVER_URL_STORAGE_KEY) ?? SERVER_URL);
   const t = text(lang);
   const {
     user,
     stats: userStats,
+    awards: userAwards,
     sessions: userSessions,
     loading: userLoading,
     busy: userBusy,
     error: userError,
     resetTokenPreview,
     resetTokenExpiresAt,
-    publicProfile,
-    publicProfileLoading,
-    publicProfileError,
     setError: setUserError,
     register: registerUser,
     login: loginUser,
@@ -131,7 +136,6 @@ export const App = () => {
     logoutSession,
     createAndJoinOwnedMatch,
     joinOwnedMatch,
-    fetchPublicProfile,
     bindMatchSession,
   } = useUserAccount({ serverUrl: SERVER_URL, lang });
   const {
@@ -150,6 +154,8 @@ export const App = () => {
   } = useAdminAuth({
     isAdminRoute,
     serverUrl: SERVER_URL,
+    defaultServerUrl: DEFAULT_SERVER_URL,
+    serverUrlStorageKey: SERVER_URL_STORAGE_KEY,
     adminTokenStorageKey: ADMIN_TOKEN_STORAGE_KEY,
     initialToken: window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? '',
     unauthorizedText: t.adminUnauthorized,
@@ -319,8 +325,11 @@ export const App = () => {
 
   useEffect(() => {
     if (!user) return;
+    setProfileScreen('login');
+    setAuthErrorModal('');
     setProfileDraft({
       displayName: user.displayName ?? '',
+      email: user.email ?? '',
       bio: user.bio ?? '',
       avatarUrl: user.avatarUrl ?? '',
       profilePublic: user.profilePublic !== false,
@@ -328,6 +337,14 @@ export const App = () => {
       showRecentMatchesPublic: user.showRecentMatchesPublic === true,
     });
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    if (playerName.trim()) return;
+    const nextPlayerName = user.displayName?.trim() || user.username?.trim() || '';
+    if (!nextPlayerName) return;
+    setPlayerName(nextPlayerName);
+  }, [user, playerName]);
 
   useEffect(() => {
     if (!user || !session?.matchID || !session?.playerID) return;
@@ -380,9 +397,6 @@ export const App = () => {
           <div className="app-top-toolbar-left">
             <UserTabs t={t} activeUserTab={activeUserTab} setActiveUserTab={setActiveUserTab} uiVariant={gameUiVariant} />
           </div>
-          <div className="app-top-toolbar-center">
-            <a className="app-toolbar-link-button" href="/admin">{t.openAdmin}</a>
-          </div>
           <div className="app-top-toolbar-right">
             <p className="app-top-row">
               {t.language}:{' '}
@@ -400,6 +414,8 @@ export const App = () => {
               <button type="button" onClick={() => setGameUiVariant('v2')} disabled={gameUiVariant === 'v2'}>
                 {t.gameUiV2}
               </button>
+              {' | '}
+              <a className="app-toolbar-link-button" href="/admin">{t.openAdmin}</a>
             </p>
           </div>
         </section>
@@ -513,23 +529,28 @@ export const App = () => {
         ) : null}
       </div>
 
-      {!isAdminRoute && activeUserTab === 'profile' ? (
+      {!isAdminRoute && activeUserTab === 'profile' && (user || profileScreen === 'login') ? (
         <ProfileSection
           t={t}
           user={user}
-          stats={userStats}
           loading={userLoading}
           busy={userBusy}
           error={userError}
+          notice={profileNotice}
           loginDraft={loginDraft}
           setLoginDraft={setLoginDraft}
-          registerDraft={registerDraft}
-          setRegisterDraft={setRegisterDraft}
           onLogin={() => {
-            void loginUser(loginDraft).catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
-          }}
-          onRegister={() => {
-            void registerUser(registerDraft).catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
+            setProfileNotice('');
+            void loginUser(loginDraft)
+              .then(() => {
+                setAuthErrorModal('');
+                setProfileNotice(t.userLoginSuccess);
+              })
+              .catch((error) => {
+                const message = String(error instanceof Error ? error.message : error);
+                setUserError(message);
+                setAuthErrorModal(message);
+              });
           }}
           onLogout={() => {
             void logoutUser().catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
@@ -537,15 +558,53 @@ export const App = () => {
           profileDraft={profileDraft}
           setProfileDraft={setProfileDraft}
           onSaveProfile={() => {
-            void updateUserProfile({ ...profileDraft, preferredLang: lang }).catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
+            setProfileNotice('');
+            void updateUserProfile({ ...profileDraft, preferredLang: lang })
+              .then(() => setProfileNotice(t.userProfileSaved))
+              .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
           }}
           passwordDraft={passwordDraft}
           setPasswordDraft={setPasswordDraft}
           onChangePassword={() => {
+            setProfileNotice('');
             void changePassword(passwordDraft)
-              .then(() => setPasswordDraft({ currentPassword: '', nextPassword: '' }))
+              .then(() => {
+                setPasswordDraft({ currentPassword: '', nextPassword: '' });
+                setProfileNotice(t.userPasswordChanged);
+              })
               .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
           }}
+          stats={userStats}
+          awards={userAwards}
+          sessions={userSessions}
+          onRefreshSessions={() => { void refreshSessions().catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
+          onLogoutAllSessions={() => { void logoutAllSessions().catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
+          onLogoutSession={(sessionId) => { void logoutSession(sessionId).catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
+          onOpenRegister={() => setProfileScreen('register')}
+        />
+      ) : null}
+
+      {!isAdminRoute && activeUserTab === 'profile' && !user && profileScreen === 'register' ? (
+        <RegisterSection
+          t={t}
+          busy={userBusy}
+          error={userError}
+          registerDraft={registerDraft}
+          setRegisterDraft={setRegisterDraft}
+          onRegister={() => {
+            void registerUser(registerDraft)
+              .then(() => setProfileScreen('login'))
+              .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
+          }}
+          onBackToLogin={() => setProfileScreen('login')}
+        />
+      ) : null}
+
+      {!isAdminRoute && activeUserTab === 'profile' && !user && profileScreen === 'reset' ? (
+        <PasswordResetSection
+          t={t}
+          busy={userBusy}
+          error={userError}
           resetRequestDraft={resetRequestDraft}
           setResetRequestDraft={setResetRequestDraft}
           onRequestPasswordReset={() => {
@@ -561,18 +620,17 @@ export const App = () => {
           }}
           resetTokenPreview={resetTokenPreview}
           resetTokenExpiresAt={resetTokenExpiresAt}
+          onBackToLogin={() => setProfileScreen('login')}
+        />
+      ) : null}
+
+      {!isAdminRoute && activeUserTab === 'statistics' ? (
+        <StatisticsSection
+          t={t}
+          user={user}
+          stats={userStats}
+          awards={userAwards}
           sessions={userSessions}
-          publicProfileLookup={publicProfileLookup}
-          setPublicProfileLookup={setPublicProfileLookup}
-          publicProfile={publicProfile}
-          publicProfileLoading={publicProfileLoading}
-          publicProfileError={publicProfileError}
-          onFetchPublicProfile={() => {
-            void fetchPublicProfile(publicProfileLookup).catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
-          }}
-          onRefreshSessions={() => { void refreshSessions().catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
-          onLogoutAllSessions={() => { void logoutAllSessions().catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
-          onLogoutSession={(sessionId) => { void logoutSession(sessionId).catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
         />
       ) : null}
 
@@ -785,6 +843,20 @@ export const App = () => {
           }
           />
         </Suspense>
+      ) : null}
+
+      {!isAdminRoute ? (
+        <AuthErrorModal
+          t={t}
+          open={Boolean(authErrorModal)}
+          error={authErrorModal}
+          onClose={() => setAuthErrorModal('')}
+          onOpenReset={() => {
+            setAuthErrorModal('');
+            setActiveUserTab('profile');
+            setProfileScreen('reset');
+          }}
+        />
       ) : null}
     </main>
   );

@@ -31,6 +31,7 @@ import {
   AdminSimulationTab,
   AdminStateTab,
   AdminTabButtons,
+  AdminAwardsTab,
   AdminUsersTab,
 } from './admin/tabs';
 
@@ -113,6 +114,7 @@ export const AdminPage = ({
     id: string;
     username: string;
     email: string | null;
+    role: 'user' | 'administrator';
     displayName: string;
     status: 'active' | 'disabled';
     createdAt: string;
@@ -135,6 +137,7 @@ export const AdminPage = ({
       preferredLang: 'uk' | 'en';
       createdAt: string;
       lastLoginAt: string | null;
+      role: 'user' | 'administrator';
       status: 'active' | 'disabled';
     };
     stats: {
@@ -178,6 +181,52 @@ export const AdminPage = ({
   }>(null);
   const [adminResetTokenPreview, setAdminResetTokenPreview] = useState('');
   const [adminResetTokenExpiresAt, setAdminResetTokenExpiresAt] = useState('');
+  const [adminCreateUserDraft, setAdminCreateUserDraft] = useState({
+    username: '',
+    displayName: '',
+    email: '',
+    password: '',
+    role: 'user' as 'user' | 'administrator',
+  });
+  const [adminEditUserDraft, setAdminEditUserDraft] = useState({
+    username: '',
+    displayName: '',
+    email: '',
+    bio: '',
+    avatarUrl: '',
+    preferredLang: 'uk' as 'uk' | 'en',
+  });
+  const [adminAwards, setAdminAwards] = useState<Array<{
+    id: string;
+    key: string;
+    title: string;
+    description: string;
+    category: 'general' | 'ranks' | 'resources' | 'actions';
+    metric: 'matches_linked' | 'matches_finished' | 'wins' | 'win_rate_pct' | 'avg_turns' | 'best_rank_order' | 'resources_gained_total' | 'resources_lost_total' | 'lyaps_played_on_others' | 'scandals_played_on_others';
+    threshold: number;
+    badgeLabel: string;
+    badgeVariant: 'bronze' | 'silver' | 'gold' | 'special';
+    iconPath: string | null;
+    active: boolean;
+    sortOrder: number;
+  }>>([]);
+  const [adminAwardsLoading, setAdminAwardsLoading] = useState(false);
+  const [adminAwardsError, setAdminAwardsError] = useState('');
+  const [selectedAdminAwardId, setSelectedAdminAwardId] = useState('');
+  const [adminAwardDraft, setAdminAwardDraft] = useState({
+    id: '',
+    key: '',
+    title: '',
+    description: '',
+    category: 'general' as 'general' | 'ranks' | 'resources' | 'actions',
+    metric: 'matches_finished' as 'matches_linked' | 'matches_finished' | 'wins' | 'win_rate_pct' | 'avg_turns' | 'best_rank_order' | 'resources_gained_total' | 'resources_lost_total' | 'lyaps_played_on_others' | 'scandals_played_on_others',
+    threshold: '10',
+    badgeLabel: '',
+    badgeVariant: 'bronze' as 'bronze' | 'silver' | 'gold' | 'special',
+    iconPath: '',
+    active: true,
+    sortOrder: '0',
+  });
   const optionalSimulationModules = useMemo(
     () => (sharedDeckTemplate.modules ?? [])
       .filter((module) => module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
@@ -288,8 +337,9 @@ export const AdminPage = ({
   });
   const adminJsonFetch = (url: string, init?: RequestInit) => fetch(url, {
     ...init,
+    credentials: 'include',
     headers: {
-      ...(adminHeaders ?? {}),
+      ...adminHeaders(),
       ...(init?.headers ?? {}),
     },
   });
@@ -422,6 +472,14 @@ export const AdminPage = ({
         throw new Error(payload.error || 'Failed to load user detail');
       }
       setSelectedAdminUserDetail(payload.detail);
+      setAdminEditUserDraft({
+        username: payload.detail.user.username ?? '',
+        displayName: payload.detail.user.displayName ?? '',
+        email: payload.detail.user.email ?? '',
+        bio: payload.detail.user.bio ?? '',
+        avatarUrl: payload.detail.user.avatarUrl ?? '',
+        preferredLang: payload.detail.user.preferredLang ?? 'uk',
+      });
     } catch (error) {
       setAdminUsersError(String(error instanceof Error ? error.message : error));
     } finally {
@@ -441,6 +499,71 @@ export const AdminPage = ({
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string };
       if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to update user status');
+      await loadAdminUsers();
+      await loadAdminUserDetail(selectedAdminUserId);
+    } catch (error) {
+      setAdminUsersError(String(error instanceof Error ? error.message : error));
+    } finally {
+      setAdminUsersLoading(false);
+    }
+  };
+
+  const updateAdminUserRole = async (role: 'user' | 'administrator') => {
+    if (!selectedAdminUserId) return;
+    setAdminUsersLoading(true);
+    setAdminUsersError('');
+    try {
+      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedAdminUserId, role }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string };
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to update user role');
+      await loadAdminUsers();
+      await loadAdminUserDetail(selectedAdminUserId);
+    } catch (error) {
+      setAdminUsersError(String(error instanceof Error ? error.message : error));
+    } finally {
+      setAdminUsersLoading(false);
+    }
+  };
+
+  const createAdminUser = async () => {
+    setAdminUsersLoading(true);
+    setAdminUsersError('');
+    try {
+      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(adminCreateUserDraft),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string; user?: { id?: string } };
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to create user');
+      setAdminCreateUserDraft({ username: '', displayName: '', email: '', password: '', role: 'user' });
+      await loadAdminUsers();
+      if (typeof payload.user?.id === 'string') {
+        await loadAdminUserDetail(payload.user.id);
+      }
+    } catch (error) {
+      setAdminUsersError(String(error instanceof Error ? error.message : error));
+    } finally {
+      setAdminUsersLoading(false);
+    }
+  };
+
+  const updateAdminUserProfile = async () => {
+    if (!selectedAdminUserId) return;
+    setAdminUsersLoading(true);
+    setAdminUsersError('');
+    try {
+      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedAdminUserId, ...adminEditUserDraft }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string };
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to update user');
       await loadAdminUsers();
       await loadAdminUserDetail(selectedAdminUserId);
     } catch (error) {
@@ -517,9 +640,120 @@ export const AdminPage = ({
     }
   };
 
+  const loadAdminAwards = async () => {
+    setAdminAwardsLoading(true);
+    setAdminAwardsError('');
+    try {
+      const response = await adminJsonFetch(`${serverUrl}/api/admin/awards`);
+      const payload = (await response.json()) as { ok?: boolean; error?: string; awards?: typeof adminAwards };
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to load awards');
+      setAdminAwards(payload.awards ?? []);
+    } catch (error) {
+      setAdminAwardsError(String(error instanceof Error ? error.message : error));
+    } finally {
+      setAdminAwardsLoading(false);
+    }
+  };
+
+  const selectAdminAward = (awardId: string) => {
+    setSelectedAdminAwardId(awardId);
+    const selected = adminAwards.find((award) => award.id === awardId);
+    if (!selected) {
+      setAdminAwardDraft({
+        id: '',
+        key: '',
+        title: '',
+        description: '',
+        category: 'general',
+        metric: 'matches_finished',
+        threshold: '10',
+        badgeLabel: '',
+        badgeVariant: 'bronze',
+        iconPath: '',
+        active: true,
+        sortOrder: '0',
+      });
+      return;
+    }
+    setAdminAwardDraft({
+      id: selected.id,
+      key: selected.key,
+      title: selected.title,
+      description: selected.description,
+      category: selected.category,
+      metric: selected.metric,
+      threshold: String(selected.threshold),
+      badgeLabel: selected.badgeLabel,
+      badgeVariant: selected.badgeVariant,
+      iconPath: selected.iconPath ?? '',
+      active: selected.active,
+      sortOrder: String(selected.sortOrder),
+    });
+  };
+
+  const saveAdminAward = async () => {
+    setAdminAwardsLoading(true);
+    setAdminAwardsError('');
+    try {
+      const response = await adminJsonFetch(`${serverUrl}/api/admin/awards/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: adminAwardDraft.id || undefined,
+          key: adminAwardDraft.key,
+          title: adminAwardDraft.title,
+          description: adminAwardDraft.description,
+          category: adminAwardDraft.category,
+          metric: adminAwardDraft.metric,
+          threshold: Number(adminAwardDraft.threshold),
+          badgeLabel: adminAwardDraft.badgeLabel,
+          badgeVariant: adminAwardDraft.badgeVariant,
+          iconPath: adminAwardDraft.iconPath || null,
+          active: adminAwardDraft.active,
+          sortOrder: Number(adminAwardDraft.sortOrder),
+        }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string; awards?: typeof adminAwards };
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to save award');
+      setAdminAwards(payload.awards ?? []);
+      if (adminAwardDraft.id) {
+        selectAdminAward(adminAwardDraft.id);
+      }
+    } catch (error) {
+      setAdminAwardsError(String(error instanceof Error ? error.message : error));
+    } finally {
+      setAdminAwardsLoading(false);
+    }
+  };
+
+  const deleteAdminAward = async () => {
+    if (!adminAwardDraft.id) return;
+    setAdminAwardsLoading(true);
+    setAdminAwardsError('');
+    try {
+      const response = await adminJsonFetch(`${serverUrl}/api/admin/awards/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ awardId: adminAwardDraft.id }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string; awards?: typeof adminAwards };
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to delete award');
+      setAdminAwards(payload.awards ?? []);
+      selectAdminAward('');
+    } catch (error) {
+      setAdminAwardsError(String(error instanceof Error ? error.message : error));
+    } finally {
+      setAdminAwardsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab !== 'users' || adminUsers.length > 0 || adminUsersLoading) return;
     void loadAdminUsers();
+  }, [activeTab]);
+  useEffect(() => {
+    if (activeTab !== 'awards' || adminAwards.length > 0 || adminAwardsLoading) return;
+    void loadAdminAwards();
   }, [activeTab]);
   return (
     <section className={`board admin-panel${uiVariant === 'v2' ? ' board-v2-panel' : ''}`}>
@@ -617,11 +851,33 @@ export const AdminPage = ({
           loading={adminUsersLoading}
           error={adminUsersError}
           onSetStatus={(status) => { void updateAdminUserStatus(status); }}
+          onSetRole={(role) => { void updateAdminUserRole(role); }}
+          editDraft={adminEditUserDraft}
+          setEditDraft={setAdminEditUserDraft}
+          onSaveEdit={() => { void updateAdminUserProfile(); }}
+          createDraft={adminCreateUserDraft}
+          setCreateDraft={setAdminCreateUserDraft}
+          onCreateUser={() => { void createAdminUser(); }}
           onIssueResetToken={() => { void issueAdminResetToken(); }}
           onLogoutAllSessions={() => { void logoutAllAdminUserSessions(); }}
           onLogoutUserSession={(sessionId) => { void logoutAdminUserSession(sessionId); }}
           resetTokenPreview={adminResetTokenPreview}
           resetTokenExpiresAt={adminResetTokenExpiresAt}
+        />
+      ) : null}
+      {activeTab === 'awards' ? (
+        <AdminAwardsTab
+          t={t}
+          awards={adminAwards}
+          loading={adminAwardsLoading}
+          error={adminAwardsError}
+          selectedAwardId={selectedAdminAwardId}
+          onSelectAwardId={selectAdminAward}
+          draft={adminAwardDraft}
+          setDraft={setAdminAwardDraft}
+          onCreateNew={() => selectAdminAward('')}
+          onSave={() => { void saveAdminAward(); }}
+          onDelete={() => { void deleteAdminAward(); }}
         />
       ) : null}
 

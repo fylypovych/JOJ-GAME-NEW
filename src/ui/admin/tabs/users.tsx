@@ -6,6 +6,7 @@ type AdminUserSummary = {
   id: string;
   username: string;
   email: string | null;
+  role: 'user' | 'administrator';
   displayName: string;
   status: 'active' | 'disabled';
   createdAt: string;
@@ -25,6 +26,7 @@ type AdminUserDetail = {
     preferredLang: 'uk' | 'en';
     createdAt: string;
     lastLoginAt: string | null;
+    role: 'user' | 'administrator';
     status: 'active' | 'disabled';
   };
   stats: {
@@ -79,6 +81,13 @@ export const AdminUsersTab = ({
   loading,
   error,
   onSetStatus,
+  onSetRole,
+  editDraft,
+  setEditDraft,
+  onSaveEdit,
+  createDraft,
+  setCreateDraft,
+  onCreateUser,
   onIssueResetToken,
   onLogoutAllSessions,
   onLogoutUserSession,
@@ -96,6 +105,39 @@ export const AdminUsersTab = ({
   loading: boolean;
   error: string;
   onSetStatus: (status: 'active' | 'disabled') => void;
+  onSetRole: (role: 'user' | 'administrator') => void;
+  editDraft: {
+    username: string;
+    displayName: string;
+    email: string;
+    bio: string;
+    avatarUrl: string;
+    preferredLang: 'uk' | 'en';
+  };
+  setEditDraft: (value: {
+    username: string;
+    displayName: string;
+    email: string;
+    bio: string;
+    avatarUrl: string;
+    preferredLang: 'uk' | 'en';
+  }) => void;
+  onSaveEdit: () => void;
+  createDraft: {
+    username: string;
+    displayName: string;
+    email: string;
+    password: string;
+    role: 'user' | 'administrator';
+  };
+  setCreateDraft: (value: {
+    username: string;
+    displayName: string;
+    email: string;
+    password: string;
+    role: 'user' | 'administrator';
+  }) => void;
+  onCreateUser: () => void;
   onIssueResetToken: () => void;
   onLogoutAllSessions: () => void;
   onLogoutUserSession: (sessionId: string) => void;
@@ -105,6 +147,37 @@ export const AdminUsersTab = ({
   <>
     <h3>{t.adminUsersTitle}</h3>
     <p>{t.adminUsersHint}</p>
+    <p className="admin-controls">
+      <input
+        value={createDraft.username}
+        onChange={(e) => setCreateDraft({ ...createDraft, username: e.target.value })}
+        placeholder={t.userUsernameLabel}
+      />
+      <input
+        value={createDraft.displayName}
+        onChange={(e) => setCreateDraft({ ...createDraft, displayName: e.target.value })}
+        placeholder={t.userDisplayNameLabel}
+      />
+      <input
+        value={createDraft.email}
+        onChange={(e) => setCreateDraft({ ...createDraft, email: e.target.value })}
+        placeholder={t.userEmailLabel}
+      />
+      <input
+        type="password"
+        value={createDraft.password}
+        onChange={(e) => setCreateDraft({ ...createDraft, password: e.target.value })}
+        placeholder={t.userPasswordLabel}
+      />
+      <select
+        value={createDraft.role}
+        onChange={(e) => setCreateDraft({ ...createDraft, role: e.target.value === 'administrator' ? 'administrator' : 'user' })}
+      >
+        <option value="user">{t.userRoleUser}</option>
+        <option value="administrator">{t.userRoleAdministrator}</option>
+      </select>
+      <button type="button" onClick={onCreateUser} disabled={loading}>{t.adminUsersCreateButton}</button>
+    </p>
     <p className="admin-controls">
       <input
         value={userSearch}
@@ -132,7 +205,7 @@ export const AdminUsersTab = ({
           <ul>
             {users.map((user) => (
               <li key={`admin-user-row-${user.id}`}>
-                <strong>{user.displayName}</strong> @{user.username} [{user.status}]
+                <strong>{user.displayName}</strong> @{user.username} [{user.status}] [{user.role}]
                 <br />
                 {user.email ?? '-'} | {t.userStatMatchesLinked}: {user.linkedMatches} | {t.userStatMatchesFinished}: {user.finishedMatches}
               </li>
@@ -149,9 +222,25 @@ export const AdminUsersTab = ({
             <p>{t.createdAt}: {new Date(selectedUserDetail.user.createdAt).toLocaleString()}</p>
             <p>{t.userLastLoginAt}: {selectedUserDetail.user.lastLoginAt ? new Date(selectedUserDetail.user.lastLoginAt).toLocaleString() : t.simulationNoData}</p>
             <p>{t.adminUsersStatusLabel}: <strong>{selectedUserDetail.user.status}</strong></p>
+            <p>{t.userRoleLabel}: <strong>{selectedUserDetail.user.role}</strong></p>
+            <h5>{t.userProfileTitle}</h5>
+            <p><input value={editDraft.username} onChange={(e) => setEditDraft({ ...editDraft, username: e.target.value })} placeholder={t.userUsernameLabel} /></p>
+            <p><input value={editDraft.displayName} onChange={(e) => setEditDraft({ ...editDraft, displayName: e.target.value })} placeholder={t.userDisplayNameLabel} /></p>
+            <p><input value={editDraft.email} onChange={(e) => setEditDraft({ ...editDraft, email: e.target.value })} placeholder={t.userEmailLabel} /></p>
+            <p><input value={editDraft.avatarUrl} onChange={(e) => setEditDraft({ ...editDraft, avatarUrl: e.target.value })} placeholder={t.userAvatarUrlLabel} /></p>
+            <p>
+              <select value={editDraft.preferredLang} onChange={(e) => setEditDraft({ ...editDraft, preferredLang: e.target.value === 'en' ? 'en' : 'uk' })}>
+                <option value="uk">{t.langUk}</option>
+                <option value="en">{t.langEn}</option>
+              </select>
+            </p>
+            <p><textarea className="admin-textarea" value={editDraft.bio} onChange={(e) => setEditDraft({ ...editDraft, bio: e.target.value })} /></p>
             <p className="admin-controls">
+              <button type="button" onClick={onSaveEdit} disabled={loading}>{t.userSaveProfileButton}</button>
               <button type="button" onClick={() => onSetStatus('active')} disabled={loading || selectedUserDetail.user.status === 'active'}>{t.adminUsersActivate}</button>
               <button type="button" onClick={() => onSetStatus('disabled')} disabled={loading || selectedUserDetail.user.status === 'disabled'}>{t.adminUsersDisable}</button>
+              <button type="button" onClick={() => onSetRole('user')} disabled={loading || selectedUserDetail.user.role === 'user'}>{t.userRoleUser}</button>
+              <button type="button" onClick={() => onSetRole('administrator')} disabled={loading || selectedUserDetail.user.role === 'administrator'}>{t.userRoleAdministrator}</button>
               <button type="button" onClick={onIssueResetToken} disabled={loading}>{t.adminUsersIssueResetToken}</button>
               <button type="button" onClick={onLogoutAllSessions} disabled={loading}>{t.adminUsersLogoutAllSessions}</button>
             </p>

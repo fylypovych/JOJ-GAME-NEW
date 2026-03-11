@@ -4,6 +4,7 @@ export type AuthUser = {
   id: string;
   username: string;
   email: string | null;
+  role: 'user' | 'administrator';
   displayName: string;
   avatarUrl: string | null;
   bio: string;
@@ -39,6 +40,32 @@ export type UserSession = {
   userAgent: string | null;
 };
 
+export type UserAward = {
+  awardId: string;
+  key: string;
+  title: string;
+  description: string;
+  category: 'general' | 'ranks' | 'resources' | 'actions';
+  metric:
+    | 'matches_linked'
+    | 'matches_finished'
+    | 'wins'
+    | 'win_rate_pct'
+    | 'avg_turns'
+    | 'best_rank_order'
+    | 'resources_gained_total'
+    | 'resources_lost_total'
+    | 'lyaps_played_on_others'
+    | 'scandals_played_on_others';
+  threshold: number;
+  badgeLabel: string;
+  badgeVariant: 'bronze' | 'silver' | 'gold' | 'special';
+  iconPath: string | null;
+  progressValue: number;
+  awarded: boolean;
+  awardedAt: string | null;
+};
+
 export type PublicUserProfile = {
   user: {
     username: string;
@@ -50,6 +77,7 @@ export type PublicUserProfile = {
     createdAt: string;
   };
   stats: UserStats | null;
+  awards?: UserAward[];
   recentMatches: Array<{
     matchId: string;
     playerId: string;
@@ -67,6 +95,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
   const [error, setError] = useState('');
   const [csrfToken, setCsrfToken] = useState('');
   const [sessions, setSessions] = useState<UserSession[]>([]);
+  const [awards, setAwards] = useState<UserAward[]>([]);
   const [resetTokenPreview, setResetTokenPreview] = useState<string>('');
   const [resetTokenExpiresAt, setResetTokenExpiresAt] = useState<string>('');
   const [publicProfile, setPublicProfile] = useState<PublicUserProfile | null>(null);
@@ -109,12 +138,14 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
         const profileResponse = await fetch(`${profileBase}/me`, { credentials: 'include' });
         const profilePayload = await profileResponse.json().catch(() => ({}));
         setStats((profilePayload as { stats?: UserStats | null }).stats ?? null);
+        setAwards((profilePayload as { awards?: UserAward[] }).awards ?? []);
         const sessionsResponse = await fetch(`${profileBase}/sessions`, { credentials: 'include' });
         const sessionsPayload = await sessionsResponse.json().catch(() => ({}));
         setSessions((sessionsPayload as { sessions?: UserSession[] }).sessions ?? []);
       } else {
         setStats(null);
         setSessions([]);
+        setAwards([]);
       }
       setError('');
     } catch (nextError) {
@@ -158,8 +189,9 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     try {
       await postJsonWithCsrf(`${authBase}/logout`);
       setUser(null);
-      setStats(null);
-      setSessions([]);
+     setStats(null);
+     setSessions([]);
+      setAwards([]);
       setError('');
       setCsrfToken('');
     } finally {
@@ -169,6 +201,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
 
   const updateProfile = async (input: {
     displayName: string;
+    email: string;
     bio: string;
     avatarUrl: string;
     preferredLang: 'uk' | 'en';
@@ -327,7 +360,8 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
 
   return {
     user,
-    stats,
+   stats,
+    awards,
     sessions,
     loading,
     busy,

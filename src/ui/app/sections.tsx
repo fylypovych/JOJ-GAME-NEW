@@ -5,7 +5,7 @@ import type { GameMode } from '../../game/types';
 import type { Language } from '../i18n';
 import { cardFlavor, cardTitleWithOverride, categoryLabel, text } from '../i18n';
 import type { GalleryCategoryFilter, LobbyMatch, UserTab } from './model';
-import type { AuthUser, PublicUserProfile, UserStats } from './useUserAccount';
+import type { AuthUser, UserAward, UserStats } from './useUserAccount';
 import type { UserSession } from './useUserAccount';
 
 type T = ReturnType<typeof text>;
@@ -80,6 +80,9 @@ export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v1' 
     </button>
     <button type="button" onClick={() => setActiveUserTab('profile')} disabled={activeUserTab === 'profile'}>
       {t.userTabProfile}
+    </button>
+    <button type="button" onClick={() => setActiveUserTab('statistics')} disabled={activeUserTab === 'statistics'}>
+      {t.userTabStatistics}
     </button>
   </p>
 );
@@ -261,16 +264,13 @@ export const ActiveSessionSection = ({
 export const ProfileSection = ({
   t,
   user,
-  stats,
   loading,
   busy,
   error,
+  notice,
   loginDraft,
   setLoginDraft,
-  registerDraft,
-  setRegisterDraft,
   onLogin,
-  onRegister,
   onLogout,
   profileDraft,
   setProfileDraft,
@@ -278,40 +278,27 @@ export const ProfileSection = ({
   passwordDraft,
   setPasswordDraft,
   onChangePassword,
-  resetRequestDraft,
-  setResetRequestDraft,
-  onRequestPasswordReset,
-  resetPasswordDraft,
-  setResetPasswordDraft,
-  onResetPassword,
-  resetTokenPreview,
-  resetTokenExpiresAt,
+  stats,
+  awards,
   sessions,
-  publicProfileLookup,
-  setPublicProfileLookup,
-  publicProfile,
-  publicProfileLoading,
-  publicProfileError,
-  onFetchPublicProfile,
   onRefreshSessions,
   onLogoutAllSessions,
   onLogoutSession,
+  onOpenRegister,
 }: {
   t: T;
   user: AuthUser | null;
-  stats: UserStats | null;
   loading: boolean;
   busy: boolean;
   error: string;
+  notice: string;
   loginDraft: { login: string; password: string };
   setLoginDraft: (value: { login: string; password: string }) => void;
-  registerDraft: { username: string; email: string; password: string; displayName: string };
-  setRegisterDraft: (value: { username: string; email: string; password: string; displayName: string }) => void;
   onLogin: () => void;
-  onRegister: () => void;
   onLogout: () => void;
   profileDraft: {
     displayName: string;
+    email: string;
     bio: string;
     avatarUrl: string;
     profilePublic: boolean;
@@ -320,6 +307,7 @@ export const ProfileSection = ({
   };
   setProfileDraft: (value: {
     displayName: string;
+    email: string;
     bio: string;
     avatarUrl: string;
     profilePublic: boolean;
@@ -330,32 +318,22 @@ export const ProfileSection = ({
   passwordDraft: { currentPassword: string; nextPassword: string };
   setPasswordDraft: (value: { currentPassword: string; nextPassword: string }) => void;
   onChangePassword: () => void;
-  resetRequestDraft: { login: string };
-  setResetRequestDraft: (value: { login: string }) => void;
-  onRequestPasswordReset: () => void;
-  resetPasswordDraft: { token: string; nextPassword: string };
-  setResetPasswordDraft: (value: { token: string; nextPassword: string }) => void;
-  onResetPassword: () => void;
-  resetTokenPreview: string;
-  resetTokenExpiresAt: string;
+  stats: UserStats | null;
+  awards: UserAward[];
   sessions: UserSession[];
-  publicProfileLookup: string;
-  setPublicProfileLookup: (value: string) => void;
-  publicProfile: PublicUserProfile | null;
-  publicProfileLoading: boolean;
-  publicProfileError: string;
-  onFetchPublicProfile: () => void;
   onRefreshSessions: () => void;
   onLogoutAllSessions: () => void;
   onLogoutSession: (sessionId: string) => void;
+  onOpenRegister: () => void;
 }) => (
   <section className="board">
     <h2>{t.userTabProfile}</h2>
     {loading ? <p>{t.loadingRooms}</p> : null}
     {error ? <p className="admin-error">{error}</p> : null}
+    {notice ? <p>{notice}</p> : null}
     {!user ? (
-      <div className="lobby-layout">
-        <div className="lobby-col">
+      <div className="auth-shell">
+        <div className="auth-card">
           <h3>{t.userLoginTitle}</h3>
           <p>
             <input
@@ -372,69 +350,10 @@ export const ProfileSection = ({
               placeholder={t.userPasswordLabel}
             />
           </p>
-          <button type="button" onClick={onLogin} disabled={busy}>{t.userLoginButton}</button>
-          <h3>{t.userPasswordResetTitle}</h3>
-          <p>
-            <input
-              value={resetRequestDraft.login}
-              onChange={(e) => setResetRequestDraft({ login: e.target.value })}
-              placeholder={t.userLoginPlaceholder}
-            />
+          <p className="admin-controls">
+            <button type="button" onClick={onLogin} disabled={busy}>{t.userLoginButton}</button>
+            <button type="button" onClick={onOpenRegister} disabled={busy}>{t.userGoToRegisterButton}</button>
           </p>
-          <p><button type="button" onClick={onRequestPasswordReset} disabled={busy}>{t.userPasswordResetRequestButton}</button></p>
-          <p>
-            <input
-              value={resetPasswordDraft.token}
-              onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, token: e.target.value })}
-              placeholder={t.userResetTokenLabel}
-            />
-          </p>
-          <p>
-            <input
-              type="password"
-              value={resetPasswordDraft.nextPassword}
-              onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, nextPassword: e.target.value })}
-              placeholder={t.userNewPasswordLabel}
-            />
-          </p>
-          <p><button type="button" onClick={onResetPassword} disabled={busy}>{t.userPasswordResetApplyButton}</button></p>
-          {resetTokenPreview ? <p>{t.userResetTokenPreview}: <code>{resetTokenPreview}</code></p> : null}
-          {resetTokenExpiresAt ? <p>{t.userResetTokenExpiresAt}: {new Date(resetTokenExpiresAt).toLocaleString()}</p> : null}
-        </div>
-        <div className="lobby-col">
-          <h3>{t.userRegisterTitle}</h3>
-          <p><input value={registerDraft.username} onChange={(e) => setRegisterDraft({ ...registerDraft, username: e.target.value })} placeholder={t.userUsernameLabel} /></p>
-          <p><input value={registerDraft.displayName} onChange={(e) => setRegisterDraft({ ...registerDraft, displayName: e.target.value })} placeholder={t.userDisplayNameLabel} /></p>
-          <p><input value={registerDraft.email} onChange={(e) => setRegisterDraft({ ...registerDraft, email: e.target.value })} placeholder={t.userEmailLabel} /></p>
-          <p><input type="password" value={registerDraft.password} onChange={(e) => setRegisterDraft({ ...registerDraft, password: e.target.value })} placeholder={t.userPasswordLabel} /></p>
-          <button type="button" onClick={onRegister} disabled={busy}>{t.userRegisterButton}</button>
-        </div>
-        <div className="lobby-col">
-          <h3>{t.userPublicProfileTitle}</h3>
-          <p>{t.userPublicProfileHint}</p>
-          <p>
-            <input
-              value={publicProfileLookup}
-              onChange={(e) => setPublicProfileLookup(e.target.value)}
-              placeholder={t.userPublicProfileLookupPlaceholder}
-            />
-          </p>
-          <p><button type="button" onClick={onFetchPublicProfile} disabled={publicProfileLoading}>{t.userPublicProfileLookupButton}</button></p>
-          {publicProfileError ? <p className="admin-error">{publicProfileError}</p> : null}
-          {!publicProfile ? null : (
-            <>
-              <p><strong>{publicProfile.user.displayName}</strong> @{publicProfile.user.username}</p>
-              {publicProfile.user.bio ? <p>{publicProfile.user.bio}</p> : null}
-              {publicProfile.stats ? (
-                <ul>
-                  <li>{t.userStatMatchesFinished}: {publicProfile.stats.matchesFinished}</li>
-                  <li>{t.userStatWins}: {publicProfile.stats.wins}</li>
-                  <li>{t.userStatWinRate}: {publicProfile.stats.winRatePct}%</li>
-                  <li>{t.userStatBestRank}: {publicProfile.stats.bestRankName}</li>
-                </ul>
-              ) : <p>{t.userPublicProfileStatsHidden}</p>}
-            </>
-          )}
         </div>
       </div>
     ) : (
@@ -448,6 +367,7 @@ export const ProfileSection = ({
           <div className="lobby-col">
             <h3>{t.userProfileTitle}</h3>
             <p><input value={profileDraft.displayName} onChange={(e) => setProfileDraft({ ...profileDraft, displayName: e.target.value })} placeholder={t.userDisplayNameLabel} /></p>
+            <p><input value={profileDraft.email} onChange={(e) => setProfileDraft({ ...profileDraft, email: e.target.value })} placeholder={t.userEmailLabel} /></p>
             <p><input value={profileDraft.avatarUrl} onChange={(e) => setProfileDraft({ ...profileDraft, avatarUrl: e.target.value })} placeholder={t.userAvatarUrlLabel} /></p>
             <p><textarea className="admin-textarea" value={profileDraft.bio} onChange={(e) => setProfileDraft({ ...profileDraft, bio: e.target.value })} /></p>
             <p><label><input type="checkbox" checked={profileDraft.profilePublic} onChange={(e) => setProfileDraft({ ...profileDraft, profilePublic: e.target.checked })} /> {t.userProfilePublicLabel}</label></p>
@@ -490,42 +410,17 @@ export const ProfileSection = ({
                 <li>{t.userStatScandals}: {stats.scandalsPlayedOnOthers}</li>
               </ul>
             )}
-            <h3>{t.userPublicProfileTitle}</h3>
-            <p>{t.userPublicProfileHint}</p>
-            <p>
-              <input
-                value={publicProfileLookup}
-                onChange={(e) => setPublicProfileLookup(e.target.value)}
-                placeholder={t.userPublicProfileLookupPlaceholder}
-              />
-            </p>
-            <p><button type="button" onClick={onFetchPublicProfile} disabled={publicProfileLoading}>{t.userPublicProfileLookupButton}</button></p>
-            {publicProfileError ? <p className="admin-error">{publicProfileError}</p> : null}
-            {!publicProfile ? null : (
-              <>
-                <p><strong>{publicProfile.user.displayName}</strong> @{publicProfile.user.username}</p>
-                {publicProfile.user.bio ? <p>{publicProfile.user.bio}</p> : null}
-                {publicProfile.stats ? (
-                  <ul>
-                    <li>{t.userStatMatchesFinished}: {publicProfile.stats.matchesFinished}</li>
-                    <li>{t.userStatWins}: {publicProfile.stats.wins}</li>
-                    <li>{t.userStatWinRate}: {publicProfile.stats.winRatePct}%</li>
-                    <li>{t.userStatBestRank}: {publicProfile.stats.bestRankName}</li>
-                  </ul>
-                ) : <p>{t.userPublicProfileStatsHidden}</p>}
-                {publicProfile.recentMatches.length > 0 ? (
-                  <>
-                    <h4>{t.userPublicProfileRecentMatchesTitle}</h4>
-                    <ul>
-                      {publicProfile.recentMatches.map((match) => (
-                        <li key={`public-profile-match-${match.matchId}-${match.playerId}`}>
-                          <code>{match.matchId}</code> / {match.playerId} / {match.playerName ?? '-'}
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                ) : null}
-              </>
+            <h3>{t.userAwardsTitle}</h3>
+            {awards.length === 0 ? <p>{t.simulationNoData}</p> : (
+              <ul>
+                {awards.filter((award) => award.awarded).map((award) => (
+                  <li key={`profile-award-${award.awardId}`}>
+                    <strong>[{award.badgeLabel}]</strong> {award.title}
+                    <br />
+                    {award.description}
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </div>
@@ -533,6 +428,201 @@ export const ProfileSection = ({
     )}
   </section>
 );
+
+export const RegisterSection = ({
+  t,
+  busy,
+  error,
+  registerDraft,
+  setRegisterDraft,
+  onRegister,
+  onBackToLogin,
+}: {
+  t: T;
+  busy: boolean;
+  error: string;
+  registerDraft: { username: string; email: string; password: string; displayName: string };
+  setRegisterDraft: (value: { username: string; email: string; password: string; displayName: string }) => void;
+  onRegister: () => void;
+  onBackToLogin: () => void;
+}) => (
+  <section className="board">
+    <h2>{t.userRegisterTitle}</h2>
+    {error ? <p className="admin-error">{error}</p> : null}
+    <div className="auth-shell">
+      <div className="auth-card">
+        <p><input value={registerDraft.username} onChange={(e) => setRegisterDraft({ ...registerDraft, username: e.target.value })} placeholder={t.userUsernameLabel} /></p>
+        <p><input value={registerDraft.displayName} onChange={(e) => setRegisterDraft({ ...registerDraft, displayName: e.target.value })} placeholder={t.userDisplayNameLabel} /></p>
+        <p><input value={registerDraft.email} onChange={(e) => setRegisterDraft({ ...registerDraft, email: e.target.value })} placeholder={t.userEmailLabel} /></p>
+        <p><input type="password" value={registerDraft.password} onChange={(e) => setRegisterDraft({ ...registerDraft, password: e.target.value })} placeholder={t.userPasswordLabel} /></p>
+        <p className="admin-controls">
+          <button type="button" onClick={onRegister} disabled={busy}>{t.userRegisterButton}</button>
+          <button type="button" onClick={onBackToLogin} disabled={busy}>{t.userGoToLoginButton}</button>
+        </p>
+      </div>
+    </div>
+  </section>
+);
+
+export const PasswordResetSection = ({
+  t,
+  busy,
+  error,
+  resetRequestDraft,
+  setResetRequestDraft,
+  onRequestPasswordReset,
+  resetPasswordDraft,
+  setResetPasswordDraft,
+  onResetPassword,
+  resetTokenPreview,
+  resetTokenExpiresAt,
+  onBackToLogin,
+}: {
+  t: T;
+  busy: boolean;
+  error: string;
+  resetRequestDraft: { login: string };
+  setResetRequestDraft: (value: { login: string }) => void;
+  onRequestPasswordReset: () => void;
+  resetPasswordDraft: { token: string; nextPassword: string };
+  setResetPasswordDraft: (value: { token: string; nextPassword: string }) => void;
+  onResetPassword: () => void;
+  resetTokenPreview: string;
+  resetTokenExpiresAt: string;
+  onBackToLogin: () => void;
+}) => (
+  <section className="board">
+    <h2>{t.userPasswordResetTitle}</h2>
+    {error ? <p className="admin-error">{error}</p> : null}
+    <div className="lobby-layout">
+      <div className="lobby-col">
+        <h3>{t.userPasswordResetRequestButton}</h3>
+        <p><input value={resetRequestDraft.login} onChange={(e) => setResetRequestDraft({ login: e.target.value })} placeholder={t.userLoginPlaceholder} /></p>
+        <p className="admin-controls">
+          <button type="button" onClick={onRequestPasswordReset} disabled={busy}>{t.userPasswordResetRequestButton}</button>
+          <button type="button" onClick={onBackToLogin} disabled={busy}>{t.userGoToLoginButton}</button>
+        </p>
+        {resetTokenPreview ? <p>{t.userResetTokenPreview}: <code>{resetTokenPreview}</code></p> : null}
+        {resetTokenExpiresAt ? <p>{t.userResetTokenExpiresAt}: {new Date(resetTokenExpiresAt).toLocaleString()}</p> : null}
+      </div>
+      <div className="lobby-col">
+        <h3>{t.userPasswordResetApplyButton}</h3>
+        <p><input value={resetPasswordDraft.token} onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, token: e.target.value })} placeholder={t.userResetTokenLabel} /></p>
+        <p><input type="password" value={resetPasswordDraft.nextPassword} onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, nextPassword: e.target.value })} placeholder={t.userNewPasswordLabel} /></p>
+        <p><button type="button" onClick={onResetPassword} disabled={busy}>{t.userPasswordResetApplyButton}</button></p>
+      </div>
+    </div>
+  </section>
+);
+
+export const StatisticsSection = ({
+  t,
+  user,
+  stats,
+  awards,
+  sessions,
+}: {
+  t: T;
+  user: AuthUser | null;
+  stats: UserStats | null;
+  awards: UserAward[];
+  sessions: UserSession[];
+}) => {
+  const [activeCategory, setActiveCategory] = useState<'general' | 'resources' | 'actions' | 'achievements' | 'sessions'>('general');
+  return (
+    <section className="board">
+      <h2>{t.userTabStatistics}</h2>
+      {!user ? <p>{t.statisticsLoginRequired}</p> : (
+        <>
+          <p className="admin-controls">
+            <button type="button" onClick={() => setActiveCategory('general')} disabled={activeCategory === 'general'}>{t.statisticsCategoryGeneral}</button>
+            <button type="button" onClick={() => setActiveCategory('resources')} disabled={activeCategory === 'resources'}>{t.statisticsCategoryResources}</button>
+            <button type="button" onClick={() => setActiveCategory('actions')} disabled={activeCategory === 'actions'}>{t.statisticsCategoryActions}</button>
+            <button type="button" onClick={() => setActiveCategory('achievements')} disabled={activeCategory === 'achievements'}>{t.statisticsCategoryAchievements}</button>
+            <button type="button" onClick={() => setActiveCategory('sessions')} disabled={activeCategory === 'sessions'}>{t.statisticsCategorySessions}</button>
+          </p>
+          {!stats ? <p>{t.simulationNoData}</p> : null}
+          {stats && activeCategory === 'general' ? (
+            <ul>
+              <li>{t.userStatMatchesLinked}: {stats.matchesLinked}</li>
+              <li>{t.userStatMatchesFinished}: {stats.matchesFinished}</li>
+              <li>{t.userStatWins}: {stats.wins}</li>
+              <li>{t.userStatWinRate}: {stats.winRatePct}%</li>
+              <li>{t.userStatAvgTurns}: {stats.avgTurns}</li>
+              <li>{t.userStatBestRank}: {stats.bestRankName}</li>
+            </ul>
+          ) : null}
+          {stats && activeCategory === 'resources' ? (
+            <ul>
+              <li>{t.userStatResourcesGained}: {stats.resourcesGainedTotal}</li>
+              <li>{t.userStatResourcesLost}: {stats.resourcesLostTotal}</li>
+            </ul>
+          ) : null}
+          {stats && activeCategory === 'actions' ? (
+            <ul>
+              <li>{t.userStatLyaps}: {stats.lyapsPlayedOnOthers}</li>
+              <li>{t.userStatScandals}: {stats.scandalsPlayedOnOthers}</li>
+              <li>{t.userLastLoginAt}: {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : '-'}</li>
+            </ul>
+          ) : null}
+          {activeCategory === 'achievements' ? (
+            awards.length === 0 ? <p>{t.simulationNoData}</p> : (
+              <ul>
+                {awards.map((award) => (
+                  <li key={`stats-award-${award.awardId}`}>
+                    <strong>[{award.badgeLabel}]</strong> {award.title}
+                    {' '}({Math.min(award.progressValue, award.threshold)}/{award.threshold})
+                    {award.awarded ? ` • ${t.userAwardUnlockedLabel}` : ''}
+                  </li>
+                ))}
+              </ul>
+            )
+          ) : null}
+          {activeCategory === 'sessions' ? (
+            sessions.length === 0 ? <p>{t.simulationNoData}</p> : (
+              <ul>
+                {sessions.map((session) => (
+                  <li key={`stats-session-${session.id}`}>
+                    {new Date(session.lastSeenAt).toLocaleString()} | {session.sourceIp ?? '-'} | {(session.userAgent ?? '-').slice(0, 48)}
+                  </li>
+                ))}
+              </ul>
+            )
+          ) : null}
+        </>
+      )}
+    </section>
+  );
+};
+
+export const AuthErrorModal = ({
+  t,
+  open,
+  error,
+  onClose,
+  onOpenReset,
+}: {
+  t: T;
+  open: boolean;
+  error: string;
+  onClose: () => void;
+  onOpenReset: () => void;
+}) => {
+  if (!open) return null;
+  return (
+    <div className="gameover-modal" role="dialog" aria-label={t.userAuthErrorTitle}>
+      <div className="gameover-modal-card">
+        <h3>{t.userAuthErrorTitle}</h3>
+        <p>{error}</p>
+        <p>{t.userAuthErrorResetHint}</p>
+        <p className="admin-controls">
+          <button type="button" onClick={onOpenReset}>{t.userPasswordResetOpenButton}</button>
+          <button type="button" onClick={onClose}>{t.closePopup}</button>
+        </p>
+      </div>
+    </div>
+  );
+};
 
 type GallerySectionProps = {
   t: T;

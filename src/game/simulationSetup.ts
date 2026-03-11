@@ -105,5 +105,7 @@ export const calculateSimulationTurnLimit = (G: JojGameState, playerCount: numbe
     + Object.values(G.legendaryHands ?? {}).reduce((sum, hand) => sum + (hand?.length ?? 0), 0)
     + (G.discard?.length ?? 0)
     + (G.legendaryDiscard?.length ?? 0);
-  return Math.max(10, Math.ceil(totalCards / Math.max(1, playerCount)) + 10);
+  const clampedPlayers = Math.max(1, playerCount);
+  const roundLimit = Math.ceil(totalCards / clampedPlayers) + 13;
+  return Math.max(clampedPlayers, roundLimit * clampedPlayers);
 };

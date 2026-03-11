@@ -3,7 +3,7 @@ import net from 'node:net';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createPostgresPool } from './db/postgres';
+import { createMemoryPostgresPool, createPostgresPool } from './db/postgres';
 import { runSqlMigrations } from './db/migrations';
 import { loadEnvFile } from './env';
 import { createFileLogger } from './file-logger';
@@ -69,10 +69,46 @@ const matchDb = new FlatFile({ dir: matchesDbDir, logging: false });
 
 const server = Server({
   games: [jojGame],
-  origins: [process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173'],
+  origins: [
+    process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:4173',
+    'http://127.0.0.1:4173',
+  ],
   db: matchDb,
 });
 const router = (server as { router?: any }).router;
+const app = (server as { app?: { middleware?: Array<(ctx: any, next: () => Promise<unknown>) => Promise<unknown>> } }).app;
+const allowedFrontendOrigins = Array.from(new Set([
+  process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
+]));
+const corsMiddleware = async (ctx: any, next: () => Promise<unknown>) => {
+    const origin = typeof ctx?.request?.headers?.origin === 'string' ? String(ctx.request.headers.origin) : '';
+    if (origin && allowedFrontendOrigins.includes(origin)) {
+      if (typeof ctx.set === 'function') {
+        ctx.set('Access-Control-Allow-Origin', origin);
+        ctx.set('Access-Control-Allow-Credentials', 'true');
+        ctx.set('Vary', 'Origin');
+      }
+      if (String(ctx.method || '').toUpperCase() === 'OPTIONS') {
+        if (typeof ctx.set === 'function') {
+          ctx.set('Access-Control-Allow-Methods', 'GET,HEAD,PUT,POST,DELETE,PATCH,OPTIONS');
+          ctx.set('Access-Control-Allow-Headers', 'content-type,x-csrf-token,x-admin-token,authorization');
+        }
+        ctx.status = 204;
+        return;
+      }
+    }
+    await next();
+  };
+if (app && Array.isArray(app.middleware)) {
+  app.middleware.unshift(corsMiddleware);
+} else if (router && typeof router.use === 'function') {
+  router.use(corsMiddleware);
+}
 const templatePath = path.resolve(appRootDir, 'database', 'shared-deck-template.json');
 const ranksPath = path.resolve(appRootDir, 'database', 'shared-ranks.json');
 const uploadsDir = path.resolve(appRootDir, 'public', 'cards');
@@ -82,7 +118,6 @@ const dbSchemaPath = path.resolve(appRootDir, 'db', 'schema', 'db.sql');
 const dbMigrationsDir = path.resolve(appRootDir, 'db', 'migrations');
 const adminDbUiConfigPath = path.resolve(appRootDir, 'database', 'admin-db-ui-config.json');
 
-const requireAdminAuth = createRequireAdminAuth({ isAdminAuthEnabled, adminToken, logLine });
 const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });
 const { runGit, runShellCommand, spawnDetachedShell } = createCommandRunners(repoDir);
 
@@ -110,6 +145,12 @@ void (async () => {
   let userPool = null as ReturnType<typeof createPostgresPool> | null;
   let userStore = null as ReturnType<typeof createUserStore> | null;
   let postgresAvailableForApp = false;
+  const requireAdminAuth = createRequireAdminAuth({
+    isAdminAuthEnabled,
+    adminToken,
+    logLine,
+    getUserStore: () => userStore,
+  });
 
   if (databaseUrl) {
     try {
@@ -117,9 +158,10 @@ void (async () => {
       await runSqlMigrations(userPool, dbMigrationsDir);
       userStore = createUserStore(userPool);
       await userStore.ensureSchema();
+      await userStore.ensureDefaultAdministrator();
       await userStore.deleteExpiredSessions();
       postgresAvailableForApp = true;
-      await logLine('INFO', 'user auth/profile schema ready');
+      await logLine('INFO', 'user auth/profile schema ready; default administrator admin/admin ensured');
       setInterval(async () => {
         if (!userStore) return;
         try {
@@ -138,10 +180,25 @@ void (async () => {
     } catch (error) {
       userPool = null;
       userStore = null;
-      await logLine('WARN', `user auth/profile module disabled (postgres unavailable): ${String(error instanceof Error ? error.message : error)}`);
+      await logLine('WARN', `user auth/profile postgres unavailable: ${String(error instanceof Error ? error.message : error)}`);
     }
   } else {
-    await logLine('WARN', 'user auth/profile module disabled (DATABASE_URL is empty)');
+    await logLine('WARN', 'user auth/profile postgres is not configured (DATABASE_URL is empty)');
+  }
+
+  if (!userStore && nodeEnv !== 'production') {
+    try {
+      userPool = await createMemoryPostgresPool();
+      userStore = createUserStore(userPool);
+      await userStore.ensureSchema();
+      await userStore.ensureDefaultAdministrator();
+      await userStore.deleteExpiredSessions();
+      await logLine('WARN', 'user auth/profile module running on in-memory fallback for local/dev mode');
+    } catch (error) {
+      userPool = null;
+      userStore = null;
+      await logLine('WARN', `user auth/profile module disabled (memory fallback failed): ${String(error instanceof Error ? error.message : error)}`);
+    }
   }
 
   if (sharedConfigStorageMode === 'postgres') {

@@ -290,6 +290,7 @@ CREATE TABLE IF NOT EXISTS app_users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   username text NOT NULL UNIQUE,
   email text UNIQUE,
+  role text NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'administrator')),
   password_hash text NOT NULL,
   password_salt text NOT NULL,
   status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'disabled')),
@@ -321,6 +322,34 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 
 CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions (user_id);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions (expires_at);
+
+CREATE TABLE IF NOT EXISTS award_definitions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  award_key text NOT NULL UNIQUE,
+  title text NOT NULL,
+  description text NOT NULL DEFAULT '',
+  category text NOT NULL DEFAULT 'general' CHECK (category IN ('general', 'ranks', 'resources', 'actions')),
+  metric text NOT NULL,
+  threshold numeric NOT NULL DEFAULT 1,
+  badge_label text NOT NULL DEFAULT '',
+  badge_variant text NOT NULL DEFAULT 'bronze' CHECK (badge_variant IN ('bronze', 'silver', 'gold', 'special')),
+  icon_path text,
+  active boolean NOT NULL DEFAULT true,
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS user_awards (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+  award_id uuid NOT NULL REFERENCES award_definitions(id) ON DELETE CASCADE,
+  awarded_at timestamptz NOT NULL DEFAULT now(),
+  progress_value numeric NOT NULL DEFAULT 0,
+  UNIQUE (user_id, award_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_awards_user_id ON user_awards (user_id, awarded_at DESC);
 
 CREATE TABLE IF NOT EXISTS user_password_reset_tokens (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -38,12 +38,15 @@ test('user-store creates users, authenticates them and exposes privacy-aware pub
       password: 'password123',
       displayName: 'Tester One',
       preferredLang: 'en',
+      role: 'administrator',
     });
     assert.equal(user.username, 'tester_1');
+    assert.equal(user.role, 'administrator');
 
     const authUser = await store.authenticateUser('tester@example.com', 'password123');
     assert.ok(authUser);
     assert.equal(authUser?.displayName, 'Tester One');
+    assert.equal(authUser?.role, 'administrator');
 
     await store.updateProfile({
       userId: user.id,
@@ -142,6 +145,81 @@ test('user-store persists finished matches and exposes admin detail aggregates',
     assert.equal(detail?.persistedMatches.length, 1);
     assert.equal(detail?.persistedMatches[0]?.finalRankId, 'captain');
     assert.equal(detail?.persistedMatches[0]?.winnerPlayerId, '0');
+  } finally {
+    await pool.end();
+  }
+});
+
+test('user-store unlocks awards from aggregated statistics', async () => {
+  const { store, pool } = await makeStore();
+  try {
+    const user = await store.createUser({
+      username: 'award_user',
+      password: 'password123',
+      displayName: 'Award User',
+    });
+    await store.linkUserToMatch({
+      userId: user.id,
+      matchId: 'award-match-1',
+      playerId: '0',
+      playerName: 'Award User',
+    });
+    await store.persistMatchResultIfFinished('award-match-1', {
+      G: {
+        ranks: { '0': 'captain' },
+        resources: { '0': { time: 3, reputation: 4, discipline: 5, documents: 1, tech: 0 } },
+        playerNames: { '0': 'Award User' },
+        playerGameStats: {
+          '0': { resourcesGainedTotal: 120, resourcesLostTotal: 7, lyapsPlayedOnOthers: 11, scandalsPlayedOnOthers: 2, turnsTaken: 15 },
+        },
+        gameStats: { turnsCompleted: 15 },
+      },
+      ctx: { gameover: { winner: '0', endReason: 'winner' } },
+    });
+
+    const awards = await store.evaluateUserAwards(user.id);
+    assert.ok(awards.some((award) => award.key === 'resources_gained_100' && award.awarded));
+    assert.ok(awards.some((award) => award.key === 'lyaps_10' && award.awarded));
+    assert.ok(awards.some((award) => award.key === 'best_rank_captain' && award.awarded));
+  } finally {
+    await pool.end();
+  }
+});
+
+test('user-store ensures default administrator admin/admin', async () => {
+  const { store, pool } = await makeStore();
+  try {
+    const admin = await store.ensureDefaultAdministrator();
+    assert.ok(admin);
+    assert.equal(admin?.username, 'admin');
+    assert.equal(admin?.role, 'administrator');
+
+    const authUser = await store.authenticateUser('admin', 'admin');
+    assert.ok(authUser);
+    assert.equal(authUser?.role, 'administrator');
+  } finally {
+    await pool.end();
+  }
+});
+
+test('ensureDefaultAdministrator does not reset an existing admin password', async () => {
+  const { store, pool } = await makeStore();
+  try {
+    const admin = await store.ensureDefaultAdministrator();
+    assert.ok(admin);
+
+    await store.changePassword({
+      userId: String(admin?.id),
+      currentPassword: 'admin',
+      nextPassword: 'admin-new-password',
+    });
+    assert.equal(await store.authenticateUser('admin', 'admin'), null);
+    assert.ok(await store.authenticateUser('admin', 'admin-new-password'));
+
+    const ensuredAgain = await store.ensureDefaultAdministrator();
+    assert.ok(ensuredAgain);
+    assert.equal(await store.authenticateUser('admin', 'admin'), null);
+    assert.ok(await store.authenticateUser('admin', 'admin-new-password'));
   } finally {
     await pool.end();
   }

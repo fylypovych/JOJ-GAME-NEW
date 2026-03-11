@@ -19,6 +19,7 @@ const baseStore = () => ({
     id: 'u1',
     username: 'tester',
     email: 't@example.com',
+    role: 'user' as const,
     displayName: 'Tester',
     avatarUrl: null,
     bio: '',

@@ -8,6 +8,7 @@ export type UserRecord = {
   id: string;
   username: string;
   email: string | null;
+  role: 'user' | 'administrator';
   displayName: string;
   avatarUrl: string | null;
   bio: string;
@@ -34,6 +35,51 @@ export type UserStatsSummary = {
   lastMatchAt: string | null;
 };
 
+export type AwardMetric =
+  | 'matches_linked'
+  | 'matches_finished'
+  | 'wins'
+  | 'win_rate_pct'
+  | 'avg_turns'
+  | 'best_rank_order'
+  | 'resources_gained_total'
+  | 'resources_lost_total'
+  | 'lyaps_played_on_others'
+  | 'scandals_played_on_others';
+
+export type AwardDefinition = {
+  id: string;
+  key: string;
+  title: string;
+  description: string;
+  category: 'general' | 'ranks' | 'resources' | 'actions';
+  metric: AwardMetric;
+  threshold: number;
+  badgeLabel: string;
+  badgeVariant: 'bronze' | 'silver' | 'gold' | 'special';
+  iconPath: string | null;
+  active: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UserAwardRecord = {
+  awardId: string;
+  key: string;
+  title: string;
+  description: string;
+  category: AwardDefinition['category'];
+  metric: AwardMetric;
+  threshold: number;
+  badgeLabel: string;
+  badgeVariant: AwardDefinition['badgeVariant'];
+  iconPath: string | null;
+  progressValue: number;
+  awarded: boolean;
+  awardedAt: string | null;
+};
+
 export type UserSessionRecord = {
   id: string;
   createdAt: string;
@@ -47,6 +93,7 @@ export type AdminUserSummary = {
   id: string;
   username: string;
   email: string | null;
+  role: 'user' | 'administrator';
   displayName: string;
   status: 'active' | 'disabled';
   createdAt: string;
@@ -58,6 +105,7 @@ export type AdminUserSummary = {
 export type AdminUserDetail = {
   user: UserRecord & { status: 'active' | 'disabled' };
   stats: UserStatsSummary;
+  awards: UserAwardRecord[];
   sessions: UserSessionRecord[];
   linkedMatches: Array<{
     matchId: string;
@@ -101,10 +149,79 @@ export type UserStore = ReturnType<typeof createUserStore>;
 const USERNAME_RE = /^[a-zA-Z0-9_-]{3,24}$/;
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const RESET_TOKEN_TTL_MS = 1000 * 60 * 30;
+const RANK_ORDER = [
+  'recruit',
+  'soldier',
+  'senior_soldier',
+  'junior_sergeant',
+  'sergeant',
+  'senior_sergeant',
+  'ensign',
+  'junior_lieutenant',
+  'lieutenant',
+  'senior_lieutenant',
+  'captain',
+  'major',
+  'lieutenant_colonel',
+  'colonel',
+  'brigadier_general',
+  'general',
+] as const;
+const DEFAULT_AWARD_DEFINITIONS: Array<Omit<AwardDefinition, 'id' | 'createdAt' | 'updatedAt'>> = [
+  { key: 'matches_finished_10', title: '10 матчів', description: 'Завершити 10 матчів.', category: 'general', metric: 'matches_finished', threshold: 10, badgeLabel: '10M', badgeVariant: 'bronze', iconPath: null, active: true, sortOrder: 10 },
+  { key: 'matches_finished_50', title: '50 матчів', description: 'Завершити 50 матчів.', category: 'general', metric: 'matches_finished', threshold: 50, badgeLabel: '50M', badgeVariant: 'silver', iconPath: null, active: true, sortOrder: 20 },
+  { key: 'wins_10', title: '10 перемог', description: 'Здобути 10 перемог.', category: 'general', metric: 'wins', threshold: 10, badgeLabel: '10W', badgeVariant: 'bronze', iconPath: null, active: true, sortOrder: 30 },
+  { key: 'best_rank_captain', title: 'Капітан', description: 'Досягти звання капітана або вище.', category: 'ranks', metric: 'best_rank_order', threshold: 10, badgeLabel: 'CAP', badgeVariant: 'silver', iconPath: null, active: true, sortOrder: 40 },
+  { key: 'resources_gained_100', title: 'Ресурсник', description: 'Накопичити 100 отриманих ресурсів.', category: 'resources', metric: 'resources_gained_total', threshold: 100, badgeLabel: '100R', badgeVariant: 'bronze', iconPath: null, active: true, sortOrder: 50 },
+  { key: 'lyaps_10', title: 'Майстер ЛЯПів', description: 'Зіграти 10 ЛЯПів на інших гравців.', category: 'actions', metric: 'lyaps_played_on_others', threshold: 10, badgeLabel: 'LYAP', badgeVariant: 'special', iconPath: null, active: true, sortOrder: 60 },
+];
 
 const normalizeUsername = (value: string) => value.trim().toLowerCase();
 const normalizeEmail = (value: string) => value.trim().toLowerCase();
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
+const getRankOrder = (rankId: string) => {
+  const index = RANK_ORDER.indexOf(rankId as typeof RANK_ORDER[number]);
+  return index >= 0 ? index + 1 : 0;
+};
+const normalizeAwardMetric = (value: unknown): AwardMetric => {
+  switch (String(value ?? '').trim()) {
+    case 'matches_linked':
+    case 'matches_finished':
+    case 'wins':
+    case 'win_rate_pct':
+    case 'avg_turns':
+    case 'best_rank_order':
+    case 'resources_gained_total':
+    case 'resources_lost_total':
+    case 'lyaps_played_on_others':
+    case 'scandals_played_on_others':
+      return value as AwardMetric;
+    default:
+      return 'matches_finished';
+  }
+};
+const normalizeAwardCategory = (value: unknown): AwardDefinition['category'] => {
+  switch (String(value ?? '').trim()) {
+    case 'ranks':
+    case 'resources':
+    case 'actions':
+    case 'general':
+      return value as AwardDefinition['category'];
+    default:
+      return 'general';
+  }
+};
+const normalizeBadgeVariant = (value: unknown): AwardDefinition['badgeVariant'] => {
+  switch (String(value ?? '').trim()) {
+    case 'silver':
+    case 'gold':
+    case 'special':
+    case 'bronze':
+      return value as AwardDefinition['badgeVariant'];
+    default:
+      return 'bronze';
+  }
+};
 
 const constantTimeEquals = (left: string, right: string): boolean => {
   const a = Buffer.from(left, 'hex');
@@ -117,6 +234,7 @@ const publicUserColumns = `
   u.id,
   u.username,
   u.email,
+  u.role,
   COALESCE(p.display_name, u.username) AS "displayName",
   p.avatar_url AS "avatarUrl",
   COALESCE(p.bio, '') AS bio,
@@ -135,6 +253,7 @@ export const createUserStore = (pool: Pool) => {
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         username text NOT NULL UNIQUE,
         email text UNIQUE,
+        role text NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'administrator')),
         password_hash text NOT NULL,
         password_salt text NOT NULL,
         status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'disabled')),
@@ -212,7 +331,60 @@ export const createUserStore = (pool: Pool) => {
         UNIQUE (match_id, player_id)
       );
       CREATE INDEX IF NOT EXISTS idx_persisted_match_participants_match_id ON persisted_match_participants (match_id);
+      CREATE TABLE IF NOT EXISTS award_definitions (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        award_key text NOT NULL UNIQUE,
+        title text NOT NULL,
+        description text NOT NULL DEFAULT '',
+        category text NOT NULL DEFAULT 'general' CHECK (category IN ('general', 'ranks', 'resources', 'actions')),
+        metric text NOT NULL,
+        threshold numeric NOT NULL DEFAULT 1,
+        badge_label text NOT NULL DEFAULT '',
+        badge_variant text NOT NULL DEFAULT 'bronze' CHECK (badge_variant IN ('bronze', 'silver', 'gold', 'special')),
+        icon_path text,
+        active boolean NOT NULL DEFAULT true,
+        sort_order integer NOT NULL DEFAULT 0,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE TABLE IF NOT EXISTS user_awards (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+        award_id uuid NOT NULL REFERENCES award_definitions(id) ON DELETE CASCADE,
+        awarded_at timestamptz NOT NULL DEFAULT now(),
+        progress_value numeric NOT NULL DEFAULT 0,
+        UNIQUE (user_id, award_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_user_awards_user_id ON user_awards (user_id, awarded_at DESC);
     `);
+    await pool.query(`
+      ALTER TABLE app_users ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'user';
+      UPDATE app_users
+      SET role = 'user'
+      WHERE role IS NULL OR role NOT IN ('user', 'administrator')
+    `);
+    const seeded = await pool.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM award_definitions');
+    if (Number(seeded.rows[0]?.count ?? 0) === 0) {
+      for (const def of DEFAULT_AWARD_DEFINITIONS) {
+        await pool.query(`
+          INSERT INTO award_definitions (
+            award_key, title, description, category, metric, threshold, badge_label, badge_variant, icon_path, active, sort_order
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        `, [
+          def.key,
+          def.title,
+          def.description,
+          def.category,
+          def.metric,
+          def.threshold,
+          def.badgeLabel,
+          def.badgeVariant,
+          def.iconPath,
+          def.active,
+          def.sortOrder,
+        ]);
+      }
+    }
   };
 
   const hashPassword = async (password: string) => {
@@ -272,11 +444,13 @@ export const createUserStore = (pool: Pool) => {
     password: string;
     displayName?: string;
     preferredLang?: 'uk' | 'en';
+    role?: 'user' | 'administrator';
   }): Promise<UserRecord> => {
     const username = normalizeUsername(args.username);
     const email = args.email?.trim() ? normalizeEmail(args.email) : null;
     const displayName = args.displayName?.trim() || args.username.trim();
     const preferredLang = args.preferredLang === 'en' ? 'en' : 'uk';
+    const role = args.role === 'administrator' ? 'administrator' : 'user';
     if (!USERNAME_RE.test(args.username.trim())) {
       throw new Error('Username must be 3-24 chars: letters, digits, "_" or "-".');
     }
@@ -292,10 +466,10 @@ export const createUserStore = (pool: Pool) => {
     }
     const { salt, hash } = await hashPassword(args.password);
     const created = await pool.query<{ id: string }>(`
-      INSERT INTO app_users (username, email, password_hash, password_salt)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO app_users (username, email, role, password_hash, password_salt)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING id
-    `, [username, email, hash, salt]);
+    `, [username, email, role, hash, salt]);
     const userId = created.rows[0]?.id;
     await pool.query(`
       INSERT INTO user_profiles (user_id, display_name, preferred_lang)
@@ -304,6 +478,43 @@ export const createUserStore = (pool: Pool) => {
     const user = await getUserById(userId);
     if (!user) throw new Error('Failed to create user.');
     return user;
+  };
+
+  const ensureDefaultAdministrator = async () => {
+    const existing = await pool.query<{ id: string }>(`
+      SELECT id
+      FROM app_users
+      WHERE username = 'admin'
+      LIMIT 1
+    `);
+    if (existing.rowCount) {
+      await pool.query(`
+        UPDATE app_users
+        SET role = 'administrator',
+            status = 'active',
+            updated_at = now()
+        WHERE username = 'admin'
+      `);
+      const user = await pool.query<{ id: string }>(`SELECT id FROM app_users WHERE username = 'admin' LIMIT 1`);
+      return getUserById(user.rows[0]?.id ?? '');
+    }
+
+    const { salt, hash } = await hashPassword('admin');
+    const created = await pool.query<{ id: string }>(`
+      INSERT INTO app_users (username, email, role, password_hash, password_salt, status)
+      VALUES ('admin', NULL, 'administrator', $1, $2, 'active')
+      RETURNING id
+    `, [hash, salt]);
+    const userId = created.rows[0]?.id;
+    await pool.query(`
+      INSERT INTO user_profiles (user_id, display_name, preferred_lang)
+      VALUES ($1, 'Administrator', 'uk')
+      ON CONFLICT (user_id) DO UPDATE
+      SET display_name = EXCLUDED.display_name,
+          preferred_lang = EXCLUDED.preferred_lang,
+          updated_at = now()
+    `, [userId]);
+    return getUserById(userId);
   };
 
   const createSession = async (args: {
@@ -362,6 +573,7 @@ export const createUserStore = (pool: Pool) => {
   const updateProfile = async (args: {
     userId: string;
     displayName: string;
+    email?: string | null;
     bio: string;
     avatarUrl?: string | null;
     preferredLang?: 'uk' | 'en';
@@ -369,11 +581,27 @@ export const createUserStore = (pool: Pool) => {
     showStatsPublic?: boolean;
     showRecentMatchesPublic?: boolean;
   }): Promise<UserRecord | null> => {
+    const normalizedEmail = args.email?.trim() ? normalizeEmail(args.email) : null;
+    const duplicate = await pool.query<{ id: string }>(`
+      SELECT id
+      FROM app_users
+      WHERE email = $2 AND id <> $1
+      LIMIT 1
+    `, [args.userId, normalizedEmail]);
+    if (duplicate.rowCount) {
+      throw new Error('Email already exists.');
+    }
+    await pool.query(`
+      UPDATE app_users
+      SET email = $2,
+          updated_at = now()
+      WHERE id = $1
+    `, [args.userId, normalizedEmail]);
     await pool.query(`
       UPDATE user_profiles
       SET display_name = $2,
-          bio = $3,
-          avatar_url = $4,
+        bio = $3,
+        avatar_url = $4,
           preferred_lang = $5,
           profile_public = $6,
           show_stats_public = $7,
@@ -691,6 +919,185 @@ export const createUserStore = (pool: Pool) => {
     };
   };
 
+  const listAwardDefinitions = async (): Promise<AwardDefinition[]> => {
+    const result = await pool.query<{
+      id: string;
+      key: string;
+      title: string;
+      description: string;
+      category: AwardDefinition['category'];
+      metric: AwardMetric;
+      threshold: string | number;
+      badgeLabel: string;
+      badgeVariant: AwardDefinition['badgeVariant'];
+      iconPath: string | null;
+      active: boolean;
+      sortOrder: number;
+      createdAt: string;
+      updatedAt: string;
+    }>(`
+      SELECT
+        id,
+        award_key AS key,
+        title,
+        description,
+        category,
+        metric,
+        threshold::text AS threshold,
+        badge_label AS "badgeLabel",
+        badge_variant AS "badgeVariant",
+        icon_path AS "iconPath",
+        active,
+        sort_order AS "sortOrder",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
+      FROM award_definitions
+      ORDER BY sort_order ASC, title ASC
+    `);
+    return result.rows.map((row) => ({
+      ...row,
+      threshold: Number(row.threshold),
+    }));
+  };
+
+  const evaluateUserAwards = async (userId: string, statsArg?: UserStatsSummary): Promise<UserAwardRecord[]> => {
+    const [definitions, stats] = await Promise.all([
+      listAwardDefinitions(),
+      statsArg ? Promise.resolve(statsArg) : getUserStatsSummary(userId),
+    ]);
+    const metricValue = (metric: AwardMetric): number => {
+      switch (metric) {
+        case 'matches_linked': return stats.matchesLinked;
+        case 'matches_finished': return stats.matchesFinished;
+        case 'wins': return stats.wins;
+        case 'win_rate_pct': return stats.winRatePct;
+        case 'avg_turns': return stats.avgTurns;
+        case 'best_rank_order': return getRankOrder(stats.bestRankId);
+        case 'resources_gained_total': return stats.resourcesGainedTotal;
+        case 'resources_lost_total': return stats.resourcesLostTotal;
+        case 'lyaps_played_on_others': return stats.lyapsPlayedOnOthers;
+        case 'scandals_played_on_others': return stats.scandalsPlayedOnOthers;
+      }
+    };
+    const activeDefinitions = definitions.filter((definition) => definition.active);
+    for (const definition of activeDefinitions) {
+      const progressValue = metricValue(definition.metric);
+      if (progressValue >= definition.threshold) {
+        await pool.query(`
+          INSERT INTO user_awards (user_id, award_id, progress_value)
+          VALUES ($1, $2, $3)
+          ON CONFLICT (user_id, award_id)
+          DO UPDATE SET progress_value = GREATEST(user_awards.progress_value, EXCLUDED.progress_value)
+        `, [userId, definition.id, progressValue]);
+      }
+    }
+    const granted = await pool.query<{ award_id: string; awarded_at: string; progress_value: number }>(`
+      SELECT award_id, awarded_at, progress_value
+      FROM user_awards
+      WHERE user_id = $1
+    `, [userId]);
+    const grantedById = new Map(granted.rows.map((row) => [row.award_id, row]));
+    return definitions.map((definition) => {
+      const progressValue = metricValue(definition.metric);
+      const grantedRow = grantedById.get(definition.id);
+      return {
+        awardId: definition.id,
+        key: definition.key,
+        title: definition.title,
+        description: definition.description,
+        category: definition.category,
+        metric: definition.metric,
+        threshold: definition.threshold,
+        badgeLabel: definition.badgeLabel,
+        badgeVariant: definition.badgeVariant,
+        iconPath: definition.iconPath,
+        progressValue,
+        awarded: Boolean(grantedRow),
+        awardedAt: grantedRow?.awarded_at ?? null,
+      };
+    });
+  };
+
+  const saveAwardDefinition = async (args: {
+    id?: string;
+    key: string;
+    title: string;
+    description: string;
+    category?: AwardDefinition['category'];
+    metric?: AwardMetric;
+    threshold: number;
+    badgeLabel: string;
+    badgeVariant?: AwardDefinition['badgeVariant'];
+    iconPath?: string | null;
+    active?: boolean;
+    sortOrder?: number;
+  }) => {
+    const key = String(args.key ?? '').trim().toLowerCase();
+    const title = String(args.title ?? '').trim();
+    if (!key || !title) throw new Error('Award key and title are required.');
+    if (!Number.isFinite(args.threshold) || Number(args.threshold) <= 0) throw new Error('Award threshold must be positive.');
+    const metric = normalizeAwardMetric(args.metric);
+    const category = normalizeAwardCategory(args.category);
+    const badgeVariant = normalizeBadgeVariant(args.badgeVariant);
+    const threshold = Number(args.threshold);
+    const sortOrder = Number.isFinite(args.sortOrder) ? Number(args.sortOrder) : 0;
+    if (args.id) {
+      await pool.query(`
+        UPDATE award_definitions
+        SET award_key = $2,
+            title = $3,
+            description = $4,
+            category = $5,
+            metric = $6,
+            threshold = $7,
+            badge_label = $8,
+            badge_variant = $9,
+            icon_path = $10,
+            active = $11,
+            sort_order = $12,
+            updated_at = now()
+        WHERE id = $1
+      `, [
+        args.id,
+        key,
+        title,
+        String(args.description ?? '').trim(),
+        category,
+        metric,
+        threshold,
+        String(args.badgeLabel ?? '').trim() || title,
+        badgeVariant,
+        args.iconPath?.trim() || null,
+        args.active !== false,
+        sortOrder,
+      ]);
+    } else {
+      await pool.query(`
+        INSERT INTO award_definitions (
+          award_key, title, description, category, metric, threshold, badge_label, badge_variant, icon_path, active, sort_order
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      `, [
+        key,
+        title,
+        String(args.description ?? '').trim(),
+        category,
+        metric,
+        threshold,
+        String(args.badgeLabel ?? '').trim() || title,
+        badgeVariant,
+        args.iconPath?.trim() || null,
+        args.active !== false,
+        sortOrder,
+      ]);
+    }
+    return listAwardDefinitions();
+  };
+
+  const deleteAwardDefinition = async (awardId: string) => {
+    await pool.query('DELETE FROM award_definitions WHERE id = $1', [awardId]);
+    return listAwardDefinitions();
+  };
+
   const listPendingPersistMatchIds = async () => {
     const result = await pool.query<{ match_id: string }>(`
       SELECT DISTINCT l.match_id
@@ -710,6 +1117,7 @@ export const createUserStore = (pool: Pool) => {
         u.id,
         u.username,
         u.email,
+        u.role,
         COALESCE(p.display_name, u.username) AS "displayName",
         u.status,
         u.created_at AS "createdAt",
@@ -726,7 +1134,7 @@ export const createUserStore = (pool: Pool) => {
         OR COALESCE(p.display_name, '') ILIKE '%' || $1 || '%'
         OR COALESCE(u.email, '') ILIKE '%' || $1 || '%'
       )
-      GROUP BY u.id, u.username, u.email, p.display_name, u.status, u.created_at, u.last_login_at
+      GROUP BY u.id, u.username, u.email, u.role, p.display_name, u.status, u.created_at, u.last_login_at
       ORDER BY u.created_at DESC
       LIMIT $2
     `, [normalizedSearch, Math.max(1, Math.min(limit, 200))]);
@@ -744,6 +1152,66 @@ export const createUserStore = (pool: Pool) => {
       await deleteAllSessionsForUser(userId);
     }
     return getUserWithStatusById(userId);
+  };
+
+  const updateUserRole = async (userId: string, role: 'user' | 'administrator') => {
+    const nextRole = role === 'administrator' ? 'administrator' : 'user';
+    await pool.query(`
+      UPDATE app_users
+      SET role = $2,
+          updated_at = now()
+      WHERE id = $1
+    `, [userId, nextRole]);
+    return getUserWithStatusById(userId);
+  };
+
+  const updateUserAdminProfile = async (args: {
+    userId: string;
+    username: string;
+    email?: string | null;
+    displayName: string;
+    bio: string;
+    avatarUrl?: string | null;
+    preferredLang?: 'uk' | 'en';
+  }) => {
+    const normalizedUsername = normalizeUsername(args.username);
+    const normalizedEmail = args.email?.trim() ? normalizeEmail(args.email) : null;
+    if (!USERNAME_RE.test(args.username.trim())) {
+      throw new Error('Username must be 3-24 chars: letters, digits, "_" or "-".');
+    }
+    const duplicate = await pool.query<{ id: string }>(`
+      SELECT id
+      FROM app_users
+      WHERE id <> $1
+        AND (username = $2 OR ($3::text IS NOT NULL AND email = $3))
+      LIMIT 1
+    `, [args.userId, normalizedUsername, normalizedEmail]);
+    if (duplicate.rowCount) {
+      throw new Error('Username or email already exists.');
+    }
+    await pool.query(`
+      UPDATE app_users
+      SET username = $2,
+          email = $3,
+          updated_at = now()
+      WHERE id = $1
+    `, [args.userId, normalizedUsername, normalizedEmail]);
+    await pool.query(`
+      UPDATE user_profiles
+      SET display_name = $2,
+          bio = $3,
+          avatar_url = $4,
+          preferred_lang = $5,
+          updated_at = now()
+      WHERE user_id = $1
+    `, [
+      args.userId,
+      args.displayName.trim() || args.username.trim(),
+      args.bio.trim(),
+      args.avatarUrl?.trim() || null,
+      args.preferredLang === 'en' ? 'en' : 'uk',
+    ]);
+    return getUserWithStatusById(args.userId);
   };
 
   const getAdminUserDetail = async (userId: string): Promise<AdminUserDetail | null> => {
@@ -789,9 +1257,11 @@ export const createUserStore = (pool: Pool) => {
         LIMIT 50
       `, [userId]),
     ]);
+    const awards = await evaluateUserAwards(userId, stats);
     return {
       user,
       stats,
+      awards,
       sessions,
       linkedMatches,
       persistedMatches: persistedMatchesResult.rows,
@@ -804,6 +1274,7 @@ export const createUserStore = (pool: Pool) => {
     const owner = await pool.query<{ id: string }>('SELECT id FROM app_users WHERE username = $1 LIMIT 1', [normalizeUsername(username)]);
     const userId = owner.rows[0]?.id;
     const stats = userId && user.showStatsPublic ? await getUserStatsSummary(userId) : null;
+    const awards = userId && user.showStatsPublic ? (await evaluateUserAwards(userId, stats ?? undefined)).filter((award) => award.awarded) : [];
     const recentMatches = userId && user.showRecentMatchesPublic
       ? (await listUserMatchLinks(userId)).slice(0, 10).map((row) => ({
         matchId: row.match_id,
@@ -812,11 +1283,12 @@ export const createUserStore = (pool: Pool) => {
         linkedAt: row.linked_at,
       }))
       : [];
-    return { user, stats, recentMatches };
+    return { user, stats, awards, recentMatches };
   };
 
   return {
     ensureSchema,
+    ensureDefaultAdministrator,
     createUser,
     authenticateUser,
     createSession,
@@ -838,9 +1310,15 @@ export const createUserStore = (pool: Pool) => {
     listUserSessions,
     persistMatchResultIfFinished,
     getUserStatsSummary,
+    listAwardDefinitions,
+    evaluateUserAwards,
+    saveAwardDefinition,
+    deleteAwardDefinition,
     listPendingPersistMatchIds,
     listUsersAdmin,
     updateUserStatus,
+    updateUserRole,
+    updateUserAdminProfile,
     getAdminUserDetail,
   };
 };

@@ -128,6 +128,7 @@ export const registerAuthRoutes = (args: {
         password: String(body.password ?? ''),
         displayName: typeof body.displayName === 'string' ? body.displayName : undefined,
         preferredLang: body.preferredLang === 'en' ? 'en' : 'uk',
+        role: 'user',
       });
       const session = await store.createSession({
         userId: user.id,
@@ -256,6 +257,7 @@ export const registerAuthRoutes = (args: {
       ok: true,
       user,
       stats: (await persistFinishedLinkedMatches(ctx, store, user.id), await store.getUserStatsSummary(user.id)),
+      awards: await store.evaluateUserAwards(user.id),
       csrfToken: issueUserCsrfToken(ctx),
     };
   });
@@ -271,6 +273,7 @@ export const registerAuthRoutes = (args: {
     const updated = await store.updateProfile({
       userId: user.id,
       displayName: String(body.displayName ?? user.displayName),
+      email: typeof body.email === 'string' ? body.email : user.email,
       bio: typeof body.bio === 'string' ? body.bio : user.bio,
       avatarUrl: typeof body.avatarUrl === 'string' ? body.avatarUrl : user.avatarUrl,
       preferredLang: body.preferredLang === 'en' ? 'en' : 'uk',

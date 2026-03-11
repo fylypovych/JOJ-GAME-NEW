@@ -94,6 +94,91 @@ export const registerAdminRoutes = ({
     ctx.body = { ok: true, adminAuthEnabled: isAdminAuthEnabled };
   });
 
+  router.get('/api/admin/awards', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/awards'))) return;
+    if (!userStore) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    ctx.body = { ok: true, awards: await userStore.listAwardDefinitions() };
+  });
+
+  router.post('/api/admin/awards/save', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/awards/save'))) return;
+    if (!userStore) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/awards/save', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    try {
+      const awards = await userStore.saveAwardDefinition({
+        id: typeof body.id === 'string' ? body.id : undefined,
+        key: String(body.key ?? ''),
+        title: String(body.title ?? ''),
+        description: String(body.description ?? ''),
+        category: body.category as never,
+        metric: body.metric as never,
+        threshold: Number(body.threshold ?? 0),
+        badgeLabel: String(body.badgeLabel ?? ''),
+        badgeVariant: body.badgeVariant as never,
+        iconPath: typeof body.iconPath === 'string' ? body.iconPath : null,
+        active: body.active !== false,
+        sortOrder: Number(body.sortOrder ?? 0),
+      });
+      ctx.body = { ok: true, awards };
+    } catch (error) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: String(error instanceof Error ? error.message : error) };
+    }
+  });
+
+  router.post('/api/admin/awards/delete', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/awards/delete'))) return;
+    if (!userStore) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/awards/delete', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const awardId = String(body.awardId ?? '').trim();
+    if (!awardId) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing awardId' };
+      return;
+    }
+    const awards = await userStore.deleteAwardDefinition(awardId);
+    ctx.body = { ok: true, awards };
+  });
+
+  router.post('/api/admin/users/create', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/users/create'))) return;
+    if (!userStore) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/users/create', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    try {
+      const user = await userStore.createUser({
+        username: String(body.username ?? ''),
+        email: typeof body.email === 'string' ? body.email : undefined,
+        password: String(body.password ?? ''),
+        displayName: typeof body.displayName === 'string' ? body.displayName : undefined,
+        preferredLang: body.preferredLang === 'en' ? 'en' : 'uk',
+        role: body.role === 'administrator' ? 'administrator' : 'user',
+      });
+      ctx.body = { ok: true, user };
+    } catch (error) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: String(error instanceof Error ? error.message : error) };
+    }
+  });
+
   router.get('/api/admin/users', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/users'))) return;
     if (!userStore) {
@@ -151,6 +236,68 @@ export const registerAdminRoutes = ({
       return;
     }
     ctx.body = { ok: true, user: updated };
+  });
+
+  router.post('/api/admin/users/role', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/users/role'))) return;
+    if (!userStore) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/users/role', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const userId = String(body.userId ?? '').trim();
+    const role = body.role === 'administrator' ? 'administrator' : 'user';
+    if (!userId) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing userId' };
+      return;
+    }
+    const updated = await userStore.updateUserRole(userId, role);
+    if (!updated) {
+      ctx.status = 404;
+      ctx.body = { ok: false, error: 'User not found' };
+      return;
+    }
+    ctx.body = { ok: true, user: updated };
+  });
+
+  router.post('/api/admin/users/update', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/users/update'))) return;
+    if (!userStore) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/users/update', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const userId = String(body.userId ?? '').trim();
+    if (!userId) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing userId' };
+      return;
+    }
+    try {
+      const updated = await userStore.updateUserAdminProfile({
+        userId,
+        username: String(body.username ?? ''),
+        email: typeof body.email === 'string' ? body.email : null,
+        displayName: typeof body.displayName === 'string' ? body.displayName : '',
+        bio: typeof body.bio === 'string' ? body.bio : '',
+        avatarUrl: typeof body.avatarUrl === 'string' ? body.avatarUrl : null,
+        preferredLang: body.preferredLang === 'en' ? 'en' : 'uk',
+      });
+      if (!updated) {
+        ctx.status = 404;
+        ctx.body = { ok: false, error: 'User not found' };
+        return;
+      }
+      ctx.body = { ok: true, user: updated };
+    } catch (error) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: String(error instanceof Error ? error.message : error) };
+    }
   });
 
   router.post('/api/admin/users/request-password-reset', async (ctx: RouteCtx) => {

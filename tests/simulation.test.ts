@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runGameSimulationsWithDeps } from '../src/game/simulation';
+import { calculateSimulationTurnLimit } from '../src/game/simulationSetup';
 import type { SimulationDeps } from '../src/game/simulation';
 import type { CardDefinition, JojGameState, ResourceKey } from '../src/game/types';
 
@@ -241,4 +242,26 @@ test('simulation tracks average passes when no hand plays happen', () => {
   const report = runGameSimulationsWithDeps(deps, 2, 1, 40);
 
   assert.ok(report.summary.avgPassesPerGame >= 1);
+});
+
+test('calculateSimulationTurnLimit uses round-based cap plus 13 rounds', () => {
+  const G = {
+    deck: Array.from({ length: 100 }, (_, i) => ({ id: `d${i}` })),
+    legendaryDeck: Array.from({ length: 15 }, (_, i) => ({ id: `l${i}` })),
+    hands: {
+      '0': [{ id: 'h0' }, { id: 'h1' }],
+      '1': [{ id: 'h2' }, { id: 'h3' }],
+      '2': [{ id: 'h4' }, { id: 'h5' }],
+      '3': [{ id: 'h6' }, { id: 'h7' }],
+      '4': [{ id: 'h8' }, { id: 'h9' }],
+      '5': [{ id: 'h10' }, { id: 'h11' }],
+    },
+    legendaryHands: {},
+    discard: [],
+    legendaryDiscard: [],
+  } as unknown as JojGameState;
+
+  const totalCards = 127;
+  const expectedRounds = Math.ceil(totalCards / 6) + 13;
+  assert.equal(calculateSimulationTurnLimit(G, 6), expectedRounds * 6);
 });
