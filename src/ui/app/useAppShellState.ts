@@ -1,0 +1,120 @@
+import { useEffect, useState } from 'react';
+import type { BotDifficulty, GameMode } from '../../game/types';
+import type { Language } from '../i18n';
+import { defaultLanguage } from '../i18n';
+import { ADMIN_UI_VARIANT_STORAGE_KEY, GAME_UI_VARIANT_STORAGE_KEY } from './clientConfig';
+import {
+  PLAYER_NAME_STORAGE_KEY,
+  SERVER_URL_STORAGE_KEY,
+  type GalleryCategoryFilter,
+  type UserTab,
+} from './model';
+
+export const useAppShellState = (serverUrl: string) => {
+  const [lang, setLang] = useState<Language>(() => {
+    const stored = window.localStorage.getItem('joj-lang');
+    return stored === 'en' || stored === 'uk' ? stored : defaultLanguage;
+  });
+  const [playerName, setPlayerName] = useState<string>(() => window.localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ?? '');
+  const [roomCapacity, setRoomCapacity] = useState<number>(2);
+  const [gameMode, setGameMode] = useState<GameMode>('standard');
+  const [createWithBots, setCreateWithBots] = useState(false);
+  const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('easy');
+  const [selectedOptionalModuleIds, setSelectedOptionalModuleIds] = useState<string[]>(['vvnz_default']);
+  const [adminSelectedMatchID, setAdminSelectedMatchID] = useState<string>('');
+  const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
+  const [profileScreen, setProfileScreen] = useState<'login' | 'register' | 'reset'>('login');
+  const [authErrorModal, setAuthErrorModal] = useState('');
+  const [gameUiVariant, setGameUiVariant] = useState<'v1' | 'v2'>(() => {
+    const raw = window.localStorage.getItem(GAME_UI_VARIANT_STORAGE_KEY);
+    return raw === 'v2' ? 'v2' : 'v1';
+  });
+  const [adminUiVariant, setAdminUiVariant] = useState<'v1' | 'v2'>(() => {
+    const raw = window.localStorage.getItem(ADMIN_UI_VARIANT_STORAGE_KEY);
+    return raw === 'v2' ? 'v2' : 'v1';
+  });
+  const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
+  const [deletingAdminMatch, setDeletingAdminMatch] = useState(false);
+  const [loginDraft, setLoginDraft] = useState({ login: '', password: '' });
+  const [registerDraft, setRegisterDraft] = useState({ username: '', email: '', password: '', displayName: '' });
+  const [profileDraft, setProfileDraft] = useState({
+    displayName: '',
+    email: '',
+    bio: '',
+    avatarUrl: '',
+    profilePublic: true,
+    showStatsPublic: true,
+    showRecentMatchesPublic: false,
+  });
+  const [profileNotice, setProfileNotice] = useState('');
+  const [passwordDraft, setPasswordDraft] = useState({ currentPassword: '', nextPassword: '' });
+  const [resetRequestDraft, setResetRequestDraft] = useState({ login: '' });
+  const [resetPasswordDraft, setResetPasswordDraft] = useState({ token: '', nextPassword: '' });
+  const [serverUrlDraft, setServerUrlDraft] = useState<string>(() => window.localStorage.getItem(SERVER_URL_STORAGE_KEY) ?? serverUrl);
+
+  useEffect(() => {
+    window.localStorage.setItem('joj-lang', lang);
+    document.documentElement.lang = lang;
+  }, [lang]);
+
+  useEffect(() => {
+    window.localStorage.setItem(PLAYER_NAME_STORAGE_KEY, playerName);
+  }, [playerName]);
+
+  useEffect(() => {
+    window.localStorage.setItem(GAME_UI_VARIANT_STORAGE_KEY, gameUiVariant);
+  }, [gameUiVariant]);
+
+  useEffect(() => {
+    window.localStorage.setItem(ADMIN_UI_VARIANT_STORAGE_KEY, adminUiVariant);
+  }, [adminUiVariant]);
+
+  return {
+    lang,
+    setLang,
+    playerName,
+    setPlayerName,
+    roomCapacity,
+    setRoomCapacity,
+    gameMode,
+    setGameMode,
+    createWithBots,
+    setCreateWithBots,
+    botDifficulty,
+    setBotDifficulty,
+    selectedOptionalModuleIds,
+    setSelectedOptionalModuleIds,
+    adminSelectedMatchID,
+    setAdminSelectedMatchID,
+    activeUserTab,
+    setActiveUserTab,
+    profileScreen,
+    setProfileScreen,
+    authErrorModal,
+    setAuthErrorModal,
+    gameUiVariant,
+    setGameUiVariant,
+    adminUiVariant,
+    setAdminUiVariant,
+    galleryCategoryFilter,
+    setGalleryCategoryFilter,
+    deletingAdminMatch,
+    setDeletingAdminMatch,
+    loginDraft,
+    setLoginDraft,
+    registerDraft,
+    setRegisterDraft,
+    profileDraft,
+    setProfileDraft,
+    profileNotice,
+    setProfileNotice,
+    passwordDraft,
+    setPasswordDraft,
+    resetRequestDraft,
+    setResetRequestDraft,
+    resetPasswordDraft,
+    setResetPasswordDraft,
+    serverUrlDraft,
+    setServerUrlDraft,
+  };
+};

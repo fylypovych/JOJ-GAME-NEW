@@ -21,7 +21,7 @@ export const useBoardV2Sync = (args: {
   canEndTurn: boolean;
   stage?: string;
   id: string;
-  v2: { replacementSelection: string };
+  v2: { replacementSelection: string; actionUnavailable: string };
   lang: 'uk' | 'en';
   cardTitle: (id: string, title: string, lang: 'uk' | 'en') => string;
   onStateChange?: (payload: { G: JojGameState; ctx: unknown }) => void;
@@ -38,6 +38,24 @@ export const useBoardV2Sync = (args: {
   syncedNamesSignatureRef: MutableRefObject<string>;
   chatLogRef: MutableRefObject<HTMLDivElement | null>;
 }) => {
+  const resolveMoveErrorText = (error: unknown, fallback: string) => {
+    if (error instanceof Error && error.message.trim()) return error.message.trim();
+    if (typeof error === 'string' && error.trim()) return error.trim();
+    return fallback;
+  };
+
+  const runMove = (move: (() => unknown) | undefined, fallback: string) => {
+    if (!move) return;
+    try {
+      const result = move();
+      Promise.resolve(result).catch((error) => {
+        args.postNotice('error', resolveMoveErrorText(error, fallback));
+      });
+    } catch (error) {
+      args.postNotice('error', resolveMoveErrorText(error, fallback));
+    }
+  };
+
   useEffect(() => {
     if (!args.G || !args.ctx) return;
     args.onStateChange?.({ G: args.G, ctx: args.ctx });
@@ -78,11 +96,11 @@ export const useBoardV2Sync = (args: {
       }
       if (event.key.toLowerCase() === 'd' && args.canDraw) {
         event.preventDefault();
-        args.moves.drawCard();
+        runMove(() => args.moves.drawCard(), args.v2.actionUnavailable);
       }
       if (event.key.toLowerCase() === 'e' && args.canEndTurn) {
         event.preventDefault();
-        args.moves.endTurn?.();
+        runMove(() => args.moves.endTurn?.(), args.v2.actionUnavailable);
       }
     };
     window.addEventListener('keydown', onKeyDown);

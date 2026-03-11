@@ -235,7 +235,7 @@ test('profile me requires auth cookie and returns stats', async () => {
   assert.equal((ctx.body as { stats: { wins: number } }).stats.wins, 1);
 });
 
-test('link-match accepts mismatched player name and binds using canonical match state', async () => {
+test('link-match requires verified boardgame credentials', async () => {
   const { router, postHandlers } = makeRouter();
   registerAuthRoutes({
     router,
@@ -263,11 +263,16 @@ test('link-match accepts mismatched player name and binds using canonical match 
             playerNames: { '0': 'Tester' },
           },
         },
+        metadata: {
+          players: {
+            '0': { id: '0', name: 'Tester', credentials: 'secret-0' },
+          },
+        },
       }),
     },
   };
   await handler?.(ctx);
-  assert.equal((ctx.body as { ok: boolean }).ok, true);
+  assert.equal(ctx.status, 400);
 });
 
 test('bind-session-match verifies boardgame credentials', async () => {
@@ -366,6 +371,8 @@ test('public profile endpoint returns user by username', async () => {
   await handler?.(ctx);
   assert.equal((ctx.body as { ok: boolean }).ok, true);
   assert.equal((ctx.body as { user: { username: string } }).user.username, 'tester');
+  assert.equal('email' in ((ctx.body as { user: Record<string, unknown> }).user), false);
+  assert.equal('role' in ((ctx.body as { user: Record<string, unknown> }).user), false);
 });
 
 test('auth me returns csrf token even without session', async () => {
@@ -390,7 +397,7 @@ test('auth me returns csrf token even without session', async () => {
   assert.equal(typeof (ctx.body as { csrfToken?: string }).csrfToken, 'string');
 });
 
-test('request-password-reset returns preview token in non-production flow', async () => {
+test('request-password-reset does not expose reset token in response', async () => {
   const { router, postHandlers } = makeRouter();
   registerAuthRoutes({
     router,
@@ -414,7 +421,8 @@ test('request-password-reset returns preview token in non-production flow', asyn
   };
   await handler?.(ctx);
   assert.equal((ctx.body as { ok: boolean }).ok, true);
-  assert.equal(typeof (ctx.body as { resetTokenPreview?: string }).resetTokenPreview, 'string');
+  assert.equal('resetTokenPreview' in (ctx.body as Record<string, unknown>), false);
+  assert.equal('resetTokenExpiresAt' in (ctx.body as Record<string, unknown>), false);
 });
 
 test('profile sessions returns active sessions for authenticated user', async () => {

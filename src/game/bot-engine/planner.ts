@@ -1,0 +1,191 @@
+import { isCommandCategory } from '../cardRules';
+import type { CardDefinition, JojGameState, ResourceKey } from '../types';
+import type { BotDifficulty } from '../types';
+
+export type BotPlan =
+  | { kind: 'promote'; score: number }
+  | {
+    kind: 'play-card';
+    cardId: string;
+    score: number;
+    targetPlayerID?: string;
+    replacementResources?: ResourceKey[];
+    replacementByTarget?: Record<string, ResourceKey[]>;
+  }
+  | {
+    kind: 'play-legendary';
+    cardId: string;
+    score: number;
+    targetPlayerID?: string;
+    selectedResource?: ResourceKey;
+  }
+  | { kind: 'pass'; score: number };
+
+export type BotPlannerDeps = {
+  resourceKeys: readonly ResourceKey[];
+  getActiveRanks: () => Array<{ id: string; cost?: Partial<Record<ResourceKey, number>> }>;
+  planReplacementResources: (
+    resources: Record<ResourceKey, number>,
+    effects: { resource: ResourceKey | 'rank'; value: number }[] | undefined,
+  ) => ResourceKey[] | null;
+  hasPlayableCardsByInventory: (G: JojGameState, playerID: string) => boolean;
+};
+
+const getRankIndex = (deps: BotPlannerDeps, rankId: string) =>
+  Math.max(0, deps.getActiveRanks().findIndex((rank) => rank.id === rankId));
+
+const getPlayerScore = (deps: BotPlannerDeps, G: JojGameState, playerID: string) =>
+  deps.resourceKeys.reduce((sum, key) => sum + (G.resources[playerID]?.[key] ?? 0), 0) + getRankIndex(deps, G.ranks[playerID]) * 4;
+
+export const getOpponentsSorted = (deps: BotPlannerDeps, G: JojGameState, playerID: string) =>
+  Object.keys(G.players ?? {})
+    .filter((pid) => pid !== playerID)
+    .sort((a, b) => getPlayerScore(deps, G, b) - getPlayerScore(deps, G, a));
+
+export const chooseStrategicResource = (deps: BotPlannerDeps, G: JojGameState, playerID: string): ResourceKey => {
+  const currentRankIndex = getRankIndex(deps, G.ranks[playerID]);
+  const nextRank = deps.getActiveRanks()[currentRankIndex + 1];
+  const deficits = deps.resourceKeys
+    .map((key) => ({
+      key,
+      deficit: Math.max(0, (nextRank?.cost?.[key] ?? 0) - (G.resources[playerID]?.[key] ?? 0)),
+      current: G.resources[playerID]?.[key] ?? 0,
+    }))
+    .sort((a, b) => b.deficit - a.deficit || a.current - b.current);
+  return deficits[0]?.key ?? 'time';
+};
+
+const scoreCardEffects = (card: CardDefinition) =>
+  (card.effects ?? []).reduce((sum, effect) => {
+    if (effect.resource === 'rank') return sum + effect.value * 8;
+    return sum + effect.value * 3;
+  }, 0);
+
+const buildCardPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string, difficulty: BotDifficulty): BotPlan[] => {
+  const opponents = getOpponentsSorted(deps, G, playerID);
+  const hand = G.hands[playerID] ?? [];
+  const currentRankIndex = getRankIndex(deps, G.ranks[playerID]);
+  const actionPlans = hand.flatMap<BotPlan>((card, index) => {
+    const baseScore = scoreCardEffects(card) + Math.max(0, hand.length - index);
+    if (card.category === 'LYAP') {
+      return opponents.map((targetPlayerID, targetIndex) => ({
+        kind: 'play-card',
+        cardId: card.id,
+        targetPlayerID,
+        replacementResources: [],
+        score: baseScore + (difficulty === 'hard' ? 35 : 20) - targetIndex,
+      }));
+    }
+    if (card.category === 'SCANDAL') {
+      const replacementByTarget = Object.fromEntries(
+        Object.keys(G.players ?? {}).map((pid) => [
+          pid,
+          deps.planReplacementResources(G.resources[pid], card.effects) ?? [],
+        ]),
+      );
+      return [{
+        kind: 'play-card',
+        cardId: card.id,
+        replacementByTarget,
+        score: baseScore + (difficulty === 'hard' ? 34 : 18),
+      }];
+    }
+    if (card.category === 'SUPPORT' || isCommandCategory(card)) {
+      const replacementResources = deps.planReplacementResources(G.resources[playerID], card.effects) ?? [];
+      return [{
+        kind: 'play-card',
+        cardId: card.id,
+        replacementResources,
+        score: baseScore + (card.category === 'SUPPORT' ? 24 : 16),
+      }];
+    }
+    if (card.category === 'VVNZ') {
+      const rankBoost = card.grantRank ? Math.max(0, getRankIndex(deps, card.grantRank) - currentRankIndex) : 0;
+      return [{
+        kind: 'play-card',
+        cardId: card.id,
+        score: baseScore + rankBoost * (difficulty === 'hard' ? 30 : 18) + 12,
+      }];
+    }
+    if (card.category === 'LEGENDARY') {
+      return [{
+        kind: 'play-card',
+        cardId: card.id,
+        replacementResources: deps.planReplacementResources(G.resources[playerID], card.effects) ?? [],
+        score: baseScore + 10,
+      }];
+    }
+    return [{
+      kind: 'play-card',
+      cardId: card.id,
+      replacementResources: deps.planReplacementResources(G.resources[playerID], card.effects) ?? [],
+      score: baseScore + 8,
+    }];
+  });
+
+  return actionPlans.sort((a, b) => b.score - a.score);
+};
+
+const buildLegendaryPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string, difficulty: BotDifficulty): BotPlan[] => {
+  const opponents = getOpponentsSorted(deps, G, playerID);
+  const hand = G.legendaryHands[playerID] ?? [];
+  return hand
+    .map<BotPlan | null>((card, index) => {
+      const base = 20 + Math.max(0, hand.length - index);
+      if (card.id === 'legendary-10') {
+        const targetPlayerID = opponents[0];
+        if (!targetPlayerID) return null;
+        return { kind: 'play-legendary', cardId: card.id, targetPlayerID, score: base + 35 };
+      }
+      if (card.id === 'legendary-06' || card.id === 'legendary-09') {
+        return {
+          kind: 'play-legendary',
+          cardId: card.id,
+          selectedResource: chooseStrategicResource(deps, G, playerID),
+          score: base + 24,
+        };
+      }
+      if (card.id === 'legendary-13') return { kind: 'play-legendary', cardId: card.id, score: base + 40 };
+      if (card.id === 'legendary-03') return { kind: 'play-legendary', cardId: card.id, score: base + 28 };
+      if (card.id === 'legendary-12') return { kind: 'play-legendary', cardId: card.id, score: base + 18 };
+      return { kind: 'play-legendary', cardId: card.id, score: base + (difficulty === 'hard' ? 16 : 10) };
+    })
+    .filter((plan): plan is BotPlan => Boolean(plan))
+    .sort((a, b) => b.score - a.score);
+};
+
+export const buildDrawResolutionPlan = (deps: BotPlannerDeps, G: JojGameState, playerID: string): {
+  replacementResources: ResourceKey[];
+  replacementByTarget: Record<string, ResourceKey[]>;
+} => {
+  const pending = G.pendingDrawAutoResolution;
+  if (!pending) return { replacementResources: [], replacementByTarget: {} };
+  if (pending.kind === 'LYAP') {
+    return {
+      replacementResources: deps.planReplacementResources(G.resources[playerID], pending.card.effects) ?? [],
+      replacementByTarget: {},
+    };
+  }
+  return {
+    replacementResources: [],
+    replacementByTarget: Object.fromEntries(
+      Object.keys(G.players ?? {}).map((pid) => [pid, deps.planReplacementResources(G.resources[pid], pending.card.effects) ?? []]),
+    ),
+  };
+};
+
+export const buildBotPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string, difficulty: BotDifficulty): BotPlan[] => {
+  const plans: BotPlan[] = [];
+  if (!G.promotedThisTurn[playerID]) {
+    plans.push({ kind: 'promote', score: difficulty === 'hard' ? 90 : difficulty === 'normal' ? 70 : 45 });
+  }
+  if (G.gameMode !== 'simplified') {
+    plans.push(...buildLegendaryPlans(deps, G, playerID, difficulty));
+  }
+  plans.push(...buildCardPlans(deps, G, playerID, difficulty));
+  if ((G.deck?.length ?? 0) === 0 && !deps.hasPlayableCardsByInventory(G, playerID)) {
+    plans.push({ kind: 'pass', score: 1 });
+  }
+  if (difficulty === 'easy') return plans;
+  return plans.sort((a, b) => b.score - a.score);
+};

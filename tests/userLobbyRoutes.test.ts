@@ -36,17 +36,20 @@ const baseStore = () => ({
 
 test('user-lobby join binds owned session after verified join', async () => {
   const { router, postHandlers } = makeRouter();
+  const joinCalls: Array<{ gameName: string; matchID: string; playerID: string; playerName: string }> = [];
   registerUserLobbyRoutes({
     router,
     userStore: baseStore() as never,
     logLine: async () => undefined,
     jsonBodyLimit: 10_000,
+    lobbyApiFactory: () => ({
+      createMatch: async () => ({ matchID: 'unused' }),
+      joinMatch: async (gameName, matchID, args) => {
+        joinCalls.push({ gameName, matchID, playerID: args.playerID, playerName: args.playerName });
+        return { playerID: '1', playerCredentials: 'cred-1' };
+      },
+    }),
   });
-  const originalFetch = global.fetch;
-  global.fetch = (async () => ({
-    ok: true,
-    json: async () => ({ playerID: '1', playerCredentials: 'cred-1' }),
-  })) as typeof global.fetch;
   const handler = postHandlers.get('/api/user-lobby/join');
   assert.ok(handler);
   const ctx: RouteCtx = {
@@ -75,49 +78,34 @@ test('user-lobby join binds owned session after verified join', async () => {
       }),
     },
   };
-  try {
-    await handler?.(ctx);
-    assert.equal((ctx.body as { ok: boolean }).ok, true);
-    assert.equal((ctx.body as { session: { playerID: string } }).session.playerID, '1');
-  } finally {
-    global.fetch = originalFetch;
-  }
+  await handler?.(ctx);
+  assert.equal((ctx.body as { ok: boolean }).ok, true);
+  assert.equal((ctx.body as { session: { playerID: string } }).session.playerID, '1');
+  assert.deepEqual(joinCalls, [{ gameName: 'joj-game', matchID: 'm1', playerID: '1', playerName: 'Tester' }]);
 });
 
 test('user-lobby create-and-join creates bot seats and returns session', async () => {
   const { router, postHandlers } = makeRouter();
+  const calls: Array<{ type: 'create' | 'join'; gameName: string; matchID?: string; body: Record<string, unknown> }> = [];
   registerUserLobbyRoutes({
     router,
     userStore: baseStore() as never,
     logLine: async () => undefined,
     jsonBodyLimit: 10_000,
+    lobbyApiFactory: () => ({
+      createMatch: async (gameName, args) => {
+        calls.push({ type: 'create', gameName, body: args as unknown as Record<string, unknown> });
+        return { matchID: 'm-bot' };
+      },
+      joinMatch: async (gameName, matchID, args) => {
+        calls.push({ type: 'join', gameName, matchID, body: args as unknown as Record<string, unknown> });
+        if (args.playerID === '0') {
+          return { playerID: '0', playerCredentials: 'cred-owner' };
+        }
+        return { playerID: String(args.playerID), playerCredentials: '' };
+      },
+    }),
   });
-  const originalFetch = global.fetch;
-  const calls: Array<{ url: string; body: Record<string, unknown> }> = [];
-  global.fetch = (async (input, init) => {
-    const url = String(input);
-    const body = init?.body ? JSON.parse(String(init.body)) as Record<string, unknown> : {};
-    calls.push({ url, body });
-    if (url.endsWith('/games/joj-game/create')) {
-      return {
-        ok: true,
-        json: async () => ({ matchID: 'm-bot' }),
-      } as Response;
-    }
-    if (url.endsWith('/games/joj-game/m-bot/join') && body.playerID === '0') {
-      return {
-        ok: true,
-        json: async () => ({ playerID: '0', playerCredentials: 'cred-owner' }),
-      } as Response;
-    }
-    if (url.endsWith('/games/joj-game/m-bot/join')) {
-      return {
-        ok: true,
-        json: async () => ({ playerID: String(body.playerID ?? ''), playerCredentials: '' }),
-      } as Response;
-    }
-    throw new Error(`Unexpected fetch: ${url}`);
-  }) as typeof global.fetch;
   const handler = postHandlers.get('/api/user-lobby/create-and-join');
   assert.ok(handler);
   const ctx: RouteCtx = {
@@ -153,16 +141,12 @@ test('user-lobby create-and-join creates bot seats and returns session', async (
       }),
     },
   };
-  try {
-    await handler?.(ctx);
-    assert.equal((ctx.body as { ok: boolean }).ok, true);
-    assert.equal((ctx.body as { session: { matchID: string } }).session.matchID, 'm-bot');
-    const joinBodies = calls
-      .filter((entry) => entry.url.endsWith('/games/joj-game/m-bot/join'))
-      .map((entry) => entry.body);
-    assert.equal(joinBodies.length, 4);
-    assert.deepEqual(joinBodies.map((row) => String(row.playerID)), ['0', '1', '2', '3']);
-  } finally {
-    global.fetch = originalFetch;
-  }
+  await handler?.(ctx);
+  assert.equal((ctx.body as { ok: boolean }).ok, true);
+  assert.equal((ctx.body as { session: { matchID: string } }).session.matchID, 'm-bot');
+  const joinBodies = calls
+    .filter((entry) => entry.type === 'join' && entry.matchID === 'm-bot')
+    .map((entry) => entry.body);
+  assert.equal(joinBodies.length, 4);
+  assert.deepEqual(joinBodies.map((row) => String(row.playerID)), ['0', '1', '2', '3']);
 });

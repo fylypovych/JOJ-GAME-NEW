@@ -318,8 +318,7 @@ export const registerAdminRoutes = ({
     const result = await userStore.createPasswordResetToken(login);
     ctx.body = {
       ok: true,
-      resetTokenPreview: result?.token ?? null,
-      resetTokenExpiresAt: result?.expiresAt ?? null,
+      created: Boolean(result),
     };
   });
 

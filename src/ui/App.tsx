@@ -1,6 +1,6 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo } from 'react';
 import { LobbyClient } from 'boardgame.io/client';
-import type { BotDifficulty, CardDefinition, GameMode, RankDefinition } from '../game/types';
+import type { CardDefinition, RankDefinition } from '../game/types';
 import {
   addCustomCardToSharedDeckTemplate,
   addCardToSharedDeckTemplate,
@@ -23,9 +23,8 @@ import {
   updateCardAtInSharedDeckTemplate,
 } from '../game/jojGame';
 import { useDbAdminTools } from './admin/useDbAdminTools';
-import type { Language } from './i18n';
-import { defaultLanguage, text } from './i18n';
-import { ADMIN_UI_VARIANT_STORAGE_KEY, GAME_UI_VARIANT_STORAGE_KEY, SERVER_URL } from './app/clientConfig';
+import { text } from './i18n';
+import { SERVER_URL } from './app/clientConfig';
 import {
   ADMIN_TOKEN_STORAGE_KEY,
   DEFAULT_SERVER_URL,
@@ -35,11 +34,9 @@ import {
   SERVER_URL_STORAGE_KEY,
   SESSION_STORAGE_KEY,
   SHARED_TEMPLATE_STORAGE_KEY,
-  type GalleryCategoryFilter,
   galleryCategories,
   normalizeServerUrl,
   parseSession,
-  type UserTab,
 } from './app/model';
 import {
   ActiveSessionSection,
@@ -56,6 +53,7 @@ import {
 } from './app/sections';
 import { useAdminAuth } from './app/useAdminAuth';
 import { useAdminSnapshot } from './app/useAdminSnapshot';
+import { useAppShellState } from './app/useAppShellState';
 import { useLobbySession } from './app/useLobbySession';
 import { useSharedConfigSync } from './app/useSharedConfigSync';
 import { useUserAccount } from './app/useUserAccount';
@@ -75,46 +73,54 @@ const ADMIN_MATCH_DELETE_API = `${SERVER_URL}/api/admin/match-delete`;
 
 export const App = () => {
   const isAdminRoute = window.location.pathname.startsWith('/admin');
-  const [lang, setLang] = useState<Language>(() => {
-    const stored = window.localStorage.getItem('joj-lang');
-    return stored === 'en' || stored === 'uk' ? stored : defaultLanguage;
-  });
-  const [playerName, setPlayerName] = useState<string>(() => window.localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ?? '');
-  const [roomCapacity, setRoomCapacity] = useState<number>(2);
-  const [gameMode, setGameMode] = useState<GameMode>('standard');
-  const [createWithBots, setCreateWithBots] = useState(false);
-  const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('easy');
-  const [selectedOptionalModuleIds, setSelectedOptionalModuleIds] = useState<string[]>(['vvnz_default']);
-  const [adminSelectedMatchID, setAdminSelectedMatchID] = useState<string>('');
-  const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
-  const [profileScreen, setProfileScreen] = useState<'login' | 'register' | 'reset'>('login');
-  const [authErrorModal, setAuthErrorModal] = useState('');
-  const [gameUiVariant, setGameUiVariant] = useState<'v1' | 'v2'>(() => {
-    const raw = window.localStorage.getItem(GAME_UI_VARIANT_STORAGE_KEY);
-    return raw === 'v2' ? 'v2' : 'v1';
-  });
-  const [adminUiVariant, setAdminUiVariant] = useState<'v1' | 'v2'>(() => {
-    const raw = window.localStorage.getItem(ADMIN_UI_VARIANT_STORAGE_KEY);
-    return raw === 'v2' ? 'v2' : 'v1';
-  });
-  const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
-  const [deletingAdminMatch, setDeletingAdminMatch] = useState(false);
-  const [loginDraft, setLoginDraft] = useState({ login: '', password: '' });
-  const [registerDraft, setRegisterDraft] = useState({ username: '', email: '', password: '', displayName: '' });
-  const [profileDraft, setProfileDraft] = useState({
-    displayName: '',
-    email: '',
-    bio: '',
-    avatarUrl: '',
-    profilePublic: true,
-    showStatsPublic: true,
-    showRecentMatchesPublic: false,
-  });
-  const [profileNotice, setProfileNotice] = useState('');
-  const [passwordDraft, setPasswordDraft] = useState({ currentPassword: '', nextPassword: '' });
-  const [resetRequestDraft, setResetRequestDraft] = useState({ login: '' });
-  const [resetPasswordDraft, setResetPasswordDraft] = useState({ token: '', nextPassword: '' });
-  const [serverUrlDraft, setServerUrlDraft] = useState<string>(() => window.localStorage.getItem(SERVER_URL_STORAGE_KEY) ?? SERVER_URL);
+  const {
+    lang,
+    setLang,
+    playerName,
+    setPlayerName,
+    roomCapacity,
+    setRoomCapacity,
+    gameMode,
+    setGameMode,
+    createWithBots,
+    setCreateWithBots,
+    botDifficulty,
+    setBotDifficulty,
+    selectedOptionalModuleIds,
+    setSelectedOptionalModuleIds,
+    adminSelectedMatchID,
+    setAdminSelectedMatchID,
+    activeUserTab,
+    setActiveUserTab,
+    profileScreen,
+    setProfileScreen,
+    authErrorModal,
+    setAuthErrorModal,
+    gameUiVariant,
+    setGameUiVariant,
+    adminUiVariant,
+    setAdminUiVariant,
+    galleryCategoryFilter,
+    setGalleryCategoryFilter,
+    deletingAdminMatch,
+    setDeletingAdminMatch,
+    loginDraft,
+    setLoginDraft,
+    registerDraft,
+    setRegisterDraft,
+    profileDraft,
+    setProfileDraft,
+    profileNotice,
+    setProfileNotice,
+    passwordDraft,
+    setPasswordDraft,
+    resetRequestDraft,
+    setResetRequestDraft,
+    resetPasswordDraft,
+    setResetPasswordDraft,
+    serverUrlDraft,
+    setServerUrlDraft,
+  } = useAppShellState(SERVER_URL);
   const t = text(lang);
   const {
     user,
@@ -371,26 +377,12 @@ export const App = () => {
   }, [adminSelectedMatchID, matches, session?.matchID]);
 
   useEffect(() => {
-    window.localStorage.setItem('joj-lang', lang);
-    document.documentElement.lang = lang;
     document.title = isAdminRoute ? t.adminTitle : t.gameTitle;
-  }, [isAdminRoute, lang, t.adminTitle, t.gameTitle]);
+  }, [isAdminRoute, t.adminTitle, t.gameTitle]);
 
   useEffect(() => {
     window.localStorage.setItem(ADMIN_STORAGE_MODE_STORAGE_KEY, adminStorageMode);
   }, [adminStorageMode]);
-
-  useEffect(() => {
-    window.localStorage.setItem(PLAYER_NAME_STORAGE_KEY, playerName);
-  }, [playerName]);
-
-  useEffect(() => {
-    window.localStorage.setItem(GAME_UI_VARIANT_STORAGE_KEY, gameUiVariant);
-  }, [gameUiVariant]);
-
-  useEffect(() => {
-    window.localStorage.setItem(ADMIN_UI_VARIANT_STORAGE_KEY, adminUiVariant);
-  }, [adminUiVariant]);
 
   const isV2Ui = isAdminRoute ? adminUiVariant === 'v2' : gameUiVariant === 'v2';
 

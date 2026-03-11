@@ -9,8 +9,10 @@ import { useAdminGitActions } from './admin/useAdminGitActions';
 import { useAdminImageRegeneration } from './admin/useAdminImageRegeneration';
 import { useAdminPageActions } from './admin/useAdminPageActions';
 import { useAdminRanksEditor } from './admin/useAdminRanksEditor';
+import { useAdminUsers } from './admin/useAdminUsers';
 import { useAdminSimulation } from './admin/useAdminSimulation';
 import { useAdminTemplateManager } from './admin/useAdminTemplateManager';
+import { useAdminAwards } from './admin/useAdminAwards';
 import {
   categories,
   rankResourceKeys,
@@ -111,123 +113,6 @@ export const AdminPage = ({
   const [restartingServer, setRestartingServer] = useState<boolean>(false);
   const [adminActionError, setAdminActionError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<AdminTab>('matches');
-  const [adminUsers, setAdminUsers] = useState<Array<{
-    id: string;
-    username: string;
-    email: string | null;
-    role: 'user' | 'administrator';
-    displayName: string;
-    status: 'active' | 'disabled';
-    createdAt: string;
-    lastLoginAt: string | null;
-    linkedMatches: number;
-    finishedMatches: number;
-  }>>([]);
-  const [adminUsersLoading, setAdminUsersLoading] = useState(false);
-  const [adminUsersError, setAdminUsersError] = useState('');
-  const [adminUserSearch, setAdminUserSearch] = useState('');
-  const [selectedAdminUserId, setSelectedAdminUserId] = useState('');
-  const [selectedAdminUserDetail, setSelectedAdminUserDetail] = useState<null | {
-    user: {
-      id: string;
-      username: string;
-      email: string | null;
-      displayName: string;
-      avatarUrl: string | null;
-      bio: string;
-      preferredLang: 'uk' | 'en';
-      createdAt: string;
-      lastLoginAt: string | null;
-      role: 'user' | 'administrator';
-      status: 'active' | 'disabled';
-    };
-    stats: {
-      matchesLinked: number;
-      matchesFinished: number;
-      wins: number;
-      winRatePct: number;
-      avgTurns: number;
-      bestRankName: string;
-      resourcesGainedTotal: number;
-      resourcesLostTotal: number;
-      lyapsPlayedOnOthers: number;
-      scandalsPlayedOnOthers: number;
-    };
-    sessions: Array<{
-      id: string;
-      createdAt: string;
-      lastSeenAt: string;
-      expiresAt: string;
-      sourceIp: string | null;
-      userAgent: string | null;
-    }>;
-    linkedMatches: Array<{
-      matchId: string;
-      playerId: string;
-      playerName: string | null;
-      linkedAt: string;
-    }>;
-    persistedMatches: Array<{
-      matchId: string;
-      playerId: string;
-      playerName: string | null;
-      winnerPlayerId: string | null;
-      endReason: string | null;
-      turnsCompleted: number;
-      finalRankId: string;
-      resourcesGainedTotal: number;
-      resourcesLostTotal: number;
-      linkedAt: string;
-    }>;
-  }>(null);
-  const [adminResetTokenPreview, setAdminResetTokenPreview] = useState('');
-  const [adminResetTokenExpiresAt, setAdminResetTokenExpiresAt] = useState('');
-  const [adminCreateUserDraft, setAdminCreateUserDraft] = useState({
-    username: '',
-    displayName: '',
-    email: '',
-    password: '',
-    role: 'user' as 'user' | 'administrator',
-  });
-  const [adminEditUserDraft, setAdminEditUserDraft] = useState({
-    username: '',
-    displayName: '',
-    email: '',
-    bio: '',
-    avatarUrl: '',
-    preferredLang: 'uk' as 'uk' | 'en',
-  });
-  const [adminAwards, setAdminAwards] = useState<Array<{
-    id: string;
-    key: string;
-    title: string;
-    description: string;
-    category: 'general' | 'ranks' | 'resources' | 'actions';
-    metric: 'matches_linked' | 'matches_finished' | 'wins' | 'win_rate_pct' | 'avg_turns' | 'best_rank_order' | 'resources_gained_total' | 'resources_lost_total' | 'lyaps_played_on_others' | 'scandals_played_on_others';
-    threshold: number;
-    badgeLabel: string;
-    badgeVariant: 'bronze' | 'silver' | 'gold' | 'special';
-    iconPath: string | null;
-    active: boolean;
-    sortOrder: number;
-  }>>([]);
-  const [adminAwardsLoading, setAdminAwardsLoading] = useState(false);
-  const [adminAwardsError, setAdminAwardsError] = useState('');
-  const [selectedAdminAwardId, setSelectedAdminAwardId] = useState('');
-  const [adminAwardDraft, setAdminAwardDraft] = useState({
-    id: '',
-    key: '',
-    title: '',
-    description: '',
-    category: 'general' as 'general' | 'ranks' | 'resources' | 'actions',
-    metric: 'matches_finished' as 'matches_linked' | 'matches_finished' | 'wins' | 'win_rate_pct' | 'avg_turns' | 'best_rank_order' | 'resources_gained_total' | 'resources_lost_total' | 'lyaps_played_on_others' | 'scandals_played_on_others',
-    threshold: '10',
-    badgeLabel: '',
-    badgeVariant: 'bronze' as 'bronze' | 'silver' | 'gold' | 'special',
-    iconPath: '',
-    active: true,
-    sortOrder: '0',
-  });
   const optionalSimulationModules = useMemo(
     () => (sharedDeckTemplate.modules ?? [])
       .filter((module) => module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
@@ -344,6 +229,42 @@ export const AdminPage = ({
       ...(init?.headers ?? {}),
     },
   });
+  const {
+    adminUsers,
+    adminUsersLoading,
+    adminUsersError,
+    adminUserSearch,
+    setAdminUserSearch,
+    selectedAdminUserId,
+    selectedAdminUserDetail,
+    adminResetTokenPreview,
+    adminResetTokenExpiresAt,
+    adminCreateUserDraft,
+    setAdminCreateUserDraft,
+    adminEditUserDraft,
+    setAdminEditUserDraft,
+    loadAdminUsers,
+    loadAdminUserDetail,
+    updateAdminUserStatus,
+    updateAdminUserRole,
+    updateAdminUserProfile,
+    logoutAdminUserSession,
+    logoutAllAdminUserSessions,
+    createAdminUser,
+    issueAdminResetToken,
+  } = useAdminUsers({ serverUrl, adminJsonFetch });
+  const {
+    adminAwards,
+    adminAwardsLoading,
+    adminAwardsError,
+    selectedAdminAwardId,
+    adminAwardDraft,
+    setAdminAwardDraft,
+    loadAdminAwards,
+    selectAdminAward,
+    saveAdminAward,
+    deleteAdminAward,
+  } = useAdminAwards({ serverUrl, adminJsonFetch });
 
   const {
     gitStatus,
@@ -431,322 +352,6 @@ export const AdminPage = ({
     setGitActionLog,
     setImagePreviewNonce,
   });
-
-  const loadAdminUsers = async () => {
-    setAdminUsersLoading(true);
-    setAdminUsersError('');
-    try {
-      const suffix = adminUserSearch.trim() ? `?search=${encodeURIComponent(adminUserSearch.trim())}` : '';
-      const response = await adminJsonFetch(`${serverUrl}/api/admin/users${suffix}`);
-      const payload = (await response.json()) as {
-        ok?: boolean;
-        error?: string;
-        users?: typeof adminUsers;
-      };
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || 'Failed to load users');
-      }
-      setAdminUsers(payload.users ?? []);
-    } catch (error) {
-      setAdminUsersError(String(error instanceof Error ? error.message : error));
-    } finally {
-      setAdminUsersLoading(false);
-    }
-  };
-
-  const loadAdminUserDetail = async (userId: string) => {
-    setSelectedAdminUserId(userId);
-    setSelectedAdminUserDetail(null);
-    setAdminResetTokenPreview('');
-    setAdminResetTokenExpiresAt('');
-    if (!userId) return;
-    setAdminUsersLoading(true);
-    setAdminUsersError('');
-    try {
-      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/detail?userId=${encodeURIComponent(userId)}`);
-      const payload = (await response.json()) as {
-        ok?: boolean;
-        error?: string;
-        detail?: typeof selectedAdminUserDetail;
-      };
-      if (!response.ok || !payload.ok || !payload.detail) {
-        throw new Error(payload.error || 'Failed to load user detail');
-      }
-      setSelectedAdminUserDetail(payload.detail);
-      setAdminEditUserDraft({
-        username: payload.detail.user.username ?? '',
-        displayName: payload.detail.user.displayName ?? '',
-        email: payload.detail.user.email ?? '',
-        bio: payload.detail.user.bio ?? '',
-        avatarUrl: payload.detail.user.avatarUrl ?? '',
-        preferredLang: payload.detail.user.preferredLang ?? 'uk',
-      });
-    } catch (error) {
-      setAdminUsersError(String(error instanceof Error ? error.message : error));
-    } finally {
-      setAdminUsersLoading(false);
-    }
-  };
-
-  const updateAdminUserStatus = async (status: 'active' | 'disabled') => {
-    if (!selectedAdminUserId) return;
-    setAdminUsersLoading(true);
-    setAdminUsersError('');
-    try {
-      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/status`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: selectedAdminUserId, status }),
-      });
-      const payload = (await response.json()) as { ok?: boolean; error?: string };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to update user status');
-      await loadAdminUsers();
-      await loadAdminUserDetail(selectedAdminUserId);
-    } catch (error) {
-      setAdminUsersError(String(error instanceof Error ? error.message : error));
-    } finally {
-      setAdminUsersLoading(false);
-    }
-  };
-
-  const updateAdminUserRole = async (role: 'user' | 'administrator') => {
-    if (!selectedAdminUserId) return;
-    setAdminUsersLoading(true);
-    setAdminUsersError('');
-    try {
-      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/role`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: selectedAdminUserId, role }),
-      });
-      const payload = (await response.json()) as { ok?: boolean; error?: string };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to update user role');
-      await loadAdminUsers();
-      await loadAdminUserDetail(selectedAdminUserId);
-    } catch (error) {
-      setAdminUsersError(String(error instanceof Error ? error.message : error));
-    } finally {
-      setAdminUsersLoading(false);
-    }
-  };
-
-  const createAdminUser = async () => {
-    setAdminUsersLoading(true);
-    setAdminUsersError('');
-    try {
-      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(adminCreateUserDraft),
-      });
-      const payload = (await response.json()) as { ok?: boolean; error?: string; user?: { id?: string } };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to create user');
-      setAdminCreateUserDraft({ username: '', displayName: '', email: '', password: '', role: 'user' });
-      await loadAdminUsers();
-      if (typeof payload.user?.id === 'string') {
-        await loadAdminUserDetail(payload.user.id);
-      }
-    } catch (error) {
-      setAdminUsersError(String(error instanceof Error ? error.message : error));
-    } finally {
-      setAdminUsersLoading(false);
-    }
-  };
-
-  const updateAdminUserProfile = async () => {
-    if (!selectedAdminUserId) return;
-    setAdminUsersLoading(true);
-    setAdminUsersError('');
-    try {
-      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: selectedAdminUserId, ...adminEditUserDraft }),
-      });
-      const payload = (await response.json()) as { ok?: boolean; error?: string };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to update user');
-      await loadAdminUsers();
-      await loadAdminUserDetail(selectedAdminUserId);
-    } catch (error) {
-      setAdminUsersError(String(error instanceof Error ? error.message : error));
-    } finally {
-      setAdminUsersLoading(false);
-    }
-  };
-
-  const issueAdminResetToken = async () => {
-    const login = selectedAdminUserDetail?.user.username?.trim();
-    if (!login) return;
-    setAdminUsersLoading(true);
-    setAdminUsersError('');
-    try {
-      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/request-password-reset`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login }),
-      });
-      const payload = (await response.json()) as {
-        ok?: boolean;
-        error?: string;
-        resetTokenPreview?: string | null;
-        resetTokenExpiresAt?: string | null;
-      };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to issue reset token');
-      setAdminResetTokenPreview(String(payload.resetTokenPreview ?? ''));
-      setAdminResetTokenExpiresAt(String(payload.resetTokenExpiresAt ?? ''));
-    } catch (error) {
-      setAdminUsersError(String(error instanceof Error ? error.message : error));
-    } finally {
-      setAdminUsersLoading(false);
-    }
-  };
-
-  const logoutAdminUserSession = async (sessionId: string) => {
-    if (!sessionId || !selectedAdminUserId) return;
-    setAdminUsersLoading(true);
-    setAdminUsersError('');
-    try {
-      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/logout-session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
-      });
-      const payload = (await response.json()) as { ok?: boolean; error?: string };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to revoke session');
-      await loadAdminUserDetail(selectedAdminUserId);
-    } catch (error) {
-      setAdminUsersError(String(error instanceof Error ? error.message : error));
-    } finally {
-      setAdminUsersLoading(false);
-    }
-  };
-
-  const logoutAllAdminUserSessions = async () => {
-    if (!selectedAdminUserId) return;
-    setAdminUsersLoading(true);
-    setAdminUsersError('');
-    try {
-      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/logout-all`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: selectedAdminUserId }),
-      });
-      const payload = (await response.json()) as { ok?: boolean; error?: string };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to revoke all sessions');
-      await loadAdminUserDetail(selectedAdminUserId);
-    } catch (error) {
-      setAdminUsersError(String(error instanceof Error ? error.message : error));
-    } finally {
-      setAdminUsersLoading(false);
-    }
-  };
-
-  const loadAdminAwards = async () => {
-    setAdminAwardsLoading(true);
-    setAdminAwardsError('');
-    try {
-      const response = await adminJsonFetch(`${serverUrl}/api/admin/awards`);
-      const payload = (await response.json()) as { ok?: boolean; error?: string; awards?: typeof adminAwards };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to load awards');
-      setAdminAwards(payload.awards ?? []);
-    } catch (error) {
-      setAdminAwardsError(String(error instanceof Error ? error.message : error));
-    } finally {
-      setAdminAwardsLoading(false);
-    }
-  };
-
-  const selectAdminAward = (awardId: string) => {
-    setSelectedAdminAwardId(awardId);
-    const selected = adminAwards.find((award) => award.id === awardId);
-    if (!selected) {
-      setAdminAwardDraft({
-        id: '',
-        key: '',
-        title: '',
-        description: '',
-        category: 'general',
-        metric: 'matches_finished',
-        threshold: '10',
-        badgeLabel: '',
-        badgeVariant: 'bronze',
-        iconPath: '',
-        active: true,
-        sortOrder: '0',
-      });
-      return;
-    }
-    setAdminAwardDraft({
-      id: selected.id,
-      key: selected.key,
-      title: selected.title,
-      description: selected.description,
-      category: selected.category,
-      metric: selected.metric,
-      threshold: String(selected.threshold),
-      badgeLabel: selected.badgeLabel,
-      badgeVariant: selected.badgeVariant,
-      iconPath: selected.iconPath ?? '',
-      active: selected.active,
-      sortOrder: String(selected.sortOrder),
-    });
-  };
-
-  const saveAdminAward = async () => {
-    setAdminAwardsLoading(true);
-    setAdminAwardsError('');
-    try {
-      const response = await adminJsonFetch(`${serverUrl}/api/admin/awards/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: adminAwardDraft.id || undefined,
-          key: adminAwardDraft.key,
-          title: adminAwardDraft.title,
-          description: adminAwardDraft.description,
-          category: adminAwardDraft.category,
-          metric: adminAwardDraft.metric,
-          threshold: Number(adminAwardDraft.threshold),
-          badgeLabel: adminAwardDraft.badgeLabel,
-          badgeVariant: adminAwardDraft.badgeVariant,
-          iconPath: adminAwardDraft.iconPath || null,
-          active: adminAwardDraft.active,
-          sortOrder: Number(adminAwardDraft.sortOrder),
-        }),
-      });
-      const payload = (await response.json()) as { ok?: boolean; error?: string; awards?: typeof adminAwards };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to save award');
-      setAdminAwards(payload.awards ?? []);
-      if (adminAwardDraft.id) {
-        selectAdminAward(adminAwardDraft.id);
-      }
-    } catch (error) {
-      setAdminAwardsError(String(error instanceof Error ? error.message : error));
-    } finally {
-      setAdminAwardsLoading(false);
-    }
-  };
-
-  const deleteAdminAward = async () => {
-    if (!adminAwardDraft.id) return;
-    setAdminAwardsLoading(true);
-    setAdminAwardsError('');
-    try {
-      const response = await adminJsonFetch(`${serverUrl}/api/admin/awards/delete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ awardId: adminAwardDraft.id }),
-      });
-      const payload = (await response.json()) as { ok?: boolean; error?: string; awards?: typeof adminAwards };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Failed to delete award');
-      setAdminAwards(payload.awards ?? []);
-      selectAdminAward('');
-    } catch (error) {
-      setAdminAwardsError(String(error instanceof Error ? error.message : error));
-    } finally {
-      setAdminAwardsLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (activeTab !== 'users' || adminUsers.length > 0 || adminUsersLoading) return;

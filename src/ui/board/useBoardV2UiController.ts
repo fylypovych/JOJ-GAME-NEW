@@ -78,6 +78,26 @@ export const useBoardV2UiController = (args: {
     [G?.players, id],
   );
 
+  const resolveMoveErrorText = (error: unknown, fallback: string) => {
+    if (error instanceof Error && error.message.trim()) return error.message.trim();
+    if (typeof error === 'string' && error.trim()) return error.trim();
+    return fallback;
+  };
+
+  const runMove = (move: (() => unknown) | undefined, fallback: string) => {
+    if (!move) return;
+    try {
+      const result = move();
+      Promise.resolve(result)
+        .then(() => setNotice(null))
+        .catch((error) => {
+          postNotice('error', resolveMoveErrorText(error, fallback));
+        });
+    } catch (error) {
+      postNotice('error', resolveMoveErrorText(error, fallback));
+    }
+  };
+
   const sendChatMessage = () => {
     const msg = chatInput.trim();
     if (!msg) return;
@@ -107,21 +127,18 @@ export const useBoardV2UiController = (args: {
 
   const handleDraw = () => {
     if (!canDraw) return postNotice('error', v2.confirmDrawFirst);
-    moves.drawCard();
-    setNotice(null);
+    runMove(() => moves.drawCard(), v2.actionUnavailable);
   };
 
   const handlePromote = (promoteReason: string | null) => {
     if (!canPlay) return postNotice('error', v2.actionUnavailable);
     if (promoteReason) return postNotice('error', promoteReason);
-    moves.promote();
-    setNotice(null);
+    runMove(() => moves.promote(), v2.actionUnavailable);
   };
 
-  const handlePass = (endTurn?: () => void) => {
+  const handlePass = (endTurn?: () => unknown) => {
     if (!canEndTurn) return;
-    endTurn?.();
-    setNotice(null);
+    runMove(endTurn, v2.actionUnavailable);
   };
 
   const handleDraftToggle = (cardId: string) => {

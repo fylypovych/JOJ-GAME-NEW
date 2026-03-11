@@ -37,6 +37,9 @@ if not exist "node_modules" (
 if not defined FRONTEND_ORIGIN (
   set "FRONTEND_ORIGIN=http://localhost:5173"
 )
+if not defined ALLOW_IN_MEMORY_USER_STORE (
+  set "ALLOW_IN_MEMORY_USER_STORE=1"
+)
 
 echo [JOJ] Cleaning up old local debug listeners on ports 5173 and 8000...
 for %%P in (5173 8000) do (

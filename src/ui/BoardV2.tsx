@@ -4,6 +4,7 @@ import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 import { GameCardTile, PilePreview } from './board/components';
 import { buildNextRankHint, getBoardPromoteBlockedReason, getBoardVvnzBlockedReason, getNextRankSeatMeta } from './board/rankHints';
 import { BoardV2HandSection, BoardV2PlayerOverview, BoardV2SelectionPanel, BoardV2SidePanel } from './board/v2Sections';
+import { BoardV2EndVoteModal, BoardV2GameoverModal, BoardV2Header } from './board/v2ShellSections';
 import { useBoardV2DerivedState } from './board/useBoardV2DerivedState';
 import { usePendingSelection } from './board/usePendingSelection';
 import { useBoardV2StageState } from './board/useBoardV2StageState';
@@ -315,63 +316,39 @@ export const BoardV2 = ({
   const stageClass = stage ? `is-stage-${stage}` : 'is-stage-waiting';
   return (
     <section className={`game-ui-v2-shell ${stageClass}${compactMode ? ' is-compact' : ''}`}>
-      <header className="game-ui-v2-header">
-        <div>
-          <p className="game-ui-v2-kicker">JOJ V2</p>
-          <h2>{isCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle}</h2>
-          {roomMeta ? (
-            <div className="game-ui-v2-room-meta">
-              <p className="game-ui-v2-subtle">{v2.activeRoom}: <strong>{roomMeta.matchID}</strong></p>
-              <p className="game-ui-v2-subtle">
-                {roomMeta.playerID ? `${v2.joinedAs}: ${playerName || '-'} (#${roomMeta.playerID})` : `${v2.spectatorMode}: ${playerName || '-'}`}
-              </p>
-            </div>
-          ) : null}
-          {currentStageFocus ? <p className="game-ui-v2-subtle game-ui-v2-stage-focus">{currentStageFocus}</p> : null}
-          {seatConnectionMissing ? (
-            <p className="admin-error">{t.seatConnectionMissing}</p>
-          ) : null}
-        </div>
-        <div className="game-ui-v2-header-actions">
-          <span className="game-ui-v2-badge">{stageLabel(stage, t)}</span>
-          {onLeaveRoom ? (
-            <button type="button" className="game-ui-v2-header-leave" onClick={onLeaveRoom}>
-              {v2.leaveRoom}
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className="game-ui-v2-header-leave"
-            onClick={() => {
-              if (typeof moves.requestEndGameVote !== 'function') return;
-              moves.requestEndGameVote();
-            }}
-            disabled={endGameVoteActive || Boolean(ctx?.gameover)}
-          >
-            {v2.requestEndGame}
-          </button>
-        </div>
-      </header>
+      <BoardV2Header
+        title={isCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle}
+        roomMeta={roomMeta}
+        playerName={playerName}
+        spectatorLabel={t.spectatorJoinedLabel}
+        activeRoomLabel={v2.activeRoom}
+        joinedAsLabel={v2.joinedAs}
+        spectatorModeLabel={v2.spectatorMode}
+        stageFocus={currentStageFocus}
+        seatConnectionMissing={seatConnectionMissing}
+        seatConnectionMissingText={t.seatConnectionMissing}
+        onLeaveRoom={onLeaveRoom}
+        leaveRoomLabel={v2.leaveRoom}
+        requestEndGameLabel={v2.requestEndGame}
+        onRequestEndGame={() => {
+          if (typeof moves.requestEndGameVote !== 'function') return;
+          moves.requestEndGameVote();
+        }}
+        requestEndGameDisabled={endGameVoteActive || Boolean(ctx?.gameover)}
+      />
 
-      {endGameVoteActive ? (
-        <section className="game-ui-v2-vote-popup" role="dialog" aria-label={v2.endVoteTitle}>
-          <div className="game-ui-v2-vote-popup-card">
-            <h3>{v2.endVoteTitle}</h3>
-              <p className="game-ui-v2-subtle">
-              {`${requestedByLabel} ${v2.endVotePromptSuffix}`}
-            </p>
-            {!hasVotedAgree ? (
-              <div className="game-ui-v2-selection-actions">
-                <button type="button" onClick={() => moves.respondEndGameVote?.(true)}>{v2.agreeEndGame}</button>
-                <button type="button" className="ghost" onClick={() => moves.respondEndGameVote?.(false)}>{v2.declineEndGame}</button>
-              </div>
-            ) : (
-              <p className="game-ui-v2-subtle">{v2.endVoteWaiting}</p>
-            )}
-            <p className="game-ui-v2-subtle">{v2.endVoteDeclinedInfo}</p>
-          </div>
-        </section>
-      ) : null}
+      <BoardV2EndVoteModal
+        open={endGameVoteActive}
+        title={v2.endVoteTitle}
+        prompt={`${requestedByLabel} ${v2.endVotePromptSuffix}`}
+        waitingLabel={v2.endVoteWaiting}
+        declineInfo={v2.endVoteDeclinedInfo}
+        hasVotedAgree={hasVotedAgree}
+        agreeLabel={v2.agreeEndGame}
+        declineLabel={v2.declineEndGame}
+        onAgree={() => moves.respondEndGameVote?.(true)}
+        onDecline={() => moves.respondEndGameVote?.(false)}
+      />
 
       <div className="game-ui-v2-grid">
         <div className="game-ui-v2-main">
@@ -655,38 +632,34 @@ export const BoardV2 = ({
           {ctx.gameover ? (
             <>
               <p className="gameover">{t.winner}: {playerLabelById(String((ctx.gameover as { winner?: string }).winner ?? ''))}</p>
-              {!gameoverModalClosed ? (
-              <div className="game-ui-v2-gameover-modal" role="dialog" aria-label={v2.gameStatsAria}>
-                <div className="game-ui-v2-gameover-card">
-                  <h3>{v2.gameStatsTitle}</h3>
-                  <p>
-                    <strong>{v2.winnerLabel}:</strong> {playerLabelById(winnerPlayerID)}
-                    {winnerRankName ? ` (${winnerRankName})` : ''}
-                  </p>
-                  {gameoverMeta?.endReason === 'stalled-no-cards' ? (
-                    <p className="game-ui-v2-subtle">{v2.gameAutoEndedSkip}</p>
-                  ) : null}
-                  {gameoverMeta?.endReason === 'agreed-end' ? (
-                    <p className="game-ui-v2-subtle">{v2.gameEndedByAgreement}</p>
-                  ) : null}
-                  <div className="game-ui-v2-token-list">
-                    <div className="game-ui-v2-token-row"><span>{v2.statsTotalTurns}</span><strong>{G.gameStats?.turnsCompleted ?? 0}</strong></div>
-                    <div className="game-ui-v2-token-row"><span>{v2.statsResourcesGained}</span><strong>{G.gameStats?.resourcesGainedTotal ?? 0}</strong></div>
-                    <div className="game-ui-v2-token-row"><span>{v2.statsResourcesLost}</span><strong>{G.gameStats?.resourcesLostTotal ?? 0}</strong></div>
-                    <div className="game-ui-v2-token-row"><span>{v2.statsLyapsPlayedOnOthers}</span><strong>{G.gameStats?.lyapsPlayedOnOthers ?? 0}</strong></div>
-                    <div className="game-ui-v2-token-row"><span>{v2.statsScandalsPlayedOnOthers}</span><strong>{G.gameStats?.scandalsPlayedOnOthers ?? 0}</strong></div>
-                  </div>
-                  {onLeaveRoom ? (
-                    <button type="button" onClick={onLeaveRoom}>
-                      {v2.leaveRoom}
-                    </button>
-                  ) : null}
-                  <button type="button" onClick={() => setGameoverModalClosed(true)}>
-                    {t.close}
-                  </button>
-                </div>
-              </div>
-              ) : null}
+              <BoardV2GameoverModal
+                open={!gameoverModalClosed}
+                ariaLabel={v2.gameStatsAria}
+                title={v2.gameStatsTitle}
+                winnerLabel={v2.winnerLabel}
+                winnerName={playerLabelById(winnerPlayerID)}
+                winnerRankName={winnerRankName}
+                autoEndedLabel={gameoverMeta?.endReason === 'stalled-no-cards' ? v2.gameAutoEndedSkip : undefined}
+                agreedEndLabel={gameoverMeta?.endReason === 'agreed-end' ? v2.gameEndedByAgreement : undefined}
+                stats={{
+                  totalTurns: G.gameStats?.turnsCompleted ?? 0,
+                  resourcesGained: G.gameStats?.resourcesGainedTotal ?? 0,
+                  resourcesLost: G.gameStats?.resourcesLostTotal ?? 0,
+                  lyapsPlayed: G.gameStats?.lyapsPlayedOnOthers ?? 0,
+                  scandalsPlayed: G.gameStats?.scandalsPlayedOnOthers ?? 0,
+                }}
+                statsLabels={{
+                  totalTurns: v2.statsTotalTurns,
+                  resourcesGained: v2.statsResourcesGained,
+                  resourcesLost: v2.statsResourcesLost,
+                  lyapsPlayed: v2.statsLyapsPlayedOnOthers,
+                  scandalsPlayed: v2.statsScandalsPlayedOnOthers,
+                }}
+                closeLabel={t.close}
+                leaveRoomLabel={v2.leaveRoom}
+                onLeaveRoom={onLeaveRoom}
+                onClose={() => setGameoverModalClosed(true)}
+              />
             </>
           ) : null}
         </div>
@@ -708,9 +681,9 @@ export const BoardV2 = ({
       </div>
 
       <div className="game-ui-v2-mobile-bar" aria-label={v2.mobileActions}>
-        <button type="button" onClick={() => canDraw && moves.drawCard()} disabled={!canDraw}>{t.draw}</button>
-        <button type="button" onClick={() => { if (!canPlay || promoteReason) return; moves.promote(); }} disabled={!canPlay || Boolean(promoteReason)}>{t.promote}</button>
-        <button type="button" onClick={() => canEndTurn && (shouldShowSkipTurnLabel ? moves.pass() : moves.endTurn?.())} disabled={!canEndTurn}>{passButtonLabel}</button>
+        <button type="button" onClick={handleDraw} disabled={!canDraw}>{t.draw}</button>
+        <button type="button" onClick={() => handlePromote(promoteReason)} disabled={!canPlay || Boolean(promoteReason)}>{t.promote}</button>
+        <button type="button" onClick={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)} disabled={!canEndTurn}>{passButtonLabel}</button>
       </div>
     </section>
   );

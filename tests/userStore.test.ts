@@ -186,40 +186,11 @@ test('user-store unlocks awards from aggregated statistics', async () => {
   }
 });
 
-test('user-store ensures default administrator admin/admin', async () => {
+test('user-store does not create a default administrator implicitly', async () => {
   const { store, pool } = await makeStore();
   try {
-    const admin = await store.ensureDefaultAdministrator();
-    assert.ok(admin);
-    assert.equal(admin?.username, 'admin');
-    assert.equal(admin?.role, 'administrator');
-
-    const authUser = await store.authenticateUser('admin', 'admin');
-    assert.ok(authUser);
-    assert.equal(authUser?.role, 'administrator');
-  } finally {
-    await pool.end();
-  }
-});
-
-test('ensureDefaultAdministrator does not reset an existing admin password', async () => {
-  const { store, pool } = await makeStore();
-  try {
-    const admin = await store.ensureDefaultAdministrator();
-    assert.ok(admin);
-
-    await store.changePassword({
-      userId: String(admin?.id),
-      currentPassword: 'admin',
-      nextPassword: 'admin-new-password',
-    });
     assert.equal(await store.authenticateUser('admin', 'admin'), null);
-    assert.ok(await store.authenticateUser('admin', 'admin-new-password'));
-
-    const ensuredAgain = await store.ensureDefaultAdministrator();
-    assert.ok(ensuredAgain);
-    assert.equal(await store.authenticateUser('admin', 'admin'), null);
-    assert.ok(await store.authenticateUser('admin', 'admin-new-password'));
+    assert.equal(await store.getPublicProfileByUsername('admin'), null);
   } finally {
     await pool.end();
   }

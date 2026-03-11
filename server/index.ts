@@ -1,11 +1,6 @@
 import { createRequire } from 'node:module';
-import net from 'node:net';
-import { spawnSync } from 'node:child_process';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { createMemoryPostgresPool, createPostgresPool } from './db/postgres';
 import { runSqlMigrations } from './db/migrations';
-import { loadEnvFile } from './env';
 import { createFileLogger } from './file-logger';
 import { autoStashRuntimeNoise, createCommandRunners, getGitUpdateStatus } from './git-utils';
 import { createRateLimiter, createRequireAdminAuth, readJsonBodySafe } from './request-utils';
@@ -16,6 +11,32 @@ import { registerUploadRoutes } from './routes/uploads';
 import { registerUserLobbyRoutes } from './routes/user-lobby';
 import { createUserStore } from './services/user-store';
 import { createSharedConfigStore } from './storage/shared-config';
+import {
+  adminDbUiConfigPath,
+  adminToken,
+  allowInMemoryUserStore,
+  allowInsecureAdmin,
+  allowedFrontendOrigins,
+  databaseUrl,
+  dbMigrationsDir,
+  dbSchemaPath,
+  devRestartTouchPath,
+  hasPsqlCli,
+  IMAGE_UPLOAD_BODY_LIMIT,
+  isAdminAuthEnabled,
+  isPortAvailable,
+  JSON_BODY_LIMIT,
+  LARGE_JSON_BODY_LIMIT,
+  logsPath,
+  matchesDbDir,
+  nodeEnv,
+  port,
+  ranksPath,
+  repoDir,
+  requestedSharedConfigStorageMode,
+  templatePath,
+  uploadsDir,
+} from './bootstrap-config';
 import {
   exportSharedDeckTemplateJson,
   exportSharedRanksJson,
@@ -37,27 +58,7 @@ const { Server, FlatFile } = require('boardgame.io/server') as {
   };
 };
 
-const serverDir = path.dirname(fileURLToPath(import.meta.url));
-const appRootDir = path.resolve(serverDir, '..');
-
-const logsPath = path.resolve(appRootDir, 'logs', 'server.log');
-const matchesDbDir = path.resolve(appRootDir, 'database', 'matches');
-const envPath = path.resolve(appRootDir, '.env');
 const rateLimitState = new Map<string, { count: number; resetAt: number }>();
-
-const JSON_BODY_LIMIT = 2 * 1024 * 1024;
-const LARGE_JSON_BODY_LIMIT = 8 * 1024 * 1024;
-const IMAGE_UPLOAD_BODY_LIMIT = 16 * 1024 * 1024;
-loadEnvFile(envPath);
-
-const adminToken = (process.env.ADMIN_TOKEN ?? '').trim();
-const disableAdminAuth = /^(1|true|yes)$/i.test((process.env.DISABLE_ADMIN_AUTH ?? '').trim());
-const isAdminAuthEnabled = !disableAdminAuth && adminToken.length > 0;
-const allowInsecureAdmin = /^(1|true|yes)$/i.test((process.env.ALLOW_INSECURE_ADMIN ?? '').trim());
-const storageModeEnv = (process.env.STORAGE_MODE ?? 'file').trim().toLowerCase();
-const requestedSharedConfigStorageMode = (storageModeEnv === 'postgres' || storageModeEnv === 'db') ? 'postgres' : 'file';
-const databaseUrl = (process.env.DATABASE_URL ?? '').trim();
-const nodeEnv = (process.env.NODE_ENV ?? '').trim().toLowerCase();
 
 const logLine = createFileLogger(logsPath);
 
@@ -94,22 +95,11 @@ if (typeof rawMatchDb.listMatches === 'function') {
 
 const server = Server({
   games: [jojGame],
-  origins: [
-    process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://localhost:4173',
-    'http://127.0.0.1:4173',
-  ],
+  origins: allowedFrontendOrigins,
   db: matchDb,
 });
 const router = (server as { router?: any }).router;
 const app = (server as { app?: { middleware?: Array<(ctx: any, next: () => Promise<unknown>) => Promise<unknown>> } }).app;
-const allowedFrontendOrigins = Array.from(new Set([
-  process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'http://localhost:4173',
-  'http://127.0.0.1:4173',
-]));
 const corsMiddleware = async (ctx: any, next: () => Promise<unknown>) => {
     const origin = typeof ctx?.request?.headers?.origin === 'string' ? String(ctx.request.headers.origin) : '';
     if (origin && allowedFrontendOrigins.includes(origin)) {
@@ -134,36 +124,8 @@ if (app && Array.isArray(app.middleware)) {
 } else if (router && typeof router.use === 'function') {
   router.use(corsMiddleware);
 }
-const templatePath = path.resolve(appRootDir, 'database', 'shared-deck-template.json');
-const ranksPath = path.resolve(appRootDir, 'database', 'shared-ranks.json');
-const uploadsDir = path.resolve(appRootDir, 'public', 'cards');
-const repoDir = appRootDir;
-const devRestartTouchPath = path.resolve(appRootDir, 'server', 'restart.touch');
-const dbSchemaPath = path.resolve(appRootDir, 'db', 'schema', 'db.sql');
-const dbMigrationsDir = path.resolve(appRootDir, 'db', 'migrations');
-const adminDbUiConfigPath = path.resolve(appRootDir, 'database', 'admin-db-ui-config.json');
-
 const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });
 const { runGit, runShellCommand, spawnDetachedShell } = createCommandRunners(repoDir);
-
-const hasPsqlCli = () => {
-  const probe = spawnSync('psql', ['--version'], { stdio: 'ignore', windowsHide: true });
-  return !probe.error;
-};
-
-const isPortAvailable = (targetPort: number) => new Promise<boolean>((resolve) => {
-  const probe = net.createServer();
-  probe.once('error', (error: NodeJS.ErrnoException) => {
-    if (error.code === 'EADDRINUSE') resolve(false);
-    else resolve(false);
-  });
-  probe.once('listening', () => {
-    probe.close(() => resolve(true));
-  });
-  probe.listen(targetPort);
-});
-
-const port = Number(process.env.PORT ?? 8000);
 
 void (async () => {
   let sharedConfigStorageMode: 'file' | 'postgres' = requestedSharedConfigStorageMode;
@@ -183,10 +145,9 @@ void (async () => {
       await runSqlMigrations(userPool, dbMigrationsDir);
       userStore = createUserStore(userPool);
       await userStore.ensureSchema();
-      await userStore.ensureDefaultAdministrator();
       await userStore.deleteExpiredSessions();
       postgresAvailableForApp = true;
-      await logLine('INFO', 'user auth/profile schema ready; default administrator admin/admin ensured');
+      await logLine('INFO', 'user auth/profile schema ready');
       setInterval(async () => {
         if (!userStore) return;
         try {
@@ -211,12 +172,11 @@ void (async () => {
     await logLine('WARN', 'user auth/profile postgres is not configured (DATABASE_URL is empty)');
   }
 
-  if (!userStore && nodeEnv !== 'production') {
+  if (!userStore && nodeEnv !== 'production' && allowInMemoryUserStore) {
     try {
       userPool = await createMemoryPostgresPool();
       userStore = createUserStore(userPool);
       await userStore.ensureSchema();
-      await userStore.ensureDefaultAdministrator();
       await userStore.deleteExpiredSessions();
       await logLine('WARN', 'user auth/profile module running on in-memory fallback for local/dev mode');
     } catch (error) {
@@ -224,6 +184,8 @@ void (async () => {
       userStore = null;
       await logLine('WARN', `user auth/profile module disabled (memory fallback failed): ${String(error instanceof Error ? error.message : error)}`);
     }
+  } else if (!userStore && nodeEnv !== 'production') {
+    await logLine('WARN', 'user auth/profile memory fallback is disabled (set ALLOW_IN_MEMORY_USER_STORE=1 to enable it locally)');
   }
 
   if (sharedConfigStorageMode === 'postgres') {

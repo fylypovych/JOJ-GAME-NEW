@@ -224,8 +224,6 @@ export const registerAuthRoutes = (args: {
     ctx.body = {
       ok: true,
       csrfToken: issueUserCsrfToken(ctx),
-      resetTokenPreview: process.env.NODE_ENV === 'production' ? undefined : result?.token ?? null,
-      resetTokenExpiresAt: process.env.NODE_ENV === 'production' ? undefined : result?.expiresAt ?? null,
     };
   });
 
@@ -336,15 +334,21 @@ export const registerAuthRoutes = (args: {
     if (!body) return;
     const matchId = String(body.matchID ?? '').trim();
     const playerId = String(body.playerID ?? '').trim();
+    const credentials = String(body.credentials ?? '').trim();
     const playerName = typeof body.playerName === 'string' ? body.playerName.trim() : '';
-    if (!matchId || !playerId) {
+    if (!matchId || !playerId || !credentials) {
       ctx.status = 400;
-      ctx.body = { ok: false, error: 'Missing matchID or playerID.' };
+      ctx.body = { ok: false, error: 'Missing matchID, playerID or credentials.' };
       return;
     }
     const verified = await getVerifiedMatchParticipant(ctx, matchId, playerId);
     if (!verified) return;
-    const { state, knownPlayerName } = verified;
+    const { state, knownPlayerName, metadataPlayer } = verified;
+    if (!metadataPlayer?.credentials || metadataPlayer.credentials !== credentials) {
+      ctx.status = 403;
+      ctx.body = { ok: false, error: 'Invalid match credentials.' };
+      return;
+    }
     await store.linkUserToMatch({
       userId: user.id,
       matchId,
