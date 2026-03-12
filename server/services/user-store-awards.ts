@@ -10,6 +10,12 @@ import {
   normalizeBadgeVariant,
 } from './user-store-shared';
 
+type AwardGrantRow = {
+  award_id: string;
+  awarded_at: string;
+  progress_value: number;
+};
+
 export const createUserAwardsStore = (args: {
   pool: Pool;
   getUserStatsSummary: (userId: string) => Promise<UserStatsSummary>;
@@ -88,12 +94,12 @@ export const createUserAwardsStore = (args: {
         `, [userId, definition.id, progressValue]);
       }
     }
-    const granted = await pool.query<{ award_id: string; awarded_at: string; progress_value: number }>(`
+    const granted = await pool.query<AwardGrantRow>(`
       SELECT award_id, awarded_at, progress_value
       FROM user_awards
       WHERE user_id = $1
     `, [userId]);
-    const grantedById = new Map(granted.rows.map((row) => [row.award_id, row]));
+    const grantedById = new Map<string, AwardGrantRow>(granted.rows.map((row) => [row.award_id, row]));
     return definitions.map((definition) => {
       const progressValue = metricValue(definition.metric);
       const grantedRow = grantedById.get(definition.id);

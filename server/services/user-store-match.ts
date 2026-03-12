@@ -6,6 +6,7 @@ import type {
   UserSessionRecord,
   UserStatsSummary,
 } from './user-store-shared';
+import { getRankOrder, RANK_ORDER } from './user-store-shared';
 
 export const createUserMatchStore = (args: {
   pool: Pool;
@@ -211,24 +212,6 @@ export const createUserMatchStore = (args: {
       FROM user_match_links l
       JOIN persisted_match_participants p ON p.match_id = l.match_id AND p.player_id = l.player_id
       WHERE l.user_id = $1
-      ORDER BY CASE p.final_rank_id
-        WHEN 'recruit' THEN 1
-        WHEN 'soldier' THEN 2
-        WHEN 'junior_sergeant' THEN 3
-        WHEN 'sergeant' THEN 4
-        WHEN 'senior_sergeant' THEN 5
-        WHEN 'ensign' THEN 6
-        WHEN 'junior_lieutenant' THEN 7
-        WHEN 'lieutenant' THEN 8
-        WHEN 'senior_lieutenant' THEN 9
-        WHEN 'captain' THEN 10
-        WHEN 'major' THEN 11
-        WHEN 'lieutenant_colonel' THEN 12
-        WHEN 'colonel' THEN 13
-        WHEN 'general' THEN 14
-        ELSE 0
-      END DESC
-      LIMIT 1
     `, [userId]);
     const row = result.rows[0];
     const matchesLinked = Number(row?.matches_linked ?? 0);
@@ -264,7 +247,9 @@ export const createUserMatchStore = (args: {
       GROUP BY COALESCE(r.player_count, 0)
       ORDER BY player_count ASC
     `, [userId]);
-    const bestRankId = bestRank.rows[0]?.final_rank_id ?? 'recruit';
+    const bestRankId = bestRank.rows
+      .map((row) => row.final_rank_id)
+      .sort((left, right) => getRankOrder(right) - getRankOrder(left))[0] ?? 'recruit';
     return {
       matchesLinked,
       matchesFinished,
@@ -282,7 +267,7 @@ export const createUserMatchStore = (args: {
       lyapsPlayedOnOthers: Number(row?.lyaps_played_on_others ?? 0),
       scandalsPlayedOnOthers: Number(row?.scandals_played_on_others ?? 0),
       lastMatchAt: row?.last_match_at instanceof Date ? row.last_match_at.toISOString() : row?.last_match_at ?? null,
-      byMode: byModeResult.rows.map((entry) => {
+      byMode: byModeResult.rows.map((entry: { mode: 'standard' | 'standard_plus' | 'simplified'; matches_finished: string; wins: string }) => {
         const modeWins = Number(entry.wins ?? 0);
         const modeMatchesFinished = Number(entry.matches_finished ?? 0);
         return {
@@ -293,8 +278,8 @@ export const createUserMatchStore = (args: {
         };
       }),
       byPlayerCount: byPlayerCountResult.rows
-        .filter((entry) => Number(entry.player_count ?? 0) > 0)
-        .map((entry) => {
+        .filter((entry: { player_count: number; matches_finished: string; wins: string }) => Number(entry.player_count ?? 0) > 0)
+        .map((entry: { player_count: number; matches_finished: string; wins: string }) => {
           const playerCountWins = Number(entry.wins ?? 0);
           const playerCountMatchesFinished = Number(entry.matches_finished ?? 0);
           return {
@@ -375,27 +360,7 @@ export const createUserMatchStore = (args: {
   };
 
   const getAdminAnalytics = async (): Promise<AdminAnalyticsSummary> => {
-    const rankOrderSql = `
-      CASE p.final_rank_id
-        WHEN 'recruit' THEN 1
-        WHEN 'soldier' THEN 2
-        WHEN 'senior_soldier' THEN 3
-        WHEN 'junior_sergeant' THEN 4
-        WHEN 'sergeant' THEN 5
-        WHEN 'senior_sergeant' THEN 6
-        WHEN 'ensign' THEN 7
-        WHEN 'junior_lieutenant' THEN 8
-        WHEN 'lieutenant' THEN 9
-        WHEN 'senior_lieutenant' THEN 10
-        WHEN 'captain' THEN 11
-        WHEN 'major' THEN 12
-        WHEN 'lieutenant_colonel' THEN 13
-        WHEN 'colonel' THEN 14
-        WHEN 'brigadier_general' THEN 15
-        WHEN 'general' THEN 16
-        ELSE 0
-      END
-    `;
+    const rankOrderSql = `CASE p.final_rank_id ${RANK_ORDER.map((rankId, index) => `WHEN '${rankId}' THEN ${index + 1}`).join(' ')} ELSE 0 END`;
     const summaryResult = await pool.query<{
       matches_finished: string;
       rank_wins: string;
@@ -491,7 +456,16 @@ export const createUserMatchStore = (args: {
       avgPlayerCount: Number(row?.avg_player_count ?? 0),
       avgBotCount: Number(row?.avg_bot_count ?? 0),
       avgWinnerRankOrder: Number(row?.avg_winner_rank_order ?? 0),
-      byMode: byModeResult.rows.map((entry) => ({
+      byMode: byModeResult.rows.map((entry: {
+        mode: 'standard' | 'standard_plus' | 'simplified';
+        matches_finished: string;
+        avg_turns: string | null;
+        stalled_matches: string;
+        rank_win_rate_pct: string | null;
+        score_win_rate_pct: string | null;
+        stalled_rate_pct: string | null;
+        avg_winner_rank_order: string | null;
+      }) => ({
         mode: entry.mode,
         matchesFinished: Number(entry.matches_finished ?? 0),
         avgTurns: Number(entry.avg_turns ?? 0),
@@ -501,7 +475,16 @@ export const createUserMatchStore = (args: {
         stalledRatePct: Number(entry.stalled_rate_pct ?? 0),
         avgWinnerRankOrder: Number(entry.avg_winner_rank_order ?? 0),
       })),
-      byPlayerCount: byPlayerCountResult.rows.map((entry) => ({
+      byPlayerCount: byPlayerCountResult.rows.map((entry: {
+        player_count: number;
+        matches_finished: string;
+        avg_turns: string | null;
+        stalled_matches: string;
+        rank_win_rate_pct: string | null;
+        score_win_rate_pct: string | null;
+        stalled_rate_pct: string | null;
+        avg_winner_rank_order: string | null;
+      }) => ({
         playerCount: Number(entry.player_count ?? 0),
         matchesFinished: Number(entry.matches_finished ?? 0),
         avgTurns: Number(entry.avg_turns ?? 0),
@@ -511,11 +494,11 @@ export const createUserMatchStore = (args: {
         stalledRatePct: Number(entry.stalled_rate_pct ?? 0),
         avgWinnerRankOrder: Number(entry.avg_winner_rank_order ?? 0),
       })),
-      topRanks: topRanksResult.rows.map((entry) => ({
+      topRanks: topRanksResult.rows.map((entry: { rank_id: string; count: string }) => ({
         rankId: entry.rank_id,
         count: Number(entry.count ?? 0),
       })),
-      topWinningRanks: topWinningRanksResult.rows.map((entry) => ({
+      topWinningRanks: topWinningRanksResult.rows.map((entry: { rank_id: string; count: string }) => ({
         rankId: entry.rank_id,
         count: Number(entry.count ?? 0),
       })),

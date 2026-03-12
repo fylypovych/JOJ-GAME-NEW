@@ -1,13 +1,22 @@
-import nodemailer from 'nodemailer';
 import type { LogLine } from '../routes/types';
 
-let transporterPromise: Promise<nodemailer.Transporter> | null = null;
+type MailTransporter = {
+  sendMail: (message: {
+    from: string | undefined;
+    to: string;
+    subject: string;
+    text: string;
+    html: string;
+  }) => Promise<unknown>;
+};
+
+let transporterPromise: Promise<MailTransporter> | null = null;
 
 const hasSmtpConfig = () => Boolean((process.env.SMTP_HOST ?? '').trim() && (process.env.SMTP_FROM ?? '').trim());
 
-const getTransporter = () => {
+const getTransporter = async () => {
   if (!transporterPromise) {
-    transporterPromise = Promise.resolve(nodemailer.createTransport({
+    transporterPromise = import('nodemailer').then((module) => module.default.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT ?? 587),
       secure: String(process.env.SMTP_SECURE ?? '').trim() === 'true',
@@ -17,7 +26,7 @@ const getTransporter = () => {
           pass: process.env.SMTP_PASS,
         }
         : undefined,
-    }));
+    }) as MailTransporter);
   }
   return transporterPromise;
 };
