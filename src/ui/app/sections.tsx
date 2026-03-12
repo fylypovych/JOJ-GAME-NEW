@@ -1,14 +1,33 @@
 import { useState } from 'react';
 import { normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition } from '../../game/types';
-import type { BotDifficulty, GameMode } from '../../game/types';
+import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { Language } from '../i18n';
 import { cardFlavor, cardTitleWithOverride, categoryLabel, text } from '../i18n';
 import type { GalleryCategoryFilter, LobbyMatch, UserTab } from './model';
 import type { AuthUser, UserAward, UserStats } from './useUserAccount';
-import type { UserSession } from './useUserAccount';
+import type { UserMatchHistoryItem, UserSession } from './useUserAccount';
 
 type T = ReturnType<typeof text>;
+
+const formatGameModeLabel = (t: T, gameMode: GameMode) => {
+  if (gameMode === 'standard_plus') return t.gameModeStandardPlus;
+  if (gameMode === 'simplified') return t.gameModeSimplified;
+  return t.gameModeStandard;
+};
+
+const formatBotDifficultyLabel = (t: T, difficulty: BotDifficulty | null) => {
+  if (difficulty === 'easy') return t.botDifficultyEasy;
+  if (difficulty === 'normal') return t.botDifficultyNormal;
+  if (difficulty === 'hard') return t.botDifficultyHard;
+  return '-';
+};
+
+const formatMatchOutcomeLabel = (t: T, item: UserMatchHistoryItem) => {
+  if (item.winnerPlayerId && item.winnerPlayerId === item.playerId) return t.userMatchHistoryOutcomeWin;
+  if (item.endReason === 'stalled-no-cards') return t.userMatchHistoryOutcomeStalled;
+  return t.userMatchHistoryOutcomeLoss;
+};
 
 type AdminAuthCardProps = {
   t: T;
@@ -103,8 +122,12 @@ type LobbySectionProps = {
   setGameMode: (value: GameMode) => void;
   createWithBots: boolean;
   setCreateWithBots: (value: boolean) => void;
+  botCount: number;
+  setBotCount: (value: number) => void;
   botDifficulty: BotDifficulty;
   setBotDifficulty: (value: BotDifficulty) => void;
+  botProfile: BotProfile;
+  setBotProfile: (value: BotProfile) => void;
   createRoom: () => void;
   refreshMatches: () => void;
   loading: boolean;
@@ -130,8 +153,12 @@ export const LobbySection = ({
   setGameMode,
   createWithBots,
   setCreateWithBots,
+  botCount,
+  setBotCount,
   botDifficulty,
   setBotDifficulty,
+  botProfile,
+  setBotProfile,
   createRoom,
   refreshMatches,
   loading,
@@ -173,7 +200,7 @@ export const LobbySection = ({
           const hasFree = taken < capacity;
           return (
             <p key={match.matchID}>
-              {match.matchID} | {taken}/{capacity}{' '}
+              <strong>{match.matchID}</strong> | {taken}/{capacity} · {hasFree ? t.roomStatusOpen : t.roomStatusFull}{' '}
               <button
                 type="button"
                 onClick={() => joinRoom(match)}
@@ -187,6 +214,13 @@ export const LobbySection = ({
                 disabled={loading}
               >
                 {t.spectateRoom}
+              </button>{' '}
+              <button
+                type="button"
+                onClick={() => { void navigator.clipboard?.writeText(match.matchID); }}
+                disabled={loading}
+              >
+                {t.copyRoomId}
               </button>
             </p>
           );
@@ -256,6 +290,19 @@ export const LobbySection = ({
         </p>
         {createWithBots ? (
           <>
+            <p>{t.roomBotCountLabel}:</p>
+            <p className="admin-controls">
+              {Array.from({ length: Math.max(0, roomCapacity - 1) }, (_, index) => index + 1).map((count) => (
+                <button
+                  key={`bot-count-${count}`}
+                  type="button"
+                  aria-pressed={botCount === count}
+                  onClick={() => setBotCount(count)}
+                >
+                  {botCount === count ? '✓ ' : ''}{count}
+                </button>
+              ))}
+            </p>
             <p>{t.roomBotDifficultyLabel}:</p>
             <p className="admin-controls">
               {[
@@ -270,6 +317,23 @@ export const LobbySection = ({
                   onClick={() => setBotDifficulty(difficulty.id as BotDifficulty)}
                 >
                   {botDifficulty === difficulty.id ? '✓ ' : ''}{difficulty.label}
+                </button>
+              ))}
+            </p>
+            <p>{t.roomBotProfileLabel}:</p>
+            <p className="admin-controls">
+              {[
+                { id: 'balanced', label: t.botProfileBalanced },
+                { id: 'aggressive', label: t.botProfileAggressive },
+                { id: 'control', label: t.botProfileControl },
+              ].map((profile) => (
+                <button
+                  key={`bot-profile-${profile.id}`}
+                  type="button"
+                  aria-pressed={botProfile === profile.id}
+                  onClick={() => setBotProfile(profile.id as BotProfile)}
+                >
+                  {botProfile === profile.id ? '✓ ' : ''}{profile.label}
                 </button>
               ))}
             </p>
@@ -344,6 +408,7 @@ export const ProfileSection = ({
   onChangePassword,
   stats,
   awards,
+  matchHistory,
   sessions,
   onRefreshSessions,
   onLogoutAllSessions,
@@ -384,6 +449,7 @@ export const ProfileSection = ({
   onChangePassword: () => void;
   stats: UserStats | null;
   awards: UserAward[];
+  matchHistory: UserMatchHistoryItem[];
   sessions: UserSession[];
   onRefreshSessions: () => void;
   onLogoutAllSessions: () => void;
@@ -486,6 +552,21 @@ export const ProfileSection = ({
                 ))}
               </ul>
             )}
+            <h3>{t.userMatchHistoryTitle}</h3>
+            {matchHistory.length === 0 ? <p>{t.simulationNoData}</p> : (
+              <ul>
+                {matchHistory.slice(0, 10).map((item) => (
+                  <li key={`profile-history-${item.matchId}-${item.playerId}`}>
+                    <strong>{formatMatchOutcomeLabel(t, item)}</strong> · {formatGameModeLabel(t, item.gameMode)}
+                    {' · '}
+                    {item.playerCount}p
+                    {item.botCount > 0 ? ` · ${item.botCount} ${t.roomBotsLabel.toLowerCase()} (${formatBotDifficultyLabel(t, item.botDifficulty)})` : ''}
+                    <br />
+                    {t.userMatchHistoryFinalRank}: {item.finalRankId.replace(/_/g, ' ')} · {t.userStatAvgTurns}: {item.turnsCompleted}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </>
@@ -578,15 +659,17 @@ export const StatisticsSection = ({
   user,
   stats,
   awards,
+  matchHistory,
   sessions,
 }: {
   t: T;
   user: AuthUser | null;
   stats: UserStats | null;
   awards: UserAward[];
+  matchHistory: UserMatchHistoryItem[];
   sessions: UserSession[];
 }) => {
-  const [activeCategory, setActiveCategory] = useState<'general' | 'resources' | 'actions' | 'achievements' | 'sessions'>('general');
+  const [activeCategory, setActiveCategory] = useState<'general' | 'resources' | 'actions' | 'achievements' | 'history' | 'sessions'>('general');
   return (
     <section className="board">
       <h2>{t.userTabStatistics}</h2>
@@ -597,6 +680,7 @@ export const StatisticsSection = ({
             <button type="button" onClick={() => setActiveCategory('resources')} disabled={activeCategory === 'resources'}>{t.statisticsCategoryResources}</button>
             <button type="button" onClick={() => setActiveCategory('actions')} disabled={activeCategory === 'actions'}>{t.statisticsCategoryActions}</button>
             <button type="button" onClick={() => setActiveCategory('achievements')} disabled={activeCategory === 'achievements'}>{t.statisticsCategoryAchievements}</button>
+            <button type="button" onClick={() => setActiveCategory('history')} disabled={activeCategory === 'history'}>{t.statisticsCategoryHistory}</button>
             <button type="button" onClick={() => setActiveCategory('sessions')} disabled={activeCategory === 'sessions'}>{t.statisticsCategorySessions}</button>
           </p>
           {!stats ? <p>{t.simulationNoData}</p> : null}
@@ -605,9 +689,32 @@ export const StatisticsSection = ({
               <li>{t.userStatMatchesLinked}: {stats.matchesLinked}</li>
               <li>{t.userStatMatchesFinished}: {stats.matchesFinished}</li>
               <li>{t.userStatWins}: {stats.wins}</li>
+              <li>{t.userStatRankWins}: {stats.rankWins}</li>
+              <li>{t.userStatScoreWins}: {stats.scoreWins}</li>
+              <li>{t.userStatStalledMatches}: {stats.stalledMatches}</li>
+              <li>{t.userStatBotMatchesFinished}: {stats.botMatchesFinished}</li>
               <li>{t.userStatWinRate}: {stats.winRatePct}%</li>
               <li>{t.userStatAvgTurns}: {stats.avgTurns}</li>
               <li>{t.userStatBestRank}: {stats.bestRankName}</li>
+              <li>{t.userStatLastMatchAt}: {stats.lastMatchAt ? new Date(stats.lastMatchAt).toLocaleString() : '-'}</li>
+              <li>{t.userStatsByModeTitle}
+                <ul>
+                  {stats.byMode.length === 0 ? <li>{t.simulationNoData}</li> : stats.byMode.map((row) => (
+                    <li key={`stats-mode-${row.mode}`}>
+                      {formatGameModeLabel(t, row.mode)}: {row.matchesFinished} / {row.wins} / {row.winRatePct}%
+                    </li>
+                  ))}
+                </ul>
+              </li>
+              <li>{t.userStatsByPlayerCountTitle}
+                <ul>
+                  {stats.byPlayerCount.length === 0 ? <li>{t.simulationNoData}</li> : stats.byPlayerCount.map((row) => (
+                    <li key={`stats-player-count-${row.playerCount}`}>
+                      {row.playerCount}: {row.matchesFinished} / {row.wins} / {row.winRatePct}%
+                    </li>
+                  ))}
+                </ul>
+              </li>
             </ul>
           ) : null}
           {stats && activeCategory === 'resources' ? (
@@ -631,6 +738,24 @@ export const StatisticsSection = ({
                     <strong>[{award.badgeLabel}]</strong> {award.title}
                     {' '}({Math.min(award.progressValue, award.threshold)}/{award.threshold})
                     {award.awarded ? ` • ${t.userAwardUnlockedLabel}` : ''}
+                  </li>
+                ))}
+              </ul>
+            )
+          ) : null}
+          {activeCategory === 'history' ? (
+            matchHistory.length === 0 ? <p>{t.simulationNoData}</p> : (
+              <ul>
+                {matchHistory.map((item) => (
+                  <li key={`stats-history-${item.matchId}-${item.playerId}`}>
+                    <strong>{formatMatchOutcomeLabel(t, item)}</strong> · {formatGameModeLabel(t, item.gameMode)}
+                    {' · '}
+                    {item.playerCount}p
+                    {item.botCount > 0 ? ` · ${item.botCount} ${t.roomBotsLabel.toLowerCase()} (${formatBotDifficultyLabel(t, item.botDifficulty)})` : ''}
+                    <br />
+                    {t.userMatchHistoryFinalRank}: {item.finalRankId.replace(/_/g, ' ')} · {t.userStatAvgTurns}: {item.turnsCompleted}
+                    <br />
+                    {t.userStatResourcesGained}: {item.resourcesGainedTotal} · {t.userStatResourcesLost}: {item.resourcesLostTotal}
                   </li>
                 ))}
               </ul>

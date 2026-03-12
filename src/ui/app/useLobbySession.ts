@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createBotPlayerName, getBotSeatIds } from '../../game/bot-engine/config';
-import type { GameMode } from '../../game/types';
-import type { BotDifficulty } from '../../game/types';
+import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { LobbyMatch, Session } from './model';
 
 type LobbyClientLike = {
@@ -20,7 +19,9 @@ export const useLobbySession = (args: {
   selectedOptionalModuleIds: string[];
   fallbackPlayerName?: string;
   createWithBots: boolean;
+  botCount: number;
   botDifficulty: BotDifficulty;
+  botProfile: BotProfile;
   sessionStorageKey: string;
   initialSession: Session | null;
   serverUnavailableText: string;
@@ -41,7 +42,9 @@ export const useLobbySession = (args: {
     selectedOptionalModuleIds,
     fallbackPlayerName,
     createWithBots,
+    botCount,
     botDifficulty,
+    botProfile,
     sessionStorageKey,
     initialSession,
     serverUnavailableText,
@@ -81,8 +84,9 @@ export const useLobbySession = (args: {
 
   const botSetup = createWithBots
     ? {
-      count: Math.max(0, Math.min(5, roomCapacity - 1)),
+      count: Math.max(0, Math.min(roomCapacity - 1, Math.floor(botCount || 0))),
       difficulty: botDifficulty,
+      profile: botProfile,
     }
     : null;
 
@@ -92,7 +96,7 @@ export const useLobbySession = (args: {
     for (const [index, playerID] of seatIds.entries()) {
       await lobbyClient.joinMatch(gameName, matchID, {
         playerID,
-        playerName: createBotPlayerName({ difficulty: botSetup.difficulty, seatIndex: index + 1 }),
+        playerName: createBotPlayerName({ difficulty: botSetup.difficulty, profile: botSetup.profile, seatIndex: index + 1 }),
       });
     }
   };

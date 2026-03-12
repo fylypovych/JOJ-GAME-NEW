@@ -256,6 +256,7 @@ export const registerAuthRoutes = (args: {
       user,
       stats: (await persistFinishedLinkedMatches(ctx, store, user.id), await store.getUserStatsSummary(user.id)),
       awards: await store.evaluateUserAwards(user.id),
+      matchHistory: await store.listUserMatchHistory(user.id, 20),
       csrfToken: issueUserCsrfToken(ctx),
     };
   });

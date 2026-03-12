@@ -1,9 +1,10 @@
-import type { BotDifficulty, JojGameState, ResourceKey } from '../types';
+import type { BotDifficulty, BotProfile, JojGameState, ResourceKey } from '../types';
 import type { JojMovesDeps, MoveArgs, MoveCtx } from '../moveTypes';
 
 export type BotSetup = {
   count: number;
   difficulty: BotDifficulty;
+  profile: BotProfile;
 };
 
 export type BotTurnContext = {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { Language } from '../i18n';
 
 type AdminJsonFetch = (url: string, init?: RequestInit) => Promise<Response>;
 
@@ -69,19 +70,21 @@ type AdminUserDetail = {
   }>;
 };
 
-const ADMIN_USERS_ERRORS = {
-  loadUsers: 'Failed to load users',
-  loadUserDetail: 'Failed to load user detail',
-  mutate: 'Request failed',
-  createUser: 'Failed to create user',
-  startPasswordReset: 'Failed to start password reset',
-} as const;
+const createAdminUsersErrors = (lang: Language) => ({
+  loadUsers: lang === 'uk' ? 'Не вдалося завантажити користувачів' : 'Failed to load users',
+  loadUserDetail: lang === 'uk' ? 'Не вдалося завантажити деталі користувача' : 'Failed to load user detail',
+  mutate: lang === 'uk' ? 'Не вдалося виконати запит' : 'Request failed',
+  createUser: lang === 'uk' ? 'Не вдалося створити користувача' : 'Failed to create user',
+  startPasswordReset: lang === 'uk' ? 'Не вдалося запустити скидання пароля' : 'Failed to start password reset',
+});
 
 export const useAdminUsers = (args: {
+  lang: Language;
   serverUrl: string;
   adminJsonFetch: AdminJsonFetch;
 }) => {
-  const { serverUrl, adminJsonFetch } = args;
+  const { lang, serverUrl, adminJsonFetch } = args;
+  const errors = createAdminUsersErrors(lang);
   const [adminUsers, setAdminUsers] = useState<AdminUserListItem[]>([]);
   const [adminUsersLoading, setAdminUsersLoading] = useState(false);
   const [adminUsersError, setAdminUsersError] = useState('');
@@ -111,7 +114,7 @@ export const useAdminUsers = (args: {
       const suffix = adminUserSearch.trim() ? `?search=${encodeURIComponent(adminUserSearch.trim())}` : '';
       const response = await adminJsonFetch(`${serverUrl}/api/admin/users${suffix}`);
       const payload = (await response.json()) as { ok?: boolean; error?: string; users?: AdminUserListItem[] };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || ADMIN_USERS_ERRORS.loadUsers);
+      if (!response.ok || !payload.ok) throw new Error(payload.error || errors.loadUsers);
       setAdminUsers(payload.users ?? []);
     } catch (error) {
       setAdminUsersError(String(error instanceof Error ? error.message : error));
@@ -129,7 +132,7 @@ export const useAdminUsers = (args: {
     try {
       const response = await adminJsonFetch(`${serverUrl}/api/admin/users/detail?userId=${encodeURIComponent(userId)}`);
       const payload = (await response.json()) as { ok?: boolean; error?: string; detail?: AdminUserDetail };
-      if (!response.ok || !payload.ok || !payload.detail) throw new Error(payload.error || ADMIN_USERS_ERRORS.loadUserDetail);
+      if (!response.ok || !payload.ok || !payload.detail) throw new Error(payload.error || errors.loadUserDetail);
       setSelectedAdminUserDetail(payload.detail);
       setAdminEditUserDraft({
         username: payload.detail.user.username ?? '',
@@ -157,7 +160,7 @@ export const useAdminUsers = (args: {
         body: JSON.stringify(body),
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || ADMIN_USERS_ERRORS.mutate);
+      if (!response.ok || !payload.ok) throw new Error(payload.error || errors.mutate);
       if (reloadList) await loadAdminUsers();
       await loadAdminUserDetail(selectedAdminUserId);
     } catch (error) {
@@ -177,7 +180,7 @@ export const useAdminUsers = (args: {
         body: JSON.stringify(adminCreateUserDraft),
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string; user?: { id?: string } };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || ADMIN_USERS_ERRORS.createUser);
+      if (!response.ok || !payload.ok) throw new Error(payload.error || errors.createUser);
       setAdminCreateUserDraft({ username: '', displayName: '', email: '', password: '', role: 'user' });
       await loadAdminUsers();
       if (typeof payload.user?.id === 'string') await loadAdminUserDetail(payload.user.id);
@@ -200,7 +203,7 @@ export const useAdminUsers = (args: {
         body: JSON.stringify({ login }),
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string };
-      if (!response.ok || !payload.ok) throw new Error(payload.error || ADMIN_USERS_ERRORS.startPasswordReset);
+      if (!response.ok || !payload.ok) throw new Error(payload.error || errors.startPasswordReset);
     } catch (error) {
       setAdminUsersError(String(error instanceof Error ? error.message : error));
     } finally {

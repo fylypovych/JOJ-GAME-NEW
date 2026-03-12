@@ -1,16 +1,22 @@
-import type { BotDifficulty } from '../types';
+import type { BotDifficulty, BotProfile } from '../types';
 import type { BotSetup } from './types';
 
 export const BOT_DIFFICULTIES: readonly BotDifficulty[] = ['easy', 'normal', 'hard'] as const;
+export const BOT_PROFILES: readonly BotProfile[] = ['balanced', 'aggressive', 'control'] as const;
 
 export const normalizeBotDifficulty = (value: unknown): BotDifficulty => {
   if (value === 'hard' || value === 'normal') return value;
   return 'easy';
 };
 
+export const normalizeBotProfile = (value: unknown): BotProfile => {
+  if (value === 'aggressive' || value === 'control') return value;
+  return 'balanced';
+};
+
 export const normalizeBotSetup = (value: unknown, totalPlayers: number): BotSetup | null => {
   if (!value || typeof value !== 'object') return null;
-  const raw = value as { count?: unknown; difficulty?: unknown; enabled?: unknown };
+  const raw = value as { count?: unknown; difficulty?: unknown; profile?: unknown; enabled?: unknown };
   if (raw.enabled === false) return null;
   const maxBotCount = Math.max(0, totalPlayers - 1);
   const requestedCount = Math.max(0, Math.min(maxBotCount, Math.floor(Number(raw.count ?? 0) || 0)));
@@ -18,6 +24,7 @@ export const normalizeBotSetup = (value: unknown, totalPlayers: number): BotSetu
   return {
     count: requestedCount,
     difficulty: normalizeBotDifficulty(raw.difficulty),
+    profile: normalizeBotProfile(raw.profile),
   };
 };
 
@@ -29,6 +36,7 @@ export const getBotSeatIds = (totalPlayers: number, botCount: number): string[] 
 
 export const createBotPlayerName = (args: {
   difficulty: BotDifficulty;
+  profile?: BotProfile;
   seatIndex: number;
 }) => {
   const labelByDifficulty: Record<BotDifficulty, string> = {
@@ -36,5 +44,9 @@ export const createBotPlayerName = (args: {
     normal: 'Bot Normal',
     hard: 'Bot Hard',
   };
-  return `${labelByDifficulty[args.difficulty]} ${args.seatIndex}`;
+  const profileSuffix =
+    args.profile === 'aggressive' ? ' Aggro'
+      : args.profile === 'control' ? ' Control'
+        : '';
+  return `${labelByDifficulty[args.difficulty]}${profileSuffix} ${args.seatIndex}`;
 };

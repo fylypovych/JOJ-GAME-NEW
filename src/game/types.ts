@@ -11,9 +11,11 @@ export type CardCategory =
 
 export type GameMode = 'standard' | 'standard_plus' | 'simplified';
 export type BotDifficulty = 'easy' | 'normal' | 'hard';
+export type BotProfile = 'balanced' | 'aggressive' | 'control';
 
 export interface BotPlayerConfig {
   difficulty: BotDifficulty;
+  profile: BotProfile;
   name: string;
 }
 

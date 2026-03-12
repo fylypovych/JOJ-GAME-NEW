@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { BotDifficulty, GameMode } from '../../game/types';
+import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { Language } from '../i18n';
 import { defaultLanguage } from '../i18n';
 import { ADMIN_UI_VARIANT_STORAGE_KEY, GAME_UI_VARIANT_STORAGE_KEY } from './clientConfig';
@@ -19,7 +19,9 @@ export const useAppShellState = (serverUrl: string) => {
   const [roomCapacity, setRoomCapacity] = useState<number>(2);
   const [gameMode, setGameMode] = useState<GameMode>('standard');
   const [createWithBots, setCreateWithBots] = useState(false);
+  const [botCount, setBotCount] = useState(1);
   const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('easy');
+  const [botProfile, setBotProfile] = useState<BotProfile>('balanced');
   const [selectedOptionalModuleIds, setSelectedOptionalModuleIds] = useState<string[]>(['vvnz_default']);
   const [adminSelectedMatchID, setAdminSelectedMatchID] = useState<string>('');
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
@@ -80,8 +82,12 @@ export const useAppShellState = (serverUrl: string) => {
     setGameMode,
     createWithBots,
     setCreateWithBots,
+    botCount,
+    setBotCount,
     botDifficulty,
     setBotDifficulty,
+    botProfile,
+    setBotProfile,
     selectedOptionalModuleIds,
     setSelectedOptionalModuleIds,
     adminSelectedMatchID,

@@ -84,8 +84,12 @@ export const App = () => {
     setGameMode,
     createWithBots,
     setCreateWithBots,
+    botCount,
+    setBotCount,
     botDifficulty,
     setBotDifficulty,
+    botProfile,
+    setBotProfile,
     selectedOptionalModuleIds,
     setSelectedOptionalModuleIds,
     adminSelectedMatchID,
@@ -126,6 +130,7 @@ export const App = () => {
     user,
     stats: userStats,
     awards: userAwards,
+    matchHistory,
     sessions: userSessions,
     loading: userLoading,
     busy: userBusy,
@@ -246,7 +251,9 @@ export const App = () => {
     gameMode,
     selectedOptionalModuleIds,
     createWithBots,
+    botCount,
     botDifficulty,
+    botProfile,
     sessionStorageKey: SESSION_STORAGE_KEY,
     initialSession: parseSession(window.localStorage.getItem(SESSION_STORAGE_KEY)),
     serverUnavailableText: t.serverUnavailable,
@@ -472,8 +479,12 @@ export const App = () => {
           setGameMode={setGameMode}
           createWithBots={createWithBots}
           setCreateWithBots={setCreateWithBots}
+          botCount={botCount}
+          setBotCount={setBotCount}
           botDifficulty={botDifficulty}
           setBotDifficulty={setBotDifficulty}
+          botProfile={botProfile}
+          setBotProfile={setBotProfile}
           createRoom={() => { void createRoom(); }}
           refreshMatches={() => { void refreshMatches(); }}
           loading={loading}
@@ -591,6 +602,7 @@ export const App = () => {
           }}
           stats={userStats}
           awards={userAwards}
+          matchHistory={matchHistory}
           sessions={userSessions}
           onRefreshSessions={() => { void refreshSessions().catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
           onLogoutAllSessions={() => { void logoutAllSessions().catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
@@ -643,6 +655,7 @@ export const App = () => {
           user={user}
           stats={userStats}
           awards={userAwards}
+          matchHistory={matchHistory}
           sessions={userSessions}
         />
       ) : null}

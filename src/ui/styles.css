@@ -982,6 +982,37 @@ button:disabled {
   gap: 10px;
 }
 
+.game-ui-v2-bot-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid #c7d6ee;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff, #f5f9ff);
+  box-shadow: 0 10px 24px rgba(21, 38, 68, 0.06);
+}
+
+.game-ui-v2-bot-strip-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.game-ui-v2-bot-thinking {
+  color: #0f6a34;
+}
+
+.game-ui-v2-bot-speed-label {
+  align-self: center;
+  font-size: 12px;
+  color: #567091;
+  font-weight: 700;
+}
+
 .game-ui-v2-room-meta {
   margin-top: 4px;
 }
@@ -1550,6 +1581,11 @@ button:disabled {
   gap: 8px;
 }
 
+.game-ui-v2-side-tab-row.is-inline {
+  display: inline-flex;
+  align-items: center;
+}
+
 .game-ui-v2-mobile-tabs {
   display: none;
 }
@@ -1693,6 +1729,15 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .game-ui-v2-bot-strip {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .game-ui-v2-bot-strip-actions {
+    justify-content: flex-start;
+  }
+
   .game-ui-v2-players-grid {
     grid-template-columns: 1fr;
   }
@@ -1777,16 +1822,51 @@ button:disabled {
   backdrop-filter: blur(2px);
 }
 
-.game-ui-v2-gameover-card {
-  width: min(680px, calc(100vw - 32px));
+  .game-ui-v2-gameover-card {
+    width: min(680px, calc(100vw - 32px));
   max-height: calc(100vh - 32px);
   overflow: auto;
   border: 1px solid #d0d5dd;
   border-radius: 12px;
   background: #fff;
-  padding: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
+    padding: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .game-ui-v2-gameover-summary {
+    margin-top: 16px;
+  }
+
+  .game-ui-v2-gameover-summary-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .game-ui-v2-gameover-summary-row {
+    border: 1px solid #d0d5dd;
+    border-radius: 10px;
+    padding: 10px;
+    background: #f8fafc;
+  }
+
+  .game-ui-v2-gameover-summary-row.is-winner {
+    border-color: #4caf50;
+    background: #edf9ef;
+  }
+
+  .game-ui-v2-gameover-summary-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .game-ui-v2-gameover-summary-grid {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 10px;
+    font-size: 13px;
+  }
 
 .gameover-modal {
   position: fixed;

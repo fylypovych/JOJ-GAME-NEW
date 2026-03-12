@@ -20,6 +20,10 @@ export type UserStatsSummary = {
   matchesLinked: number;
   matchesFinished: number;
   wins: number;
+  rankWins: number;
+  scoreWins: number;
+  stalledMatches: number;
+  botMatchesFinished: number;
   winRatePct: number;
   avgTurns: number;
   bestRankId: string;
@@ -29,6 +33,40 @@ export type UserStatsSummary = {
   lyapsPlayedOnOthers: number;
   scandalsPlayedOnOthers: number;
   lastMatchAt: string | null;
+  byMode: Array<{
+    mode: 'standard' | 'standard_plus' | 'simplified';
+    matchesFinished: number;
+    wins: number;
+    winRatePct: number;
+  }>;
+  byPlayerCount: Array<{
+    playerCount: number;
+    matchesFinished: number;
+    wins: number;
+    winRatePct: number;
+  }>;
+};
+
+export type UserMatchHistoryItem = {
+  matchId: string;
+  playerId: string;
+  playerName: string | null;
+  winnerPlayerId: string | null;
+  winnerPlayerName: string | null;
+  endReason: string | null;
+  turnsCompleted: number;
+  gameMode: 'standard' | 'standard_plus' | 'simplified';
+  playerCount: number;
+  botCount: number;
+  botDifficulty: 'easy' | 'normal' | 'hard' | null;
+  finalRankId: string;
+  finalResources: Record<string, number>;
+  resourcesGainedTotal: number;
+  resourcesLostTotal: number;
+  lyapsPlayedOnOthers: number;
+  scandalsPlayedOnOthers: number;
+  linkedAt: string;
+  persistedAt: string;
 };
 
 export type AwardMetric =
@@ -109,25 +147,55 @@ export type AdminUserDetail = {
     playerName: string | null;
     linkedAt: string;
   }>;
-  persistedMatches: Array<{
-    matchId: string;
-    playerId: string;
-    playerName: string | null;
-    winnerPlayerId: string | null;
-    endReason: string | null;
-    turnsCompleted: number;
-    finalRankId: string;
-    resourcesGainedTotal: number;
-    resourcesLostTotal: number;
-    linkedAt: string;
+  persistedMatches: UserMatchHistoryItem[];
+};
+
+export type AdminAnalyticsSummary = {
+  matchesFinished: number;
+  rankWins: number;
+  scoreWins: number;
+  stalledMatches: number;
+  avgTurns: number;
+  avgPlayerCount: number;
+  avgBotCount: number;
+  avgWinnerRankOrder: number;
+  byMode: Array<{
+    mode: 'standard' | 'standard_plus' | 'simplified';
+    matchesFinished: number;
+    avgTurns: number;
+    stalledMatches: number;
+    rankWinRatePct: number;
+    scoreWinRatePct: number;
+    stalledRatePct: number;
+    avgWinnerRankOrder: number;
+  }>;
+  byPlayerCount: Array<{
+    playerCount: number;
+    matchesFinished: number;
+    avgTurns: number;
+    stalledMatches: number;
+    rankWinRatePct: number;
+    scoreWinRatePct: number;
+    stalledRatePct: number;
+    avgWinnerRankOrder: number;
+  }>;
+  topRanks: Array<{
+    rankId: string;
+    count: number;
+  }>;
+  topWinningRanks: Array<{
+    rankId: string;
+    count: number;
   }>;
 };
 
 export type PersistableMatchState = {
   G?: {
+    gameMode?: 'standard' | 'standard_plus' | 'simplified';
     ranks?: Record<string, string>;
     resources?: Record<string, Record<string, number>>;
     playerNames?: Record<string, string>;
+    botPlayers?: Record<string, { difficulty?: 'easy' | 'normal' | 'hard'; profile?: 'balanced' | 'aggressive' | 'control'; name?: string }>;
     playerGameStats?: Record<string, {
       resourcesGainedTotal?: number;
       resourcesLostTotal?: number;

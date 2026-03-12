@@ -122,6 +122,27 @@ export const BoardV2GameoverModal = (props: {
     lyapsPlayed: string;
     scandalsPlayed: string;
   };
+  summaryTitle: string;
+  summaryLabels: {
+    player: string;
+    rank: string;
+    resources: string;
+    turns: string;
+    gainLoss: string;
+    actions: string;
+  };
+  playerSummaries: Array<{
+    playerID: string;
+    name: string;
+    rankName: string;
+    resourcesText: string;
+    turnsTaken: number;
+    resourcesGainedTotal: number;
+    resourcesLostTotal: number;
+    lyapsPlayedOnOthers: number;
+    scandalsPlayedOnOthers: number;
+    winner: boolean;
+  }>;
   closeLabel: string;
   leaveRoomLabel: string;
   onLeaveRoom?: () => void;
@@ -145,9 +166,60 @@ export const BoardV2GameoverModal = (props: {
           <div className="game-ui-v2-token-row"><span>{props.statsLabels.lyapsPlayed}</span><strong>{props.stats.lyapsPlayed}</strong></div>
           <div className="game-ui-v2-token-row"><span>{props.statsLabels.scandalsPlayed}</span><strong>{props.stats.scandalsPlayed}</strong></div>
         </div>
+        <BoardV2StandingsSummary
+          title={props.summaryTitle}
+          summaryLabels={props.summaryLabels}
+          playerSummaries={props.playerSummaries}
+        />
         {props.onLeaveRoom ? <button type="button" onClick={props.onLeaveRoom}>{props.leaveRoomLabel}</button> : null}
         <button type="button" onClick={props.onClose}>{props.closeLabel}</button>
       </div>
     </div>
   );
 };
+
+export const BoardV2StandingsSummary = (props: {
+  title: string;
+  summaryLabels: {
+    player: string;
+    rank: string;
+    resources: string;
+    turns: string;
+    gainLoss: string;
+    actions: string;
+  };
+  playerSummaries: Array<{
+    playerID: string;
+    name: string;
+    rankName: string;
+    resourcesText: string;
+    turnsTaken: number;
+    resourcesGainedTotal: number;
+    resourcesLostTotal: number;
+    lyapsPlayedOnOthers: number;
+    scandalsPlayedOnOthers: number;
+    winner?: boolean;
+  }>;
+}) => (
+  <div className="game-ui-v2-gameover-summary">
+    <h4>{props.title}</h4>
+    <div className="game-ui-v2-gameover-summary-list">
+      {props.playerSummaries.map((row) => (
+        <article key={`summary-${row.playerID}`} className={`game-ui-v2-gameover-summary-row${row.winner ? ' is-winner' : ''}`}>
+          <div className="game-ui-v2-gameover-summary-head">
+            <strong>{row.name}</strong>
+            <span>{row.rankName}</span>
+          </div>
+          <div className="game-ui-v2-gameover-summary-grid">
+            <span>{props.summaryLabels.player}</span><strong>{row.name}</strong>
+            <span>{props.summaryLabels.rank}</span><strong>{row.rankName}</strong>
+            <span>{props.summaryLabels.resources}</span><strong>{row.resourcesText}</strong>
+            <span>{props.summaryLabels.turns}</span><strong>{row.turnsTaken}</strong>
+            <span>{props.summaryLabels.gainLoss}</span><strong>+{row.resourcesGainedTotal} / -{row.resourcesLostTotal}</strong>
+            <span>{props.summaryLabels.actions}</span><strong>{row.lyapsPlayedOnOthers} / {row.scandalsPlayedOnOthers}</strong>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+);

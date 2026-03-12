@@ -94,6 +94,16 @@ export const registerAdminRoutes = ({
     ctx.body = { ok: true, adminAuthEnabled: isAdminAuthEnabled };
   });
 
+  router.get('/api/admin/analytics', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/analytics'))) return;
+    if (!userStore) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    ctx.body = { ok: true, analytics: await userStore.getAdminAnalytics() };
+  });
+
   router.get('/api/admin/awards', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/awards'))) return;
     if (!userStore) {

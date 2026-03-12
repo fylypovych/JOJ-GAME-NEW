@@ -236,6 +236,8 @@ export const BoardV2SidePanel = (props: {
   setSidePanelTab: (tab: 'events' | 'chat') => void;
   v2: Record<string, string>;
   latestEvents: Array<{ id: string; type: 'player' | 'system'; text: string; playerID?: string }>;
+  eventsTitle: string;
+  spectatorMode?: boolean;
   t: ReturnType<typeof import('../i18n').text>;
   playerLabelById: (id: string | null | undefined) => string;
   lang: 'uk' | 'en';
@@ -245,7 +247,7 @@ export const BoardV2SidePanel = (props: {
   sendChatMessage: () => void;
   chatLogRef: RefObject<HTMLDivElement | null>;
 }) => {
-  const { sidePanelTab, setSidePanelTab, v2, latestEvents, t, playerLabelById, lang, G, chatInput, setChatInput, sendChatMessage, chatLogRef } = props;
+  const { sidePanelTab, setSidePanelTab, v2, latestEvents, eventsTitle, spectatorMode = false, t, playerLabelById, lang, G, chatInput, setChatInput, sendChatMessage, chatLogRef } = props;
   return (
     <aside className="game-ui-v2-side">
       <section className="game-ui-v2-events game-ui-v2-mobile-tabs">
@@ -255,7 +257,7 @@ export const BoardV2SidePanel = (props: {
         </div>
       </section>
       <section className={`game-ui-v2-events${sidePanelTab !== 'events' ? ' game-ui-v2-mobile-hidden' : ''}`}>
-        <h3>{v2.recentEvents}</h3>
+        <h3>{eventsTitle}</h3>
         <div className="game-ui-v2-events-list">
           {latestEvents.map((row) => {
             const author = row.type === 'system' ? t.systemTag : playerLabelById(row.playerID);
@@ -280,6 +282,7 @@ export const BoardV2SidePanel = (props: {
           chatLogRef={chatLogRef as RefObject<HTMLDivElement>}
           includeSystemMessages={false}
           lang={lang}
+          readOnly={spectatorMode}
         />
       </section>
     </aside>

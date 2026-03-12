@@ -222,7 +222,7 @@ export const registerUserLobbyRoutes = (args: {
         for (const [index, botPlayerID] of getBotSeatIds(numPlayers, botSetup.count).entries()) {
           await lobbyApi.joinMatch(gameName, matchID, {
             playerID: botPlayerID,
-            playerName: createBotPlayerName({ difficulty: botSetup.difficulty, seatIndex: index + 1 }),
+            playerName: createBotPlayerName({ difficulty: botSetup.difficulty, profile: botSetup.profile, seatIndex: index + 1 }),
           });
         }
       }

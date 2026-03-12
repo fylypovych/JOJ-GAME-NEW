@@ -1,5 +1,11 @@
 import type { Pool } from 'pg';
-import type { PersistableMatchState, UserSessionRecord, UserStatsSummary } from './user-store-shared';
+import type {
+  AdminAnalyticsSummary,
+  PersistableMatchState,
+  UserMatchHistoryItem,
+  UserSessionRecord,
+  UserStatsSummary,
+} from './user-store-shared';
 
 export const createUserMatchStore = (args: {
   pool: Pool;
@@ -66,15 +72,42 @@ export const createUserMatchStore = (args: {
     if (already.rowCount) return true;
     const gameover = state.ctx.gameover;
     const turnsCompleted = Number(state.G?.gameStats?.turnsCompleted ?? 0);
-    await pool.query(`
-      INSERT INTO persisted_match_results (match_id, winner_player_id, end_reason, turns_completed)
-      VALUES ($1, $2, $3, $4)
-      ON CONFLICT (match_id) DO NOTHING
-    `, [matchId, gameover.winner ? String(gameover.winner) : null, gameover.endReason ? String(gameover.endReason) : null, turnsCompleted]);
-
-    const ranks = state.G?.ranks ?? {};
-    const resources = state.G?.resources ?? {};
     const playerNames = state.G?.playerNames ?? {};
+    const ranks = state.G?.ranks ?? {};
+    const botPlayers = state.G?.botPlayers ?? {};
+    const botIds = Object.keys(botPlayers);
+    const winnerPlayerId = gameover.winner ? String(gameover.winner) : null;
+    const winnerPlayerName = winnerPlayerId ? String(playerNames[winnerPlayerId] ?? '') || null : null;
+    const playerCount = Object.keys(ranks).length;
+    const botCount = botIds.length;
+    const botDifficulty = botIds.length > 0 ? String(botPlayers[botIds[0]]?.difficulty ?? '').trim() || null : null;
+    await pool.query(`
+      INSERT INTO persisted_match_results (
+        match_id,
+        winner_player_id,
+        winner_player_name,
+        end_reason,
+        game_mode,
+        player_count,
+        bot_count,
+        bot_difficulty,
+        turns_completed
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ON CONFLICT (match_id) DO NOTHING
+    `, [
+      matchId,
+      winnerPlayerId,
+      winnerPlayerName,
+      gameover.endReason ? String(gameover.endReason) : null,
+      state.G?.gameMode ?? 'standard',
+      playerCount,
+      botCount,
+      botDifficulty,
+      turnsCompleted,
+    ]);
+
+    const resources = state.G?.resources ?? {};
     const playerStats = state.G?.playerGameStats ?? {};
     for (const playerId of Object.keys(ranks)) {
       const stats = playerStats[playerId] ?? {};
@@ -123,6 +156,10 @@ export const createUserMatchStore = (args: {
       matchesLinked: 0,
       matchesFinished: 0,
       wins: 0,
+      rankWins: 0,
+      scoreWins: 0,
+      stalledMatches: 0,
+      botMatchesFinished: 0,
       winRatePct: 0,
       avgTurns: 0,
       bestRankId: 'recruit',
@@ -132,11 +169,17 @@ export const createUserMatchStore = (args: {
       lyapsPlayedOnOthers: 0,
       scandalsPlayedOnOthers: 0,
       lastMatchAt: null,
+      byMode: [],
+      byPlayerCount: [],
     };
     const result = await pool.query<{
       matches_linked: string;
       matches_finished: string;
       wins: string;
+      rank_wins: string;
+      score_wins: string;
+      stalled_matches: string;
+      bot_matches_finished: string;
       avg_turns: string | null;
       resources_gained_total: string | null;
       resources_lost_total: string | null;
@@ -148,6 +191,10 @@ export const createUserMatchStore = (args: {
         COUNT(*)::text AS matches_linked,
         COUNT(r.match_id)::text AS matches_finished,
         COALESCE(SUM(CASE WHEN r.winner_player_id = l.player_id THEN 1 ELSE 0 END), 0)::text AS wins,
+        COALESCE(SUM(CASE WHEN r.winner_player_id = l.player_id AND r.end_reason = 'winner' THEN 1 ELSE 0 END), 0)::text AS rank_wins,
+        COALESCE(SUM(CASE WHEN r.winner_player_id = l.player_id AND COALESCE(r.end_reason, '') <> 'winner' THEN 1 ELSE 0 END), 0)::text AS score_wins,
+        COALESCE(SUM(CASE WHEN r.end_reason = 'stalled-no-cards' THEN 1 ELSE 0 END), 0)::text AS stalled_matches,
+        COALESCE(SUM(CASE WHEN COALESCE(r.bot_count, 0) > 0 THEN 1 ELSE 0 END), 0)::text AS bot_matches_finished,
         ROUND(AVG(r.turns_completed)::numeric, 2)::text AS avg_turns,
         COALESCE(SUM(p.resources_gained_total), 0)::text AS resources_gained_total,
         COALESCE(SUM(p.resources_lost_total), 0)::text AS resources_lost_total,
@@ -187,11 +234,45 @@ export const createUserMatchStore = (args: {
     const matchesLinked = Number(row?.matches_linked ?? 0);
     const matchesFinished = Number(row?.matches_finished ?? 0);
     const wins = Number(row?.wins ?? 0);
+    const byModeResult = await pool.query<{
+      mode: 'standard' | 'standard_plus' | 'simplified';
+      matches_finished: string;
+      wins: string;
+    }>(`
+      SELECT
+        COALESCE(r.game_mode, 'standard') AS mode,
+        COUNT(*)::text AS matches_finished,
+        COALESCE(SUM(CASE WHEN r.winner_player_id = l.player_id THEN 1 ELSE 0 END), 0)::text AS wins
+      FROM user_match_links l
+      JOIN persisted_match_results r ON r.match_id = l.match_id
+      WHERE l.user_id = $1
+      GROUP BY COALESCE(r.game_mode, 'standard')
+      ORDER BY mode ASC
+    `, [userId]);
+    const byPlayerCountResult = await pool.query<{
+      player_count: number;
+      matches_finished: string;
+      wins: string;
+    }>(`
+      SELECT
+        COALESCE(r.player_count, 0) AS player_count,
+        COUNT(*)::text AS matches_finished,
+        COALESCE(SUM(CASE WHEN r.winner_player_id = l.player_id THEN 1 ELSE 0 END), 0)::text AS wins
+      FROM user_match_links l
+      JOIN persisted_match_results r ON r.match_id = l.match_id
+      WHERE l.user_id = $1
+      GROUP BY COALESCE(r.player_count, 0)
+      ORDER BY player_count ASC
+    `, [userId]);
     const bestRankId = bestRank.rows[0]?.final_rank_id ?? 'recruit';
     return {
       matchesLinked,
       matchesFinished,
       wins,
+      rankWins: Number(row?.rank_wins ?? 0),
+      scoreWins: Number(row?.score_wins ?? 0),
+      stalledMatches: Number(row?.stalled_matches ?? 0),
+      botMatchesFinished: Number(row?.bot_matches_finished ?? 0),
       winRatePct: matchesFinished > 0 ? Number(((wins / matchesFinished) * 100).toFixed(2)) : 0,
       avgTurns: Number(row?.avg_turns ?? 0),
       bestRankId,
@@ -201,7 +282,84 @@ export const createUserMatchStore = (args: {
       lyapsPlayedOnOthers: Number(row?.lyaps_played_on_others ?? 0),
       scandalsPlayedOnOthers: Number(row?.scandals_played_on_others ?? 0),
       lastMatchAt: row?.last_match_at instanceof Date ? row.last_match_at.toISOString() : row?.last_match_at ?? null,
+      byMode: byModeResult.rows.map((entry) => {
+        const modeWins = Number(entry.wins ?? 0);
+        const modeMatchesFinished = Number(entry.matches_finished ?? 0);
+        return {
+          mode: entry.mode,
+          matchesFinished: modeMatchesFinished,
+          wins: modeWins,
+          winRatePct: modeMatchesFinished > 0 ? Number(((modeWins / modeMatchesFinished) * 100).toFixed(2)) : 0,
+        };
+      }),
+      byPlayerCount: byPlayerCountResult.rows
+        .filter((entry) => Number(entry.player_count ?? 0) > 0)
+        .map((entry) => {
+          const playerCountWins = Number(entry.wins ?? 0);
+          const playerCountMatchesFinished = Number(entry.matches_finished ?? 0);
+          return {
+            playerCount: Number(entry.player_count),
+            matchesFinished: playerCountMatchesFinished,
+            wins: playerCountWins,
+            winRatePct: playerCountMatchesFinished > 0 ? Number(((playerCountWins / playerCountMatchesFinished) * 100).toFixed(2)) : 0,
+          };
+        }),
     };
+  };
+
+  const listUserMatchHistory = async (userId: string, limit = 25): Promise<UserMatchHistoryItem[]> => {
+    const result = await pool.query<{
+      matchId: string;
+      playerId: string;
+      playerName: string | null;
+      winnerPlayerId: string | null;
+      winnerPlayerName: string | null;
+      endReason: string | null;
+      turnsCompleted: number;
+      gameMode: 'standard' | 'standard_plus' | 'simplified';
+      playerCount: number;
+      botCount: number;
+      botDifficulty: 'easy' | 'normal' | 'hard' | null;
+      finalRankId: string;
+      finalResources: Record<string, number> | null;
+      resourcesGainedTotal: number;
+      resourcesLostTotal: number;
+      lyapsPlayedOnOthers: number;
+      scandalsPlayedOnOthers: number;
+      linkedAt: string;
+      persistedAt: string;
+    }>(`
+      SELECT
+        l.match_id AS "matchId",
+        l.player_id AS "playerId",
+        l.player_name AS "playerName",
+        r.winner_player_id AS "winnerPlayerId",
+        r.winner_player_name AS "winnerPlayerName",
+        r.end_reason AS "endReason",
+        r.turns_completed AS "turnsCompleted",
+        COALESCE(r.game_mode, 'standard') AS "gameMode",
+        COALESCE(r.player_count, 0) AS "playerCount",
+        COALESCE(r.bot_count, 0) AS "botCount",
+        r.bot_difficulty AS "botDifficulty",
+        p.final_rank_id AS "finalRankId",
+        p.final_resources AS "finalResources",
+        p.resources_gained_total AS "resourcesGainedTotal",
+        p.resources_lost_total AS "resourcesLostTotal",
+        p.lyaps_played_on_others AS "lyapsPlayedOnOthers",
+        p.scandals_played_on_others AS "scandalsPlayedOnOthers",
+        l.linked_at AS "linkedAt",
+        r.persisted_at AS "persistedAt"
+      FROM user_match_links l
+      JOIN persisted_match_results r ON r.match_id = l.match_id
+      JOIN persisted_match_participants p ON p.match_id = l.match_id AND p.player_id = l.player_id
+      WHERE l.user_id = $1
+      ORDER BY l.linked_at DESC
+      LIMIT $2
+    `, [userId, Math.max(1, Math.min(limit, 100))]);
+    return result.rows.map((row) => ({
+      ...row,
+      finalResources: row.finalResources ?? {},
+    }));
   };
 
   const listPendingPersistMatchIds = async () => {
@@ -216,6 +374,154 @@ export const createUserMatchStore = (args: {
     return result.rows.map((row) => row.match_id);
   };
 
+  const getAdminAnalytics = async (): Promise<AdminAnalyticsSummary> => {
+    const rankOrderSql = `
+      CASE p.final_rank_id
+        WHEN 'recruit' THEN 1
+        WHEN 'soldier' THEN 2
+        WHEN 'senior_soldier' THEN 3
+        WHEN 'junior_sergeant' THEN 4
+        WHEN 'sergeant' THEN 5
+        WHEN 'senior_sergeant' THEN 6
+        WHEN 'ensign' THEN 7
+        WHEN 'junior_lieutenant' THEN 8
+        WHEN 'lieutenant' THEN 9
+        WHEN 'senior_lieutenant' THEN 10
+        WHEN 'captain' THEN 11
+        WHEN 'major' THEN 12
+        WHEN 'lieutenant_colonel' THEN 13
+        WHEN 'colonel' THEN 14
+        WHEN 'brigadier_general' THEN 15
+        WHEN 'general' THEN 16
+        ELSE 0
+      END
+    `;
+    const summaryResult = await pool.query<{
+      matches_finished: string;
+      rank_wins: string;
+      score_wins: string;
+      stalled_matches: string;
+      avg_turns: string | null;
+      avg_player_count: string | null;
+      avg_bot_count: string | null;
+      avg_winner_rank_order: string | null;
+    }>(`
+      SELECT
+        COUNT(DISTINCT r.match_id)::text AS matches_finished,
+        COALESCE(SUM(CASE WHEN r.end_reason = 'winner' THEN 1 ELSE 0 END), 0)::text AS rank_wins,
+        COALESCE(SUM(CASE WHEN COALESCE(r.end_reason, '') <> 'winner' THEN 1 ELSE 0 END), 0)::text AS score_wins,
+        COALESCE(SUM(CASE WHEN r.end_reason = 'stalled-no-cards' THEN 1 ELSE 0 END), 0)::text AS stalled_matches,
+        ROUND(AVG(r.turns_completed)::numeric, 2)::text AS avg_turns,
+        ROUND(AVG(r.player_count)::numeric, 2)::text AS avg_player_count,
+        ROUND(AVG(r.bot_count)::numeric, 2)::text AS avg_bot_count,
+        ROUND(AVG(${rankOrderSql})::numeric, 2)::text AS avg_winner_rank_order
+      FROM persisted_match_results r
+      LEFT JOIN persisted_match_participants p ON p.match_id = r.match_id AND p.player_id = r.winner_player_id
+    `);
+    const byModeResult = await pool.query<{
+      mode: 'standard' | 'standard_plus' | 'simplified';
+      matches_finished: string;
+      avg_turns: string | null;
+      stalled_matches: string;
+      rank_win_rate_pct: string | null;
+      score_win_rate_pct: string | null;
+      stalled_rate_pct: string | null;
+      avg_winner_rank_order: string | null;
+    }>(`
+      SELECT
+        COALESCE(r.game_mode, 'standard') AS mode,
+        COUNT(DISTINCT r.match_id)::text AS matches_finished,
+        ROUND(AVG(r.turns_completed)::numeric, 2)::text AS avg_turns,
+        COALESCE(SUM(CASE WHEN r.end_reason = 'stalled-no-cards' THEN 1 ELSE 0 END), 0)::text AS stalled_matches,
+        ROUND((COALESCE(SUM(CASE WHEN r.end_reason = 'winner' THEN 1 ELSE 0 END), 0)::numeric / NULLIF(COUNT(DISTINCT r.match_id), 0)) * 100, 2)::text AS rank_win_rate_pct,
+        ROUND((COALESCE(SUM(CASE WHEN COALESCE(r.end_reason, '') <> 'winner' THEN 1 ELSE 0 END), 0)::numeric / NULLIF(COUNT(DISTINCT r.match_id), 0)) * 100, 2)::text AS score_win_rate_pct,
+        ROUND((COALESCE(SUM(CASE WHEN r.end_reason = 'stalled-no-cards' THEN 1 ELSE 0 END), 0)::numeric / NULLIF(COUNT(DISTINCT r.match_id), 0)) * 100, 2)::text AS stalled_rate_pct,
+        ROUND(AVG(${rankOrderSql})::numeric, 2)::text AS avg_winner_rank_order
+      FROM persisted_match_results r
+      LEFT JOIN persisted_match_participants p ON p.match_id = r.match_id AND p.player_id = r.winner_player_id
+      GROUP BY COALESCE(r.game_mode, 'standard')
+      ORDER BY mode ASC
+    `);
+    const byPlayerCountResult = await pool.query<{
+      player_count: number;
+      matches_finished: string;
+      avg_turns: string | null;
+      stalled_matches: string;
+      rank_win_rate_pct: string | null;
+      score_win_rate_pct: string | null;
+      stalled_rate_pct: string | null;
+      avg_winner_rank_order: string | null;
+    }>(`
+      SELECT
+        r.player_count,
+        COUNT(DISTINCT r.match_id)::text AS matches_finished,
+        ROUND(AVG(r.turns_completed)::numeric, 2)::text AS avg_turns,
+        COALESCE(SUM(CASE WHEN r.end_reason = 'stalled-no-cards' THEN 1 ELSE 0 END), 0)::text AS stalled_matches,
+        ROUND((COALESCE(SUM(CASE WHEN r.end_reason = 'winner' THEN 1 ELSE 0 END), 0)::numeric / NULLIF(COUNT(DISTINCT r.match_id), 0)) * 100, 2)::text AS rank_win_rate_pct,
+        ROUND((COALESCE(SUM(CASE WHEN COALESCE(r.end_reason, '') <> 'winner' THEN 1 ELSE 0 END), 0)::numeric / NULLIF(COUNT(DISTINCT r.match_id), 0)) * 100, 2)::text AS score_win_rate_pct,
+        ROUND((COALESCE(SUM(CASE WHEN r.end_reason = 'stalled-no-cards' THEN 1 ELSE 0 END), 0)::numeric / NULLIF(COUNT(DISTINCT r.match_id), 0)) * 100, 2)::text AS stalled_rate_pct,
+        ROUND(AVG(${rankOrderSql})::numeric, 2)::text AS avg_winner_rank_order
+      FROM persisted_match_results r
+      LEFT JOIN persisted_match_participants p ON p.match_id = r.match_id AND p.player_id = r.winner_player_id
+      GROUP BY r.player_count
+      ORDER BY player_count ASC
+    `);
+    const topRanksResult = await pool.query<{ rank_id: string; count: string }>(`
+      SELECT p.final_rank_id AS rank_id, COUNT(*)::text AS count
+      FROM persisted_match_participants p
+      GROUP BY p.final_rank_id
+      ORDER BY COUNT(*) DESC, p.final_rank_id ASC
+      LIMIT 10
+    `);
+    const topWinningRanksResult = await pool.query<{ rank_id: string; count: string }>(`
+      SELECT p.final_rank_id AS rank_id, COUNT(*)::text AS count
+      FROM persisted_match_results r
+      JOIN persisted_match_participants p ON p.match_id = r.match_id AND p.player_id = r.winner_player_id
+      GROUP BY p.final_rank_id
+      ORDER BY COUNT(*) DESC, p.final_rank_id ASC
+      LIMIT 10
+    `);
+    const row = summaryResult.rows[0];
+    return {
+      matchesFinished: Number(row?.matches_finished ?? 0),
+      rankWins: Number(row?.rank_wins ?? 0),
+      scoreWins: Number(row?.score_wins ?? 0),
+      stalledMatches: Number(row?.stalled_matches ?? 0),
+      avgTurns: Number(row?.avg_turns ?? 0),
+      avgPlayerCount: Number(row?.avg_player_count ?? 0),
+      avgBotCount: Number(row?.avg_bot_count ?? 0),
+      avgWinnerRankOrder: Number(row?.avg_winner_rank_order ?? 0),
+      byMode: byModeResult.rows.map((entry) => ({
+        mode: entry.mode,
+        matchesFinished: Number(entry.matches_finished ?? 0),
+        avgTurns: Number(entry.avg_turns ?? 0),
+        stalledMatches: Number(entry.stalled_matches ?? 0),
+        rankWinRatePct: Number(entry.rank_win_rate_pct ?? 0),
+        scoreWinRatePct: Number(entry.score_win_rate_pct ?? 0),
+        stalledRatePct: Number(entry.stalled_rate_pct ?? 0),
+        avgWinnerRankOrder: Number(entry.avg_winner_rank_order ?? 0),
+      })),
+      byPlayerCount: byPlayerCountResult.rows.map((entry) => ({
+        playerCount: Number(entry.player_count ?? 0),
+        matchesFinished: Number(entry.matches_finished ?? 0),
+        avgTurns: Number(entry.avg_turns ?? 0),
+        stalledMatches: Number(entry.stalled_matches ?? 0),
+        rankWinRatePct: Number(entry.rank_win_rate_pct ?? 0),
+        scoreWinRatePct: Number(entry.score_win_rate_pct ?? 0),
+        stalledRatePct: Number(entry.stalled_rate_pct ?? 0),
+        avgWinnerRankOrder: Number(entry.avg_winner_rank_order ?? 0),
+      })),
+      topRanks: topRanksResult.rows.map((entry) => ({
+        rankId: entry.rank_id,
+        count: Number(entry.count ?? 0),
+      })),
+      topWinningRanks: topWinningRanksResult.rows.map((entry) => ({
+        rankId: entry.rank_id,
+        count: Number(entry.count ?? 0),
+      })),
+    };
+  };
+
   return {
     linkUserToMatch,
     listUserMatchLinks,
@@ -224,6 +530,8 @@ export const createUserMatchStore = (args: {
     deleteSessionById,
     persistMatchResultIfFinished,
     getUserStatsSummary,
+    listUserMatchHistory,
     listPendingPersistMatchIds,
+    getAdminAnalytics,
   };
 };

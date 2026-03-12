@@ -1,7 +1,7 @@
 import type { MoveArgs } from '../moveTypes';
 import type { JojGameState } from '../types';
 import { BOT_DIFFICULTIES, createBotPlayerName, getBotSeatIds } from './config';
-import type { BotDifficulty, BotPlayerConfig } from '../types';
+import type { BotDifficulty, BotPlayerConfig, BotProfile } from '../types';
 import type { BotEngineDeps, BotSetup, BotTurnContext } from './types';
 import { buildBotPlans, buildDrawResolutionPlan, type BotPlan } from './planner';
 import { executeBotPlanSequence } from './execution';
@@ -83,6 +83,11 @@ const getBotDifficulty = (G: JojGameState, playerID: string): BotDifficulty =>
     ? G.botPlayers[playerID].difficulty
     : 'easy';
 
+const getBotProfile = (G: JojGameState, playerID: string): BotProfile =>
+  G.botPlayers?.[playerID]?.profile === 'aggressive' || G.botPlayers?.[playerID]?.profile === 'control'
+    ? G.botPlayers[playerID].profile
+    : 'balanced';
+
 export const isBotPlayer = (G: JojGameState, playerID?: string | null) =>
   Boolean(playerID && G.botPlayers?.[playerID]);
 
@@ -97,7 +102,8 @@ export const attachBotsToGameState = (args: {
   getBotSeatIds(totalPlayers, botSetup.count).forEach((playerID, index) => {
     const config: BotPlayerConfig = {
       difficulty: botSetup.difficulty,
-      name: createBotPlayerName({ difficulty: botSetup.difficulty, seatIndex: index + 1 }),
+      profile: botSetup.profile,
+      name: createBotPlayerName({ difficulty: botSetup.difficulty, profile: botSetup.profile, seatIndex: index + 1 }),
     };
     G.botPlayers[playerID] = config;
     G.playerNames[playerID] = config.name;
@@ -146,7 +152,7 @@ export const createBotEngine = (d: BotEngineDeps) => ({
     }
 
     const executionResult = executeBotPlanSequence({
-      getPlans: () => buildBotPlans(d, G, playerID, getBotDifficulty(G, playerID)),
+      getPlans: () => buildBotPlans(d, G, playerID, getBotDifficulty(G, playerID), getBotProfile(G, playerID)),
       executePlan: (plan) => executePlan(d, plan, makeArgs),
       maxIterations: 16,
       shouldStop: () => endedTurn,

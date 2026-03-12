@@ -13,6 +13,7 @@ import { useAdminUsers } from './admin/useAdminUsers';
 import { useAdminSimulation } from './admin/useAdminSimulation';
 import { useAdminTemplateManager } from './admin/useAdminTemplateManager';
 import { useAdminAwards } from './admin/useAdminAwards';
+import { useAdminAnalytics } from './admin/useAdminAnalytics';
 import {
   categories,
   rankResourceKeys,
@@ -250,7 +251,7 @@ export const AdminPage = ({
     logoutAllAdminUserSessions,
     createAdminUser,
     requestAdminPasswordReset,
-  } = useAdminUsers({ serverUrl, adminJsonFetch });
+  } = useAdminUsers({ lang, serverUrl, adminJsonFetch });
   const {
     adminAwards,
     adminAwardsLoading,
@@ -262,7 +263,13 @@ export const AdminPage = ({
     selectAdminAward,
     saveAdminAward,
     deleteAdminAward,
-  } = useAdminAwards({ serverUrl, adminJsonFetch });
+  } = useAdminAwards({ lang, serverUrl, adminJsonFetch });
+  const {
+    adminAnalytics,
+    adminAnalyticsLoading,
+    adminAnalyticsError,
+    refreshAdminAnalytics,
+  } = useAdminAnalytics({ lang, serverUrl, adminJsonFetch });
 
   const {
     gitStatus,
@@ -359,6 +366,10 @@ export const AdminPage = ({
     if (activeTab !== 'awards' || adminAwards.length > 0 || adminAwardsLoading) return;
     void loadAdminAwards();
   }, [activeTab]);
+  useEffect(() => {
+    if (activeTab !== 'settings' || adminAnalytics || adminAnalyticsLoading) return;
+    void refreshAdminAnalytics();
+  }, [activeTab, adminAnalytics, adminAnalyticsLoading, refreshAdminAnalytics]);
   return (
     <section className={`board admin-panel${uiVariant === 'v2' ? ' board-v2-panel' : ''}`}>
       <h2>{t.adminTitle}</h2>
@@ -406,6 +417,10 @@ export const AdminPage = ({
           setRestartingServer={setRestartingServer}
           onRestartServer={onRestartServer}
           adminActionError={adminActionError}
+          adminAnalytics={adminAnalytics}
+          adminAnalyticsLoading={adminAnalyticsLoading}
+          adminAnalyticsError={adminAnalyticsError}
+          onRefreshAdminAnalytics={refreshAdminAnalytics}
         />
       ) : null}
       {activeTab === 'database' ? (

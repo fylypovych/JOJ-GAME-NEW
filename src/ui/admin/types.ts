@@ -54,6 +54,45 @@ export type SharedDeckTemplate = {
   gameSetup: SharedGameSetup;
 };
 
+export type AdminAnalyticsSummary = {
+  matchesFinished: number;
+  rankWins: number;
+  scoreWins: number;
+  stalledMatches: number;
+  avgTurns: number;
+  avgPlayerCount: number;
+  avgBotCount: number;
+  avgWinnerRankOrder: number;
+  byMode: Array<{
+    mode: 'standard' | 'standard_plus' | 'simplified';
+    matchesFinished: number;
+    avgTurns: number;
+    stalledMatches: number;
+    rankWinRatePct: number;
+    scoreWinRatePct: number;
+    stalledRatePct: number;
+    avgWinnerRankOrder: number;
+  }>;
+  byPlayerCount: Array<{
+    playerCount: number;
+    matchesFinished: number;
+    avgTurns: number;
+    stalledMatches: number;
+    rankWinRatePct: number;
+    scoreWinRatePct: number;
+    stalledRatePct: number;
+    avgWinnerRankOrder: number;
+  }>;
+  topRanks: Array<{
+    rankId: string;
+    count: number;
+  }>;
+  topWinningRanks: Array<{
+    rankId: string;
+    count: number;
+  }>;
+};
+
 export type AdminPageProps = {
   uiVariant: 'v1' | 'v2';
   lang: Language;

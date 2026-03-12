@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CardDefinition, ResourceKey } from '../game/types';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 import { GameCardTile, PilePreview } from './board/components';
 import { buildNextRankHint, getBoardPromoteBlockedReason, getBoardVvnzBlockedReason, getNextRankSeatMeta } from './board/rankHints';
 import { BoardV2HandSection, BoardV2PlayerOverview, BoardV2SelectionPanel, BoardV2SidePanel } from './board/v2Sections';
-import { BoardV2EndVoteModal, BoardV2GameoverModal, BoardV2Header } from './board/v2ShellSections';
+import { BoardV2EndVoteModal, BoardV2GameoverModal, BoardV2Header, BoardV2StandingsSummary } from './board/v2ShellSections';
 import { useBoardV2DerivedState } from './board/useBoardV2DerivedState';
 import { usePendingSelection } from './board/usePendingSelection';
 import { useBoardV2StageState } from './board/useBoardV2StageState';
@@ -16,6 +16,13 @@ const RESOURCE_ORDER: ResourceKey[] = ['time', 'reputation', 'discipline', 'docu
 
 type HandFilter = 'all' | 'playable' | CardDefinition['category'];
 type HandSort = 'default' | 'playable' | 'category' | 'title';
+type BotPlaybackSpeed = 'fast' | 'normal' | 'slow';
+
+const BOT_DELAY_BY_SPEED: Record<BotPlaybackSpeed, number> = {
+  fast: 250,
+  normal: 850,
+  slow: 1600,
+};
 
 const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
   stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
@@ -36,7 +43,11 @@ export const BoardV2 = ({
 }: LocalizedBoardProps) => {
   const t = text(lang);
   const v2 = t.v2;
-  const BOT_TURN_DELAY_MS = 850;
+  const isSpectator = !playerID;
+  const [spectatorView, setSpectatorView] = useState<'live' | 'summary'>('live');
+  const [botPlaybackSpeed, setBotPlaybackSpeed] = useState<BotPlaybackSpeed>('normal');
+  const [botAutoplayEnabled, setBotAutoplayEnabled] = useState(true);
+  const [botThinkingPlayerName, setBotThinkingPlayerName] = useState('');
   const [renderSnapshot, setRenderSnapshot] = useState(() => ({
     G: incomingG,
     ctx: incomingCtx,
@@ -45,12 +56,62 @@ export const BoardV2 = ({
   const processingQueueRef = useRef(false);
   const lastSnapshotSignatureRef = useRef('');
   const delayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const botAutoplayEnabledRef = useRef(true);
+  const botDelayMsRef = useRef(BOT_DELAY_BY_SPEED.normal);
 
   useEffect(() => {
     return () => {
       if (delayTimerRef.current) clearTimeout(delayTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    botAutoplayEnabledRef.current = botAutoplayEnabled;
+  }, [botAutoplayEnabled]);
+
+  useEffect(() => {
+    botDelayMsRef.current = BOT_DELAY_BY_SPEED[botPlaybackSpeed];
+  }, [botPlaybackSpeed]);
+
+  const processSnapshotQueue = useCallback(() => {
+    if (processingQueueRef.current) return;
+    const nextSnapshot = snapshotQueueRef.current[0];
+    if (!nextSnapshot) {
+      setBotThinkingPlayerName('');
+      return;
+    }
+    const nextCurrentPlayer = nextSnapshot.ctx?.currentPlayer ?? '';
+    const nextBot = nextCurrentPlayer ? nextSnapshot.G?.botPlayers?.[nextCurrentPlayer] : null;
+    const nextBotName = nextCurrentPlayer
+      ? String(nextSnapshot.G?.playerNames?.[nextCurrentPlayer] ?? nextBot?.name ?? nextCurrentPlayer)
+      : '';
+    const shouldDelay = Boolean(nextBot);
+    if (shouldDelay && !botAutoplayEnabledRef.current) {
+      setBotThinkingPlayerName(nextBotName);
+      return;
+    }
+    snapshotQueueRef.current.shift();
+    processingQueueRef.current = true;
+    const finish = () => {
+      setRenderSnapshot(nextSnapshot);
+      processingQueueRef.current = false;
+      setBotThinkingPlayerName('');
+      if (snapshotQueueRef.current.length) processSnapshotQueue();
+    };
+    if (shouldDelay) {
+      setBotThinkingPlayerName(nextBotName);
+      delayTimerRef.current = setTimeout(() => {
+        delayTimerRef.current = null;
+        finish();
+      }, botDelayMsRef.current);
+      return;
+    }
+    finish();
+  }, []);
+
+  useEffect(() => {
+    if (botAutoplayEnabled) processSnapshotQueue();
+  }, [botAutoplayEnabled, processSnapshotQueue]);
 
   useEffect(() => {
     const currentPlayer = incomingCtx?.currentPlayer ?? '';
@@ -67,29 +128,8 @@ export const BoardV2 = ({
     if (lastSnapshotSignatureRef.current === signature) return;
     lastSnapshotSignatureRef.current = signature;
     snapshotQueueRef.current.push({ G: incomingG, ctx: incomingCtx });
-    const processQueue = () => {
-      if (processingQueueRef.current) return;
-      const nextSnapshot = snapshotQueueRef.current.shift();
-      if (!nextSnapshot) return;
-      processingQueueRef.current = true;
-      const nextCurrentPlayer = nextSnapshot.ctx?.currentPlayer ?? '';
-      const shouldDelay = Boolean(nextCurrentPlayer && nextSnapshot.G?.botPlayers?.[nextCurrentPlayer]);
-      const finish = () => {
-        setRenderSnapshot(nextSnapshot);
-        processingQueueRef.current = false;
-        if (snapshotQueueRef.current.length) processQueue();
-      };
-      if (shouldDelay) {
-        delayTimerRef.current = setTimeout(() => {
-          delayTimerRef.current = null;
-          finish();
-        }, BOT_TURN_DELAY_MS);
-      } else {
-        finish();
-      }
-    };
-    processQueue();
-  }, [incomingG, incomingCtx, playerID]);
+    processSnapshotQueue();
+  }, [incomingG, incomingCtx, playerID, processSnapshotQueue]);
 
   const G = renderSnapshot.G;
   const ctx = renderSnapshot.ctx;
@@ -127,6 +167,7 @@ export const BoardV2 = ({
     cardImageById,
   });
   const rankName = rawRankName || rankLabel(rankId ?? '', lang);
+  const hasBotPlayers = Object.keys(G?.botPlayers ?? {}).length > 0;
   const safeResources: Record<ResourceKey, number> = resources ?? {
     time: 0,
     reputation: 0,
@@ -298,6 +339,31 @@ export const BoardV2 = ({
   }
 
   const promoteReason = getPromoteBlockedReason();
+  const gameoverPlayerSummaries = Object.keys(G.players ?? {})
+    .map((pid) => {
+      const playerResources = G.resources?.[pid] ?? {};
+      const statRow = G.playerGameStats?.[pid];
+      const resourcesText = RESOURCE_ORDER.map((key) => `${resourceLabels[key]} ${playerResources[key] ?? 0}`).join(', ');
+      return {
+        playerID: pid,
+        name: playerLabelById(pid),
+        rankName: rankLabel(G.ranks?.[pid] ?? '', lang),
+        resourcesText,
+        turnsTaken: statRow?.turnsTaken ?? 0,
+        resourcesGainedTotal: statRow?.resourcesGainedTotal ?? 0,
+        resourcesLostTotal: statRow?.resourcesLostTotal ?? 0,
+        lyapsPlayedOnOthers: statRow?.lyapsPlayedOnOthers ?? 0,
+        scandalsPlayedOnOthers: statRow?.scandalsPlayedOnOthers ?? 0,
+        winner: pid === winnerPlayerID,
+        rankId: G.ranks?.[pid] ?? '',
+        reputation: playerResources.reputation ?? 0,
+      };
+    })
+    .sort((a, b) =>
+      Number(b.winner) - Number(a.winner)
+      || sharedRanks.findIndex((rank) => rank.id === b.rankId) - sharedRanks.findIndex((rank) => rank.id === a.rankId)
+      || b.reputation - a.reputation,
+    );
   const pendingCost: Partial<Record<ResourceKey, number>> = {};
   const highlightedResources = new Set<ResourceKey>();
   const deficitByResource: Partial<Record<ResourceKey, number>> = {};
@@ -315,7 +381,7 @@ export const BoardV2 = ({
     stage === 'draw' ? v2.stageFocusDraw : stage === 'play' ? v2.stageFocusPlay : stage === 'end' ? v2.stageFocusEnd : '';
   const stageClass = stage ? `is-stage-${stage}` : 'is-stage-waiting';
   return (
-    <section className={`game-ui-v2-shell ${stageClass}${compactMode ? ' is-compact' : ''}`}>
+    <section className={`game-ui-v2-shell ${stageClass}${compactMode ? ' is-compact' : ''}${isSpectator ? ' is-spectator' : ''}`}>
       <BoardV2Header
         title={isCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle}
         roomMeta={roomMeta}
@@ -337,6 +403,37 @@ export const BoardV2 = ({
         requestEndGameDisabled={endGameVoteActive || Boolean(ctx?.gameover)}
       />
 
+      {hasBotPlayers && !isSpectator ? (
+        <section className="game-ui-v2-bot-strip">
+          <div>
+            <p className="game-ui-v2-kicker">{v2.botControlsTitle}</p>
+            {botThinkingPlayerName ? (
+              <p className="game-ui-v2-subtle game-ui-v2-bot-thinking">
+                {v2.botThinkingPrefix}: <strong>{botThinkingPlayerName}</strong>...
+              </p>
+            ) : null}
+          </div>
+          <div className="game-ui-v2-bot-strip-actions">
+            <button type="button" onClick={() => setBotAutoplayEnabled((prev) => !prev)}>
+              {botAutoplayEnabled ? v2.botAutoplayPause : v2.botAutoplayResume}
+            </button>
+            <div className="game-ui-v2-side-tab-row is-inline">
+              <span className="game-ui-v2-bot-speed-label">{v2.botSpeedLabel}</span>
+              {(['fast', 'normal', 'slow'] as BotPlaybackSpeed[]).map((speed) => (
+                <button
+                  key={`bot-speed-${speed}`}
+                  type="button"
+                  className={botPlaybackSpeed === speed ? 'is-active' : ''}
+                  onClick={() => setBotPlaybackSpeed(speed)}
+                >
+                  {speed === 'fast' ? v2.botSpeedFast : speed === 'normal' ? v2.botSpeedNormal : v2.botSpeedSlow}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <BoardV2EndVoteModal
         open={endGameVoteActive}
         title={v2.endVoteTitle}
@@ -350,8 +447,38 @@ export const BoardV2 = ({
         onDecline={() => moves.respondEndGameVote?.(false)}
       />
 
+      {isSpectator ? (
+        <section className="game-ui-v2-spectator-strip">
+          <p className="game-ui-v2-subtle">{v2.spectatorCompactHint}</p>
+          <div className="game-ui-v2-side-tab-row">
+            <button type="button" className={spectatorView === 'live' ? 'is-active' : ''} onClick={() => setSpectatorView('live')}>
+              {v2.spectatorLiveView}
+            </button>
+            <button type="button" className={spectatorView === 'summary' ? 'is-active' : ''} onClick={() => setSpectatorView('summary')}>
+              {v2.spectatorSummaryView}
+            </button>
+          </div>
+        </section>
+      ) : null}
+
       <div className="game-ui-v2-grid">
         <div className="game-ui-v2-main">
+          {isSpectator && spectatorView === 'summary' ? (
+            <section className="game-ui-v2-command">
+              <BoardV2StandingsSummary
+                title={v2.finalStandingsTitle}
+                summaryLabels={{
+                  player: v2.finalStandingsPlayer,
+                  rank: v2.finalStandingsRank,
+                  resources: v2.finalStandingsResources,
+                  turns: v2.finalStandingsTurns,
+                  gainLoss: v2.finalStandingsGainLoss,
+                  actions: v2.finalStandingsActions,
+                }}
+                playerSummaries={gameoverPlayerSummaries}
+              />
+            </section>
+          ) : null}
           {draftPending && !myDraftDone ? (
             <section className="game-ui-v2-command">
               <div className="game-ui-v2-command-top">
@@ -397,6 +524,7 @@ export const BoardV2 = ({
               </div>
             </section>
           ) : null}
+          {!isSpectator ? (
           <section className="game-ui-v2-command">
             <div className="game-ui-v2-command-top">
               <div>
@@ -495,7 +623,9 @@ export const BoardV2 = ({
               pickTargetNotice={pickTargetNotice}
             />
           </section>
+          ) : null}
 
+          {(!isSpectator || spectatorView === 'live') ? (
           <section className="game-ui-v2-piles">
             <h3>{v2.tableState}</h3>
             <div className="play-area">
@@ -549,7 +679,9 @@ export const BoardV2 = ({
               </div>
             </div>
           </section>
+          ) : null}
 
+          {!isSpectator ? (
           <section className="game-ui-v2-hand-section">
             <div className="game-ui-v2-hand-head">
               <div>
@@ -606,8 +738,9 @@ export const BoardV2 = ({
               }}
             />
           </section>
+          ) : null}
 
-          {!isSimplifiedMode ? (
+          {!isSimplifiedMode && !isSpectator ? (
             <BoardV2HandSection
               title={`${t.legendaryHand} (${legendaryHand.length})`}
               subtitle={t.legendaryHandHint}
@@ -655,6 +788,16 @@ export const BoardV2 = ({
                   lyapsPlayed: v2.statsLyapsPlayedOnOthers,
                   scandalsPlayed: v2.statsScandalsPlayedOnOthers,
                 }}
+                summaryTitle={v2.finalStandingsTitle}
+                summaryLabels={{
+                  player: v2.finalStandingsPlayer,
+                  rank: v2.finalStandingsRank,
+                  resources: v2.finalStandingsResources,
+                  turns: v2.finalStandingsTurns,
+                  gainLoss: v2.finalStandingsGainLoss,
+                  actions: v2.finalStandingsActions,
+                }}
+                playerSummaries={gameoverPlayerSummaries}
                 closeLabel={t.close}
                 leaveRoomLabel={v2.leaveRoom}
                 onLeaveRoom={onLeaveRoom}
@@ -664,7 +807,7 @@ export const BoardV2 = ({
           ) : null}
         </div>
 
-        <BoardV2SidePanel
+          <BoardV2SidePanel
           sidePanelTab={sidePanelTab}
           setSidePanelTab={setSidePanelTab}
           v2={v2}
@@ -677,14 +820,18 @@ export const BoardV2 = ({
           setChatInput={setChatInput}
           sendChatMessage={sendChatMessage}
           chatLogRef={chatLogRef}
+          eventsTitle={isSpectator ? v2.spectatorTimelineTitle : v2.recentEvents}
+          spectatorMode={isSpectator}
         />
       </div>
 
+      {!isSpectator ? (
       <div className="game-ui-v2-mobile-bar" aria-label={v2.mobileActions}>
         <button type="button" onClick={handleDraw} disabled={!canDraw}>{t.draw}</button>
         <button type="button" onClick={() => handlePromote(promoteReason)} disabled={!canPlay || Boolean(promoteReason)}>{t.promote}</button>
         <button type="button" onClick={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)} disabled={!canEndTurn}>{passButtonLabel}</button>
       </div>
+      ) : null}
     </section>
   );
 };

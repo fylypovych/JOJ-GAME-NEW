@@ -1,6 +1,6 @@
 import { isCommandCategory } from '../cardRules';
 import type { CardDefinition, JojGameState, ResourceKey } from '../types';
-import type { BotDifficulty } from '../types';
+import type { BotDifficulty, BotProfile } from '../types';
 
 export type BotPlan =
   | { kind: 'promote'; score: number }
@@ -61,10 +61,18 @@ const scoreCardEffects = (card: CardDefinition) =>
     return sum + effect.value * 3;
   }, 0);
 
-const buildCardPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string, difficulty: BotDifficulty): BotPlan[] => {
+const getProfileAdjustments = (profile: BotProfile) => ({
+  aggressiveAttackBonus: profile === 'aggressive' ? 12 : profile === 'control' ? -4 : 0,
+  aggressiveRankBonus: profile === 'aggressive' ? 6 : profile === 'control' ? -2 : 0,
+  controlCommandBonus: profile === 'control' ? 10 : profile === 'aggressive' ? -2 : 0,
+  supportBonus: profile === 'control' ? 6 : 0,
+});
+
+const buildCardPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string, difficulty: BotDifficulty, profile: BotProfile): BotPlan[] => {
   const opponents = getOpponentsSorted(deps, G, playerID);
   const hand = G.hands[playerID] ?? [];
   const currentRankIndex = getRankIndex(deps, G.ranks[playerID]);
+  const profileAdjustments = getProfileAdjustments(profile);
   const actionPlans = hand.flatMap<BotPlan>((card, index) => {
     const baseScore = scoreCardEffects(card) + Math.max(0, hand.length - index);
     if (card.category === 'LYAP') {
@@ -73,7 +81,7 @@ const buildCardPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string,
         cardId: card.id,
         targetPlayerID,
         replacementResources: [],
-        score: baseScore + (difficulty === 'hard' ? 35 : 20) - targetIndex,
+        score: baseScore + (difficulty === 'hard' ? 35 : 20) + profileAdjustments.aggressiveAttackBonus - targetIndex,
       }));
     }
     if (card.category === 'SCANDAL') {
@@ -87,7 +95,7 @@ const buildCardPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string,
         kind: 'play-card',
         cardId: card.id,
         replacementByTarget,
-        score: baseScore + (difficulty === 'hard' ? 34 : 18),
+        score: baseScore + (difficulty === 'hard' ? 34 : 18) + profileAdjustments.aggressiveAttackBonus + profileAdjustments.controlCommandBonus,
       }];
     }
     if (card.category === 'SUPPORT' || isCommandCategory(card)) {
@@ -96,7 +104,7 @@ const buildCardPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string,
         kind: 'play-card',
         cardId: card.id,
         replacementResources,
-        score: baseScore + (card.category === 'SUPPORT' ? 24 : 16),
+        score: baseScore + (card.category === 'SUPPORT' ? 24 + profileAdjustments.supportBonus : 16 + profileAdjustments.controlCommandBonus),
       }];
     }
     if (card.category === 'VVNZ') {
@@ -104,7 +112,7 @@ const buildCardPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string,
       return [{
         kind: 'play-card',
         cardId: card.id,
-        score: baseScore + rankBoost * (difficulty === 'hard' ? 30 : 18) + 12,
+        score: baseScore + rankBoost * (difficulty === 'hard' ? 30 : 18) + 12 + profileAdjustments.aggressiveRankBonus,
       }];
     }
     if (card.category === 'LEGENDARY') {
@@ -126,16 +134,17 @@ const buildCardPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string,
   return actionPlans.sort((a, b) => b.score - a.score);
 };
 
-const buildLegendaryPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string, difficulty: BotDifficulty): BotPlan[] => {
+const buildLegendaryPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string, difficulty: BotDifficulty, profile: BotProfile): BotPlan[] => {
   const opponents = getOpponentsSorted(deps, G, playerID);
   const hand = G.legendaryHands[playerID] ?? [];
+  const profileAdjustments = getProfileAdjustments(profile);
   return hand
     .map<BotPlan | null>((card, index) => {
       const base = 20 + Math.max(0, hand.length - index);
       if (card.id === 'legendary-10') {
         const targetPlayerID = opponents[0];
         if (!targetPlayerID) return null;
-        return { kind: 'play-legendary', cardId: card.id, targetPlayerID, score: base + 35 };
+        return { kind: 'play-legendary', cardId: card.id, targetPlayerID, score: base + 35 + profileAdjustments.aggressiveAttackBonus };
       }
       if (card.id === 'legendary-06' || card.id === 'legendary-09') {
         return {
@@ -174,15 +183,16 @@ export const buildDrawResolutionPlan = (deps: BotPlannerDeps, G: JojGameState, p
   };
 };
 
-export const buildBotPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string, difficulty: BotDifficulty): BotPlan[] => {
+export const buildBotPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string, difficulty: BotDifficulty, profile: BotProfile = 'balanced'): BotPlan[] => {
   const plans: BotPlan[] = [];
   if (!G.promotedThisTurn[playerID]) {
-    plans.push({ kind: 'promote', score: difficulty === 'hard' ? 90 : difficulty === 'normal' ? 70 : 45 });
+    const profileBonus = profile === 'aggressive' ? 8 : profile === 'control' ? -4 : 0;
+    plans.push({ kind: 'promote', score: (difficulty === 'hard' ? 90 : difficulty === 'normal' ? 70 : 45) + profileBonus });
   }
   if (G.gameMode !== 'simplified') {
-    plans.push(...buildLegendaryPlans(deps, G, playerID, difficulty));
+    plans.push(...buildLegendaryPlans(deps, G, playerID, difficulty, profile));
   }
-  plans.push(...buildCardPlans(deps, G, playerID, difficulty));
+  plans.push(...buildCardPlans(deps, G, playerID, difficulty, profile));
   if ((G.deck?.length ?? 0) === 0 && !deps.hasPlayableCardsByInventory(G, playerID)) {
     plans.push({ kind: 'pass', score: 1 });
   }

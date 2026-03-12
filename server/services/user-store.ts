@@ -98,10 +98,20 @@ export const createUserStore = (pool: Pool) => {
       CREATE TABLE IF NOT EXISTS persisted_match_results (
         match_id text PRIMARY KEY,
         winner_player_id text,
+        winner_player_name text,
         end_reason text,
+        game_mode text NOT NULL DEFAULT 'standard',
+        player_count integer NOT NULL DEFAULT 0,
+        bot_count integer NOT NULL DEFAULT 0,
+        bot_difficulty text,
         turns_completed integer NOT NULL DEFAULT 0,
         persisted_at timestamptz NOT NULL DEFAULT now()
       );
+      ALTER TABLE persisted_match_results ADD COLUMN IF NOT EXISTS winner_player_name text;
+      ALTER TABLE persisted_match_results ADD COLUMN IF NOT EXISTS game_mode text NOT NULL DEFAULT 'standard';
+      ALTER TABLE persisted_match_results ADD COLUMN IF NOT EXISTS player_count integer NOT NULL DEFAULT 0;
+      ALTER TABLE persisted_match_results ADD COLUMN IF NOT EXISTS bot_count integer NOT NULL DEFAULT 0;
+      ALTER TABLE persisted_match_results ADD COLUMN IF NOT EXISTS bot_difficulty text;
       CREATE TABLE IF NOT EXISTS persisted_match_participants (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         match_id text NOT NULL REFERENCES persisted_match_results(match_id) ON DELETE CASCADE,
@@ -479,7 +489,9 @@ export const createUserStore = (pool: Pool) => {
     deleteSessionById,
     persistMatchResultIfFinished,
     getUserStatsSummary,
+    listUserMatchHistory,
     listPendingPersistMatchIds,
+    getAdminAnalytics,
   } = matchStore;
 
   const awardsStore = createUserAwardsStore({
@@ -500,6 +512,7 @@ export const createUserStore = (pool: Pool) => {
     listUserSessions,
     listUserMatchLinks,
     getUserStatsSummary,
+    listUserMatchHistory,
     evaluateUserAwards,
     getPublicUserByUsername,
     normalizeUsername,
@@ -538,11 +551,13 @@ export const createUserStore = (pool: Pool) => {
     listUserSessions,
     persistMatchResultIfFinished,
     getUserStatsSummary,
+    listUserMatchHistory,
     listAwardDefinitions,
     evaluateUserAwards,
     saveAwardDefinition,
     deleteAwardDefinition,
     listPendingPersistMatchIds,
+    getAdminAnalytics,
     listUsersAdmin,
     updateUserStatus,
     updateUserRole,

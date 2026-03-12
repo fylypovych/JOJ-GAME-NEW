@@ -190,6 +190,7 @@ type ChatPanelProps = {
   chatLogRef: RefObject<HTMLDivElement>;
   includeSystemMessages?: boolean;
   lang?: Language;
+  readOnly?: boolean;
 };
 
 export const BoardChatPanel = ({
@@ -202,6 +203,7 @@ export const BoardChatPanel = ({
   chatLogRef,
   includeSystemMessages = true,
   lang = 'uk',
+  readOnly = false,
 }: ChatPanelProps) => (
   <aside className="board-chat">
     <h3>{t.chatTitle}</h3>
@@ -221,6 +223,7 @@ export const BoardChatPanel = ({
       className="chat-input-row"
       onSubmit={(e) => {
         e.preventDefault();
+        if (readOnly) return;
         onSend();
       }}
     >
@@ -228,8 +231,9 @@ export const BoardChatPanel = ({
         value={chatInput}
         onChange={(e) => setChatInput(e.target.value)}
         placeholder={t.chatPlaceholder}
+        disabled={readOnly}
       />
-      <button type="submit">{t.sendMessage}</button>
+      <button type="submit" disabled={readOnly}>{t.sendMessage}</button>
     </form>
   </aside>
 );

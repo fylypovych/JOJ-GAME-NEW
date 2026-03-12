@@ -3,6 +3,7 @@ import type {
   AdminUserDetail,
   AdminUserSummary,
   UserAwardRecord,
+  UserMatchHistoryItem,
   UserRecord,
   UserSessionRecord,
   UserStatsSummary,
@@ -20,6 +21,7 @@ export const createUserAdminStore = (args: {
     linked_at: string;
   }>>;
   getUserStatsSummary: (userId: string) => Promise<UserStatsSummary>;
+  listUserMatchHistory: (userId: string, limit?: number) => Promise<UserMatchHistoryItem[]>;
   evaluateUserAwards: (userId: string, statsArg?: UserStatsSummary) => Promise<UserAwardRecord[]>;
   getPublicUserByUsername: (username: string) => Promise<Pick<UserRecord, 'username' | 'displayName' | 'avatarUrl' | 'bio' | 'createdAt' | 'showStatsPublic' | 'showRecentMatchesPublic'> | null>;
   normalizeUsername: (value: string) => string;
@@ -33,6 +35,7 @@ export const createUserAdminStore = (args: {
     listUserSessions,
     listUserMatchLinks,
     getUserStatsSummary,
+    listUserMatchHistory,
     evaluateUserAwards,
     getPublicUserByUsername,
     normalizeUsername,
@@ -147,7 +150,7 @@ export const createUserAdminStore = (args: {
   const getAdminUserDetail = async (userId: string): Promise<AdminUserDetail | null> => {
     const user = await getUserWithStatusById(userId);
     if (!user) return null;
-    const [stats, sessions, linkedMatches, persistedMatchesResult] = await Promise.all([
+    const [stats, sessions, linkedMatches, persistedMatches] = await Promise.all([
       getUserStatsSummary(userId),
       listUserSessions(userId),
       listUserMatchLinks(userId).then((rows) => rows.map((row) => ({
@@ -156,36 +159,7 @@ export const createUserAdminStore = (args: {
         playerName: row.player_name,
         linkedAt: row.linked_at,
       }))),
-      pool.query<{
-        matchId: string;
-        playerId: string;
-        playerName: string | null;
-        winnerPlayerId: string | null;
-        endReason: string | null;
-        turnsCompleted: number;
-        finalRankId: string;
-        resourcesGainedTotal: number;
-        resourcesLostTotal: number;
-        linkedAt: string;
-      }>(`
-        SELECT
-          l.match_id AS "matchId",
-          l.player_id AS "playerId",
-          l.player_name AS "playerName",
-          r.winner_player_id AS "winnerPlayerId",
-          r.end_reason AS "endReason",
-          r.turns_completed AS "turnsCompleted",
-          p.final_rank_id AS "finalRankId",
-          p.resources_gained_total AS "resourcesGainedTotal",
-          p.resources_lost_total AS "resourcesLostTotal",
-          l.linked_at AS "linkedAt"
-        FROM user_match_links l
-        JOIN persisted_match_results r ON r.match_id = l.match_id
-        JOIN persisted_match_participants p ON p.match_id = l.match_id AND p.player_id = l.player_id
-        WHERE l.user_id = $1
-        ORDER BY l.linked_at DESC
-        LIMIT 50
-      `, [userId]),
+      listUserMatchHistory(userId, 50),
     ]);
     const awards = await evaluateUserAwards(userId, stats);
     return {
@@ -194,7 +168,7 @@ export const createUserAdminStore = (args: {
       awards,
       sessions,
       linkedMatches,
-      persistedMatches: persistedMatchesResult.rows,
+      persistedMatches,
     };
   };
 
@@ -206,12 +180,7 @@ export const createUserAdminStore = (args: {
     const stats = userId && user.showStatsPublic ? await getUserStatsSummary(userId) : null;
     const awards = userId && user.showStatsPublic ? (await evaluateUserAwards(userId, stats ?? undefined)).filter((award) => (award as { awarded?: boolean }).awarded) : [];
     const recentMatches = userId && user.showRecentMatchesPublic
-      ? (await listUserMatchLinks(userId)).slice(0, 10).map((row) => ({
-        matchId: row.match_id,
-        playerId: row.player_id,
-        playerName: row.player_name,
-        linkedAt: row.linked_at,
-      }))
+      ? await listUserMatchHistory(userId, 10)
       : [];
     return { user, stats, awards, recentMatches };
   };

@@ -20,6 +20,10 @@ export type UserStats = {
   matchesLinked: number;
   matchesFinished: number;
   wins: number;
+  rankWins: number;
+  scoreWins: number;
+  stalledMatches: number;
+  botMatchesFinished: number;
   winRatePct: number;
   avgTurns: number;
   bestRankId: string;
@@ -29,6 +33,40 @@ export type UserStats = {
   lyapsPlayedOnOthers: number;
   scandalsPlayedOnOthers: number;
   lastMatchAt: string | null;
+  byMode: Array<{
+    mode: 'standard' | 'standard_plus' | 'simplified';
+    matchesFinished: number;
+    wins: number;
+    winRatePct: number;
+  }>;
+  byPlayerCount: Array<{
+    playerCount: number;
+    matchesFinished: number;
+    wins: number;
+    winRatePct: number;
+  }>;
+};
+
+export type UserMatchHistoryItem = {
+  matchId: string;
+  playerId: string;
+  playerName: string | null;
+  winnerPlayerId: string | null;
+  winnerPlayerName: string | null;
+  endReason: string | null;
+  turnsCompleted: number;
+  gameMode: 'standard' | 'standard_plus' | 'simplified';
+  playerCount: number;
+  botCount: number;
+  botDifficulty: 'easy' | 'normal' | 'hard' | null;
+  finalRankId: string;
+  finalResources: Record<string, number>;
+  resourcesGainedTotal: number;
+  resourcesLostTotal: number;
+  lyapsPlayedOnOthers: number;
+  scandalsPlayedOnOthers: number;
+  linkedAt: string;
+  persistedAt: string;
 };
 
 export type UserSession = {
@@ -80,6 +118,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
   const [csrfToken, setCsrfToken] = useState('');
   const [sessions, setSessions] = useState<UserSession[]>([]);
   const [awards, setAwards] = useState<UserAward[]>([]);
+  const [matchHistory, setMatchHistory] = useState<UserMatchHistoryItem[]>([]);
 
   const authBase = `${serverUrl}/api/auth`;
   const profileBase = `${serverUrl}/api/profile`;
@@ -134,6 +173,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
         applyPayloadCsrf(profilePayload);
         setStats((profilePayload as { stats?: UserStats | null }).stats ?? null);
         setAwards((profilePayload as { awards?: UserAward[] }).awards ?? []);
+        setMatchHistory((profilePayload as { matchHistory?: UserMatchHistoryItem[] }).matchHistory ?? []);
         const sessionsResponse = await fetch(`${profileBase}/sessions`, { credentials: 'include' });
         const sessionsPayload = await sessionsResponse.json().catch(() => ({}));
         applyPayloadCsrf(sessionsPayload);
@@ -142,6 +182,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
         setStats(null);
         setSessions([]);
         setAwards([]);
+        setMatchHistory([]);
       }
       setError('');
     } catch (nextError) {
@@ -188,6 +229,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
       setStats(null);
       setSessions([]);
       setAwards([]);
+      setMatchHistory([]);
       setError('');
       setCsrfToken('');
       await refreshUser();
@@ -273,6 +315,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
       setStats(null);
       setSessions([]);
       setAwards([]);
+      setMatchHistory([]);
       setError('');
       setCsrfToken('');
     } finally {
@@ -314,6 +357,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     user,
     stats,
     awards,
+    matchHistory,
     sessions,
     loading,
     busy,
