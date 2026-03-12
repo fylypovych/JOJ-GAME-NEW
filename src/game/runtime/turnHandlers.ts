@@ -1,14 +1,11 @@
 import type { CardDefinition } from '../types';
 import type { JojMovesDeps, MoveArgs } from '../moveTypes';
-import { isDrawAutoResolutionPending, isLegendaryDraftPending } from './drawHandlers';
+import { validateMoveAction } from '../actionRules';
 
 export const discardFromHandHandler = (d: JojMovesDeps, args: MoveArgs, cardId: string) => {
   const playerID = args.playerID;
-  if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
-  if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
-  if (isDrawAutoResolutionPending(args.G)) return d.INVALID_MOVE;
-  const stage = args.ctx.activePlayers?.[playerID];
-  if (![d.PLAY_STAGE, d.END_STAGE].includes(stage as string)) return d.INVALID_MOVE;
+  if (!playerID) return d.INVALID_MOVE;
+  if (!validateMoveAction(d, args, 'discard-from-hand')) return d.INVALID_MOVE;
   const hand = args.G.hands[playerID];
   if (hand.length <= d.HAND_LIMIT) return d.INVALID_MOVE;
   const idx = hand.findIndex((card: CardDefinition) => card.id === cardId);
@@ -31,10 +28,8 @@ export const discardFromHandHandler = (d: JojMovesDeps, args: MoveArgs, cardId: 
 
 export const promoteHandler = (d: JojMovesDeps, args: MoveArgs) => {
   const playerID = args.playerID;
-  if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
-  if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
-  if (isDrawAutoResolutionPending(args.G)) return d.INVALID_MOVE;
-  if (![d.PLAY_STAGE, d.END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return d.INVALID_MOVE;
+  if (!playerID) return d.INVALID_MOVE;
+  if (!validateMoveAction(d, args, 'promote')) return d.INVALID_MOVE;
   if (args.G.promotedThisTurn[playerID]) return d.INVALID_MOVE;
   const beforeResources = { ...args.G.resources[playerID] };
   const beforeResourcesGlobal = d.snapshotResourcesForStats(args.G);
@@ -66,10 +61,8 @@ export const promoteHandler = (d: JojMovesDeps, args: MoveArgs) => {
 
 export const endTurnHandler = (d: JojMovesDeps, args: MoveArgs) => {
   const playerID = args.playerID;
-  if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
-  if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
-  if (isDrawAutoResolutionPending(args.G)) return d.INVALID_MOVE;
-  if (![d.PLAY_STAGE, d.END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return d.INVALID_MOVE;
+  if (!playerID) return d.INVALID_MOVE;
+  if (!validateMoveAction(d, args, 'end-turn')) return d.INVALID_MOVE;
   if ((args.G.hands[playerID]?.length ?? 0) > d.HAND_LIMIT) return d.INVALID_MOVE;
   d.incrementTurnsCompleted(args.G, playerID);
   d.resetNoPlayablePassStreak(args.G);
@@ -80,10 +73,8 @@ export const endTurnHandler = (d: JojMovesDeps, args: MoveArgs) => {
 
 export const passHandler = (d: JojMovesDeps, args: MoveArgs) => {
   const playerID = args.playerID;
-  if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
-  if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
-  if (isDrawAutoResolutionPending(args.G)) return d.INVALID_MOVE;
-  if (![d.PLAY_STAGE, d.END_STAGE].includes(args.ctx.activePlayers?.[playerID] as string)) return d.INVALID_MOVE;
+  if (!playerID) return d.INVALID_MOVE;
+  if (!validateMoveAction(d, args, 'pass')) return d.INVALID_MOVE;
   if ((args.G.hands[playerID]?.length ?? 0) > d.HAND_LIMIT) return d.INVALID_MOVE;
   if ((args.G.deck?.length ?? 0) > 0) return d.INVALID_MOVE;
   if (d.hasPlayableCardsByInventory(args.G, playerID)) return d.INVALID_MOVE;

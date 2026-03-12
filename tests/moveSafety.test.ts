@@ -4,6 +4,7 @@ import { createJojMoves } from '../src/game/moves';
 import { drawCardHandler, endTurnHandler, passHandler, playCardHandler, playLegendaryCardHandler, resolveDrawAutoCardHandler } from '../src/game/moveHandlers';
 import type { JojMovesDeps, MoveArgs } from '../src/game/moveTypes';
 import type { CardDefinition, JojGameState, ResourceKey } from '../src/game/types';
+import { createEmptyGameState } from '../src/game/stateFactory';
 
 const makeState = (): JojGameState => ({
   gameMode: 'standard',
@@ -317,6 +318,46 @@ test('playLegendaryCardHandler rolls back special effects when card effects fail
   assert.equal(G.extraHandPlayTokens['0'], 0);
   assert.equal(G.legendaryHands['0'].length, 1);
   assert.equal(G.legendaryDiscard.length, 0);
+});
+
+test('playLegendaryCardHandler rejects legendary play outside acting player turn', () => {
+  const G = makeState();
+  G.legendaryHands['0'] = [{ id: 'legendary-03', title: 'Legendary', category: 'LEGENDARY', effects: [] }];
+  const args: MoveArgs = {
+    G,
+    ctx: { currentPlayer: '1', activePlayers: { '0': 'play', '1': 'play' }, turn: 1, numPlayers: 2 },
+    playerID: '0',
+  };
+
+  const result = playLegendaryCardHandler(makeDeps(), args, 'legendary-03');
+
+  assert.equal(result, 'INVALID_MOVE');
+  assert.equal(G.legendaryHands['0'].length, 1);
+  assert.equal(G.legendaryDiscard.length, 0);
+  assert.equal(G.extraHandPlayTokens['0'], 0);
+});
+
+test('createEmptyGameState starts resource flow stats at zero', () => {
+  const G = createEmptyGameState({
+    gameMode: 'standard',
+    deck: [],
+    legendaryDeck: [],
+  });
+
+  assert.deepEqual(G.gameStats.resourcesGainedByType, {
+    time: 0,
+    reputation: 0,
+    discipline: 0,
+    documents: 0,
+    tech: 0,
+  });
+  assert.deepEqual(G.gameStats.resourcesLostByType, {
+    time: 0,
+    reputation: 0,
+    discipline: 0,
+    documents: 0,
+    tech: 0,
+  });
 });
 
 test('passHandler rejects pass while deck still has cards', () => {

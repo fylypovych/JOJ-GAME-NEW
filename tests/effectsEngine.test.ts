@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createEffectsEngine } from '../src/game/effectsEngine';
+import { appendAppliedEffectLog } from '../src/game/effectLog';
 import type { JojGameState, ResourceKey } from '../src/game/types';
 
 const makeState = (): JojGameState => ({
@@ -109,4 +110,24 @@ test('cancelLastScandalForPlayer reverts last scandal effects for the player', (
   assert.equal(result.canceledCard?.id, 'scandal-x');
   assert.equal(G.resources['0'].documents, 1);
   assert.equal(result.summary.resources.documents, 1);
+});
+
+test('cancelLastScandalForPlayer prefers exact applied effect log when available', () => {
+  const G = makeState();
+  G.resources['0'].documents = 0;
+  appendAppliedEffectLog(G, {
+    sourceCardId: 'scandal-logged',
+    sourceCardTitle: 'Logged Scandal',
+    sourceCategory: 'SCANDAL',
+    sourcePlayerID: '1',
+    targetPlayerID: '0',
+    summary: { resources: { documents: -1 }, rank: 0 },
+    createdAtTurn: 3,
+  });
+
+  const result = engine.cancelLastScandalForPlayer(G, '0');
+
+  assert.equal(result.canceledCard?.id, 'scandal-logged');
+  assert.equal(G.resources['0'].documents, 1);
+  assert.equal(G.appliedEffectLog?.[0]?.canceled, true);
 });

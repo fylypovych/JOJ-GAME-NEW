@@ -1,7 +1,9 @@
+import { getCardPlayBehavior, type CardPlayBehavior } from './cardRules';
 import { rankSeatLimitForRank } from './rankEngine';
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from './types';
 
 export type ResourceLabels = Record<ResourceKey, string>;
+export type ActionAvailability = { allowed: boolean; reason: string | null };
 
 export const getMissingResourceParts = (
   required: Partial<Record<ResourceKey, number>> | undefined,
@@ -69,6 +71,22 @@ export const getPromoteBlockedReason = (args: {
   return null;
 };
 
+export const getPromoteActionState = (args: {
+  G: Pick<JojGameState, 'players' | 'ranks' | 'resources' | 'promotedThisTurn'>;
+  playerID: string;
+  ranks: RankDefinition[];
+  resourceLabels: ResourceLabels;
+  lang?: 'uk' | 'en';
+}): ActionAvailability & { nextRank?: RankDefinition } => {
+  const nextRank = findNextRank(args.ranks, args.G.ranks[args.playerID]);
+  const reason = getPromoteBlockedReason(args);
+  return {
+    allowed: !reason,
+    reason,
+    nextRank,
+  };
+};
+
 export const getVvnzPlayBlockedReason = (args: {
   card: Pick<CardDefinition, 'category' | 'grantRank'>;
   G: Pick<JojGameState, 'players' | 'ranks' | 'resources'>;
@@ -120,4 +138,29 @@ export const getVvnzPlayBlockedReason = (args: {
       : `No free seat for rank "${targetRank.name}" (limit ${seatLimit}).`;
   }
   return null;
+};
+
+export const getHandCardActionState = (args: {
+  card: CardDefinition;
+  G: Pick<JojGameState, 'players' | 'ranks' | 'resources'>;
+  playerID: string;
+  ranks: RankDefinition[];
+  resourceLabels: ResourceLabels;
+  canPlayHandCard?: boolean;
+  lang?: 'uk' | 'en';
+}): ActionAvailability & { behavior: CardPlayBehavior } => {
+  const { card, G, playerID, ranks, resourceLabels, canPlayHandCard = true, lang = 'uk' } = args;
+  const behavior = getCardPlayBehavior(card);
+  if (!canPlayHandCard) {
+    return {
+      allowed: false,
+      reason: lang === 'uk' ? 'Цю карту зараз не можна розіграти.' : 'This card cannot be played right now.',
+      behavior,
+    };
+  }
+  if (behavior === 'vvnz') {
+    const reason = getVvnzPlayBlockedReason({ card, G, playerID, ranks, resourceLabels, lang });
+    return { allowed: !reason, reason, behavior };
+  }
+  return { allowed: true, reason: null, behavior };
 };

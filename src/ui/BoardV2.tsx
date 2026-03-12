@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CardDefinition, ResourceKey } from '../game/types';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 import { GameCardTile, PilePreview } from './board/components';
-import { buildNextRankHint, getBoardPromoteBlockedReason, getBoardVvnzBlockedReason, getNextRankSeatMeta } from './board/rankHints';
+import { buildNextRankHint, getBoardPromoteBlockedReason, getNextRankSeatMeta } from './board/rankHints';
 import { BoardV2HandSection, BoardV2PlayerOverview, BoardV2SelectionPanel, BoardV2SidePanel } from './board/v2Sections';
 import { BoardV2EndVoteModal, BoardV2GameoverModal, BoardV2Header, BoardV2StandingsSummary } from './board/v2ShellSections';
 import { useBoardV2DerivedState } from './board/useBoardV2DerivedState';
@@ -219,13 +219,11 @@ export const BoardV2 = ({
     canPlay,
     canDraw,
     canEndTurn,
-    resources: safeResources,
     sharedRanks,
     resourceLabels,
     lang,
     v2,
     t,
-    getBoardVvnzBlockedReason,
   });
 
   const {

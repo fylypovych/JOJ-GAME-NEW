@@ -1,4 +1,5 @@
 import type { CardDefinition, JojGameState, ResourceKey } from './types';
+import { findLastAppliedEffect, markAppliedEffectCanceled, toLoggedCardDefinition } from './effectLog';
 
 export type EffectSummary = {
   resources: Partial<Record<ResourceKey, number>>;
@@ -123,6 +124,19 @@ export const createEffectsEngine = ({
     return summary;
   };
 
+  const revertSummary = (
+    G: JojGameState,
+    playerID: string,
+    summary: EffectSummary,
+  ) => {
+    const resources = G.resources[playerID];
+    resourceKeys.forEach((key) => {
+      resources[key] = (resources[key] ?? 0) - (summary.resources[key] ?? 0);
+    });
+    if (summary.rank !== 0) shiftRank(G, playerID, summary.rank * -1);
+    clampNonNegativeResources(resources);
+  };
+
   const applyCardEffects = (
     G: JojGameState,
     playerID: string,
@@ -240,6 +254,15 @@ export const createEffectsEngine = ({
     G: JojGameState,
     playerID: string,
   ): { canceledCard: CardDefinition | null; summary: EffectSummary } => {
+    const logged = findLastAppliedEffect(
+      G,
+      (entry) => entry.targetPlayerID === playerID && (entry.sourceCategory === 'LYAP' || entry.sourceCategory === 'SCANDAL'),
+    );
+    if (logged) {
+      revertSummary(G, playerID, logged.summary);
+      markAppliedEffectCanceled(G, logged.id);
+      return { canceledCard: toLoggedCardDefinition(logged), summary: logged.summary };
+    }
     for (let i = G.discard.length - 1; i >= 0; i -= 1) {
       const card = G.discard[i];
       if (!card || (card.category !== 'LYAP' && card.category !== 'SCANDAL')) continue;
@@ -261,6 +284,15 @@ export const createEffectsEngine = ({
     G: JojGameState,
     playerID: string,
   ): { canceledCard: CardDefinition | null; summary: EffectSummary } => {
+    const logged = findLastAppliedEffect(
+      G,
+      (entry) => entry.targetPlayerID === playerID && entry.sourceCategory === 'SCANDAL',
+    );
+    if (logged) {
+      revertSummary(G, playerID, logged.summary);
+      markAppliedEffectCanceled(G, logged.id);
+      return { canceledCard: toLoggedCardDefinition(logged), summary: logged.summary };
+    }
     for (let i = G.discard.length - 1; i >= 0; i -= 1) {
       const card = G.discard[i];
       if (!card || card.category !== 'SCANDAL') continue;

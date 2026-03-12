@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
+import { cardNeedsTargetSelection, getCardPlayBehavior } from '../../game/cardRules';
+import { getHandCardActionState } from '../../game/actionValidation';
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from '../../game/types';
 import type { JojMoveApi } from './types';
 
@@ -18,21 +20,11 @@ export const useBoardV2UiController = (args: {
   canPlay: boolean;
   canDraw: boolean;
   canEndTurn: boolean;
-  resources?: Record<ResourceKey, number>;
   sharedRanks: RankDefinition[];
   resourceLabels: Record<ResourceKey, string>;
   lang: 'uk' | 'en';
   v2: Record<string, string>;
   t: ReturnType<typeof import('../i18n').text>;
-  getBoardVvnzBlockedReason: (args: {
-    card: CardDefinition;
-    G: Pick<JojGameState, 'players' | 'ranks' | 'resources'>;
-    playerID: string;
-    sharedRanks: RankDefinition[];
-    resources: Record<ResourceKey, number>;
-    resourceLabels: Record<ResourceKey, string>;
-    lang: 'uk' | 'en';
-  }) => string | null;
 }) => {
   const {
     G,
@@ -44,13 +36,11 @@ export const useBoardV2UiController = (args: {
     canPlay,
     canDraw,
     canEndTurn,
-    resources,
     sharedRanks,
     resourceLabels,
     lang,
     v2,
     t,
-    getBoardVvnzBlockedReason,
   } = args;
   const [chatInput, setChatInput] = useState('');
   const [openPreviewKey, setOpenPreviewKey] = useState<string | null>(null);
@@ -106,15 +96,19 @@ export const useBoardV2UiController = (args: {
   };
 
   const handleHandCardAction = (card: CardDefinition, requestPlayHandCard: (card: CardDefinition) => void) => {
-    if (!canPlayHandCard) {
-      postNotice('error', v2.actionUnavailable);
-      return;
-    }
-    const vvnzReason = resources && G
-      ? getBoardVvnzBlockedReason({ card, G, playerID: id, sharedRanks, resources, resourceLabels, lang })
-      : null;
-    if (vvnzReason) {
-      postNotice('error', vvnzReason);
+    const actionState = G
+      ? getHandCardActionState({
+        card,
+        G,
+        playerID: id,
+        ranks: sharedRanks,
+        resourceLabels,
+        canPlayHandCard,
+        lang,
+      })
+      : { allowed: canPlayHandCard, reason: canPlayHandCard ? null : v2.actionUnavailable };
+    if (!actionState.allowed) {
+      postNotice('error', actionState.reason ?? v2.actionUnavailable);
       return;
     }
     requestPlayHandCard(card);
@@ -151,21 +145,39 @@ export const useBoardV2UiController = (args: {
 
   const getHandBadges = (card: CardDefinition, handCardsView: Array<{ card: CardDefinition; playable: boolean }>) => {
     const playable = handCardsView.find((row) => row.card.id === card.id)?.playable ?? false;
-    const vvnzReason = resources && G
-      ? getBoardVvnzBlockedReason({ card, G, playerID: id, sharedRanks, resources, resourceLabels, lang })
+    const actionState = G
+      ? getHandCardActionState({
+        card,
+        G,
+        playerID: id,
+        ranks: sharedRanks,
+        resourceLabels,
+        canPlayHandCard,
+        lang,
+      })
       : null;
+    const vvnzReason = actionState?.behavior === 'vvnz' ? actionState.reason : null;
     return [
       playable ? v2.canPlayNow : v2.notNow,
-      ...(card.category === 'LYAP' ? [v2.requiresTarget] : []),
-      ...(card.category === 'VVNZ' && vvnzReason ? [card.category] : []),
+      ...(cardNeedsTargetSelection(card) && getCardPlayBehavior(card) === 'lyap' ? [v2.requiresTarget] : []),
+      ...(getCardPlayBehavior(card) === 'vvnz' && vvnzReason ? [card.category] : []),
     ];
   };
 
   const getHandHelperText = (card: CardDefinition, handCardsView: Array<{ card: CardDefinition; playable: boolean }>) => {
     const playable = handCardsView.find((row) => row.card.id === card.id)?.playable ?? false;
-    const vvnzReason = resources && G
-      ? getBoardVvnzBlockedReason({ card, G, playerID: id, sharedRanks, resources, resourceLabels, lang })
+    const actionState = G
+      ? getHandCardActionState({
+        card,
+        G,
+        playerID: id,
+        ranks: sharedRanks,
+        resourceLabels,
+        canPlayHandCard,
+        lang,
+      })
       : null;
+    const vvnzReason = actionState?.behavior === 'vvnz' ? actionState.reason : null;
     return vvnzReason || (!playable && !canPlayHandCard ? v2.actionUnavailable : undefined);
   };
 

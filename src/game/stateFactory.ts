@@ -8,6 +8,14 @@ const createBaseResourceRow = (): Record<ResourceKey, number> => ({
   tech: 1,
 });
 
+const createZeroResourceRow = (): Record<ResourceKey, number> => ({
+  time: 0,
+  reputation: 0,
+  discipline: 0,
+  documents: 0,
+  tech: 0,
+});
+
 const createBasePlayerGameStats = () => ({
   resourcesGainedTotal: 0,
   resourcesLostTotal: 0,
@@ -48,8 +56,8 @@ export const createEmptyGameState = (args: {
     turnsCompleted: 0,
     resourcesGainedTotal: 0,
     resourcesLostTotal: 0,
-    resourcesGainedByType: createBaseResourceRow(),
-    resourcesLostByType: createBaseResourceRow(),
+    resourcesGainedByType: createZeroResourceRow(),
+    resourcesLostByType: createZeroResourceRow(),
     lyapsPlayedOnOthers: 0,
     scandalsPlayedOnOthers: 0,
   },
@@ -61,6 +69,7 @@ export const createEmptyGameState = (args: {
     votes: {},
   },
   pendingDrawAutoResolution: null,
+  appliedEffectLog: [],
 });
 
 export const initializePlayerInGameState = (args: {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { cardNeedsResourceSelection, cardNeedsTargetSelection, getCardPlayBehavior } from '../../game/cardRules';
 import type { CardDefinition, JojGameState, ResourceKey } from '../../game/types';
 import { buildReplacementSlots, isReplacementPrefixValid } from './replacement';
 import type { JojMoveApi } from './types';
@@ -75,7 +76,7 @@ export const usePendingSelection = ({
   );
 
   const requestPlayHandCard = (card: CardDefinition) => {
-    if (card.category === 'LYAP') {
+    if (getCardPlayBehavior(card) === 'lyap') {
       setPendingSelection({ type: 'hand-lyap', cardId: card.id });
       setSelectedTargetId(null);
       setReplacementSelectionsByTarget({});
@@ -83,7 +84,7 @@ export const usePendingSelection = ({
       postNotice('info', `${v2.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
       return false;
     }
-    if (card.category === 'SCANDAL') {
+    if (getCardPlayBehavior(card) === 'scandal') {
       const targets = opponentIds.filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
       setPendingSelection({ type: 'hand-scandal', cardId: card.id });
       setSelectedTargetId(null);
@@ -99,13 +100,13 @@ export const usePendingSelection = ({
 
   const requestPlayLegendaryCard = (card: CardDefinition) => {
     if (typeof moves.playLegendaryCard !== 'function') return false;
-    if (card.id === 'legendary-10') {
+    if (cardNeedsTargetSelection(card)) {
       setPendingSelection({ type: 'legendary-drone', cardId: card.id });
       setSelectedTargetId(null);
       postNotice('info', `${v2.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
       return false;
     }
-    if (card.id === 'legendary-09' || card.id === 'legendary-06') {
+    if (cardNeedsResourceSelection(card)) {
       setPendingSelection({ type: 'legendary-water', cardId: card.id });
       setSelectedResource(null);
       postNotice('info', `${v2.pickResource}: ${cardTitle(card.id, card.title, lang)}`);

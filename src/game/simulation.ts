@@ -1,6 +1,8 @@
 import type { CardDefinition, GameMode, JojGameState, ResourceKey } from './types';
-import { isCommandCategory } from './cardRules';
+import { getCardPlayBehavior } from './cardRules';
+import { appendAppliedEffectLog } from './effectLog';
 import { withGameStateTransaction } from './gameStateUtils';
+import { applyLegendaryAbility } from './legendaryAbilities';
 import { calculateSimulationTurnLimit, createSimulationState } from './simulationSetup';
 import type { SharedGameSetup } from './sharedConfig';
 import { buildBotPlans, type BotPlan } from './bot-engine/planner';
@@ -399,47 +401,55 @@ const tryExecuteLegendaryPlanSim = (args: {
   if (index === -1) return false;
   const card = hand[index];
   const played = runSimulationTransaction(G, () => {
-    let playable = true;
-
-    if (card.id === 'legendary-02') {
-      deps.cancelLastLyapOrScandalForPlayer(G, playerID);
-    } else if (card.id === 'legendary-08') {
-      deps.cancelLastScandalForPlayer(G, playerID);
-    } else if (card.id === 'legendary-05') {
-      G.sukhpayZsuWatchUntilTurn[playerID] = currentTurn + playerIDs.length;
-      G.sukhpayZsuPendingBonus[playerID] = true;
-    } else if (card.id === 'legendary-12') {
-      G.lyapScandalShieldUntilTurn[playerID] = currentTurn + playerIDs.length;
-    } else if (card.id === 'legendary-03') {
-      G.extraHandPlayTokens[playerID] = (G.extraHandPlayTokens[playerID] ?? 0) + 1;
-    } else if (card.id === 'legendary-06') {
-      const selected = plan.selectedResource ?? chooseLowestResource(deps, G.resources[playerID]);
-      G.resources[playerID][selected] = (G.resources[playerID][selected] ?? 0) + 3;
-      playerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
-        G.resources[pid].documents = (G.resources[pid].documents ?? 0) + 1;
-        deps.clampNonNegativeResources(G.resources[pid]);
-        deps.syncPlayerState(G, pid);
-      });
-      deps.clampNonNegativeResources(G.resources[playerID]);
-    } else if (card.id === 'legendary-07') {
-      G.resources[playerID].time = (G.resources[playerID].time ?? 0) + 2;
-      G.resources[playerID].reputation = (G.resources[playerID].reputation ?? 0) + 2;
-      playerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
-        G.resources[pid].reputation = Math.max(0, (G.resources[pid].reputation ?? 0) - 1);
-        deps.clampNonNegativeResources(G.resources[pid]);
-        deps.syncPlayerState(G, pid);
-      });
-      deps.clampNonNegativeResources(G.resources[playerID]);
-    } else if (card.id === 'legendary-09') {
-      const selected = plan.selectedResource ?? chooseLowestResource(deps, G.resources[playerID]);
-      G.resources[playerID][selected] = Math.max(G.resources[playerID][selected] ?? 0, 3);
-    } else if (card.id === 'legendary-13') {
-      playable = deps.grantSpecificRankIgnoringRequirements(G, playerID, 'senior_lieutenant', playerIDs.length).ok;
-    } else if (card.id === 'legendary-10') {
-      playable = Boolean(plan.targetPlayerID && deps.demoteByOneRankWithSeatCheck(G, plan.targetPlayerID, playerIDs.length).ok);
-    }
-
-    if (!playable) return false;
+    const special = applyLegendaryAbility({
+      d: {
+        INVALID_MOVE: 'INVALID_MOVE',
+        resourceKeys: deps.resourceKeys,
+        resourceLabelsUk: Object.fromEntries(deps.resourceKeys.map((key) => [key, String(key)])) as Record<ResourceKey, string>,
+        legendaryTexts: {
+          budanovCanceled: () => '',
+          budanovNoTarget: () => '',
+          starlinkCanceled: () => '',
+          starlinkNoTarget: () => '',
+          sukhpayActivated: () => '',
+          grammarShield: () => '',
+          posmishkaMalyuka: () => '',
+          statueTor: () => '',
+          churchLeadership: () => '',
+          waterRestore: () => '',
+          goodPressOfficerGranted: () => '',
+          goodPressOfficerNoChange: () => '',
+          droidDemote: () => '',
+        },
+        effectSummaryToText: () => '',
+        rankNameById: (rankId) => rankId,
+        resourceDeltaToText: () => '',
+        clampNonNegativeResources: deps.clampNonNegativeResources,
+        syncPlayerState: deps.syncPlayerState,
+        getPlayerLabel: (_G, pid) => pid,
+        computeShieldUntilNextOwnTurn: () => currentTurn + playerIDs.length,
+        cancelLastLyapOrScandalForPlayer: (state, pid) => ({ ...deps.cancelLastLyapOrScandalForPlayer(state, pid), summary: { resources: {}, rank: 0 } }),
+        cancelLastScandalForPlayer: (state, pid) => ({ ...deps.cancelLastScandalForPlayer(state, pid), summary: { resources: {}, rank: 0 } }),
+        grantSpecificRankIgnoringRequirements: (state, pid, rankId, playerCount) => {
+          const result = deps.grantSpecificRankIgnoringRequirements(state, pid, rankId, playerCount);
+          if (!result.ok) return { ok: false as const, reason: 'grant-failed' };
+          return { ok: true as const, applied: Boolean(result.applied), rank: { bonus: undefined } };
+        },
+        demoteByOneRankWithSeatCheck: (state, pid, playerCount) => {
+          const result = deps.demoteByOneRankWithSeatCheck(state, pid, playerCount);
+          return result.ok
+            ? { ok: true as const, fromRankId: '', toRankId: '' }
+            : { ok: false as const, reason: 'demote-failed' };
+        },
+      },
+      G,
+      ctx: { currentPlayer: playerID, playOrder: playerIDs, turn: currentTurn, numPlayers: playerIDs.length },
+      card,
+      playerID,
+      targetPlayerID: plan.targetPlayerID,
+      selectedResource: plan.selectedResource ?? chooseLowestResource(deps, G.resources[playerID]),
+    });
+    if (special === 'INVALID_MOVE') return false;
     return deps.applyCardEffects(G, playerID, card.effects, []);
   });
   if (!played) return false;
@@ -448,6 +458,15 @@ const tryExecuteLegendaryPlanSim = (args: {
   deps.syncPlayerState(G, playerID);
   return true;
 };
+
+export const executeSimulationLegendaryPlan = (args: {
+  deps: SimulationDeps;
+  G: JojGameState;
+  plan: Extract<BotPlan, { kind: 'play-legendary' }>;
+  playerID: string;
+  playerIDs: string[];
+  currentTurn: number;
+}): boolean => tryExecuteLegendaryPlanSim(args);
 
 const tryExecuteHandPlanSim = (args: {
   deps: SimulationDeps;
@@ -465,21 +484,40 @@ const tryExecuteHandPlanSim = (args: {
   if (index === -1) return false;
   const card = hand[index];
 
-  if (card.category === 'LYAP') {
+  const behavior = getCardPlayBehavior(card);
+  if (behavior === 'lyap') {
     if (!plan.targetPlayerID) return false;
     if (!isProtectedFromLyapScandal(G, currentTurn, plan.targetPlayerID)) {
-      deps.applyCardEffectsSoft(G, plan.targetPlayerID, card.effects);
+      const summary = deps.applyCardEffectsSoft(G, plan.targetPlayerID, card.effects);
+      appendAppliedEffectLog(G, {
+        sourceCardId: card.id,
+        sourceCardTitle: card.title,
+        sourceCategory: 'LYAP',
+        sourcePlayerID: playerID,
+        targetPlayerID: plan.targetPlayerID,
+        summary,
+        createdAtTurn: currentTurn,
+      });
     }
     deps.syncPlayerState(G, plan.targetPlayerID);
-  } else if (card.category === 'SCANDAL') {
+  } else if (behavior === 'scandal') {
     playerIDs.filter((pid) => pid !== playerID).forEach((pid) => {
       if (!isProtectedFromLyapScandal(G, currentTurn, pid)) {
-        deps.applyCardEffectsSoft(G, pid, card.effects);
+        const summary = deps.applyCardEffectsSoft(G, pid, card.effects);
+        appendAppliedEffectLog(G, {
+          sourceCardId: card.id,
+          sourceCardTitle: card.title,
+          sourceCategory: 'SCANDAL',
+          sourcePlayerID: playerID,
+          targetPlayerID: pid,
+          summary,
+          createdAtTurn: currentTurn,
+        });
       }
       deps.syncPlayerState(G, pid);
     });
     deps.triggerSukhpayZsuOnScandal(G, { turn: currentTurn }, playerID);
-  } else if (isCommandCategory(card)) {
+  } else if (behavior === 'command') {
     const played = runSimulationTransaction(G, () => {
       const replacement = plan.replacementResources ?? deps.planReplacementResources(G.resources[playerID], card.effects);
       if (replacement === null) return false;
@@ -492,7 +530,7 @@ const tryExecuteHandPlanSim = (args: {
       return true;
     });
     if (!played) return false;
-  } else if (card.category === 'VVNZ' && card.grantRank) {
+  } else if (behavior === 'vvnz') {
     const played = runSimulationTransaction(G, () => {
       const promoted = deps.promoteToSpecificRank(G, playerID, card.grantRank as string, numPlayers);
       if (!promoted.ok) return false;
@@ -518,6 +556,16 @@ const tryExecuteHandPlanSim = (args: {
   deps.syncPlayerState(G, playerID);
   return true;
 };
+
+export const executeSimulationHandPlan = (args: {
+  deps: SimulationDeps;
+  G: JojGameState;
+  plan: Extract<BotPlan, { kind: 'play-card' }>;
+  playerID: string;
+  playerIDs: string[];
+  currentTurn: number;
+  numPlayers: number;
+}): boolean => tryExecuteHandPlanSim(args);
 
 const tryPlayLegendaryCards = (
   deps: SimulationDeps,
@@ -717,13 +765,36 @@ const simulateFromPreparedState = (
       const card = G.deck.pop();
       if (card) {
         progressedThisTurn = true;
-        if (card.category === 'LYAP') {
-          if (!isProtectedFromLyapScandal(G, currentTurn, playerID)) deps.applyCardEffectsSoft(G, playerID, card.effects);
+        const behavior = getCardPlayBehavior(card);
+        if (behavior === 'lyap') {
+          if (!isProtectedFromLyapScandal(G, currentTurn, playerID)) {
+            const summary = deps.applyCardEffectsSoft(G, playerID, card.effects);
+            appendAppliedEffectLog(G, {
+              sourceCardId: card.id,
+              sourceCardTitle: card.title,
+              sourceCategory: 'LYAP',
+              sourcePlayerID: playerID,
+              targetPlayerID: playerID,
+              summary,
+              createdAtTurn: currentTurn,
+            });
+          }
           G.discard.push(card);
           stage = 'end';
-        } else if (card.category === 'SCANDAL') {
+        } else if (behavior === 'scandal') {
           playerIDs.forEach((pid) => {
-            if (!isProtectedFromLyapScandal(G, currentTurn, pid)) deps.applyCardEffectsSoft(G, pid, card.effects);
+            if (!isProtectedFromLyapScandal(G, currentTurn, pid)) {
+              const summary = deps.applyCardEffectsSoft(G, pid, card.effects);
+              appendAppliedEffectLog(G, {
+                sourceCardId: card.id,
+                sourceCardTitle: card.title,
+                sourceCategory: 'SCANDAL',
+                sourcePlayerID: playerID,
+                targetPlayerID: pid,
+                summary,
+                createdAtTurn: currentTurn,
+              });
+            }
             deps.syncPlayerState(G, pid);
           });
           deps.triggerSukhpayZsuOnScandal(G, { turn: currentTurn }, playerID);

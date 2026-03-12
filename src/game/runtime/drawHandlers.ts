@@ -1,22 +1,15 @@
-import type { JojGameState, ResourceKey } from '../types';
+import type { ResourceKey } from '../types';
 import type { JojMovesDeps, MoveArgs, ReplacementByTarget } from '../moveTypes';
+import { validateMoveAction } from '../actionRules';
+import { appendAppliedEffectLog } from '../effectLog';
 import { createInvalidMoveRollback, summarizeCardEffectForPlayer } from './runtimeHelpers';
 
-export const isLegendaryDraftPending = (G: JojGameState) => {
-  if (G.gameMode !== 'standard_plus') return false;
-  const playerIDs = Object.keys(G.players ?? {});
-  if (playerIDs.length === 0) return false;
-  return playerIDs.some((pid) => G.legendaryDraftCompleted?.[pid] !== true);
-};
-
-export const isDrawAutoResolutionPending = (G: JojGameState) => Boolean(G.pendingDrawAutoResolution);
+export { isLegendaryDraftPending, isDrawAutoResolutionPending } from '../actionRules';
 
 export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
   const playerID = args.playerID;
-  if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
-  if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
-  if (isDrawAutoResolutionPending(args.G)) return d.INVALID_MOVE;
-  if (args.ctx.activePlayers?.[playerID] !== d.DRAW_STAGE) return d.INVALID_MOVE;
+  if (!playerID) return d.INVALID_MOVE;
+  if (!validateMoveAction(d, args, 'draw-card')) return d.INVALID_MOVE;
 
   const beforeResources = d.snapshotResourcesForStats(args.G);
   const invalidMove = createInvalidMoveRollback(d, args.G);
@@ -44,6 +37,15 @@ export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
           try {
             const summary = summarizeCardEffectForPlayer(d, args.G, playerID, card, []);
             if (!summary) return invalidMove();
+            appendAppliedEffectLog(args.G, {
+              sourceCardId: card.id,
+              sourceCardTitle: card.title,
+              sourceCategory: 'LYAP',
+              sourcePlayerID: playerID,
+              targetPlayerID: playerID,
+              summary,
+              createdAtTurn: args.ctx.turn,
+            });
             const seq = d.nextSystemMessageSeq(args.G);
             d.appendChat(args.G, {
               type: 'system',
@@ -85,6 +87,15 @@ export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
                 invalidScandalAutoPlay = true;
                 break;
               }
+              appendAppliedEffectLog(args.G, {
+                sourceCardId: card.id,
+                sourceCardTitle: card.title,
+                sourceCategory: 'SCANDAL',
+                sourcePlayerID: playerID,
+                targetPlayerID: pid,
+                summary,
+                createdAtTurn: args.ctx.turn,
+              });
               targetSummaries.push(`${d.getPlayerLabel(args.G, pid)}: ${d.effectSummaryToText(summary)}`);
             } catch {
               invalidScandalAutoPlay = true;
@@ -131,9 +142,8 @@ export const resolveDrawAutoCardHandler = (
   replacementByTarget: ReplacementByTarget = {},
 ) => {
   const playerID = args.playerID;
-  if (!playerID || args.ctx.currentPlayer !== playerID) return d.INVALID_MOVE;
-  if (isLegendaryDraftPending(args.G)) return d.INVALID_MOVE;
-  if (args.ctx.activePlayers?.[playerID] !== d.DRAW_STAGE) return d.INVALID_MOVE;
+  if (!playerID) return d.INVALID_MOVE;
+  if (!validateMoveAction(d, args, 'resolve-draw-auto')) return d.INVALID_MOVE;
   const pending = args.G.pendingDrawAutoResolution;
   if (!pending || pending.sourcePlayerID !== playerID) return d.INVALID_MOVE;
   const card = pending.card;
@@ -153,6 +163,15 @@ export const resolveDrawAutoCardHandler = (
       try {
         const summary = summarizeCardEffectForPlayer(d, args.G, playerID, card, replacementResources);
         if (!summary) return invalidMove();
+        appendAppliedEffectLog(args.G, {
+          sourceCardId: card.id,
+          sourceCardTitle: card.title,
+          sourceCategory: 'LYAP',
+          sourcePlayerID: playerID,
+          targetPlayerID: playerID,
+          summary,
+          createdAtTurn: args.ctx.turn,
+        });
         const seq = d.nextSystemMessageSeq(args.G);
         d.appendChat(args.G, {
           type: 'system',
@@ -192,6 +211,15 @@ export const resolveDrawAutoCardHandler = (
           invalidScandalReplacement = true;
           return;
         }
+        appendAppliedEffectLog(args.G, {
+          sourceCardId: card.id,
+          sourceCardTitle: card.title,
+          sourceCategory: 'SCANDAL',
+          sourcePlayerID: playerID,
+          targetPlayerID: pid,
+          summary,
+          createdAtTurn: args.ctx.turn,
+        });
         targetSummaries.push(`${d.getPlayerLabel(args.G, pid)}: ${d.effectSummaryToText(summary)}`);
       } catch {
         invalidScandalReplacement = true;

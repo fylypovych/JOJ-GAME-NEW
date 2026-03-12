@@ -1,5 +1,5 @@
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from '../../game/types';
-import { getBoardVvnzBlockedReason } from './rankHints';
+import { getBoardHandCardActionState } from './rankHints';
 
 export const isPlayAllowedForCard = (args: {
   card: CardDefinition;
@@ -11,15 +11,13 @@ export const isPlayAllowedForCard = (args: {
   resourceLabels: Record<ResourceKey, string>;
   lang: 'uk' | 'en';
 }) => {
-  if (!args.canPlayHandCard) return false;
-  if (args.card.category !== 'VVNZ') return true;
-  return !getBoardVvnzBlockedReason({
+  return getBoardHandCardActionState({
     card: args.card,
     G: args.G,
     playerID: args.playerID,
     sharedRanks: args.sharedRanks,
-    resources: args.resources,
     resourceLabels: args.resourceLabels,
+    canPlayHandCard: args.canPlayHandCard,
     lang: args.lang,
-  });
+  }).allowed;
 };

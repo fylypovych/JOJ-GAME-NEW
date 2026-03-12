@@ -109,6 +109,20 @@ export interface JOJState {
     sourcePlayerID: string;
     card: Card;
   } | null;
+  appliedEffectLog?: Array<{
+    id: string;
+    sourceCardId: string;
+    sourceCardTitle: string;
+    sourceCategory: 'LYAP' | 'SCANDAL';
+    sourcePlayerID: string;
+    targetPlayerID: string;
+    summary: {
+      resources: Partial<Record<ResourceKey, number>>;
+      rank: number;
+    };
+    createdAtTurn?: number;
+    canceled?: boolean;
+  }>;
 }
 
 // Backward-compatible aliases for existing code.

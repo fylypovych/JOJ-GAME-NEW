@@ -1,6 +1,7 @@
 import type { CardDefinition, ResourceKey } from '../types';
 import type { JojMovesDeps, MoveArgs, ReplacementByTarget } from '../moveTypes';
-import { isCommandCategory } from '../cardRules';
+import { getCardPlayBehavior } from '../cardRules';
+import { appendAppliedEffectLog } from '../effectLog';
 import { applyLegendaryCardEffects } from './legendaryHandlers';
 import { summarizeCardEffectForPlayer } from './runtimeHelpers';
 
@@ -25,6 +26,15 @@ export const handleLyapPlay = (args: {
       const nextSummary = summarizeCardEffectForPlayer(d, moveArgs.G, targetPlayerID, card, replacementResources);
       if (!nextSummary) return invalidMove();
       summary = nextSummary;
+      appendAppliedEffectLog(moveArgs.G, {
+        sourceCardId: card.id,
+        sourceCardTitle: card.title,
+        sourceCategory: 'LYAP',
+        sourcePlayerID: playerID,
+        targetPlayerID,
+        summary,
+        createdAtTurn: moveArgs.ctx.turn,
+      });
     } catch {
       return invalidMove();
     }
@@ -71,6 +81,15 @@ export const handleScandalPlay = (args: {
         invalidScandalReplacement = true;
         return;
       }
+      appendAppliedEffectLog(moveArgs.G, {
+        sourceCardId: card.id,
+        sourceCardTitle: card.title,
+        sourceCategory: 'SCANDAL',
+        sourcePlayerID: playerID,
+        targetPlayerID: pid,
+        summary,
+        createdAtTurn: moveArgs.ctx.turn,
+      });
       d.syncPlayerState(moveArgs.G, pid);
       targetSummaries.push(`${d.getPlayerLabel(moveArgs.G, pid)}: ${d.effectSummaryToText(summary)}`);
     } catch {
@@ -213,4 +232,83 @@ export const handleLegendaryPlayFromHand = (args: {
   return undefined;
 };
 
-export const isCommandPlay = (card: CardDefinition) => isCommandCategory(card);
+export const executeHandCardByBehavior = (args: {
+  d: JojMovesDeps;
+  moveArgs: MoveArgs;
+  playerID: string;
+  card: CardDefinition;
+  replacementResources: ResourceKey[];
+  targetPlayerID?: string;
+  replacementByTarget: ReplacementByTarget;
+  allPlayerIDs: string[];
+  invalidMove: () => 'INVALID_MOVE';
+}) => {
+  const behavior = getCardPlayBehavior(args.card);
+  switch (behavior) {
+    case 'lyap':
+      return handleLyapPlay({
+        d: args.d,
+        moveArgs: args.moveArgs,
+        playerID: args.playerID,
+        card: args.card,
+        targetPlayerID: args.targetPlayerID,
+        replacementResources: args.replacementResources,
+        invalidMove: args.invalidMove,
+      });
+    case 'scandal':
+      return handleScandalPlay({
+        d: args.d,
+        moveArgs: args.moveArgs,
+        playerID: args.playerID,
+        card: args.card,
+        replacementByTarget: args.replacementByTarget,
+        allPlayerIDs: args.allPlayerIDs,
+        invalidMove: args.invalidMove,
+      });
+    case 'support':
+      return handleSupportPlay({
+        d: args.d,
+        moveArgs: args.moveArgs,
+        playerID: args.playerID,
+        card: args.card,
+        replacementResources: args.replacementResources,
+        invalidMove: args.invalidMove,
+      });
+    case 'command':
+      return handleCommandPlay({
+        d: args.d,
+        moveArgs: args.moveArgs,
+        playerID: args.playerID,
+        card: args.card,
+        replacementResources: args.replacementResources,
+        allPlayerIDs: args.allPlayerIDs,
+        invalidMove: args.invalidMove,
+      });
+    case 'vvnz':
+      return handleVvnzPlay({
+        d: args.d,
+        moveArgs: args.moveArgs,
+        playerID: args.playerID,
+        card: args.card,
+        invalidMove: args.invalidMove,
+      });
+    case 'legendary':
+      return handleLegendaryPlayFromHand({
+        d: args.d,
+        moveArgs: args.moveArgs,
+        playerID: args.playerID,
+        card: args.card,
+        targetPlayerID: args.targetPlayerID,
+        replacementResources: args.replacementResources,
+        invalidMove: args.invalidMove,
+      });
+    default:
+      try {
+        const applied = args.d.applyCardEffects(args.moveArgs.G, args.playerID, args.card.effects, args.replacementResources);
+        if (!applied) return args.invalidMove();
+      } catch {
+        return args.invalidMove();
+      }
+      return undefined;
+  }
+};

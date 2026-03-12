@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getPromoteBlockedReason, getVvnzPlayBlockedReason } from '../src/game/actionValidation';
+import { getHandCardActionState, getPromoteActionState, getPromoteBlockedReason, getVvnzPlayBlockedReason } from '../src/game/actionValidation';
 import type { JojGameState, RankDefinition, ResourceKey } from '../src/game/types';
 
 const labels: Record<ResourceKey, string> = {
@@ -123,4 +123,43 @@ test('getPromoteBlockedReason reports already promoted this turn', () => {
   });
   const reason = getPromoteBlockedReason({ G, playerID: '0', ranks, resourceLabels: labels, lang: 'uk' });
   assert.match(reason ?? '', /вже підвищувалися/);
+});
+
+test('getPromoteActionState exposes next rank and allowed flag', () => {
+  const G = makeState({
+    resources: {
+      '0': { time: 2, reputation: 3, discipline: 2, documents: 0, tech: 0 },
+      '1': { time: 2, reputation: 2, discipline: 2, documents: 0, tech: 0 },
+    },
+  });
+  const state = getPromoteActionState({ G, playerID: '0', ranks, resourceLabels: labels, lang: 'uk' });
+  assert.equal(state.allowed, true);
+  assert.equal(state.nextRank?.id, 'soldier');
+});
+
+test('getHandCardActionState reflects VVNZ restrictions and generic stage blocks', () => {
+  const G = makeState();
+  const genericBlocked = getHandCardActionState({
+    card: { id: 'support-1', title: 'Support', category: 'SUPPORT', effects: [] },
+    G,
+    playerID: '0',
+    ranks,
+    resourceLabels: labels,
+    canPlayHandCard: false,
+    lang: 'uk',
+  });
+  assert.equal(genericBlocked.allowed, false);
+  assert.match(genericBlocked.reason ?? '', /не можна розіграти/i);
+
+  const vvnzBlocked = getHandCardActionState({
+    card: { id: 'vvnz-1', title: 'VVNZ', category: 'VVNZ', grantRank: 'senior_sergeant', effects: [] },
+    G,
+    playerID: '0',
+    ranks,
+    resourceLabels: labels,
+    canPlayHandCard: true,
+    lang: 'uk',
+  });
+  assert.equal(vvnzBlocked.allowed, false);
+  assert.equal(vvnzBlocked.behavior, 'vvnz');
 });

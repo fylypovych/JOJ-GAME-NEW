@@ -1,4 +1,9 @@
-import { findNextRank, getPromoteBlockedReason, getVvnzPlayBlockedReason, type ResourceLabels } from '../../game/actionValidation';
+import {
+  findNextRank,
+  getHandCardActionState,
+  getPromoteActionState,
+  type ResourceLabels,
+} from '../../game/actionValidation';
 import { rankSeatLimitForRank } from '../../game/rankEngine';
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from '../../game/types';
 
@@ -14,15 +19,15 @@ export const buildNextRankHint = (args: {
   lang: Lang;
 }): string | null => {
   const { G, playerID, sharedRanks, resourceLabels, promoteLabel, lang } = args;
-  const nextRank = findNextRank(sharedRanks, G.ranks[playerID]);
+  const promoteState = getPromoteActionState({ G, playerID, ranks: sharedRanks, resourceLabels, lang });
+  const nextRank = promoteState.nextRank ?? findNextRank(sharedRanks, G.ranks[playerID]);
   if (!nextRank) return null;
-  const reason = getPromoteBlockedReason({ G, playerID, ranks: sharedRanks, resourceLabels, lang });
-  if (!reason) {
+  if (promoteState.allowed) {
     return lang === 'uk'
       ? `Можна підвищитися до «${nextRank.name}» (натисніть «${promoteLabel}»)`
       : `You can promote to "${nextRank.name}" (click "${promoteLabel}")`;
   }
-  return reason;
+  return promoteState.reason;
 };
 
 export const getNextRankSeatMeta = (args: {
@@ -49,12 +54,31 @@ export const getBoardVvnzBlockedReason = (args: {
   resourceLabels: ResourceLabels;
   lang: Lang;
 }): string | null =>
-  getVvnzPlayBlockedReason({
+  getHandCardActionState({
+    card: args.card as CardDefinition,
+    G: args.G,
+    playerID: args.playerID,
+    ranks: args.sharedRanks,
+    resourceLabels: args.resourceLabels,
+    lang: args.lang,
+  }).reason;
+
+export const getBoardHandCardActionState = (args: {
+  card: CardDefinition;
+  G: Pick<JojGameState, 'players' | 'ranks' | 'resources'>;
+  playerID: string;
+  sharedRanks: RankDefinition[];
+  resourceLabels: ResourceLabels;
+  canPlayHandCard?: boolean;
+  lang: Lang;
+}) =>
+  getHandCardActionState({
     card: args.card,
     G: args.G,
     playerID: args.playerID,
     ranks: args.sharedRanks,
     resourceLabels: args.resourceLabels,
+    canPlayHandCard: args.canPlayHandCard,
     lang: args.lang,
   });
 
@@ -65,10 +89,10 @@ export const getBoardPromoteBlockedReason = (args: {
   resourceLabels: ResourceLabels;
   lang: Lang;
 }): string | null =>
-  getPromoteBlockedReason({
+  getPromoteActionState({
     G: args.G,
     playerID: args.playerID,
     ranks: args.sharedRanks,
     resourceLabels: args.resourceLabels,
     lang: args.lang,
-  });
+  }).reason;
