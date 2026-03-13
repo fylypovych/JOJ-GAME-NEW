@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { CardDefinition, ResourceKey } from '../game/types';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
+import { buildGameoverPlayerSummaries, buildResourceHighlightMeta, buildTurnHelpItems, getBoardPromoteReason } from './board/boardViewHelpers';
 import { GameCardTile, PilePreview } from './board/components';
-import { buildNextRankHint, getBoardPromoteBlockedReason, getNextRankSeatMeta } from './board/rankHints';
-import { BoardV2HandSection, BoardV2PlayerOverview, BoardV2SelectionPanel, BoardV2SidePanel } from './board/v2Sections';
+import { buildNextRankHint, getNextRankSeatMeta } from './board/rankHints';
+import { BoardV2HandSection, BoardV2NoticeStack, BoardV2PlayerOverview, BoardV2SelectionPanel, BoardV2SidePanel } from './board/v2Sections';
 import { BoardV2EndVoteModal, BoardV2GameoverModal, BoardV2Header, BoardV2StandingsSummary } from './board/v2ShellSections';
 import { useBoardV2DerivedState } from './board/useBoardV2DerivedState';
+import { useBotPlaybackQueue } from './board/useBotPlaybackQueue';
 import { usePendingSelection } from './board/usePendingSelection';
 import { useBoardV2StageState } from './board/useBoardV2StageState';
 import { useBoardV2Sync } from './board/useBoardV2Sync';
@@ -17,12 +19,6 @@ const RESOURCE_ORDER: ResourceKey[] = ['time', 'reputation', 'discipline', 'docu
 type HandFilter = 'all' | 'playable' | CardDefinition['category'];
 type HandSort = 'default' | 'playable' | 'category' | 'title';
 type BotPlaybackSpeed = 'fast' | 'normal' | 'slow';
-
-const BOT_DELAY_BY_SPEED: Record<BotPlaybackSpeed, number> = {
-  fast: 250,
-  normal: 850,
-  slow: 1600,
-};
 
 const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
   stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
@@ -45,94 +41,19 @@ export const BoardV2 = ({
   const v2 = t.v2;
   const isSpectator = !playerID;
   const [spectatorView, setSpectatorView] = useState<'live' | 'summary'>('live');
-  const [botPlaybackSpeed, setBotPlaybackSpeed] = useState<BotPlaybackSpeed>('normal');
-  const [botAutoplayEnabled, setBotAutoplayEnabled] = useState(true);
-  const [botThinkingPlayerName, setBotThinkingPlayerName] = useState('');
-  const [renderSnapshot, setRenderSnapshot] = useState(() => ({
-    G: incomingG,
-    ctx: incomingCtx,
-  }));
-  const snapshotQueueRef = useRef<Array<{ G: typeof incomingG; ctx: typeof incomingCtx }>>([]);
-  const processingQueueRef = useRef(false);
-  const lastSnapshotSignatureRef = useRef('');
-  const delayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const botAutoplayEnabledRef = useRef(true);
-  const botDelayMsRef = useRef(BOT_DELAY_BY_SPEED.normal);
-
-  useEffect(() => {
-    return () => {
-      if (delayTimerRef.current) clearTimeout(delayTimerRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    botAutoplayEnabledRef.current = botAutoplayEnabled;
-  }, [botAutoplayEnabled]);
-
-  useEffect(() => {
-    botDelayMsRef.current = BOT_DELAY_BY_SPEED[botPlaybackSpeed];
-  }, [botPlaybackSpeed]);
-
-  const processSnapshotQueue = useCallback(() => {
-    if (processingQueueRef.current) return;
-    const nextSnapshot = snapshotQueueRef.current[0];
-    if (!nextSnapshot) {
-      setBotThinkingPlayerName('');
-      return;
-    }
-    const nextCurrentPlayer = nextSnapshot.ctx?.currentPlayer ?? '';
-    const nextBot = nextCurrentPlayer ? nextSnapshot.G?.botPlayers?.[nextCurrentPlayer] : null;
-    const nextBotName = nextCurrentPlayer
-      ? String(nextSnapshot.G?.playerNames?.[nextCurrentPlayer] ?? nextBot?.name ?? nextCurrentPlayer)
-      : '';
-    const shouldDelay = Boolean(nextBot);
-    if (shouldDelay && !botAutoplayEnabledRef.current) {
-      setBotThinkingPlayerName(nextBotName);
-      return;
-    }
-    snapshotQueueRef.current.shift();
-    processingQueueRef.current = true;
-    const finish = () => {
-      setRenderSnapshot(nextSnapshot);
-      processingQueueRef.current = false;
-      setBotThinkingPlayerName('');
-      if (snapshotQueueRef.current.length) processSnapshotQueue();
-    };
-    if (shouldDelay) {
-      setBotThinkingPlayerName(nextBotName);
-      delayTimerRef.current = setTimeout(() => {
-        delayTimerRef.current = null;
-        finish();
-      }, botDelayMsRef.current);
-      return;
-    }
-    finish();
-  }, []);
-
-  useEffect(() => {
-    if (botAutoplayEnabled) processSnapshotQueue();
-  }, [botAutoplayEnabled, processSnapshotQueue]);
-
-  useEffect(() => {
-    const currentPlayer = incomingCtx?.currentPlayer ?? '';
-    const stage = currentPlayer ? incomingCtx?.activePlayers?.[currentPlayer] ?? '' : '';
-    const signature = [
-      incomingCtx?.turn ?? '',
-      currentPlayer,
-      stage,
-      incomingG?.chat?.length ?? '',
-      incomingG?.discard?.length ?? '',
-      incomingG?.deck?.length ?? '',
-      playerID ? incomingG?.hands?.[playerID]?.length ?? '' : '',
-    ].join('|');
-    if (lastSnapshotSignatureRef.current === signature) return;
-    lastSnapshotSignatureRef.current = signature;
-    snapshotQueueRef.current.push({ G: incomingG, ctx: incomingCtx });
-    processSnapshotQueue();
-  }, [incomingG, incomingCtx, playerID, processSnapshotQueue]);
-
-  const G = renderSnapshot.G;
-  const ctx = renderSnapshot.ctx;
+  const {
+    G,
+    ctx,
+    botPlaybackSpeed,
+    setBotPlaybackSpeed,
+    botAutoplayEnabled,
+    setBotAutoplayEnabled,
+    botThinkingPlayerName,
+  } = useBotPlaybackQueue({
+    incomingG,
+    incomingCtx,
+    playerID,
+  });
 
   const id = playerID ?? '';
   const seatConnectionMissing = Boolean(roomMeta?.playerID) && !playerID;
@@ -168,13 +89,6 @@ export const BoardV2 = ({
   });
   const rankName = rawRankName || rankLabel(rankId ?? '', lang);
   const hasBotPlayers = Object.keys(G?.botPlayers ?? {}).length > 0;
-  const safeResources: Record<ResourceKey, number> = resources ?? {
-    time: 0,
-    reputation: 0,
-    discipline: 0,
-    documents: 0,
-    tech: 0,
-  };
   const compactMode = false;
   const {
     chatInput,
@@ -183,7 +97,7 @@ export const BoardV2 = ({
     setOpenPreviewKey,
     draftSelection,
     setDraftSelection,
-    notice,
+    notices,
     gameoverModalClosed,
     setGameoverModalClosed,
     handFilter,
@@ -199,6 +113,7 @@ export const BoardV2 = ({
     effectLabel,
     togglePreview,
     postNotice,
+    dismissNotice,
     opponentIds,
     sendChatMessage,
     handleHandCardAction,
@@ -207,8 +122,6 @@ export const BoardV2 = ({
     handlePromote,
     handlePass,
     handleDraftToggle,
-    getHandBadges,
-    getHandHelperText,
   } = useBoardV2UiController({
     G,
     id,
@@ -296,11 +209,6 @@ export const BoardV2 = ({
     chatLogRef,
   });
 
-  const getPromoteBlockedReason = () => {
-    if (!G || !resources) return null;
-    return getBoardPromoteBlockedReason({ G, playerID: id, sharedRanks, resourceLabels, lang });
-  };
-
   const endGameVote = G?.endGameVote;
   const endGameVoteActive = Boolean(endGameVote?.active) && !ctx?.gameover;
   const requestedByLabel = endGameVote?.requestedBy ? playerLabelById(endGameVote.requestedBy) : '';
@@ -323,7 +231,6 @@ export const BoardV2 = ({
     canPlay: canPlay && typeof moves.playLegendaryCard === 'function',
     canPlayHandCard,
     sharedRanks,
-    resources: safeResources,
     resourceLabels,
     lang,
     handFilter,
@@ -336,47 +243,43 @@ export const BoardV2 = ({
     return <section className="board"><p>{t.loading}</p></section>;
   }
 
-  const promoteReason = getPromoteBlockedReason();
-  const gameoverPlayerSummaries = Object.keys(G.players ?? {})
-    .map((pid) => {
-      const playerResources = G.resources?.[pid] ?? {};
-      const statRow = G.playerGameStats?.[pid];
-      const resourcesText = RESOURCE_ORDER.map((key) => `${resourceLabels[key]} ${playerResources[key] ?? 0}`).join(', ');
-      return {
-        playerID: pid,
-        name: playerLabelById(pid),
-        rankName: rankLabel(G.ranks?.[pid] ?? '', lang),
-        resourcesText,
-        turnsTaken: statRow?.turnsTaken ?? 0,
-        resourcesGainedTotal: statRow?.resourcesGainedTotal ?? 0,
-        resourcesLostTotal: statRow?.resourcesLostTotal ?? 0,
-        lyapsPlayedOnOthers: statRow?.lyapsPlayedOnOthers ?? 0,
-        scandalsPlayedOnOthers: statRow?.scandalsPlayedOnOthers ?? 0,
-        winner: pid === winnerPlayerID,
-        rankId: G.ranks?.[pid] ?? '',
-        reputation: playerResources.reputation ?? 0,
-      };
-    })
-    .sort((a, b) =>
-      Number(b.winner) - Number(a.winner)
-      || sharedRanks.findIndex((rank) => rank.id === b.rankId) - sharedRanks.findIndex((rank) => rank.id === a.rankId)
-      || b.reputation - a.reputation,
-    );
-  const pendingCost: Partial<Record<ResourceKey, number>> = {};
-  const highlightedResources = new Set<ResourceKey>();
-  const deficitByResource: Partial<Record<ResourceKey, number>> = {};
-  for (const key of RESOURCE_ORDER) {
-    const need = pendingCost?.[key] ?? 0;
-    if (need > 0) {
-      highlightedResources.add(key);
-      const have = resources[key] ?? 0;
-      if (have < need) deficitByResource[key] = need - have;
-    }
-    if (selectedResource && selectedResource === key) highlightedResources.add(key);
-  }
+  const promoteReason = getBoardPromoteReason({ G, playerID: id, sharedRanks, resourceLabels, lang });
+  const gameoverPlayerSummaries = buildGameoverPlayerSummaries({
+    G,
+    winnerPlayerID,
+    playerLabelById,
+    resourceLabels,
+    sharedRanks,
+    lang,
+  });
+  const { highlightedResources, deficitByResource } = buildResourceHighlightMeta({
+    resources,
+    selectedResource,
+  });
 
   const currentStageFocus =
     stage === 'draw' ? v2.stageFocusDraw : stage === 'play' ? v2.stageFocusPlay : stage === 'end' ? v2.stageFocusEnd : '';
+  const turnHelpItems = buildTurnHelpItems({
+    stage,
+    stageLabel: stageLabel(stage, t),
+    canDraw,
+    canPlay,
+    canEndTurn,
+    passButtonLabel,
+    promoteReason,
+    pendingSelectionLabel: pendingSelection ? (currentPendingCard ? cardTitle(currentPendingCard.id, currentPendingCard.title, lang) : pendingSelection.cardId) : v2.waitingAction,
+    mustDiscardOverflow,
+    handOverflow,
+    handCount: hand.length,
+    v2,
+    t,
+    promoteLabel: t.promote,
+    lang,
+    G,
+    playerID: id,
+    sharedRanks,
+    resourceLabels,
+  });
   const stageClass = stage ? `is-stage-${stage}` : 'is-stage-waiting';
   return (
     <section className={`game-ui-v2-shell ${stageClass}${compactMode ? ' is-compact' : ''}${isSpectator ? ' is-spectator' : ''}`}>
@@ -589,7 +492,7 @@ export const BoardV2 = ({
                 <p className="game-ui-v2-subtle">{v2.noNextRank}</p>
               )}
             </div>
-            {notice ? <p className={`game-ui-v2-notice is-${notice.type}`}>{notice.text}</p> : null}
+            <BoardV2NoticeStack notices={notices} dismissNotice={dismissNotice} />
             <BoardV2SelectionPanel
               pendingSelection={pendingSelection}
               activeSelectionNeedsTarget={activeSelectionNeedsTarget}
@@ -721,10 +624,12 @@ export const BoardV2 = ({
               categoryText={(card) => categoryLabel(card.category, lang)}
               actionLabel={v2.play}
               onAction={(card) => handleHandCardAction(card, requestPlayHandCard)}
-              actionDisabled={() => !canPlayHandCard}
+              actionDisabled={(card) => !(handCardsView.find((row) => row.card.id === card.id)?.actionState.allowed ?? false)}
               effectLabel={effectLabel}
-              badges={(card) => getHandBadges(card, handCardsView)}
-              helperText={(card) => getHandHelperText(card, handCardsView)}
+              badges={(card) => handCardsView.find((row) => row.card.id === card.id)?.badges}
+              helperText={(card) => handCardsView.find((row) => row.card.id === card.id)?.helperText}
+              previewText={(card) => handCardsView.find((row) => row.card.id === card.id)?.previewText}
+              actionTitle={(card) => handCardsView.find((row) => row.card.id === card.id)?.actionState.reason ?? v2.play}
               extraAction={(card) => {
                 const canDiscardThisCard = mustDiscardOverflow && card.category !== 'LYAP' && card.category !== 'SCANDAL';
                 return canDiscardThisCard ? {
@@ -757,6 +662,7 @@ export const BoardV2 = ({
                 ...(card.id === 'legendary-10' ? [v2.requiresTarget] : []),
                 ...((card.id === 'legendary-09' || card.id === 'legendary-06') ? [v2.requiresResource] : []),
               ]}
+              previewText={(card) => handCardsView.find((row) => row.card.id === card.id)?.previewText}
             />
           ) : null}
 
@@ -820,6 +726,8 @@ export const BoardV2 = ({
           chatLogRef={chatLogRef}
           eventsTitle={isSpectator ? v2.spectatorTimelineTitle : v2.recentEvents}
           spectatorMode={isSpectator}
+          helpTitle={v2.helpPanelTitle}
+          helpItems={turnHelpItems}
         />
       </div>
 

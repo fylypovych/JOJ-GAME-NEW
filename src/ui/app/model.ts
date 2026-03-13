@@ -1,4 +1,4 @@
-import type { CardDefinition } from '../../game/types';
+import type { BotDifficulty, BotProfile, CardDefinition, GameMode } from '../../game/types';
 import type { DeckModuleDefinition, SharedGameSetup } from '../../game/jojGame';
 
 export const SERVER_URL_STORAGE_KEY = 'joj-server-url-v1';
@@ -64,6 +64,15 @@ export type LobbyPlayer = {
 export type LobbyMatch = {
   matchID: string;
   players: LobbyPlayer[];
+  setupData?: {
+    gameMode?: GameMode;
+    gameSetup?: Partial<SharedGameSetup>;
+    bots?: {
+      count?: number;
+      difficulty?: BotDifficulty;
+      profile?: BotProfile;
+    } | null;
+  };
 };
 
 export type SharedDeckTemplate = {

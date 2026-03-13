@@ -3,6 +3,7 @@ import type { CardDefinition, JojGameState, ResourceKey, RankDefinition } from '
 import { buildReplacementSlots } from './replacement';
 import { BoardChatPanel, GameCardTile } from './components';
 import { cardTitle, localizeSystemMessageText, rankLabel } from '../i18n';
+import type { BoardNotice } from './useBoardV2UiController';
 
 const RESOURCE_ORDER: ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
 
@@ -70,6 +71,11 @@ export const BoardV2SelectionPanel = (props: {
   return (
     <div className="game-ui-v2-selection-panel game-ui-v2-selection-panel-inline">
       <div>
+        <div className="game-ui-v2-steps" aria-label={v2.stepAssistant}>
+          <span className={activeSelectionNeedsTarget ? 'is-done' : ''}>{v2.step1}</span>
+          <span className={(!activeSelectionNeedsTarget && (activeSelectionNeedsReplacement || activeSelectionNeedsResource)) ? 'is-done' : ''}>{v2.step2}</span>
+          <span>{v2.step3}</span>
+        </div>
         <p className="game-ui-v2-kicker">
           {activeSelectionNeedsTarget
             ? v2.pickTarget
@@ -173,6 +179,23 @@ export const BoardV2SelectionPanel = (props: {
   );
 };
 
+export const BoardV2NoticeStack = (props: {
+  notices: BoardNotice[];
+  dismissNotice: (noticeId: string) => void;
+}) => {
+  if (!props.notices.length) return null;
+  return (
+    <div className="game-ui-v2-notice-stack" aria-live="polite">
+      {props.notices.map((notice) => (
+        <div key={notice.id} className={`game-ui-v2-notice is-${notice.type}`}>
+          <span>{notice.text}</span>
+          <button type="button" className="ghost" onClick={() => props.dismissNotice(notice.id)}>×</button>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export const BoardV2HandSection = (props: {
   title: string;
   subtitle?: string;
@@ -187,12 +210,14 @@ export const BoardV2HandSection = (props: {
   actionLabel: string;
   onAction: (card: CardDefinition) => void;
   actionDisabled: (card: CardDefinition) => boolean;
+  actionTitle?: (card: CardDefinition) => string | undefined;
   effectLabel: (resource: ResourceKey | 'rank') => string;
   badges?: (card: CardDefinition) => string[] | undefined;
   helperText?: (card: CardDefinition) => string | undefined;
+  previewText?: (card: CardDefinition) => string | undefined;
   extraAction?: (card: CardDefinition) => { label: string; onClick: () => void; disabled?: boolean; className?: string } | undefined;
 }) => {
-  const { title, subtitle, headRight, cards, cardImageById, lang, openPreviewKey, togglePreview, closePreview, categoryText, actionLabel, onAction, actionDisabled, effectLabel, badges, helperText, extraAction } = props;
+  const { title, subtitle, headRight, cards, cardImageById, lang, openPreviewKey, togglePreview, closePreview, categoryText, actionLabel, onAction, actionDisabled, actionTitle, effectLabel, badges, helperText, previewText, extraAction } = props;
   return (
     <section className="game-ui-v2-hand-section">
       <div className="game-ui-v2-hand-head">
@@ -217,9 +242,11 @@ export const BoardV2HandSection = (props: {
             actionLabel={actionLabel}
             onAction={() => onAction(card)}
             actionDisabled={actionDisabled(card)}
+            actionTitle={actionTitle?.(card)}
             effectLabel={effectLabel}
             badges={badges?.(card)}
             helperText={helperText?.(card)}
+            previewText={previewText?.(card)}
             extraAction={(() => {
               const action = extraAction?.(card);
               return action ? { ...action, disabled: Boolean(action.disabled) } : undefined;
@@ -232,10 +259,10 @@ export const BoardV2HandSection = (props: {
 };
 
 export const BoardV2SidePanel = (props: {
-  sidePanelTab: 'events' | 'chat';
-  setSidePanelTab: (tab: 'events' | 'chat') => void;
+  sidePanelTab: 'events' | 'chat' | 'help';
+  setSidePanelTab: (tab: 'events' | 'chat' | 'help') => void;
   v2: Record<string, string>;
-  latestEvents: Array<{ id: string; type: 'player' | 'system'; text: string; playerID?: string }>;
+  latestEvents: Array<{ id: string; type: 'player' | 'system'; text: string; playerID?: string; label: string; tone: 'neutral' | 'warn' | 'good' | 'legendary' }>;
   eventsTitle: string;
   spectatorMode?: boolean;
   t: ReturnType<typeof import('../i18n').text>;
@@ -246,14 +273,34 @@ export const BoardV2SidePanel = (props: {
   setChatInput: (value: string) => void;
   sendChatMessage: () => void;
   chatLogRef: RefObject<HTMLDivElement | null>;
+  helpTitle: string;
+  helpItems: Array<{ label: string; value: string; tone?: 'neutral' | 'warn' | 'good' }>;
 }) => {
-  const { sidePanelTab, setSidePanelTab, v2, latestEvents, eventsTitle, spectatorMode = false, t, playerLabelById, lang, G, chatInput, setChatInput, sendChatMessage, chatLogRef } = props;
+  const {
+    sidePanelTab,
+    setSidePanelTab,
+    v2,
+    latestEvents,
+    eventsTitle,
+    spectatorMode = false,
+    t,
+    playerLabelById,
+    lang,
+    G,
+    chatInput,
+    setChatInput,
+    sendChatMessage,
+    chatLogRef,
+    helpTitle,
+    helpItems,
+  } = props;
   return (
     <aside className="game-ui-v2-side">
       <section className="game-ui-v2-events game-ui-v2-mobile-tabs">
         <div className="game-ui-v2-side-tab-row">
           <button type="button" className={sidePanelTab === 'events' ? 'is-active' : ''} onClick={() => setSidePanelTab('events')}>{v2.openEvents}</button>
           <button type="button" className={sidePanelTab === 'chat' ? 'is-active' : ''} onClick={() => setSidePanelTab('chat')}>{v2.openChat}</button>
+          <button type="button" className={sidePanelTab === 'help' ? 'is-active' : ''} onClick={() => setSidePanelTab('help')}>{v2.openHelp}</button>
         </div>
       </section>
       <section className={`game-ui-v2-events${sidePanelTab !== 'events' ? ' game-ui-v2-mobile-hidden' : ''}`}>
@@ -262,8 +309,11 @@ export const BoardV2SidePanel = (props: {
           {latestEvents.map((row) => {
             const author = row.type === 'system' ? t.systemTag : playerLabelById(row.playerID);
             return (
-              <div key={`v2-evt-${row.id}`} className={`game-ui-v2-event-row ${row.type === 'system' ? 'is-system' : ''}`}>
-                <strong>{author}</strong>
+              <div key={`v2-evt-${row.id}`} className={`game-ui-v2-event-row ${row.type === 'system' ? 'is-system' : ''} is-${row.tone}`}>
+                <div className="game-ui-v2-event-head">
+                  <strong>{author}</strong>
+                  <span className={`game-ui-v2-event-chip is-${row.tone}`}>{row.label}</span>
+                </div>
                 <span>{row.type === 'system' ? localizeSystemMessageText(row.text, lang) : row.text}</span>
               </div>
             );
@@ -284,6 +334,19 @@ export const BoardV2SidePanel = (props: {
           lang={lang}
           readOnly={spectatorMode}
         />
+      </section>
+      <section className={sidePanelTab !== 'help' ? 'game-ui-v2-mobile-hidden' : ''}>
+        <div className="board-chat game-ui-v2-help-panel">
+          <h3>{helpTitle}</h3>
+          <div className="game-ui-v2-help-list">
+            {helpItems.map((item, index) => (
+              <div key={`help-${index}`} className={`game-ui-v2-help-row${item.tone ? ` is-${item.tone}` : ''}`}>
+                <strong>{item.label}</strong>
+                <span>{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
     </aside>
   );

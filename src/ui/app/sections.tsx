@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { getBotSeatIds } from '../../game/bot-engine/config';
 import { normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition } from '../../game/types';
 import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
@@ -21,6 +22,20 @@ const formatBotDifficultyLabel = (t: T, difficulty: BotDifficulty | null) => {
   if (difficulty === 'normal') return t.botDifficultyNormal;
   if (difficulty === 'hard') return t.botDifficultyHard;
   return '-';
+};
+
+const estimateRoomDurationLabel = (t: T, players: number, gameMode: GameMode) => {
+  if (gameMode === 'standard_plus' || players >= 5) return t.roomDurationLong;
+  if (gameMode === 'simplified' || players <= 3) return t.roomDurationShort;
+  return t.roomDurationMedium;
+};
+
+const copyText = async (value: string) => {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+  window.prompt('Copy text', value);
 };
 
 const formatMatchOutcomeLabel = (t: T, item: UserMatchHistoryItem) => {
@@ -171,6 +186,7 @@ export const LobbySection = ({
   setSelectedOptionalModuleIds,
   uiVariant = 'v1',
 }: LobbySectionProps) => {
+  const [roomFilter, setRoomFilter] = useState<'all' | 'open' | 'free' | 'no_bots' | 'standard' | 'standard_plus'>('all');
   const toggleModule = (id: string, alwaysOn: boolean) => {
     if (alwaysOn) return;
     if (selectedOptionalModuleIds.includes(id)) {
@@ -180,6 +196,34 @@ export const LobbySection = ({
     setSelectedOptionalModuleIds([...selectedOptionalModuleIds, id]);
   };
   const effectivePlayerName = playerName.trim() || fallbackPlayerName?.trim() || '';
+  const invitedRoomId = useMemo(() => new URLSearchParams(window.location.search).get('room')?.trim() || '', []);
+  const visibleMatches = useMemo(() => {
+    const filtered = matches.filter((match) => {
+      const taken = match.players.filter((player) => Boolean(player.name)).length;
+      const capacity = match.players.length;
+      const hasFree = taken < capacity;
+      const gameModeValue = match.setupData?.gameMode ?? 'standard';
+      const hasBots = Math.max(0, Math.floor(match.setupData?.bots?.count ?? 0)) > 0;
+      if (roomFilter === 'open') return hasFree;
+      if (roomFilter === 'free') return hasFree && taken + 1 === capacity;
+      if (roomFilter === 'no_bots') return !hasBots;
+      if (roomFilter === 'standard') return gameModeValue === 'standard';
+      if (roomFilter === 'standard_plus') return gameModeValue === 'standard_plus';
+      return true;
+    });
+    return filtered.sort((a, b) => {
+      const aInvited = a.matchID === invitedRoomId ? 1 : 0;
+      const bInvited = b.matchID === invitedRoomId ? 1 : 0;
+      if (aInvited !== bInvited) return bInvited - aInvited;
+      const aTaken = a.players.filter((player) => Boolean(player.name)).length;
+      const bTaken = b.players.filter((player) => Boolean(player.name)).length;
+      const aAlmostReady = aTaken < a.players.length && aTaken + 1 === a.players.length ? 1 : 0;
+      const bAlmostReady = bTaken < b.players.length && bTaken + 1 === b.players.length ? 1 : 0;
+      if (aAlmostReady !== bAlmostReady) return bAlmostReady - aAlmostReady;
+      if (aTaken !== bTaken) return bTaken - aTaken;
+      return b.matchID.localeCompare(a.matchID);
+    });
+  }, [invitedRoomId, matches, roomFilter]);
 
   return (
   <section className={`board${uiVariant === 'v2' ? ' board-v2-panel' : ''}`}>
@@ -192,39 +236,109 @@ export const LobbySection = ({
             {t.refreshRooms}
           </button>
         </p>
+        <div className="lobby-room-filters">
+          <button type="button" onClick={() => setRoomFilter('all')} disabled={roomFilter === 'all'}>{t.lobbyFilterAll}</button>
+          <button type="button" onClick={() => setRoomFilter('open')} disabled={roomFilter === 'open'}>{t.roomStatusOpen}</button>
+          <button type="button" onClick={() => setRoomFilter('free')} disabled={roomFilter === 'free'}>{t.lobbyAlmostReady}</button>
+          <button type="button" onClick={() => setRoomFilter('no_bots')} disabled={roomFilter === 'no_bots'}>{t.lobbyFilterNoBots}</button>
+          <button type="button" onClick={() => setRoomFilter('standard')} disabled={roomFilter === 'standard'}>{t.gameModeStandard}</button>
+          <button type="button" onClick={() => setRoomFilter('standard_plus')} disabled={roomFilter === 'standard_plus'}>{t.gameModeStandardPlus}</button>
+        </div>
         {loading ? <p>{t.loadingRooms}</p> : null}
-        {matches.length === 0 ? <p>{t.noRooms}</p> : null}
-        {matches.map((match) => {
+        {visibleMatches.length === 0 ? (
+          <div className="lobby-empty-state">
+            <p>{t.noRooms}</p>
+            <p className="game-ui-v2-subtle">{t.noRoomsHelp}</p>
+            <p className="admin-controls">
+              <button type="button" onClick={refreshMatches} disabled={loading}>{t.refreshRooms}</button>
+              <button type="button" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })} disabled={loading}>{t.createRoom}</button>
+            </p>
+          </div>
+        ) : null}
+        <div className="lobby-room-list">
+        {visibleMatches.map((match) => {
           const taken = match.players.filter((player) => Boolean(player.name)).length;
           const capacity = match.players.length;
           const hasFree = taken < capacity;
+          const gameModeValue = match.setupData?.gameMode ?? 'standard';
+          const botSetup = match.setupData?.bots;
+          const botCountValue = Math.max(0, Math.min(capacity - 1, Math.floor(botSetup?.count ?? 0)));
+          const legendMode = match.setupData?.gameSetup?.legendaryDeckMode ?? 'separate';
+          const optionalModules = match.setupData?.gameSetup?.optionalMainDeckModuleIds ?? [];
+          const freePlayer = match.players.find((player) => !player.name);
+          const almostReady = hasFree && taken + 1 === capacity;
+          const shareLink = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(match.matchID)}`;
+          const inviteText = `${t.activeRoom}: ${match.matchID} · ${t.gameModeLabel}: ${formatGameModeLabel(t, gameModeValue)} · ${t.roomSummaryPlayers}: ${taken}/${capacity}`;
           return (
-            <p key={match.matchID}>
-              <strong>{match.matchID}</strong> | {taken}/{capacity} · {hasFree ? t.roomStatusOpen : t.roomStatusFull}{' '}
-              <button
-                type="button"
-                onClick={() => joinRoom(match)}
-                disabled={!effectivePlayerName || loading || !hasFree}
-              >
-                {t.joinRoom}
-              </button>{' '}
-              <button
-                type="button"
-                onClick={() => spectateRoom(match)}
-                disabled={loading}
-              >
-                {t.spectateRoom}
-              </button>{' '}
-              <button
-                type="button"
-                onClick={() => { void navigator.clipboard?.writeText(match.matchID); }}
-                disabled={loading}
-              >
-                {t.copyRoomId}
-              </button>
-            </p>
+            <article key={match.matchID} className={`lobby-room-card${almostReady ? ' is-almost-ready' : ''}${invitedRoomId === match.matchID ? ' is-invited' : ''}`}>
+              <div className="lobby-room-card-head">
+                <div>
+                  <strong>{match.matchID}</strong>
+                  <p className="game-ui-v2-subtle">
+                    {formatGameModeLabel(t, gameModeValue)} · {taken}/{capacity} · {hasFree ? (almostReady ? t.lobbyAlmostReady : t.roomStatusWaiting) : t.roomStatusFull}
+                  </p>
+                </div>
+                <span className={`pill pill-badge${almostReady ? ' pill-badge-good' : ''}`}>
+                  {almostReady ? t.lobbyAlmostReady : (hasFree ? t.roomStatusWaiting : t.roomStatusFull)}
+                </span>
+              </div>
+              {invitedRoomId === match.matchID ? <p className="lobby-room-invite-badge">{t.roomInviteLinkHint}</p> : null}
+              <div className="lobby-room-summary-grid">
+                <span>{t.roomSummaryPlayers}</span><strong>{taken}/{capacity}</strong>
+                <span>{t.gameModeLabel}</span><strong>{formatGameModeLabel(t, gameModeValue)}</strong>
+                <span>{t.roomBotsLabel}</span><strong>{botCountValue > 0 ? `${botCountValue} · ${formatBotDifficultyLabel(t, botSetup?.difficulty ?? null)}` : t.roomBotsOff}</strong>
+                <span>{t.legendaryModeLabel}</span><strong>{legendMode === 'merged' ? t.legendaryModeMerged : t.legendaryModeSeparate}</strong>
+                <span>{t.roomModulesLabel}</span><strong>{optionalModules.length ? optionalModules.join(', ') : '-'}</strong>
+                <span>{t.roomSummarySeat}</span><strong>{freePlayer ? `#${freePlayer.id}` : '-'}</strong>
+              </div>
+              <div className="lobby-room-seat-list">
+                {match.players.map((player) => (
+                  <span key={`${match.matchID}-seat-${player.id}`} className={`lobby-room-seat${player.name ? ' is-filled' : ' is-empty'}`}>
+                    #{player.id} {player.name?.trim() || t.lobbySeatOpen}
+                  </span>
+                ))}
+              </div>
+              <div className="admin-controls">
+                <button
+                  type="button"
+                  onClick={() => joinRoom(match)}
+                  disabled={!effectivePlayerName || loading || !hasFree}
+                >
+                  {t.joinRoomPrimary}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => spectateRoom(match)}
+                  disabled={loading}
+                >
+                  {t.spectateRoom}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { void copyText(match.matchID); }}
+                  disabled={loading}
+                >
+                  {t.copyRoomId}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { void copyText(inviteText); }}
+                  disabled={loading}
+                >
+                  {t.copyInviteText}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { void copyText(shareLink); }}
+                  disabled={loading}
+                >
+                  {t.copyInviteLink}
+                </button>
+              </div>
+            </article>
           );
         })}
+        </div>
       </div>
       <div className="lobby-col">
         <h3>{t.roomCreateTitle}</h3>
@@ -344,6 +458,17 @@ export const LobbySection = ({
             {t.createRoom}
           </button>
         </p>
+        <div className="lobby-room-create-summary">
+          <h4>{t.roomSummaryReady}</h4>
+          <ul>
+            <li>{t.gameModeLabel}: {formatGameModeLabel(t, gameMode)}</li>
+            <li>{t.roomCapacity}: {roomCapacity}</li>
+            <li>{t.roomBotsLabel}: {createWithBots ? `${botCount} · ${formatBotDifficultyLabel(t, botDifficulty)}` : t.roomBotsOff}</li>
+            <li>{t.roomModulesLabel}: {selectedOptionalModuleIds.length ? selectedOptionalModuleIds.join(', ') : '-'}</li>
+            <li>{t.roomDurationLabel}: {estimateRoomDurationLabel(t, roomCapacity, gameMode)}</li>
+          </ul>
+          <p className="game-ui-v2-subtle">{t.roomDraftHint}</p>
+        </div>
       </div>
     </div>
     {error ? <p className="admin-error">{error}</p> : null}
@@ -357,7 +482,19 @@ type ActiveSessionSectionProps = {
   playerName: string;
   sessionBroken: boolean;
   canStart: boolean;
+  activeMatch?: LobbyMatch | null;
+  roomPlayerNames: Record<string, string>;
+  roomDraft: {
+    roomCapacity: number;
+    gameMode: GameMode;
+    createWithBots: boolean;
+    botCount: number;
+    botDifficulty: BotDifficulty;
+    selectedOptionalModuleIds: string[];
+  };
+  applyCurrentRoomToDraft: () => void;
   leaveRoom: () => void;
+  refreshMatches: () => void;
   loading: boolean;
   uiVariant?: 'v1' | 'v2';
 };
@@ -368,26 +505,187 @@ export const ActiveSessionSection = ({
   playerName,
   sessionBroken,
   canStart,
+  activeMatch = null,
+  roomPlayerNames,
+  roomDraft,
+  applyCurrentRoomToDraft,
   leaveRoom,
+  refreshMatches,
   loading,
   uiVariant = 'v1',
-}: ActiveSessionSectionProps) => (
-  <section className={`board${uiVariant === 'v2' ? ' board-v2-panel' : ''}`}>
-    <h2>
-      {t.activeRoom}: {session.matchID}
-    </h2>
-    <p>
-      {session.spectator
-        ? `${t.spectatorMode}: ${t.spectatorJoinedLabel}`
-        : `${t.joinedAs}: ${playerName || '-'} (#${session.playerID})`}
-    </p>
-    {sessionBroken ? <p>{t.noRooms}</p> : null}
-    {!sessionBroken && !canStart ? <p>{t.waitingForPlayers}</p> : null}
-    <button type="button" onClick={leaveRoom} disabled={loading}>
-      {t.leaveRoom}
-    </button>
-  </section>
-);
+}: ActiveSessionSectionProps) => {
+  const [activityItems, setActivityItems] = useState<string[]>([]);
+  const previousActiveMatchRef = useRef<LobbyMatch | null>(null);
+
+  useEffect(() => {
+    setActivityItems([]);
+    previousActiveMatchRef.current = null;
+  }, [session.matchID]);
+
+  useEffect(() => {
+    setActivityItems((prev) => {
+      const previous = previousActiveMatchRef.current;
+      previousActiveMatchRef.current = activeMatch;
+      if (!activeMatch || !previous || previous.matchID !== activeMatch.matchID) return prev;
+      const nextEvents: string[] = [];
+      for (const player of activeMatch.players) {
+        const before = previous.players.find((row) => row.id === player.id)?.name?.trim() || '';
+        const after = player.name?.trim() || '';
+        if (!before && after) nextEvents.push(t.roomActivityPlayerJoined.replace('{name}', after).replace('{seat}', `#${player.id}`));
+        if (before && !after) nextEvents.push(t.roomActivityPlayerLeft.replace('{name}', before).replace('{seat}', `#${player.id}`));
+      }
+      const previousBots = Math.floor(previous.setupData?.bots?.count ?? 0);
+      const nextBots = Math.floor(activeMatch.setupData?.bots?.count ?? 0);
+      if (previousBots !== nextBots) nextEvents.push(t.roomActivityBotsChanged.replace('{count}', String(nextBots)));
+      const previousMode = previous.setupData?.gameMode ?? 'standard';
+      const nextMode = activeMatch.setupData?.gameMode ?? 'standard';
+      if (previousMode !== nextMode) nextEvents.push(`${t.roomActivityModeChanged}: ${formatGameModeLabel(t, nextMode)}`);
+      const prevModules = (previous.setupData?.gameSetup?.optionalMainDeckModuleIds ?? []).join(', ');
+      const nextModules = (activeMatch.setupData?.gameSetup?.optionalMainDeckModuleIds ?? []).join(', ');
+      if (prevModules !== nextModules) nextEvents.push(`${t.roomActivityModulesChanged}: ${nextModules || '-'}`);
+      return nextEvents.length ? [...nextEvents.reverse(), ...prev].slice(0, 6) : prev;
+    });
+  }, [activeMatch, t]);
+
+  const shareLink = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(session.matchID)}`;
+  const activeGameMode = activeMatch?.setupData?.gameMode ?? 'standard';
+  const activePlayerCount = activeMatch?.players.length ?? 0;
+  const botsCount = Math.max(0, Math.min(Math.max(0, activePlayerCount - 1), Math.floor(activeMatch?.setupData?.bots?.count ?? 0)));
+  const botSeatSet = new Set(getBotSeatIds(activeMatch?.players.length ?? 0, botsCount));
+  const activeModules = activeMatch?.setupData?.gameSetup?.optionalMainDeckModuleIds ?? [];
+  const draftDiffersFromRoom = Boolean(activeMatch) && (
+    roomDraft.roomCapacity !== activePlayerCount
+    || roomDraft.gameMode !== activeGameMode
+    || (roomDraft.createWithBots ? roomDraft.botCount : 0) !== botsCount
+    || roomDraft.selectedOptionalModuleIds.join('|') !== activeModules.join('|')
+  );
+  const missingSeats = activeMatch ? activeMatch.players.filter((player) => !player.name?.trim()).length : 0;
+  const blockers = [
+    ...(sessionBroken ? [t.roomReconnectHint] : []),
+    ...(!sessionBroken && activeMatch && missingSeats > 0
+      ? [t.roomBlockedNeedPlayersCount.replace('{count}', String(missingSeats))]
+      : []),
+    ...(!sessionBroken && session.spectator && activeMatch ? [t.roomSpectatorHint] : []),
+  ];
+  const inviteText = `${t.activeRoom}: ${session.matchID} · ${t.gameModeLabel}: ${formatGameModeLabel(t, activeGameMode)} · ${t.roomSummaryPlayers}: ${activeMatch ? `${activeMatch.players.filter((player) => Boolean(player.name?.trim())).length}/${activeMatch.players.length}` : '-'}`;
+
+  return (
+    <section className={`board${uiVariant === 'v2' ? ' board-v2-panel' : ''}`}>
+      <h2>
+        {t.activeRoom}: {session.matchID}
+      </h2>
+      <p>
+        {session.spectator
+          ? `${t.spectatorMode}: ${t.spectatorJoinedLabel}`
+          : `${t.joinedAs}: ${playerName || '-'} (#${session.playerID})`}
+      </p>
+      {activeMatch ? (
+        <div className="lobby-active-room-grid">
+          <div>
+            <h3>{t.roomSummaryReady}</h3>
+            <ul>
+              <li>{t.gameModeLabel}: {formatGameModeLabel(t, activeGameMode)}</li>
+              <li>{t.roomCapacity}: {activeMatch.players.length}</li>
+              <li>{t.roomBotsLabel}: {botsCount || t.roomBotsOff}</li>
+              <li>{t.legendaryModeLabel}: {(activeMatch.setupData?.gameSetup?.legendaryDeckMode ?? 'separate') === 'merged' ? t.legendaryModeMerged : t.legendaryModeSeparate}</li>
+              <li>{t.roomModulesLabel}: {(activeMatch.setupData?.gameSetup?.optionalMainDeckModuleIds ?? []).join(', ') || '-'}</li>
+              <li>{t.roomDurationLabel}: {estimateRoomDurationLabel(t, activeMatch.players.length, activeGameMode)}</li>
+              <li>{canStart ? t.roomReadyToStart : t.roomBlockedNeedPlayersCount.replace('{count}', String(missingSeats))}</li>
+            </ul>
+          </div>
+          <div>
+            <h3>{t.roomSummaryRoster}</h3>
+            <div className="lobby-room-seat-list">
+              {activeMatch.players.map((player) => {
+                const name = roomPlayerNames[String(player.id)] || player.name?.trim() || '';
+                const isYou = String(player.id) === (session.playerID ?? '');
+                const isBot = botSeatSet.has(String(player.id)) && Boolean(name);
+                const isHost = player.id === 0;
+                return (
+                  <span key={`active-seat-${player.id}`} className={`lobby-room-seat${name ? ' is-filled' : ' is-empty'}${isYou ? ' is-you' : ''}`}>
+                    #{player.id} {name || t.lobbySeatOpen}
+                    {isYou ? ` · ${t.roomYouTag}` : ''}
+                    {isBot ? ` · ${t.roomBotTag}` : ''}
+                    {isHost ? ` · ${t.roomHostTag}` : ''}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {activeMatch ? (
+        <div className="lobby-active-room-grid">
+          <div className="lobby-room-create-summary">
+            <h3>{t.roomAppliedConfigTitle}</h3>
+            <ul>
+              <li>{t.gameModeLabel}: {formatGameModeLabel(t, activeGameMode)}</li>
+              <li>{t.roomCapacity}: {activeMatch.players.length}</li>
+              <li>{t.roomBotsLabel}: {botsCount || t.roomBotsOff}</li>
+              <li>{t.roomModulesLabel}: {activeModules.join(', ') || '-'}</li>
+            </ul>
+          </div>
+          <div className="lobby-room-create-summary">
+            <h3>{t.roomDraftConfigTitle}</h3>
+            <ul>
+              <li>{t.gameModeLabel}: {formatGameModeLabel(t, roomDraft.gameMode)}</li>
+              <li>{t.roomCapacity}: {roomDraft.roomCapacity}</li>
+              <li>{t.roomBotsLabel}: {roomDraft.createWithBots ? `${roomDraft.botCount} · ${formatBotDifficultyLabel(t, roomDraft.botDifficulty)}` : t.roomBotsOff}</li>
+              <li>{t.roomModulesLabel}: {roomDraft.selectedOptionalModuleIds.join(', ') || '-'}</li>
+            </ul>
+            <p className="game-ui-v2-subtle">
+              {draftDiffersFromRoom ? t.roomDraftDiffersHint : t.roomDraftMatchesHint}
+            </p>
+            <p className="admin-controls">
+              <button type="button" onClick={applyCurrentRoomToDraft} disabled={loading || !draftDiffersFromRoom}>
+                {t.roomApplyCurrentToDraft}
+              </button>
+            </p>
+          </div>
+        </div>
+      ) : null}
+      {blockers.length ? (
+        <div className="lobby-room-blockers">
+          {blockers.map((item) => (
+            <p key={item} className={item === t.roomReconnectHint ? 'admin-error' : ''}>{item}</p>
+          ))}
+        </div>
+      ) : null}
+      {activityItems.length ? (
+        <div className="lobby-room-activity">
+          <h3>{t.roomActivityTitle}</h3>
+          <ul>
+            {activityItems.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
+          </ul>
+        </div>
+      ) : null}
+      <p className="admin-controls">
+        <button type="button" onClick={() => { void copyText(session.matchID); }} disabled={loading}>
+          {t.copyRoomId}
+        </button>
+        <button type="button" onClick={() => { void copyText(inviteText); }} disabled={loading}>
+          {t.copyInviteText}
+        </button>
+        <button type="button" onClick={() => { void copyText(shareLink); }} disabled={loading}>
+          {t.copyInviteLink}
+        </button>
+        <button type="button" onClick={refreshMatches} disabled={loading}>
+          {t.refreshRooms}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (!window.confirm(t.leaveRoomConfirm)) return;
+            leaveRoom();
+          }}
+          disabled={loading}
+        >
+          {t.leaveRoom}
+        </button>
+      </p>
+    </section>
+  );
+};
 
 export const ProfileSection = ({
   t,

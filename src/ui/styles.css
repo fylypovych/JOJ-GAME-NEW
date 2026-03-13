@@ -170,6 +170,22 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .lobby-active-room-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lobby-room-card-head {
+    flex-direction: column;
+  }
+
+  .lobby-room-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lobby-room-summary-grid strong {
+    margin-top: -2px;
+  }
+
   .app-top-toolbar {
     align-items: stretch;
   }
@@ -214,6 +230,131 @@ button:disabled {
 
 .lobby-col {
   min-width: 0;
+}
+
+.lobby-room-filters,
+.lobby-room-list {
+  display: grid;
+  gap: 10px;
+}
+
+.lobby-room-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: linear-gradient(180deg, #ffffff, #f7fbff);
+  box-shadow: 0 8px 20px rgba(20, 40, 72, 0.06);
+  display: grid;
+  gap: 10px;
+}
+
+.lobby-room-card.is-almost-ready {
+  border-color: #99d4af;
+  background: linear-gradient(180deg, #ffffff, #f2fcf5);
+}
+
+.lobby-room-card.is-invited {
+  border-color: #8cb1f4;
+  box-shadow: 0 10px 24px rgba(35, 89, 182, 0.12);
+}
+
+.lobby-room-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.lobby-room-summary-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  font-size: 13px;
+}
+
+.lobby-room-summary-grid span {
+  color: #5b6f8e;
+}
+
+.lobby-room-invite-badge {
+  margin: 0;
+  border: 1px solid #bfd2f1;
+  background: #edf4ff;
+  color: #184c8c;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lobby-room-seat-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lobby-room-seat {
+  border: 1px solid #d5e2f2;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: #f8fbff;
+  font-size: 12px;
+}
+
+.lobby-room-seat.is-filled {
+  background: #eef8ff;
+}
+
+.lobby-room-seat.is-empty {
+  background: #fff8ef;
+  border-color: #ecd0a1;
+}
+
+.lobby-room-seat.is-you {
+  border-color: #8cb1f4;
+  background: #eaf2ff;
+}
+
+.pill-badge-good {
+  border-color: #a8dfba;
+  background: #ebfbf0;
+  color: #17693a;
+}
+
+.lobby-room-create-summary,
+.lobby-active-room-grid {
+  margin-top: 12px;
+}
+
+.lobby-empty-state,
+.lobby-room-activity,
+.lobby-room-blockers {
+  margin-top: 12px;
+  border: 1px solid #d4deef;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff, #f7fbff);
+  padding: 12px;
+}
+
+.lobby-room-activity ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.lobby-room-activity h3 {
+  margin: 0 0 8px;
+}
+
+.lobby-room-create-summary ul,
+.lobby-active-room-grid ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.lobby-active-room-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
 .gallery-grid {
@@ -909,6 +1050,19 @@ button:disabled {
   gap: 10px;
 }
 
+.game-ui-v2-shell.is-spectator .game-ui-v2-header {
+  background:
+    radial-gradient(600px 160px at 10% 0%, rgba(255, 214, 102, 0.16), transparent 60%),
+    radial-gradient(500px 180px at 100% 0%, rgba(120, 191, 255, 0.14), transparent 60%),
+    linear-gradient(180deg, #2c2215, #171c28);
+}
+
+.game-ui-v2-shell.is-spectator .game-ui-v2-piles,
+.game-ui-v2-shell.is-spectator .game-ui-v2-events,
+.game-ui-v2-shell.is-spectator .board-chat {
+  background: linear-gradient(180deg, #fffefb, #f8f5ee);
+}
+
 .game-ui-v2-shell.is-stage-draw .game-ui-v2-command {
   border-color: #78c2ff;
   box-shadow: 0 12px 26px rgba(38, 125, 201, 0.14);
@@ -1258,11 +1412,26 @@ button:disabled {
   font-size: 14px;
 }
 
+.game-ui-v2-notice-stack {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
 .game-ui-v2-notice {
-  margin: 10px 0 0;
   padding: 8px 10px;
   border-radius: 10px;
   font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.game-ui-v2-notice button {
+  padding: 0 6px;
+  min-width: auto;
+  line-height: 1.1;
 }
 
 .game-ui-v2-notice.is-info {
@@ -1471,6 +1640,10 @@ button:disabled {
   min-width: 150px;
 }
 
+.game-ui-v2-hand-controls label span {
+  font-weight: 700;
+}
+
 .game-ui-v2-events-list {
   display: grid;
   gap: 8px;
@@ -1488,6 +1661,13 @@ button:disabled {
   gap: 3px;
 }
 
+.game-ui-v2-event-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .game-ui-v2-event-row strong {
   font-size: 12px;
 }
@@ -1498,6 +1678,97 @@ button:disabled {
 
 .game-ui-v2-event-row.is-system {
   background: #f6fbff;
+}
+
+.game-ui-v2-event-row.is-warn {
+  border-color: #f0cf9d;
+  background: #fffaf0;
+}
+
+.game-ui-v2-event-row.is-good {
+  border-color: #b8dfc6;
+  background: #f3fcf5;
+}
+
+.game-ui-v2-event-row.is-legendary {
+  border-color: #d8c5ff;
+  background: linear-gradient(180deg, #fcf9ff, #f5eeff);
+}
+
+.game-ui-v2-event-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid #d3dff1;
+  background: #f7fbff;
+  color: #4f678d;
+}
+
+.game-ui-v2-event-chip.is-warn {
+  border-color: #f0cf9d;
+  background: #fff4db;
+  color: #9a5b00;
+}
+
+.game-ui-v2-event-chip.is-good {
+  border-color: #b8dfc6;
+  background: #ebfbf0;
+  color: #17693a;
+}
+
+.game-ui-v2-event-chip.is-legendary {
+  border-color: #d8c5ff;
+  background: #f4ebff;
+  color: #6f3ca0;
+}
+
+.game-ui-v2-help-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.game-ui-v2-help-list {
+  display: grid;
+  gap: 8px;
+}
+
+.game-ui-v2-help-row {
+  border: 1px solid #d7e2f1;
+  background: #fbfdff;
+  border-radius: 10px;
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.game-ui-v2-help-row strong {
+  font-size: 12px;
+  color: #536a8f;
+}
+
+.game-ui-v2-help-row.is-good {
+  border-color: #b8e1c5;
+  background: #f0fbf4;
+}
+
+.game-ui-v2-help-row.is-warn {
+  border-color: #f0d39c;
+  background: #fff8eb;
+}
+
+.game-ui-v2-side > section {
+  min-width: 0;
+}
+
+.game-card-preview {
+  display: block;
+  margin-top: 4px;
+  color: #38577e;
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .game-ui-v2-token-list {
@@ -1749,6 +2020,10 @@ button:disabled {
   .game-ui-v2-action-lane-grid {
     grid-template-columns: 1fr;
   }
+
+  .game-ui-v2-side {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 700px) {
@@ -1804,10 +2079,22 @@ button:disabled {
 
   .game-ui-v2-hand-controls {
     width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .game-ui-v2-hand-controls label {
     flex: 1 1 100%;
+  }
+
+  .game-ui-v2-hand-controls select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .game-ui-v2-selection-actions button,
+  .game-ui-v2-command-buttons button {
+    flex: 1 1 140px;
   }
 }
 

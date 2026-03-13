@@ -1,11 +1,10 @@
 import {
   findNextRank,
-  getHandCardActionState,
   getPromoteActionState,
   type ResourceLabels,
 } from '../../game/actionValidation';
 import { rankSeatLimitForRank } from '../../game/rankEngine';
-import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from '../../game/types';
+import type { JojGameState, RankDefinition, ResourceKey } from '../../game/types';
 
 type Lang = 'uk' | 'en';
 
@@ -44,55 +43,3 @@ export const getNextRankSeatMeta = (args: {
     : 0;
   return { nextRank, seatLimit, occupied, seatBlocked: Boolean(nextRank) && occupied >= seatLimit };
 };
-
-export const getBoardVvnzBlockedReason = (args: {
-  card: Pick<CardDefinition, 'category' | 'grantRank'>;
-  G: Pick<JojGameState, 'players' | 'ranks' | 'resources'>;
-  playerID: string;
-  sharedRanks: RankDefinition[];
-  resources: Record<ResourceKey, number>;
-  resourceLabels: ResourceLabels;
-  lang: Lang;
-}): string | null =>
-  getHandCardActionState({
-    card: args.card as CardDefinition,
-    G: args.G,
-    playerID: args.playerID,
-    ranks: args.sharedRanks,
-    resourceLabels: args.resourceLabels,
-    lang: args.lang,
-  }).reason;
-
-export const getBoardHandCardActionState = (args: {
-  card: CardDefinition;
-  G: Pick<JojGameState, 'players' | 'ranks' | 'resources'>;
-  playerID: string;
-  sharedRanks: RankDefinition[];
-  resourceLabels: ResourceLabels;
-  canPlayHandCard?: boolean;
-  lang: Lang;
-}) =>
-  getHandCardActionState({
-    card: args.card,
-    G: args.G,
-    playerID: args.playerID,
-    ranks: args.sharedRanks,
-    resourceLabels: args.resourceLabels,
-    canPlayHandCard: args.canPlayHandCard,
-    lang: args.lang,
-  });
-
-export const getBoardPromoteBlockedReason = (args: {
-  G: Pick<JojGameState, 'players' | 'ranks' | 'resources' | 'promotedThisTurn'>;
-  playerID: string;
-  sharedRanks: RankDefinition[];
-  resourceLabels: ResourceLabels;
-  lang: Lang;
-}): string | null =>
-  getPromoteActionState({
-    G: args.G,
-    playerID: args.playerID,
-    ranks: args.sharedRanks,
-    resourceLabels: args.resourceLabels,
-    lang: args.lang,
-  }).reason;

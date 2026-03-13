@@ -50,6 +50,7 @@ type GameCardTileProps = {
   actionLabel: string;
   onAction: () => void;
   actionDisabled: boolean;
+  actionTitle?: string;
   extraAction?: {
     label: string;
     onClick: () => void;
@@ -64,6 +65,7 @@ type GameCardTileProps = {
   effectLabel: (resource: ResourceKey | 'rank') => string;
   badges?: string[];
   helperText?: string;
+  previewText?: string;
 };
 
 export const GameCardTile = ({
@@ -78,11 +80,13 @@ export const GameCardTile = ({
   actionLabel,
   onAction,
   actionDisabled,
+  actionTitle,
   extraAction,
   utilityAction,
   effectLabel,
   badges,
   helperText,
+  previewText,
 }: GameCardTileProps) => {
   const imageSrc = normalizeImagePath(resolvedImage) ?? normalizeImagePath(card.image) ?? `/cards/${card.id}.png`;
   const withCacheBust = (src: string) => `${src}${src.includes('?') ? '&' : '?'}v=${Date.now()}`;
@@ -105,6 +109,7 @@ export const GameCardTile = ({
         className="game-card-inline-action"
         onClick={onAction}
         disabled={actionDisabled}
+        title={actionTitle}
       >
         {actionLabel}
       </button>
@@ -169,6 +174,7 @@ export const GameCardTile = ({
           </div>
         ) : null}
         {helperText ? <small className="game-card-helper">{helperText}</small> : null}
+        {previewText ? <small className="game-card-preview">{previewText}</small> : null}
         {flavorText ? <small className="game-card-helper">{flavorText}</small> : null}
       </div>
     </div>

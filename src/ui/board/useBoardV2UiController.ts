@@ -5,10 +5,10 @@ import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from '
 import type { JojMoveApi } from './types';
 
 type NoticeKind = 'info' | 'error' | 'success';
-export type BoardNotice = { type: NoticeKind; text: string } | null;
+export type BoardNotice = { id: string; type: NoticeKind; text: string };
 type HandFilter = 'all' | 'playable' | CardDefinition['category'];
 type HandSort = 'default' | 'playable' | 'category' | 'title';
-type SidePanelTab = 'events' | 'chat';
+type SidePanelTab = 'events' | 'chat' | 'help';
 
 export const useBoardV2UiController = (args: {
   G: Pick<JojGameState, 'players' | 'ranks' | 'resources'> | null | undefined;
@@ -45,7 +45,7 @@ export const useBoardV2UiController = (args: {
   const [chatInput, setChatInput] = useState('');
   const [openPreviewKey, setOpenPreviewKey] = useState<string | null>(null);
   const [draftSelection, setDraftSelection] = useState<string[]>([]);
-  const [notice, setNotice] = useState<BoardNotice>(null);
+  const [notices, setNotices] = useState<BoardNotice[]>([]);
   const [gameoverModalClosed, setGameoverModalClosed] = useState(false);
   const [handFilter, setHandFilter] = useState<HandFilter>('all');
   const [handSort, setHandSort] = useState<HandSort>('playable');
@@ -62,7 +62,21 @@ export const useBoardV2UiController = (args: {
 
   const effectLabel = (resource: ResourceKey | 'rank') => (resource === 'rank' ? t.rankResource : resourceLabels[resource]);
   const togglePreview = (key: string) => setOpenPreviewKey((prev) => (prev === key ? null : key));
-  const postNotice = (type: NoticeKind, msg: string) => setNotice(msg ? { type, text: msg } : null);
+  const dismissNotice = (noticeId: string) => setNotices((prev) => prev.filter((row) => row.id !== noticeId));
+  const postNotice = (type: NoticeKind, msg: string) => {
+    if (!msg) {
+      setNotices([]);
+      return;
+    }
+    const idValue = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const nextNotice = { id: idValue, type, text: msg };
+    setNotices((prev) => [nextNotice, ...prev].slice(0, 3));
+    if (type !== 'error') {
+      setTimeout(() => {
+        setNotices((prev) => prev.filter((row) => row.id !== idValue));
+      }, 3600);
+    }
+  };
   const opponentIds = useMemo(
     () => Object.keys(G?.players ?? {}).filter((pid) => pid !== id),
     [G?.players, id],
@@ -79,7 +93,7 @@ export const useBoardV2UiController = (args: {
     try {
       const result = move();
       Promise.resolve(result)
-        .then(() => setNotice(null))
+        .then(() => setNotices([]))
         .catch((error) => {
           postNotice('error', resolveMoveErrorText(error, fallback));
         });
@@ -160,7 +174,7 @@ export const useBoardV2UiController = (args: {
     return [
       playable ? v2.canPlayNow : v2.notNow,
       ...(cardNeedsTargetSelection(card) && getCardPlayBehavior(card) === 'lyap' ? [v2.requiresTarget] : []),
-      ...(getCardPlayBehavior(card) === 'vvnz' && vvnzReason ? [card.category] : []),
+      ...(getCardPlayBehavior(card) === 'vvnz' && vvnzReason ? [v2.blockedReason] : []),
     ];
   };
 
@@ -188,8 +202,7 @@ export const useBoardV2UiController = (args: {
     setOpenPreviewKey,
     draftSelection,
     setDraftSelection,
-    notice,
-    setNotice,
+    notices,
     gameoverModalClosed,
     setGameoverModalClosed,
     handFilter,
@@ -205,6 +218,7 @@ export const useBoardV2UiController = (args: {
     effectLabel,
     togglePreview,
     postNotice,
+    dismissNotice,
     opponentIds,
     sendChatMessage,
     handleHandCardAction,

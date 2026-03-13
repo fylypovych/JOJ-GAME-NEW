@@ -68,6 +68,7 @@ export const uiV2Uk = {
   legendaryDiscard: 'Легендарний скид',
   openChat: 'Чат',
   openEvents: 'Події',
+  openHelp: 'Хід',
   mobileActions: 'Швидкі дії (mobile)',
   deficit: 'Не вистачає',
   actionLane: 'Смуга дій',
@@ -130,6 +131,11 @@ export const uiV2Uk = {
   botSpeedSlow: 'Повільно',
   botThinkingPrefix: 'Хід обирає',
   noEventsYet: 'Подій ще немає',
+  helpPanelTitle: 'Стан ходу',
+  helpCurrentStage: 'Етап',
+  helpActionReady: 'Дія доступна зараз.',
+  helpPendingSelection: 'Очікує вибір',
+  helpHandStatus: 'Стан руки',
 } as const;
 
 export const uiV2En = {
@@ -202,6 +208,7 @@ export const uiV2En = {
   legendaryDiscard: 'Legendary discard',
   openChat: 'Chat',
   openEvents: 'Events',
+  openHelp: 'Turn',
   mobileActions: 'Quick actions (mobile)',
   deficit: 'Missing',
   actionLane: 'Action lane',
@@ -264,4 +271,9 @@ export const uiV2En = {
   botSpeedSlow: 'Slow',
   botThinkingPrefix: 'Choosing move',
   noEventsYet: 'No events yet',
+  helpPanelTitle: 'Turn state',
+  helpCurrentStage: 'Stage',
+  helpActionReady: 'Action is available now.',
+  helpPendingSelection: 'Pending selection',
+  helpHandStatus: 'Hand status',
 } as const;
