@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { buildAdminHeaders } from './authHeaders';
 import { uploadAdminImageDataUrl } from './imageUpload';
 
 export const useAdminPageActions = (args: {
@@ -29,7 +30,7 @@ export const useAdminPageActions = (args: {
   const [stopGameError, setStopGameError] = useState('');
   const [stopGameStatus, setStopGameStatus] = useState('');
 
-  const adminHeaders = () => ({ ...(adminToken.trim() ? { 'x-admin-token': adminToken.trim() } : {}) });
+  const adminHeaders = () => buildAdminHeaders(adminToken);
 
   useEffect(() => {
     setStopGameError('');

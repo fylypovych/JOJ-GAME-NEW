@@ -75,6 +75,7 @@ export const useAdminImageRegeneration = ({
       try {
         const response = await fetch(`${serverUrl}/api/admin/delete-card-image`, {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
             ...adminHeaders(),

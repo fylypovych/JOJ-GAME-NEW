@@ -51,7 +51,7 @@ export const useAdminGitActions = ({
       setGitActionLog('');
     }
     try {
-      const response = await fetch(`${serverUrl}/api/admin/git/status`, { headers: adminHeaders() });
+      const response = await fetch(`${serverUrl}/api/admin/git/status`, { headers: adminHeaders(), credentials: 'include' });
       const payload = (await response.json()) as ({ ok?: boolean; error?: string; details?: string } & Partial<GitUpdateStatus>);
       if (!response.ok || !payload.ok) {
         if (!silentDuringExpectedRestart) {
@@ -96,6 +96,7 @@ export const useAdminGitActions = ({
       const response = await fetch(`${serverUrl}/api/admin/git/update`, {
         method: 'POST',
         headers: adminHeaders(),
+        credentials: 'include',
       });
       const payload = (await response.json()) as {
         ok?: boolean;
@@ -136,6 +137,7 @@ export const useAdminGitActions = ({
       const response = await fetch(`${serverUrl}/api/admin/git/deploy`, {
         method: 'POST',
         headers: adminHeaders(),
+        credentials: 'include',
       });
       const payload = (await response.json()) as {
         ok?: boolean;

@@ -38,6 +38,7 @@ const makeState = (): JojGameState => {
     '0': [{ ...legendaryCard }],
     '1': [{ ...legendaryCard, id: 'legendary-other', title: 'Other Legendary', flavor: 'other legendary' }],
   };
+  G.legendaryDraftCompleted = { '0': true, '1': true };
   G.players['0'].hand = G.hands['0'];
   G.players['1'].hand = G.hands['1'];
   return G;
@@ -88,4 +89,17 @@ test('playerView hides both decks before game end and reveals them after gameove
   assert.ok(finishedView);
   assert.equal(finishedView?.deck[0]?.id, 'support-secret');
   assert.equal(finishedView?.legendaryDeck[0]?.id, 'legendary-secret');
+});
+
+test('playerView reveals legendary draft pool while standard plus draft is active', () => {
+  const G = makeState();
+  G.legendaryDraftCompleted = { '0': false, '1': true };
+  const playerView = jojGame.playerView?.({
+    G,
+    ctx: { gameover: undefined },
+    playerID: '0',
+  });
+
+  assert.ok(playerView);
+  assert.equal(playerView?.legendaryDeck[0]?.id, 'legendary-secret');
 });

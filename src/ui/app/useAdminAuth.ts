@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getAdminCsrfToken } from '../admin/authHeaders';
 
 type Params = {
   isAdminRoute: boolean;
@@ -39,6 +40,8 @@ export const useAdminAuth = ({
     const headers = new Headers(init?.headers ?? undefined);
     const token = adminToken.trim();
     if (token) headers.set('x-admin-token', token);
+    const csrfToken = getAdminCsrfToken();
+    if (csrfToken && !headers.has('x-csrf-token')) headers.set('x-csrf-token', csrfToken);
     const response = await fetch(input, { ...init, headers, credentials: 'include' });
     if (response.status === 401) {
       setAdminAuthorized(false);

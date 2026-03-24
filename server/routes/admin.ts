@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from './types';
+import { requireAdminMutationAuth } from '../admin-auth';
 import { registerAdminDbToolRoutes } from '../services/admin-db-tools';
 import type { UserStore } from '../services/user-store';
 
@@ -78,6 +79,9 @@ export const registerAdminRoutes = ({
   importJsonConfigToDb,
   userStore,
 }: AdminRoutesDeps) => {
+  const requireAdminWriteAccess = (ctx: RouteCtx, routeLabel: string) =>
+    requireAdminMutationAuth(ctx, routeLabel, requireAdminAuth);
+
   router.get('/api/health', (ctx: RouteCtx) => {
     ctx.body = {
       ok: true,
@@ -115,7 +119,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/awards/save', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/awards/save'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/awards/save'))) return;
     if (!userStore) {
       ctx.status = 503;
       ctx.body = { ok: false, error: 'User module is unavailable.' };
@@ -146,7 +150,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/awards/delete', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/awards/delete'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/awards/delete'))) return;
     if (!userStore) {
       ctx.status = 503;
       ctx.body = { ok: false, error: 'User module is unavailable.' };
@@ -165,7 +169,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/users/create', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/users/create'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/users/create'))) return;
     if (!userStore) {
       ctx.status = 503;
       ctx.body = { ok: false, error: 'User module is unavailable.' };
@@ -224,7 +228,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/users/status', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/users/status'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/users/status'))) return;
     if (!userStore) {
       ctx.status = 503;
       ctx.body = { ok: false, error: 'User module is unavailable.' };
@@ -249,7 +253,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/users/role', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/users/role'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/users/role'))) return;
     if (!userStore) {
       ctx.status = 503;
       ctx.body = { ok: false, error: 'User module is unavailable.' };
@@ -274,7 +278,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/users/update', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/users/update'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/users/update'))) return;
     if (!userStore) {
       ctx.status = 503;
       ctx.body = { ok: false, error: 'User module is unavailable.' };
@@ -311,7 +315,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/users/request-password-reset', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/users/request-password-reset'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/users/request-password-reset'))) return;
     if (!userStore) {
       ctx.status = 503;
       ctx.body = { ok: false, error: 'User module is unavailable.' };
@@ -333,7 +337,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/users/logout-session', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/users/logout-session'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/users/logout-session'))) return;
     if (!userStore) {
       ctx.status = 503;
       ctx.body = { ok: false, error: 'User module is unavailable.' };
@@ -352,7 +356,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/users/logout-all', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/users/logout-all'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/users/logout-all'))) return;
     if (!userStore) {
       ctx.status = 503;
       ctx.body = { ok: false, error: 'User module is unavailable.' };
@@ -420,7 +424,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/match-stop', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/match-stop'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/match-stop'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-match-stop', 10, 60_000))) return;
     const matchID = typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
     if (!matchID) {
@@ -482,7 +486,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/match-reset', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/match-reset'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/match-reset'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-match-reset', 10, 60_000))) return;
     const matchID = typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
     if (!matchID) {
@@ -535,7 +539,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/match-delete', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/match-delete'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/match-delete'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-match-delete', 10, 60_000))) return;
     const matchID = typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
     if (!matchID) {
@@ -580,7 +584,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/restart', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/restart'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/restart'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-restart', 5, 60_000))) return;
     const isPm2Managed =
       process.env.pm_id !== undefined ||
@@ -606,7 +610,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/git/update', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/git/update'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/git/update'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-git-update', 5, 60_000))) return;
     const status = await getGitUpdateStatus(runGit);
     if (!status.ok) {
@@ -659,7 +663,7 @@ export const registerAdminRoutes = ({
   });
 
   router.post('/api/admin/git/deploy', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/git/deploy'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/git/deploy'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-git-deploy', 3, 60_000))) return;
 
     const status = await getGitUpdateStatus(runGit);

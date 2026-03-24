@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
+import { requireAdminMutationAuth } from '../admin-auth';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from '../routes/types';
 
 export type DbConnInput = {
@@ -95,9 +96,11 @@ export const registerAdminDbToolRoutes = ({
   importJsonConfigToDb,
 }: AdminDbToolsDeps) => {
   const ADMIN_DB_SQL_BODY_LIMIT = Math.max(JSON_BODY_LIMIT, 32 * 1024 * 1024);
+  const requireAdminWriteAccess = (ctx: RouteCtx, routeLabel: string) =>
+    requireAdminMutationAuth(ctx, routeLabel, requireAdminAuth);
 
   router.post('/api/admin/db/test-connection', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/db/test-connection'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/db/test-connection'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-db-test-connection', 20, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/test-connection', maxBytes: JSON_BODY_LIMIT, logLine });
     if (!body) return;
@@ -136,7 +139,7 @@ export const registerAdminDbToolRoutes = ({
   });
 
   router.post('/api/admin/db/ui-config', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/db/ui-config'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/db/ui-config'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-db-ui-config-post', 20, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/ui-config', maxBytes: JSON_BODY_LIMIT, logLine });
     if (!body) return;
@@ -179,7 +182,7 @@ export const registerAdminDbToolRoutes = ({
   });
 
   router.post('/api/admin/db/import-schema', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/db/import-schema'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/db/import-schema'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-db-import-schema', 5, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/import-schema', maxBytes: JSON_BODY_LIMIT, logLine });
     if (!body) return;
@@ -197,7 +200,7 @@ export const registerAdminDbToolRoutes = ({
   });
 
   router.post('/api/admin/db/import-json-config', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/db/import-json-config'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/db/import-json-config'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-db-import-json-config', 5, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/import-json-config', maxBytes: JSON_BODY_LIMIT, logLine });
     if (!body) return;
@@ -213,7 +216,7 @@ export const registerAdminDbToolRoutes = ({
   });
 
   router.post('/api/admin/db/export-backup', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/db/export-backup'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/db/export-backup'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-db-export-backup', 5, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/export-backup', maxBytes: JSON_BODY_LIMIT, logLine });
     if (!body) return;
@@ -234,7 +237,7 @@ export const registerAdminDbToolRoutes = ({
   });
 
   router.post('/api/admin/db/restore-backup', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/db/restore-backup'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/db/restore-backup'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-db-restore-backup', 3, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/restore-backup', maxBytes: ADMIN_DB_SQL_BODY_LIMIT, logLine });
     if (!body) return;

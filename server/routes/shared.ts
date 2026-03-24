@@ -1,4 +1,5 @@
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from './types';
+import { requireAdminMutationAuth } from '../admin-auth';
 
 type SharedRoutesDeps = {
   router: RouterLike;
@@ -37,6 +38,9 @@ export const registerSharedRoutes = ({
   saveRanksToDisk,
   saveTemplateToDisk,
 }: SharedRoutesDeps) => {
+  const requireAdminWriteAccess = (ctx: RouteCtx, routeLabel: string) =>
+    requireAdminMutationAuth(ctx, routeLabel, requireAdminAuth);
+
   router.get('/api/shared-deck-template', (ctx: RouteCtx) => {
     ctx.body = {
       json: exportSharedDeckTemplateJson(),
@@ -49,7 +53,7 @@ export const registerSharedRoutes = ({
   });
 
   router.post('/api/shared-ranks', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/shared-ranks'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/shared-ranks'))) return;
     if (!(await enforceRateLimit(ctx, 'shared-ranks-write', 20, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/shared-ranks', maxBytes: JSON_BODY_LIMIT, logLine });
     if (!body) return;
@@ -71,7 +75,7 @@ export const registerSharedRoutes = ({
   });
 
   router.post('/api/shared-ranks/reset', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/shared-ranks/reset'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/shared-ranks/reset'))) return;
     if (!(await enforceRateLimit(ctx, 'shared-ranks-reset', 10, 60_000))) return;
     resetSharedRanks();
     await saveRanksToDisk();
@@ -80,7 +84,7 @@ export const registerSharedRoutes = ({
   });
 
   router.post('/api/shared-deck-template/import', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/shared-deck-template/import'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/shared-deck-template/import'))) return;
     if (!(await enforceRateLimit(ctx, 'template-import', 10, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/shared-deck-template/import', maxBytes: LARGE_JSON_BODY_LIMIT, logLine });
     if (!body) return;
@@ -102,7 +106,7 @@ export const registerSharedRoutes = ({
   });
 
   router.post('/api/shared-deck-template/reset', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/shared-deck-template/reset'))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/shared-deck-template/reset'))) return;
     if (!(await enforceRateLimit(ctx, 'template-reset', 10, 60_000))) return;
     resetSharedDeckTemplate();
     await saveTemplateToDisk();

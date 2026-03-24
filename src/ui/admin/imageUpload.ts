@@ -74,6 +74,7 @@ export const uploadAdminImageDataUrl = async ({
   try {
     const response = await fetch(`${serverUrl}/api/upload-card-image`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...adminHeaders(),

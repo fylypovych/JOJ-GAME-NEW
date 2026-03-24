@@ -42,6 +42,7 @@ const makeState = (): JojGameState => {
     '0': [{ ...supportCard, id: 'legendary-02', category: 'LEGENDARY' }],
     '1': [{ ...supportCard, id: 'legendary-03', category: 'LEGENDARY', title: 'Hidden Legendary' }],
   };
+  G.legendaryDraftCompleted = { '0': true, '1': true };
   G.players['0'].hand = G.hands['0'];
   G.players['1'].hand = G.hands['1'];
   return G;

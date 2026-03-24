@@ -54,6 +54,9 @@ export const createSanitizedPlayerView = (
   ctx: { gameover?: unknown },
   playerID?: string,
 ): JojGameState => {
+  const revealLegendaryDraftPool =
+    G.gameMode === 'standard_plus'
+    && Object.keys(G.players ?? {}).some((pid) => G.legendaryDraftCompleted?.[pid] !== true);
   const filteredHands: JojGameState['hands'] = {};
   const filteredLegendaryHands: JojGameState['legendaryHands'] = {};
   Object.entries(G.hands as Record<string, CardDefinition[]>).forEach(([pid, cards]) => {
@@ -76,6 +79,8 @@ export const createSanitizedPlayerView = (
     hands: filteredHands,
     legendaryHands: filteredLegendaryHands,
     deck: ctx.gameover ? G.deck : new Array(G.deck.length).fill({ ...HIDDEN_CARD }),
-    legendaryDeck: ctx.gameover ? G.legendaryDeck : new Array(G.legendaryDeck.length).fill({ ...HIDDEN_CARD }),
+    legendaryDeck: ctx.gameover || revealLegendaryDraftPool
+      ? G.legendaryDeck
+      : new Array(G.legendaryDeck.length).fill({ ...HIDDEN_CARD }),
   };
 };
