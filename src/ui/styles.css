@@ -69,6 +69,15 @@ button:disabled {
     radial-gradient(980px 420px at 110% -14%, rgba(106, 231, 156, 0.2), transparent 60%);
 }
 
+.app.app-v3 {
+  font-family: "Bahnschrift", "Trebuchet MS", "Segoe UI", sans-serif;
+  color: #efe9da;
+  background:
+    radial-gradient(1200px 520px at 50% -16%, rgba(74, 131, 168, 0.28), transparent 58%),
+    radial-gradient(900px 420px at 0% 0%, rgba(29, 142, 135, 0.18), transparent 60%),
+    linear-gradient(180deg, #071118, #0b1c27 38%, #102734 100%);
+}
+
 .app > h1 {
   margin: 4px 0 8px;
   letter-spacing: 0.2px;
@@ -99,6 +108,25 @@ button:disabled {
   background:
     radial-gradient(900px 220px at 0% -20%, rgba(88, 194, 255, 0.14), transparent 60%),
     linear-gradient(180deg, #ffffff, #f4f9ff);
+}
+
+.app-top-toolbar-v3 {
+  border-color: rgba(93, 150, 170, 0.45);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(5, 16, 24, 0.9), rgba(10, 31, 42, 0.95)),
+    radial-gradient(900px 260px at 0% 0%, rgba(39, 167, 157, 0.18), transparent 60%);
+  box-shadow:
+    0 20px 44px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(182, 217, 221, 0.08);
+}
+
+.app-top-toolbar-v3,
+.app-top-toolbar-v3 .app-top-row,
+.app-top-toolbar-v3 a,
+.app.app-v3 .app-link-row a,
+.app.app-v3 > h1 {
+  color: #f4efe0;
 }
 
 .app-top-toolbar-left,
@@ -149,6 +177,15 @@ button:disabled {
   border-color: #b8ccec;
   background: linear-gradient(180deg, #ffffff, #edf5ff);
   font-weight: 600;
+}
+
+.user-tabs-v3 button {
+  border-color: rgba(95, 163, 177, 0.38);
+  background: linear-gradient(180deg, rgba(18, 44, 57, 0.95), rgba(11, 29, 38, 0.98));
+  color: #ecf4f2;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .app-top-toolbar .user-tabs {
@@ -220,6 +257,56 @@ button:disabled {
     radial-gradient(880px 240px at -10% -30%, rgba(99, 187, 255, 0.12), transparent 65%),
     linear-gradient(180deg, #ffffff, #f7fbff);
   box-shadow: 0 12px 30px rgba(20, 40, 72, 0.09);
+}
+
+.board-v3-panel {
+  border-color: rgba(98, 153, 170, 0.34);
+  border-radius: 18px;
+  background:
+    radial-gradient(900px 260px at 100% -10%, rgba(46, 173, 159, 0.12), transparent 56%),
+    linear-gradient(180deg, rgba(9, 22, 31, 0.96), rgba(11, 29, 40, 0.98));
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(227, 240, 233, 0.05);
+  color: #ecf0e8;
+}
+
+.board-v3-panel h2,
+.board-v3-panel h3,
+.board-v3-panel strong,
+.board-v3-panel label,
+.board-v3-panel p,
+.board-v3-panel li,
+.board-v3-panel span {
+  color: inherit;
+}
+
+.board-v3-panel input,
+.board-v3-panel select,
+.board-v3-panel textarea,
+.board-v3-panel button {
+  border-color: rgba(112, 171, 184, 0.38);
+  background: linear-gradient(180deg, rgba(18, 43, 54, 0.98), rgba(11, 28, 37, 1));
+  color: #edf4ef;
+}
+
+.board-v3-panel .pill,
+.board-v3-panel .lobby-room-seat,
+.board-v3-panel .lobby-room-invite-badge {
+  border-color: rgba(121, 183, 193, 0.28);
+  background: rgba(227, 170, 76, 0.08);
+  color: #f2d8a4;
+}
+
+.lobby-v3-panel .lobby-room-card,
+.board-v3-gallery .gallery-card,
+.board-v3-rules .rules-list li {
+  border-color: rgba(102, 154, 170, 0.32);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(11, 25, 34, 0.98), rgba(12, 32, 43, 1)),
+    radial-gradient(460px 160px at 100% 0%, rgba(218, 158, 48, 0.08), transparent 60%);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
 }
 
 .lobby-layout {
@@ -1080,6 +1167,205 @@ button:disabled {
   box-shadow: 0 12px 26px rgba(171, 113, 20, 0.1);
 }
 
+.game-ui-v3-shell {
+  color: #eef2e6;
+}
+
+.game-ui-v3-shell .game-ui-v2-header,
+.game-ui-v3-shell .game-ui-v2-command,
+.game-ui-v3-shell .game-ui-v2-piles,
+.game-ui-v3-shell .game-ui-v2-selection-panel,
+.game-ui-v3-shell .game-ui-v2-hand-section,
+.game-ui-v3-shell .game-ui-v2-events,
+.game-ui-v3-shell .board-chat,
+.game-ui-v3-shell .game-ui-v2-bot-strip,
+.game-ui-v3-shell .game-ui-v2-vote-popup-card {
+  border-color: rgba(95, 154, 168, 0.3);
+  background:
+    linear-gradient(180deg, rgba(7, 18, 27, 0.95), rgba(10, 26, 38, 0.98)),
+    radial-gradient(700px 240px at 100% 0%, rgba(194, 141, 48, 0.12), transparent 58%);
+  box-shadow:
+    0 18px 34px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(235, 242, 230, 0.05);
+}
+
+.game-ui-v3-shell .game-ui-v2-header {
+  background:
+    radial-gradient(700px 200px at 0% 0%, rgba(33, 161, 151, 0.22), transparent 58%),
+    radial-gradient(540px 180px at 100% 0%, rgba(214, 157, 62, 0.14), transparent 60%),
+    linear-gradient(180deg, rgba(8, 17, 25, 0.98), rgba(10, 28, 39, 1));
+}
+
+.game-ui-v3-shell .game-ui-v2-kicker,
+.game-ui-v3-shell .game-ui-v2-subtle,
+.game-ui-v3-shell .game-ui-v2-resource-name,
+.game-ui-v3-shell .game-ui-v2-player-head span,
+.game-ui-v3-shell .game-ui-v2-player-rank,
+.game-ui-v3-shell .game-ui-v2-help-row strong {
+  color: #9fb8b5;
+}
+
+.game-ui-v3-shell .game-ui-v2-header h2,
+.game-ui-v3-shell h3,
+.game-ui-v3-shell h4,
+.game-ui-v3-shell strong {
+  color: #f4ecd5;
+}
+
+.game-ui-v3-shell .game-ui-v2-header-leave,
+.game-ui-v3-shell .game-ui-v2-command-buttons button,
+.game-ui-v3-shell .game-ui-v2-selection-actions button,
+.game-ui-v3-shell .game-ui-v2-pick-chip,
+.game-ui-v3-shell .game-ui-v2-mobile-bar button {
+  border-color: rgba(197, 149, 72, 0.45);
+  background: linear-gradient(180deg, #d49a3f, #9d6a26);
+  color: #120f0b;
+  box-shadow: inset 0 1px 0 rgba(255, 232, 186, 0.35);
+}
+
+.game-ui-v3-shell .game-ui-v2-selection-actions .ghost {
+  border-color: rgba(86, 150, 162, 0.34);
+  background: rgba(17, 44, 56, 0.88);
+  color: #ecf4ef;
+}
+
+.game-ui-v3-shell .game-ui-v2-resource-card,
+.game-ui-v3-shell .game-ui-v2-player-card,
+.game-ui-v3-shell .game-ui-v2-event-row,
+.game-ui-v3-shell .game-ui-v2-help-row,
+.game-ui-v3-shell .game-ui-v2-token-row {
+  border-color: rgba(89, 145, 160, 0.32);
+  background: linear-gradient(180deg, rgba(14, 33, 45, 0.98), rgba(10, 24, 34, 1));
+  color: #edf1e5;
+}
+
+.game-ui-v3-shell .game-ui-v2-player-card.is-active {
+  border-color: rgba(74, 209, 176, 0.56);
+  background: linear-gradient(180deg, rgba(11, 52, 49, 0.96), rgba(11, 30, 36, 1));
+  box-shadow: inset 0 0 0 1px rgba(86, 219, 183, 0.24), 0 0 0 2px rgba(60, 171, 149, 0.12);
+}
+
+.game-ui-v3-shell .game-ui-v2-player-card.is-selected,
+.game-ui-v3-shell .game-ui-v2-pick-chip.is-selected,
+.game-ui-v3-shell .game-ui-v2-side-tab-row button.is-active {
+  border-color: rgba(214, 161, 73, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(244, 204, 135, 0.28), 0 0 0 2px rgba(209, 149, 50, 0.12);
+}
+
+.game-ui-v3-shell .game-ui-v2-chip,
+.game-ui-v3-shell .game-ui-v2-event-chip,
+.game-ui-v3-shell .resources span {
+  border-color: rgba(89, 145, 160, 0.32);
+  background: rgba(11, 31, 43, 0.92);
+  color: #cbd6ce;
+}
+
+.game-ui-v3-shell .game-ui-v2-progress-bar {
+  background: rgba(26, 49, 60, 0.95);
+}
+
+.game-ui-v3-shell .game-ui-v2-progress-bar i {
+  background: linear-gradient(90deg, #2bb6b4, #e0a84c);
+}
+
+.game-ui-v3-shell .hand .game-card,
+.game-ui-v3-shell .pile,
+.game-ui-v3-shell .pile-card {
+  border-color: rgba(102, 154, 170, 0.32);
+  background:
+    linear-gradient(180deg, rgba(11, 25, 34, 0.98), rgba(12, 32, 43, 1)),
+    radial-gradient(440px 160px at 100% 0%, rgba(218, 158, 48, 0.1), transparent 60%);
+}
+
+.game-ui-v3-shell .hand .game-card:hover,
+.game-ui-v3-shell .hand .game-card:focus-visible {
+  transform: translateY(-4px) scale(1.015);
+  border-color: rgba(221, 171, 85, 0.72);
+  box-shadow: 0 20px 34px rgba(0, 0, 0, 0.3);
+}
+
+.game-ui-v3-shell .game-card-inline-action,
+.game-ui-v3-shell .game-card-inline-discard {
+  border-color: rgba(201, 151, 71, 0.4);
+  background: linear-gradient(180deg, #e0ab4e, #a56c22);
+  color: #1d1710;
+}
+
+.game-ui-v3-shell .game-ui-v2-mobile-bar {
+  border-color: rgba(90, 148, 161, 0.32);
+  background: rgba(6, 17, 24, 0.96);
+}
+
+.game-ui-v3-stage-rail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.game-ui-v3-stage-card {
+  border: 1px solid rgba(100, 156, 169, 0.34);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background:
+    linear-gradient(180deg, rgba(9, 21, 30, 0.96), rgba(13, 34, 45, 0.98)),
+    radial-gradient(320px 120px at 100% 0%, rgba(219, 165, 70, 0.12), transparent 60%);
+  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.22);
+  animation: v3-rise 420ms ease both;
+}
+
+.game-ui-v3-arena {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.8fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.game-ui-v3-arena-main,
+.game-ui-v3-arena-side {
+  border: 1px solid rgba(95, 154, 168, 0.3);
+  border-radius: 16px;
+  padding: 14px 16px;
+  background:
+    radial-gradient(420px 160px at 0% 0%, rgba(36, 170, 158, 0.14), transparent 60%),
+    linear-gradient(180deg, rgba(8, 20, 28, 0.98), rgba(12, 31, 42, 1));
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.22);
+}
+
+.game-ui-v3-arena-main h4,
+.game-ui-v3-arena-side strong {
+  margin: 0;
+  font-size: 22px;
+  color: #f4ecd5;
+}
+
+.game-ui-v3-arena-feed {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(95, 154, 168, 0.22);
+  display: grid;
+  gap: 6px;
+}
+
+.game-ui-v3-stage-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #97b1ad;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+@keyframes v3-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .game-ui-v2-header {
   display: flex;
   justify-content: space-between;
@@ -1533,6 +1819,19 @@ button:disabled {
 .game-ui-v2-player-card.is-selected {
   border-color: #376ed3;
   box-shadow: inset 0 0 0 1px #8cb1f4, 0 0 0 3px rgba(55, 110, 211, 0.12);
+}
+
+.game-ui-v2-player-card.is-priority {
+  position: relative;
+}
+
+.game-ui-v2-player-card.is-priority::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px;
+  border: 1px solid rgba(82, 179, 109, 0.35);
+  pointer-events: none;
 }
 
 .game-ui-v2-player-head {
@@ -2027,6 +2326,14 @@ button:disabled {
 }
 
 @media (max-width: 700px) {
+  .game-ui-v3-stage-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .game-ui-v3-arena {
+    grid-template-columns: 1fr;
+  }
+
   .game-ui-v2-hand-head,
   .game-ui-v2-command-top,
   .game-ui-v2-action-lane-head {

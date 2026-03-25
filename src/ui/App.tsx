@@ -62,6 +62,7 @@ const lobbyClient = new LobbyClient({ server: SERVER_URL });
 const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
 const NetworkClientV1 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV1 })));
 const NetworkClientV2 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV2 })));
+const NetworkClientV3 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV3 })));
 
 const TEMPLATE_API = `${SERVER_URL}/api/shared-deck-template`;
 const RANKS_API = `${SERVER_URL}/api/shared-ranks`;
@@ -389,13 +390,14 @@ export const App = () => {
     window.localStorage.setItem(ADMIN_STORAGE_MODE_STORAGE_KEY, adminStorageMode);
   }, [adminStorageMode]);
 
-  const isV2Ui = isAdminRoute ? adminUiVariant === 'v2' : gameUiVariant === 'v2';
+  const shellUiVariant = isAdminRoute ? adminUiVariant : gameUiVariant;
+  const isEnhancedUi = shellUiVariant !== 'v1';
 
   return (
-    <main className={`app${isV2Ui ? ' app-v2' : ''}`}>
+    <main className={`app${isEnhancedUi ? ` app-${shellUiVariant}` : ''}`}>
       <h1>{isAdminRoute ? t.adminTitle : t.gameTitle}</h1>
       {!isAdminRoute ? (
-        <section className={`app-top-toolbar${isV2Ui ? ' app-top-toolbar-v2' : ''}`}>
+        <section className={`app-top-toolbar${shellUiVariant === 'v2' ? ' app-top-toolbar-v2' : ''}${shellUiVariant === 'v3' ? ' app-top-toolbar-v3' : ''}`}>
           <div className="app-top-toolbar-left">
             <UserTabs t={t} activeUserTab={activeUserTab} setActiveUserTab={setActiveUserTab} uiVariant={gameUiVariant} />
           </div>
@@ -415,6 +417,9 @@ export const App = () => {
               </button>{' '}
               <button type="button" onClick={() => setGameUiVariant('v2')} disabled={gameUiVariant === 'v2'}>
                 {t.gameUiV2}
+              </button>{' '}
+              <button type="button" onClick={() => setGameUiVariant('v3')} disabled={gameUiVariant === 'v3'}>
+                {t.gameUiV3}
               </button>
               {' | '}
               <a className="app-toolbar-link-button" href="/admin">{t.openAdmin}</a>
@@ -499,7 +504,7 @@ export const App = () => {
         />
       ) : null}
 
-      {!isAdminRoute && activeUserTab === 'games' && session && gameUiVariant !== 'v2' ? (
+      {!isAdminRoute && activeUserTab === 'games' && session && gameUiVariant === 'v1' ? (
         <ActiveSessionSection
           t={t}
           session={session}
@@ -537,7 +542,19 @@ export const App = () => {
       <div style={{ display: !isAdminRoute && activeUserTab === 'games' && session && canStart ? 'block' : 'none' }}>
         {session ? (
           <Suspense fallback={<p>{t.loading}</p>}>
-            {gameUiVariant === 'v2' ? <NetworkClientV2
+            {gameUiVariant === 'v3' ? <NetworkClientV3
+              key={`${session.matchID}:${session.playerID ?? 'spectator'}:v3`}
+              matchID={session.matchID}
+              playerID={session.playerID}
+              credentials={session.credentials}
+              lang={lang}
+              playerName={session.spectator ? t.spectatorJoinedLabel : playerName}
+              knownPlayerNames={roomPlayerNames}
+              sharedRanks={sharedRanks}
+              cardImageById={cardImageById}
+              roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
+              onLeaveRoom={() => { void leaveRoom(); }}
+            /> : gameUiVariant === 'v2' ? <NetworkClientV2
               key={`${session.matchID}:${session.playerID ?? 'spectator'}:v2`}
               matchID={session.matchID}
               playerID={session.playerID}

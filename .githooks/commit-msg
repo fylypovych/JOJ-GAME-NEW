@@ -1,2 +1,2 @@
 #!/bin/sh
-node scripts/sync-version-from-commit.cjs "$1"
+node scripts/check-version-sync.cjs "$1"

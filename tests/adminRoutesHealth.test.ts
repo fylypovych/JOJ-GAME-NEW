@@ -31,15 +31,21 @@ test('health endpoint exposes password reset delivery health', async () => {
     importJsonConfigToDb: async () => undefined,
     userStore: null,
     getPasswordResetDeliveryHealth: () => ({
+      status: 'degraded',
       ok: false,
       lastDegradedAt: '2026-03-25T10:00:00.000Z',
       lastDegradedMode: 'error',
+      lastHealthyAt: '2026-03-25T09:00:00.000Z',
       lastError: 'smtp failed',
+      observedSinceStartAt: '2026-03-25T08:00:00.000Z',
     }),
     getPublicPasswordResetDeliveryHealth: () => ({
+      status: 'degraded',
       ok: false,
       lastDegradedAt: '2026-03-25T10:00:00.000Z',
       lastDegradedMode: 'error',
+      lastHealthyAt: '2026-03-25T09:00:00.000Z',
+      observedSinceStartAt: '2026-03-25T08:00:00.000Z',
     }),
   });
 
@@ -50,8 +56,11 @@ test('health endpoint exposes password reset delivery health', async () => {
 
   assert.equal((ctx.body as { ok: boolean }).ok, true);
   assert.deepEqual((ctx.body as { passwordResetDelivery: unknown }).passwordResetDelivery, {
+    status: 'degraded',
     ok: false,
     lastDegradedAt: '2026-03-25T10:00:00.000Z',
     lastDegradedMode: 'error',
+    lastHealthyAt: '2026-03-25T09:00:00.000Z',
+    observedSinceStartAt: '2026-03-25T08:00:00.000Z',
   });
 });

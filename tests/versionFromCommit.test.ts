@@ -11,6 +11,9 @@ const { getConflictAbortText, resolveVersionFromInput } = require('../scripts/sy
   getConflictAbortText: (files: string[], version: string) => string[];
   resolveVersionFromInput: () => string;
 };
+const { getValidationErrorText } = require('../scripts/check-version-sync.cjs') as {
+  getValidationErrorText: (version: string) => string[];
+};
 const { getSkipReason, isCiEnvironment } = require('../scripts/install-git-hooks.cjs') as {
   getSkipReason: (args: { env: Record<string, string | undefined>; gitDirExists: boolean; hooksDirExists: boolean }) => string;
   isCiEnvironment: (env: Record<string, string | undefined>) => boolean;
@@ -68,4 +71,11 @@ test('resolveVersionFromInput parses raw commit message argument', () => {
   } finally {
     process.argv = originalArgv;
   }
+});
+
+test('getValidationErrorText explains how to repair staged version mismatch', () => {
+  assert.deepEqual(getValidationErrorText('0.0.0.95'), [
+    '[version-check] aborted: staged package version does not match 0.0.0.95.',
+    '[version-check] run npm run set:version -- "v=0.0.0.95" and retry the commit.',
+  ]);
 });

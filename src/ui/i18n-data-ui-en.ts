@@ -8,6 +8,7 @@ export const uiEnData = {
     gameUiLabel: 'Game UI',
     gameUiV1: 'v1',
     gameUiV2: 'v2',
+    gameUiV3: 'v3',
     langUk: 'Ukrainian',
     langEn: 'English',
     openAdmin: 'Admin',

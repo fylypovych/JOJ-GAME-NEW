@@ -8,6 +8,7 @@ export const uiUkData = {
     gameUiLabel: 'Інтерфейс гри',
     gameUiV1: 'v1',
     gameUiV2: 'v2',
+    gameUiV3: 'v3',
     langUk: 'Українська',
     langEn: 'English',
     openAdmin: 'Адмінка',

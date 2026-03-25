@@ -18,6 +18,7 @@ export const devRestartTouchPath = path.resolve(appRootDir, 'server', 'restart.t
 export const dbSchemaPath = path.resolve(appRootDir, 'db', 'schema', 'db.sql');
 export const dbMigrationsDir = path.resolve(appRootDir, 'db', 'migrations');
 export const adminDbUiConfigPath = path.resolve(appRootDir, 'database', 'admin-db-ui-config.json');
+export const passwordResetHealthPath = path.resolve(appRootDir, 'database', 'password-reset-health.json');
 
 export const JSON_BODY_LIMIT = 2 * 1024 * 1024;
 export const LARGE_JSON_BODY_LIMIT = 8 * 1024 * 1024;

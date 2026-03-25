@@ -30,6 +30,7 @@ import {
   logsPath,
   matchesDbDir,
   nodeEnv,
+  passwordResetHealthPath,
   port,
   ranksPath,
   repoDir,
@@ -37,6 +38,7 @@ import {
   templatePath,
   uploadsDir,
 } from './bootstrap-config';
+import { initializePasswordResetDeliveryHealth } from './services/password-reset-health';
 import {
   exportSharedDeckTemplateJson,
   exportSharedRanksJson,
@@ -146,6 +148,7 @@ void (async () => {
   for (const warning of adminRuntimePolicy.warnings) {
     await logLine('WARN', warning);
   }
+  await initializePasswordResetDeliveryHealth({ statePath: passwordResetHealthPath });
   let sharedConfigStorageMode: 'file' | 'postgres' = requestedSharedConfigStorageMode;
   let userPool = null as ReturnType<typeof createPostgresPool> | null;
   let userStore = null as ReturnType<typeof createUserStore> | null;

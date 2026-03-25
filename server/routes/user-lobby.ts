@@ -44,6 +44,8 @@ const parseInternalJsonBody = (value: Buffer) => {
 };
 
 const createInternalLobbyApi = (ctx: RouteCtx): InternalLobbyApi => {
+  const directLobbyApi = (ctx as RouteCtx & { app?: { context?: { lobbyApi?: InternalLobbyApi } } })?.app?.context?.lobbyApi;
+  if (directLobbyApi) return directLobbyApi;
   const app = (ctx as RouteCtx & { app?: { callback?: () => (req: NodeJS.ReadableStream, res: NodeJS.WritableStream) => void } }).app;
   if (!app || typeof app.callback !== 'function') {
     throw new Error('Lobby app is unavailable.');

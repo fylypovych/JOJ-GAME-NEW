@@ -1,5 +1,6 @@
 export const BoardV2Header = (props: {
   title: string;
+  uiVariant?: 'v2' | 'v3';
   roomMeta?: { matchID: string; playerID?: string | null } | null;
   playerName: string;
   spectatorLabel: string;
@@ -17,6 +18,7 @@ export const BoardV2Header = (props: {
 }) => {
   const {
     title,
+    uiVariant = 'v2',
     roomMeta,
     playerName,
     spectatorLabel,
@@ -35,7 +37,7 @@ export const BoardV2Header = (props: {
   return (
     <header className="game-ui-v2-header">
       <div>
-        <p className="game-ui-v2-kicker">JOJ V2</p>
+        <p className="game-ui-v2-kicker">{uiVariant === 'v3' ? 'JOJ V3 TCG' : 'JOJ V2'}</p>
         <h2>{title}</h2>
         {roomMeta ? (
           <div className="game-ui-v2-room-meta">

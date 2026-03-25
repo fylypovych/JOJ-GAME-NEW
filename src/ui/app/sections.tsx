@@ -102,11 +102,11 @@ type UserTabsProps = {
   t: T;
   activeUserTab: UserTab;
   setActiveUserTab: (tab: UserTab) => void;
-  uiVariant?: 'v1' | 'v2';
+  uiVariant?: 'v1' | 'v2' | 'v3';
 };
 
 export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v1' }: UserTabsProps) => (
-  <p className={`user-tabs${uiVariant === 'v2' ? ' user-tabs-v2' : ''}`}>
+  <p className={`user-tabs${uiVariant === 'v2' ? ' user-tabs-v2' : ''}${uiVariant === 'v3' ? ' user-tabs-v3' : ''}`}>
     <button type="button" onClick={() => setActiveUserTab('games')} disabled={activeUserTab === 'games'}>
       {t.userTabGames}
     </button>
@@ -153,7 +153,7 @@ type LobbySectionProps = {
   optionalModules: Array<{ id: string; name: string; alwaysOn: boolean }>;
   selectedOptionalModuleIds: string[];
   setSelectedOptionalModuleIds: (ids: string[]) => void;
-  uiVariant?: 'v1' | 'v2';
+  uiVariant?: 'v1' | 'v2' | 'v3';
 };
 
 export const LobbySection = ({
@@ -226,7 +226,7 @@ export const LobbySection = ({
   }, [invitedRoomId, matches, roomFilter]);
 
   return (
-  <section className={`board${uiVariant === 'v2' ? ' board-v2-panel' : ''}`}>
+  <section className={`board${uiVariant === 'v2' ? ' board-v2-panel' : ''}${uiVariant === 'v3' ? ' board-v3-panel lobby-v3-panel' : ''}`}>
     <h2>{t.lobbyTitle}</h2>
     <div className="lobby-layout">
       <div className="lobby-col">
@@ -496,7 +496,7 @@ type ActiveSessionSectionProps = {
   leaveRoom: () => void;
   refreshMatches: () => void;
   loading: boolean;
-  uiVariant?: 'v1' | 'v2';
+  uiVariant?: 'v1' | 'v2' | 'v3';
 };
 
 export const ActiveSessionSection = ({
@@ -570,7 +570,7 @@ export const ActiveSessionSection = ({
   const inviteText = `${t.activeRoom}: ${session.matchID} · ${t.gameModeLabel}: ${formatGameModeLabel(t, activeGameMode)} · ${t.roomSummaryPlayers}: ${activeMatch ? `${activeMatch.players.filter((player) => Boolean(player.name?.trim())).length}/${activeMatch.players.length}` : '-'}`;
 
   return (
-    <section className={`board${uiVariant === 'v2' ? ' board-v2-panel' : ''}`}>
+    <section className={`board${uiVariant === 'v2' ? ' board-v2-panel' : ''}${uiVariant === 'v3' ? ' board-v3-panel lobby-v3-panel' : ''}`}>
       <h2>
         {t.activeRoom}: {session.matchID}
       </h2>
@@ -1113,7 +1113,7 @@ type GallerySectionProps = {
   galleryCards: CardDefinition[];
   galleryCategories: CardDefinition['category'][];
   effectLabel: (resource: 'time' | 'reputation' | 'discipline' | 'documents' | 'tech' | 'rank') => string;
-  uiVariant?: 'v1' | 'v2';
+  uiVariant?: 'v1' | 'v2' | 'v3';
 };
 
 export const GallerySection = ({
@@ -1130,7 +1130,7 @@ export const GallerySection = ({
   const togglePreview = (key: string) => setOpenPreviewKey((prev) => (prev === key ? null : key));
 
   return (
-    <section className={`board${uiVariant === 'v2' ? ' board-v2-panel board-v2-gallery' : ''}`}>
+    <section className={`board${uiVariant === 'v2' ? ' board-v2-panel board-v2-gallery' : ''}${uiVariant === 'v3' ? ' board-v3-panel board-v3-gallery' : ''}`}>
       <h2>{t.galleryTitle}</h2>
       <p>{t.galleryDescription}</p>
       <p className={`gallery-category-tabs${uiVariant === 'v2' ? ' gallery-category-tabs-v2' : ''}`}>
@@ -1218,8 +1218,8 @@ export const RulesSection = ({
   t,
   rules,
   uiVariant = 'v1',
-}: { t: T; rules: readonly string[]; uiVariant?: 'v1' | 'v2' }) => (
-  <section className={`board${uiVariant === 'v2' ? ' board-v2-panel board-v2-rules' : ''}`}>
+}: { t: T; rules: readonly string[]; uiVariant?: 'v1' | 'v2' | 'v3' }) => (
+  <section className={`board${uiVariant === 'v2' ? ' board-v2-panel board-v2-rules' : ''}${uiVariant === 'v3' ? ' board-v3-panel board-v3-rules' : ''}`}>
     <h2>{t.rulesTitle}</h2>
     <ol className={`rules-list${uiVariant === 'v2' ? ' rules-list-v2' : ''}`}>
       {rules.map((rule, index) => (

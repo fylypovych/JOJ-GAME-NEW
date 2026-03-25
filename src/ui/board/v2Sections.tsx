@@ -381,7 +381,7 @@ export const BoardV2PlayerOverview = (props: {
           <button
             key={`player-${pid}`}
             type="button"
-            className={`game-ui-v2-player-card${active ? ' is-active' : ''}${selectedTargetId === pid ? ' is-selected' : ''}${selectable ? ' is-selectable' : ''}`}
+            className={`game-ui-v2-player-card${active ? ' is-active' : ''}${selectedTargetId === pid ? ' is-selected' : ''}${selectable ? ' is-selectable' : ''}${active && selectable ? ' is-priority' : ''}`}
             onClick={() => {
               if (!selectable) return;
               setSelectedTargetId(pid);
@@ -396,6 +396,7 @@ export const BoardV2PlayerOverview = (props: {
             </div>
             <div className="game-ui-v2-player-rank">{pRank}</div>
             <div className="game-ui-v2-player-badges">
+              {active ? <span className="pill pill-badge">{v2.currentTurn ?? 'Current turn'}</span> : null}
               {selectable ? <span className="pill pill-badge">{v2.targetableNow}</span> : null}
               {pMeta.seatBlocked ? <span className="pill pill-badge">{v2.seatBlocked}</span> : null}
               {(G.lyapScandalShieldUntilTurn?.[pid] ?? 0) > 0 ? <span className="pill pill-badge">{v2.shieldUntil}: {G.lyapScandalShieldUntilTurn?.[pid] ?? 0}</span> : null}
