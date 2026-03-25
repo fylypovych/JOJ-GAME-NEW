@@ -15,7 +15,6 @@ import {
   adminDbUiConfigPath,
   adminToken,
   allowInMemoryUserStore,
-  allowInsecureAdmin,
   allowedFrontendOrigins,
   databaseUrl,
   dbMigrationsDir,
@@ -62,8 +61,8 @@ const rateLimitState = new Map<string, { count: number; resetAt: number }>();
 
 const logLine = createFileLogger(logsPath);
 
-if (!isAdminAuthEnabled && nodeEnv === 'production' && !allowInsecureAdmin) {
-  throw new Error('Refusing to start with admin auth disabled in production. Set ADMIN_TOKEN or explicitly ALLOW_INSECURE_ADMIN=1.');
+if (!isAdminAuthEnabled && nodeEnv === 'production') {
+  throw new Error('Refusing to start in production without ADMIN_TOKEN.');
 }
 
 const matchDb = new FlatFile({ dir: matchesDbDir, logging: false });
@@ -100,6 +99,18 @@ const server = Server({
 });
 const router = (server as { router?: any }).router;
 const app = (server as { app?: { middleware?: Array<(ctx: any, next: () => Promise<unknown>) => Promise<unknown>> } }).app;
+const securityHeadersMiddleware = async (ctx: any, next: () => Promise<unknown>) => {
+  if (typeof ctx?.set === 'function') {
+    ctx.set('X-Frame-Options', 'DENY');
+    ctx.set('X-Content-Type-Options', 'nosniff');
+    ctx.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    ctx.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    ctx.set('Cross-Origin-Opener-Policy', 'same-origin');
+    ctx.set('Cross-Origin-Resource-Policy', 'same-origin');
+    ctx.set('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+  }
+  await next();
+};
 const corsMiddleware = async (ctx: any, next: () => Promise<unknown>) => {
     const origin = typeof ctx?.request?.headers?.origin === 'string' ? String(ctx.request.headers.origin) : '';
     if (origin && allowedFrontendOrigins.includes(origin)) {
@@ -120,8 +131,10 @@ const corsMiddleware = async (ctx: any, next: () => Promise<unknown>) => {
     await next();
   };
 if (app && Array.isArray(app.middleware)) {
+  app.middleware.unshift(securityHeadersMiddleware);
   app.middleware.unshift(corsMiddleware);
 } else if (router && typeof router.use === 'function') {
+  router.use(securityHeadersMiddleware);
   router.use(corsMiddleware);
 }
 const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });
@@ -222,6 +235,7 @@ void (async () => {
       userStore,
       logLine,
       jsonBodyLimit: JSON_BODY_LIMIT,
+      enforceRateLimit,
     });
     registerUserLobbyRoutes({
       router,

@@ -88,8 +88,9 @@ export const registerAuthRoutes = (args: {
   userStore: UserStore | null;
   logLine: LogLine;
   jsonBodyLimit: number;
+  enforceRateLimit: (ctx: RouteCtx, bucket: string, limit: number, windowMs: number) => Promise<boolean>;
 }) => {
-  const { router, userStore, logLine, jsonBodyLimit } = args;
+  const { router, userStore, logLine, jsonBodyLimit, enforceRateLimit } = args;
 
   const requireUserStore = (ctx: RouteCtx): boolean => {
     if (userStore) return true;
@@ -116,6 +117,7 @@ export const registerAuthRoutes = (args: {
 
   router.post('/api/auth/register', async (ctx: RouteCtx) => {
     if (!requireUserStore(ctx)) return;
+    if (!(await enforceRateLimit(ctx, 'auth-register', 10, 15 * 60_000))) return;
     const store = getStore();
     await store.deleteExpiredSessions();
     if (!requireUserCsrf(ctx)) return;
@@ -145,6 +147,7 @@ export const registerAuthRoutes = (args: {
 
   router.post('/api/auth/login', async (ctx: RouteCtx) => {
     if (!requireUserStore(ctx)) return;
+    if (!(await enforceRateLimit(ctx, 'auth-login', 20, 15 * 60_000))) return;
     const store = getStore();
     await store.deleteExpiredSessions();
     if (!requireUserCsrf(ctx)) return;
@@ -180,6 +183,7 @@ export const registerAuthRoutes = (args: {
 
   router.post('/api/auth/change-password', async (ctx: RouteCtx) => {
     if (!requireUserStore(ctx)) return;
+    if (!(await enforceRateLimit(ctx, 'auth-change-password', 10, 15 * 60_000))) return;
     const store = getStore();
     if (!requireUserCsrf(ctx)) return;
     const user = await requireUserAuth(ctx, store);
@@ -208,6 +212,7 @@ export const registerAuthRoutes = (args: {
 
   router.post('/api/auth/request-password-reset', async (ctx: RouteCtx) => {
     if (!requireUserStore(ctx)) return;
+    if (!(await enforceRateLimit(ctx, 'auth-request-password-reset', 8, 15 * 60_000))) return;
     const store = getStore();
     if (!requireUserCsrf(ctx)) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/auth/request-password-reset', maxBytes: jsonBodyLimit, logLine });
@@ -229,6 +234,7 @@ export const registerAuthRoutes = (args: {
 
   router.post('/api/auth/reset-password', async (ctx: RouteCtx) => {
     if (!requireUserStore(ctx)) return;
+    if (!(await enforceRateLimit(ctx, 'auth-reset-password', 10, 15 * 60_000))) return;
     const store = getStore();
     if (!requireUserCsrf(ctx)) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/auth/reset-password', maxBytes: jsonBodyLimit, logLine });

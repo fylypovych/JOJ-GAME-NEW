@@ -26,9 +26,7 @@ export const IMAGE_UPLOAD_BODY_LIMIT = 16 * 1024 * 1024;
 loadEnvFile(envPath);
 
 export const adminToken = (process.env.ADMIN_TOKEN ?? '').trim();
-export const disableAdminAuth = /^(1|true|yes)$/i.test((process.env.DISABLE_ADMIN_AUTH ?? '').trim());
-export const isAdminAuthEnabled = !disableAdminAuth && adminToken.length > 0;
-export const allowInsecureAdmin = /^(1|true|yes)$/i.test((process.env.ALLOW_INSECURE_ADMIN ?? '').trim());
+export const isAdminAuthEnabled = adminToken.length > 0;
 const storageModeEnv = (process.env.STORAGE_MODE ?? 'file').trim().toLowerCase();
 export const requestedSharedConfigStorageMode = (storageModeEnv === 'postgres' || storageModeEnv === 'db') ? 'postgres' : 'file';
 export const databaseUrl = (process.env.DATABASE_URL ?? '').trim();

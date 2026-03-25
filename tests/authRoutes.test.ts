@@ -28,6 +28,8 @@ const makeSameOriginCsrfHeaders = (cookie = 'joj_user_csrf=csrf-token') => ({
   origin: 'http://localhost:8000',
 });
 
+const allowRateLimit = async () => true;
+
 const makeRouter = () => {
   const getHandlers = new Map<string, Handler>();
   const postHandlers = new Map<string, Handler>();
@@ -137,6 +139,7 @@ test('auth register sets cookie and returns user', async () => {
     userStore: baseStore(),
     logLine: async () => undefined,
     jsonBodyLimit: 10_000,
+    enforceRateLimit: allowRateLimit,
   });
   const handler = postHandlers.get('/api/auth/register');
   assert.ok(handler);
@@ -164,6 +167,7 @@ test('profile me requires auth cookie and returns stats', async () => {
     userStore: baseStore(),
     logLine: async () => undefined,
     jsonBodyLimit: 10_000,
+    enforceRateLimit: allowRateLimit,
   });
   const handler = getHandlers.get('/api/profile/me');
   assert.ok(handler);
@@ -197,6 +201,7 @@ test('bind-session-match verifies boardgame credentials', async () => {
     userStore: baseStore(),
     logLine: async () => undefined,
     jsonBodyLimit: 10_000,
+    enforceRateLimit: allowRateLimit,
   });
   const handler = postHandlers.get('/api/profile/bind-session-match');
   assert.ok(handler);
@@ -234,6 +239,7 @@ test('bind-session-match rejects invalid boardgame credentials', async () => {
     userStore: baseStore(),
     logLine: async () => undefined,
     jsonBodyLimit: 10_000,
+    enforceRateLimit: allowRateLimit,
   });
   const handler = postHandlers.get('/api/profile/bind-session-match');
   assert.ok(handler);
@@ -271,6 +277,7 @@ test('public profile endpoint returns user by username', async () => {
     userStore: baseStore(),
     logLine: async () => undefined,
     jsonBodyLimit: 10_000,
+    enforceRateLimit: allowRateLimit,
   });
   const handler = getHandlers.get('/api/users/profile');
   assert.ok(handler);
@@ -295,6 +302,7 @@ test('auth me returns csrf token even without session', async () => {
     },
     logLine: async () => undefined,
     jsonBodyLimit: 10_000,
+    enforceRateLimit: allowRateLimit,
   });
   const handler = getHandlers.get('/api/auth/me');
   const ctx: RouteCtx = {
@@ -313,6 +321,7 @@ test('request-password-reset does not expose reset token in response', async () 
     userStore: baseStore(),
     logLine: async () => undefined,
     jsonBodyLimit: 10_000,
+    enforceRateLimit: allowRateLimit,
   });
   const handler = postHandlers.get('/api/auth/request-password-reset');
   assert.ok(handler);
@@ -336,6 +345,7 @@ test('profile sessions returns active sessions for authenticated user', async ()
     userStore: baseStore(),
     logLine: async () => undefined,
     jsonBodyLimit: 10_000,
+    enforceRateLimit: allowRateLimit,
   });
   const handler = getHandlers.get('/api/profile/sessions');
   assert.ok(handler);
@@ -357,6 +367,7 @@ test('logout-session accepts authenticated session removal request', async () =>
     userStore: baseStore(),
     logLine: async () => undefined,
     jsonBodyLimit: 10_000,
+    enforceRateLimit: allowRateLimit,
   });
   const handler = postHandlers.get('/api/profile/logout-session');
   assert.ok(handler);
@@ -369,4 +380,30 @@ test('logout-session accepts authenticated session removal request', async () =>
   };
   await handler?.(ctx);
   assert.equal((ctx.body as { ok: boolean }).ok, true);
+});
+
+test('auth login is blocked when rate limit is exceeded', async () => {
+  const { router, postHandlers } = makeRouter();
+  registerAuthRoutes({
+    router,
+    userStore: baseStore(),
+    logLine: async () => undefined,
+    jsonBodyLimit: 10_000,
+    enforceRateLimit: async (ctx) => {
+      ctx.status = 429;
+      ctx.body = { ok: false, error: 'Too many requests' };
+      return false;
+    },
+  });
+  const handler = postHandlers.get('/api/auth/login');
+  assert.ok(handler);
+  const ctx: RouteCtx = {
+    request: {
+      body: { login: 'tester', password: 'password123' },
+      headers: makeSameOriginCsrfHeaders(),
+    },
+  };
+  await handler?.(ctx);
+  assert.equal(ctx.status, 429);
+  assert.equal((ctx.body as { ok: boolean }).ok, false);
 });
