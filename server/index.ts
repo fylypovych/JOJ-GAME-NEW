@@ -11,6 +11,7 @@ import { registerUploadRoutes } from './routes/uploads';
 import { registerUserLobbyRoutes } from './routes/user-lobby';
 import { createUserStore } from './services/user-store';
 import { createSharedConfigStore } from './storage/shared-config';
+import { getAdminRuntimePolicy } from './runtime-policy';
 import {
   adminDbUiConfigPath,
   adminToken,
@@ -60,9 +61,10 @@ const { Server, FlatFile } = require('boardgame.io/server') as {
 const rateLimitState = new Map<string, { count: number; resetAt: number }>();
 
 const logLine = createFileLogger(logsPath);
+const adminRuntimePolicy = getAdminRuntimePolicy(process.env);
 
-if (!isAdminAuthEnabled && nodeEnv === 'production') {
-  throw new Error('Refusing to start in production without ADMIN_TOKEN.');
+if (adminRuntimePolicy.startupError) {
+  throw new Error(adminRuntimePolicy.startupError);
 }
 
 const matchDb = new FlatFile({ dir: matchesDbDir, logging: false });
@@ -141,6 +143,9 @@ const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });
 const { runGit, runShellCommand, spawnDetachedShell } = createCommandRunners(repoDir);
 
 void (async () => {
+  for (const warning of adminRuntimePolicy.warnings) {
+    await logLine('WARN', warning);
+  }
   let sharedConfigStorageMode: 'file' | 'postgres' = requestedSharedConfigStorageMode;
   let userPool = null as ReturnType<typeof createPostgresPool> | null;
   let userStore = null as ReturnType<typeof createUserStore> | null;

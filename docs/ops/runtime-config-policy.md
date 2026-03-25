@@ -6,6 +6,7 @@ This project treats runtime environment settings as part of deployment safety, n
 
 - `ADMIN_TOKEN` must be set in production.
 - Starting without admin auth in production is blocked.
+- Legacy admin auth overrides `DISABLE_ADMIN_AUTH` and `ALLOW_INSECURE_ADMIN` are no longer supported and are ignored.
 - `STORAGE_MODE` must be one of `file`, `postgres`, or `db` (`db` is normalized to `postgres`).
 - `DATABASE_URL` is required whenever `STORAGE_MODE=postgres`.
 
@@ -32,5 +33,12 @@ These are acceptable only for local development or tightly controlled temporary 
 
 - empty `ADMIN_TOKEN`
 - exposing server ports directly without a reverse proxy
+
+### Removed Legacy Flags
+
+- `DISABLE_ADMIN_AUTH`
+- `ALLOW_INSECURE_ADMIN`
+
+If these flags are still present in old `.env` or PM2 configs, remove them. They no longer affect runtime behavior.
 
 If any of these are enabled outside local development, treat it as a deployment misconfiguration.

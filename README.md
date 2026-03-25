@@ -34,6 +34,21 @@ set FRONTEND_ORIGIN=http://192.168.0.25:5173 && npm run dev:server
 
 `http://192.168.0.25:5173`
 
+## Version Sync From Commit Message
+
+If a commit message contains a marker like `v=0.0.0.26`, the local `commit-msg` hook automatically syncs that version into `package.json` and `package-lock.json` before the commit is finalized.
+
+Examples:
+
+- `v=0.0.0.26`
+- `auth fixes, v=0.0.0.27`
+
+If hooks are not configured yet, run:
+
+```bash
+npm run setup:git-hooks
+```
+
 ## Admin
 
 - Admin UI: `/admin`

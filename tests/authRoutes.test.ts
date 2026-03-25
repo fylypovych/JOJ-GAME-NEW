@@ -338,6 +338,45 @@ test('request-password-reset does not expose reset token in response', async () 
   assert.equal('resetTokenExpiresAt' in (ctx.body as Record<string, unknown>), false);
 });
 
+test('request-password-reset stays successful when delivery config is invalid', async () => {
+  const originalEnv = {
+    NODE_ENV: process.env.NODE_ENV,
+    PASSWORD_RESET_WEBHOOK_URL: process.env.PASSWORD_RESET_WEBHOOK_URL,
+  };
+  process.env.NODE_ENV = 'development';
+  process.env.PASSWORD_RESET_WEBHOOK_URL = 'http://example.com/reset-hook';
+
+  const logMessages: string[] = [];
+  const { router, postHandlers } = makeRouter();
+  registerAuthRoutes({
+    router,
+    userStore: baseStore(),
+    logLine: async (_level, message) => { logMessages.push(message); },
+    jsonBodyLimit: 10_000,
+    enforceRateLimit: allowRateLimit,
+  });
+  const handler = postHandlers.get('/api/auth/request-password-reset');
+  assert.ok(handler);
+  const ctx: RouteCtx = {
+    request: {
+      body: { login: 'tester' },
+      headers: makeSameOriginCsrfHeaders(),
+    },
+    response: { headers: {} } as never,
+  };
+
+  try {
+    await handler?.(ctx);
+  } finally {
+    process.env.NODE_ENV = originalEnv.NODE_ENV;
+    process.env.PASSWORD_RESET_WEBHOOK_URL = originalEnv.PASSWORD_RESET_WEBHOOK_URL;
+  }
+
+  assert.equal((ctx.body as { ok: boolean }).ok, true);
+  assert.equal(ctx.status, undefined);
+  assert.equal(logMessages.some((message) => message.includes('password reset delivery failed')), true);
+});
+
 test('profile sessions returns active sessions for authenticated user', async () => {
   const { router, getHandlers } = makeRouter();
   registerAuthRoutes({

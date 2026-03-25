@@ -219,12 +219,19 @@ export const registerAuthRoutes = (args: {
     if (!body) return;
     const result = await store.createPasswordResetToken(String(body.login ?? ''));
     if (result) {
-      await deliverPasswordReset({
-        usernameOrEmail: String(body.login ?? ''),
-        token: result.token,
-        expiresAt: result.expiresAt,
-        logLine,
-      });
+      try {
+        await deliverPasswordReset({
+          usernameOrEmail: String(body.login ?? ''),
+          token: result.token,
+          expiresAt: result.expiresAt,
+          logLine,
+        });
+      } catch (error) {
+        await logLine(
+          'WARN',
+          `password reset delivery failed for ${String(body.login ?? '')}: ${String(error instanceof Error ? error.message : error)}`,
+        );
+      }
     }
     ctx.body = {
       ok: true,
