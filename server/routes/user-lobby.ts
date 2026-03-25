@@ -31,6 +31,8 @@ type InternalLobbyApi = {
   joinMatch: (gameName: string, matchID: string, args: { playerID: string; playerName: string }) => Promise<{ playerID: string; playerCredentials: string }>;
 };
 
+const INTERNAL_LOBBY_TIMEOUT_MS = 10_000;
+
 const parseInternalJsonBody = (value: Buffer) => {
   if (!value.length) return {};
   try {
@@ -103,7 +105,18 @@ const createInternalLobbyApi = (ctx: RouteCtx): InternalLobbyApi => {
       response.headersSent = true;
     };
 
-    const done = new Promise<{ status: number; body: Record<string, unknown> }>((resolve) => {
+    const done = new Promise<{ status: number; body: Record<string, unknown> }>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error(`Internal lobby request timed out for ${path}.`));
+      }, INTERNAL_LOBBY_TIMEOUT_MS);
+      const finish = (result: { status: number; body: Record<string, unknown> }) => {
+        clearTimeout(timeout);
+        resolve(result);
+      };
+      const fail = (error: Error) => {
+        clearTimeout(timeout);
+        reject(error);
+      };
       const originalEnd = response.end.bind(response) as (...args: unknown[]) => Writable;
       response.end = ((...args: unknown[]) => {
         const [chunk] = args;
@@ -112,15 +125,32 @@ const createInternalLobbyApi = (ctx: RouteCtx): InternalLobbyApi => {
         }
         response.headersSent = true;
         originalEnd(...args);
-        resolve({
+        finish({
           status: Number(response.statusCode ?? 500),
           body: parseInternalJsonBody(Buffer.concat(chunks)),
         });
         return response;
       }) as typeof response.end;
+      request.on('error', (error) => {
+        fail(error instanceof Error ? error : new Error(String(error)));
+      });
+      response.on('error', (error) => {
+        fail(error instanceof Error ? error : new Error(String(error)));
+      });
+      response.on('finish', () => {
+        if (response.headersSent) return;
+        finish({
+          status: Number(response.statusCode ?? 500),
+          body: parseInternalJsonBody(Buffer.concat(chunks)),
+        });
+      });
     });
 
-    handler(request as never, response as never);
+    try {
+      handler(request as never, response as never);
+    } catch (error) {
+      throw error instanceof Error ? error : new Error(String(error));
+    }
     return done;
   };
 

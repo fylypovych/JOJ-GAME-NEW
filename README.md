@@ -49,6 +49,14 @@ If hooks are not configured yet, run:
 npm run setup:git-hooks
 ```
 
+Hooks are configured explicitly; `npm install` does not modify your git hooks automatically.
+
+If `package.json` or `package-lock.json` are already being edited, sync version explicitly before commit:
+
+```bash
+npm run set:version -- "v=0.0.0.94"
+```
+
 ## Admin
 
 - Admin UI: `/admin`

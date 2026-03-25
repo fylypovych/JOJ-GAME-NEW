@@ -1,6 +1,6 @@
 {
   "name": "joj-game-new",
-  "version": "0.0.0.92",
+  "version": "0.0.0.94",
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,9 +17,10 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "start:server": "tsx server/index.ts",
-    "postinstall": "node scripts/fix-is-generator-function.cjs && node scripts/install-git-hooks.cjs",
+    "postinstall": "node scripts/fix-is-generator-function.cjs",
     "setup:git-hooks": "node scripts/install-git-hooks.cjs",
-    "sync:version-from-commit": "node scripts/sync-version-from-commit.cjs"
+    "sync:version-from-commit": "node scripts/sync-version-from-commit.cjs",
+    "set:version": "node scripts/sync-version-from-commit.cjs"
   },
   "dependencies": {
     "boardgame.io": "^0.50.2",

@@ -11,6 +11,11 @@ const readJson = (targetPath) => JSON.parse(fs.readFileSync(targetPath, 'utf8'))
 const writeJson = (targetPath, value) => {
   fs.writeFileSync(targetPath, `${JSON.stringify(value, null, 2)}\n`);
 };
+const runGit = (args) => execFileSync('git', args, {
+  cwd: repoRoot,
+  encoding: 'utf8',
+  windowsHide: true,
+});
 
 const updateVersionFields = (targetPath, version, mutator) => {
   if (!fs.existsSync(targetPath)) return false;
@@ -40,28 +45,88 @@ const syncVersionInPackageLock = (version) => updateVersionFields(packageLockPat
   return changed;
 });
 
+const getGitChangedFiles = (args) => runGit(args)
+  .split(/\r?\n/)
+  .map((line) => line.trim())
+  .filter(Boolean);
+
+const readJsonFromGitIndex = (repoPath) => {
+  try {
+    return JSON.parse(runGit(['show', `:${repoPath}`]));
+  } catch {
+    return null;
+  }
+};
+
+const readPackageVersion = (targetPath) => {
+  if (!fs.existsSync(targetPath)) return '';
+  const payload = readJson(targetPath);
+  if (targetPath === packageLockPath) {
+    const rootVersion = typeof payload.version === 'string' ? payload.version : '';
+    const packageVersion = typeof payload?.packages?.['']?.version === 'string' ? payload.packages[''].version : '';
+    return rootVersion && packageVersion && rootVersion === packageVersion ? rootVersion : '';
+  }
+  return typeof payload.version === 'string' ? payload.version : '';
+};
+
+const readIndexedPackageVersion = (repoPath) => {
+  const payload = readJsonFromGitIndex(repoPath);
+  if (!payload || typeof payload !== 'object') return '';
+  if (repoPath === 'package-lock.json') {
+    const rootVersion = typeof payload.version === 'string' ? payload.version : '';
+    const packageVersion = typeof payload?.packages?.['']?.version === 'string' ? payload.packages[''].version : '';
+    return rootVersion && packageVersion && rootVersion === packageVersion ? rootVersion : '';
+  }
+  return typeof payload.version === 'string' ? payload.version : '';
+};
+
+const getConflictingVersionFiles = () => {
+  const trackedFiles = ['package.json', 'package-lock.json'];
+  const unstaged = new Set(getGitChangedFiles(['diff', '--name-only', '--', ...trackedFiles]));
+  return trackedFiles.filter((file) => unstaged.has(file));
+};
+
+const getConflictAbortText = (files, version) => [
+  `[version-sync] aborted: ${files.join(', ')} contain unstaged changes.`,
+  `[version-sync] set version ${version} in those files manually, then retry the commit.`,
+];
+
 const stageFiles = (files) => {
   const existingFiles = files.filter((targetPath) => fs.existsSync(targetPath));
   if (existingFiles.length === 0) return;
-  execFileSync('git', ['add', ...existingFiles], {
-    cwd: repoRoot,
-    stdio: 'ignore',
-    windowsHide: true,
-  });
+  runGit(['add', ...existingFiles]);
 };
 
-const getCommitMessagePath = () => {
-  const candidate = process.argv[2];
-  return candidate ? path.resolve(process.cwd(), candidate) : '';
+const getVersionInputArg = () => process.argv.slice(2).join(' ').trim();
+
+const resolveVersionFromInput = () => {
+  const candidate = getVersionInputArg();
+  if (!candidate) return '';
+  const resolvedPath = path.resolve(process.cwd(), candidate);
+  if (fs.existsSync(resolvedPath)) {
+    return parseVersionFromCommitMessage(fs.readFileSync(resolvedPath, 'utf8'));
+  }
+  return parseVersionFromCommitMessage(candidate);
 };
 
 const main = () => {
-  const commitMessagePath = getCommitMessagePath();
-  if (!commitMessagePath || !fs.existsSync(commitMessagePath)) return 0;
-
-  const commitMessage = fs.readFileSync(commitMessagePath, 'utf8');
-  const version = parseVersionFromCommitMessage(commitMessage);
+  const version = resolveVersionFromInput();
   if (!version) return 0;
+
+  const conflictingFiles = getConflictingVersionFiles();
+  if (conflictingFiles.length > 0) {
+    const matchingVersions = [
+      readIndexedPackageVersion('package.json') || readPackageVersion(packageJsonPath),
+      readIndexedPackageVersion('package-lock.json') || readPackageVersion(packageLockPath),
+    ].every((currentVersion) => currentVersion === version);
+    if (matchingVersions) {
+      return 0;
+    }
+    for (const line of getConflictAbortText(conflictingFiles, version)) {
+      process.stderr.write(`${line}\n`);
+    }
+    return 1;
+  }
 
   const changedFiles = [];
   if (syncVersionInPackageJson(version)) changedFiles.push(packageJsonPath);
@@ -73,4 +138,13 @@ const main = () => {
   return 0;
 };
 
-process.exitCode = main();
+module.exports = {
+  getConflictAbortText,
+  readPackageVersion,
+  readIndexedPackageVersion,
+  resolveVersionFromInput,
+};
+
+if (require.main === module) {
+  process.exitCode = main();
+}

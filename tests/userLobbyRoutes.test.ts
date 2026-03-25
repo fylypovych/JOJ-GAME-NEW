@@ -150,3 +150,38 @@ test('user-lobby create-and-join creates bot seats and returns session', async (
   assert.equal(joinBodies.length, 4);
   assert.deepEqual(joinBodies.map((row) => String(row.playerID)), ['0', '1', '2', '3']);
 });
+
+test('user-lobby join returns controlled error when internal lobby api fails', async () => {
+  const { router, postHandlers } = makeRouter();
+  registerUserLobbyRoutes({
+    router,
+    userStore: baseStore() as never,
+    logLine: async () => undefined,
+    jsonBodyLimit: 10_000,
+    lobbyApiFactory: () => ({
+      createMatch: async () => ({ matchID: 'unused' }),
+      joinMatch: async () => {
+        throw new Error('Internal lobby exploded.');
+      },
+    }),
+  });
+  const handler = postHandlers.get('/api/user-lobby/join');
+  assert.ok(handler);
+  const ctx: RouteCtx = {
+    request: {
+      body: { gameName: 'joj-game', matchID: 'm1', playerID: '1', playerName: 'Tester' },
+      headers: {
+        cookie: 'joj_user_session=session-token; joj_user_csrf=csrf-token',
+        'x-csrf-token': 'csrf-token',
+        host: 'localhost:8000',
+        origin: 'http://localhost:8000',
+      },
+    },
+  };
+
+  await handler?.(ctx);
+
+  assert.equal(ctx.status, 400);
+  assert.equal((ctx.body as { ok: boolean }).ok, false);
+  assert.match(String((ctx.body as { error?: string }).error ?? ''), /Internal lobby exploded/);
+});

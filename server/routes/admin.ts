@@ -3,6 +3,12 @@ import path from 'node:path';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from './types';
 import { requireAdminMutationAuth } from '../admin-auth';
 import { registerAdminDbToolRoutes } from '../services/admin-db-tools';
+import {
+  getPasswordResetDeliveryHealth,
+  getPublicPasswordResetDeliveryHealth,
+  type PasswordResetDeliveryHealth,
+  type PublicPasswordResetDeliveryHealth,
+} from '../services/password-reset-health';
 import type { UserStore } from '../services/user-store';
 
 type CmdResult = { ok: true; stdout: string; stderr: string } | { ok: false; error: string };
@@ -58,6 +64,8 @@ type AdminRoutesDeps = {
     sslMode?: 'disable' | 'require';
   }) => Promise<void>;
   userStore?: UserStore | null;
+  getPasswordResetDeliveryHealth?: () => PasswordResetDeliveryHealth;
+  getPublicPasswordResetDeliveryHealth?: () => PublicPasswordResetDeliveryHealth;
 };
 
 export const registerAdminRoutes = ({
@@ -78,6 +86,8 @@ export const registerAdminRoutes = ({
   adminDbUiConfigPath,
   importJsonConfigToDb,
   userStore,
+  getPasswordResetDeliveryHealth: getPasswordResetDeliveryHealthFn = getPasswordResetDeliveryHealth,
+  getPublicPasswordResetDeliveryHealth: getPublicPasswordResetDeliveryHealthFn = getPublicPasswordResetDeliveryHealth,
 }: AdminRoutesDeps) => {
   const requireAdminWriteAccess = (ctx: RouteCtx, routeLabel: string) =>
     requireAdminMutationAuth(ctx, routeLabel, requireAdminAuth);
@@ -90,6 +100,15 @@ export const registerAdminRoutes = ({
       uptimeSec: Math.round(process.uptime()),
       port: Number(process.env.PORT ?? 8000),
       adminAuthEnabled: isAdminAuthEnabled,
+      passwordResetDelivery: getPublicPasswordResetDeliveryHealthFn(),
+    };
+  });
+
+  router.get('/api/admin/health/password-reset', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/health/password-reset'))) return;
+    ctx.body = {
+      ok: true,
+      passwordResetDelivery: getPasswordResetDeliveryHealthFn(),
     };
   });
 

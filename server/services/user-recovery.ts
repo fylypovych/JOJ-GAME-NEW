@@ -10,9 +10,16 @@ type MailTransporter = {
   }) => Promise<unknown>;
 };
 
-let transporterPromise: Promise<MailTransporter> | null = null;
+type RecoveryEnv = NodeJS.ProcessEnv;
+type SmtpConfigKey = string;
+export type PasswordResetDeliveryResult = {
+  mode: 'smtp' | 'webhook' | 'log';
+  resetLink: string;
+};
 
-const hasSmtpConfig = () => Boolean((process.env.SMTP_HOST ?? '').trim() && (process.env.SMTP_FROM ?? '').trim());
+const transporterPromises = new Map<SmtpConfigKey, Promise<MailTransporter>>();
+
+const hasSmtpConfig = (env: RecoveryEnv) => Boolean((env.SMTP_HOST ?? '').trim() && (env.SMTP_FROM ?? '').trim());
 
 const isPrivateIpLiteral = (hostname: string) => {
   const normalized = hostname.trim().toLowerCase();
@@ -34,8 +41,8 @@ const isPrivateIpLiteral = (hostname: string) => {
   return false;
 };
 
-const getValidatedWebhookUrl = () => {
-  const rawValue = (process.env.PASSWORD_RESET_WEBHOOK_URL ?? '').trim();
+const getValidatedWebhookUrl = (env: RecoveryEnv) => {
+  const rawValue = (env.PASSWORD_RESET_WEBHOOK_URL ?? '').trim();
   if (!rawValue) return '';
   let parsed: URL;
   try {
@@ -46,7 +53,7 @@ const getValidatedWebhookUrl = () => {
   if (parsed.username || parsed.password) {
     throw new Error('PASSWORD_RESET_WEBHOOK_URL must not include credentials.');
   }
-  const isProduction = (process.env.NODE_ENV ?? '').trim().toLowerCase() === 'production';
+  const isProduction = (env.NODE_ENV ?? '').trim().toLowerCase() === 'production';
   const protocol = parsed.protocol.toLowerCase();
   const hostname = parsed.hostname.trim().toLowerCase();
   const localTarget = isPrivateIpLiteral(hostname);
@@ -63,21 +70,32 @@ const getValidatedWebhookUrl = () => {
   return parsed.toString();
 };
 
-const getTransporter = async () => {
-  if (!transporterPromise) {
-    transporterPromise = import('nodemailer').then((module) => module.default.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT ?? 587),
-      secure: String(process.env.SMTP_SECURE ?? '').trim() === 'true',
-      auth: (process.env.SMTP_USER ?? '').trim()
+const getSmtpConfigKey = (env: RecoveryEnv) => JSON.stringify({
+  host: env.SMTP_HOST ?? '',
+  port: String(env.SMTP_PORT ?? 587),
+  secure: String(env.SMTP_SECURE ?? '').trim(),
+  user: env.SMTP_USER ?? '',
+  pass: env.SMTP_PASS ?? '',
+});
+
+const getTransporter = async (env: RecoveryEnv) => {
+  const configKey = getSmtpConfigKey(env);
+  const existing = transporterPromises.get(configKey);
+  if (existing) return existing;
+
+  const created = import('nodemailer').then((module) => module.default.createTransport({
+    host: env.SMTP_HOST,
+    port: Number(env.SMTP_PORT ?? 587),
+    secure: String(env.SMTP_SECURE ?? '').trim() === 'true',
+    auth: (env.SMTP_USER ?? '').trim()
         ? {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
+          user: env.SMTP_USER,
+          pass: env.SMTP_PASS,
         }
         : undefined,
-    }) as MailTransporter);
-  }
-  return transporterPromise;
+  }) as MailTransporter);
+  transporterPromises.set(configKey, created);
+  return created;
 };
 
 export const deliverPasswordReset = async (args: {
@@ -85,15 +103,26 @@ export const deliverPasswordReset = async (args: {
   token: string;
   expiresAt: string;
   logLine: LogLine;
-}) => {
-  const { usernameOrEmail, token, expiresAt, logLine } = args;
-  const webhookUrl = getValidatedWebhookUrl();
-  const frontendBaseUrl = (process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173').replace(/\/+$/, '');
+  env?: RecoveryEnv;
+  fetchImpl?: typeof fetch;
+  getTransporterFn?: (env: RecoveryEnv) => Promise<MailTransporter>;
+}): Promise<PasswordResetDeliveryResult> => {
+  const {
+    usernameOrEmail,
+    token,
+    expiresAt,
+    logLine,
+    env = process.env,
+    fetchImpl = fetch,
+    getTransporterFn = getTransporter,
+  } = args;
+  const webhookUrl = getValidatedWebhookUrl(env);
+  const frontendBaseUrl = (env.FRONTEND_ORIGIN ?? 'http://localhost:5173').replace(/\/+$/, '');
   const resetLink = `${frontendBaseUrl}/?resetToken=${encodeURIComponent(token)}`;
-  if (hasSmtpConfig()) {
-    const transporter = await getTransporter();
+  if (hasSmtpConfig(env)) {
+    const transporter = await getTransporterFn(env);
     await transporter.sendMail({
-      from: process.env.SMTP_FROM,
+      from: env.SMTP_FROM,
       to: usernameOrEmail,
       subject: 'JOJ password reset',
       text: [
@@ -112,7 +141,7 @@ export const deliverPasswordReset = async (args: {
     return { mode: 'smtp' as const, resetLink };
   }
   if (webhookUrl) {
-    const response = await fetch(webhookUrl, {
+    const response = await fetchImpl(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -128,6 +157,6 @@ export const deliverPasswordReset = async (args: {
     }
     return { mode: 'webhook' as const, resetLink };
   }
-  await logLine('WARN', `password reset token for ${usernameOrEmail}: token=${token} expiresAt=${expiresAt} link=${resetLink}`);
+  await logLine('WARN', `password reset delivery fallback for ${usernameOrEmail}: expiresAt=${expiresAt}`);
   return { mode: 'log' as const, resetLink };
 };

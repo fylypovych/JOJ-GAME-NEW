@@ -339,13 +339,6 @@ test('request-password-reset does not expose reset token in response', async () 
 });
 
 test('request-password-reset stays successful when delivery config is invalid', async () => {
-  const originalEnv = {
-    NODE_ENV: process.env.NODE_ENV,
-    PASSWORD_RESET_WEBHOOK_URL: process.env.PASSWORD_RESET_WEBHOOK_URL,
-  };
-  process.env.NODE_ENV = 'development';
-  process.env.PASSWORD_RESET_WEBHOOK_URL = 'http://example.com/reset-hook';
-
   const logMessages: string[] = [];
   const { router, postHandlers } = makeRouter();
   registerAuthRoutes({
@@ -354,6 +347,9 @@ test('request-password-reset stays successful when delivery config is invalid', 
     logLine: async (_level, message) => { logMessages.push(message); },
     jsonBodyLimit: 10_000,
     enforceRateLimit: allowRateLimit,
+    deliverPasswordResetFn: async () => {
+      throw new Error('PASSWORD_RESET_WEBHOOK_URL must use HTTPS unless it targets localhost/private IPs in development.');
+    },
   });
   const handler = postHandlers.get('/api/auth/request-password-reset');
   assert.ok(handler);
@@ -365,16 +361,37 @@ test('request-password-reset stays successful when delivery config is invalid', 
     response: { headers: {} } as never,
   };
 
-  try {
-    await handler?.(ctx);
-  } finally {
-    process.env.NODE_ENV = originalEnv.NODE_ENV;
-    process.env.PASSWORD_RESET_WEBHOOK_URL = originalEnv.PASSWORD_RESET_WEBHOOK_URL;
-  }
-
+  await handler?.(ctx);
   assert.equal((ctx.body as { ok: boolean }).ok, true);
   assert.equal(ctx.status, undefined);
-  assert.equal(logMessages.some((message) => message.includes('password reset delivery failed')), true);
+  assert.equal(logMessages.some((message) => message.includes('password-reset-delivery-degraded')), true);
+});
+
+test('request-password-reset logs degraded signal when delivery falls back to log mode', async () => {
+  const logEvents: Array<{ level: string; message: string }> = [];
+  const { router, postHandlers } = makeRouter();
+  registerAuthRoutes({
+    router,
+    userStore: baseStore(),
+    logLine: async (level, message) => { logEvents.push({ level, message }); },
+    jsonBodyLimit: 10_000,
+    enforceRateLimit: allowRateLimit,
+    deliverPasswordResetFn: async () => ({ mode: 'log', resetLink: 'http://localhost/reset' }),
+  });
+  const handler = postHandlers.get('/api/auth/request-password-reset');
+  assert.ok(handler);
+  const ctx: RouteCtx = {
+    request: {
+      body: { login: 'tester' },
+      headers: makeSameOriginCsrfHeaders(),
+    },
+    response: { headers: {} } as never,
+  };
+
+  await handler?.(ctx);
+
+  assert.equal((ctx.body as { ok: boolean }).ok, true);
+  assert.equal(logEvents.some((entry) => entry.level === 'ERROR' && entry.message.includes('password-reset-delivery-degraded')), true);
 });
 
 test('profile sessions returns active sessions for authenticated user', async () => {

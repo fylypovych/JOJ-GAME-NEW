@@ -11,6 +11,7 @@ import {
   requireUserAuth,
 } from '../services/user-auth';
 import { deliverPasswordReset } from '../services/user-recovery';
+import { markPasswordResetDeliveryDegraded, markPasswordResetDeliveryHealthy } from '../services/password-reset-health';
 
 type MatchDbStateLike = {
   G?: {
@@ -89,8 +90,16 @@ export const registerAuthRoutes = (args: {
   logLine: LogLine;
   jsonBodyLimit: number;
   enforceRateLimit: (ctx: RouteCtx, bucket: string, limit: number, windowMs: number) => Promise<boolean>;
+  deliverPasswordResetFn?: typeof deliverPasswordReset;
 }) => {
-  const { router, userStore, logLine, jsonBodyLimit, enforceRateLimit } = args;
+  const {
+    router,
+    userStore,
+    logLine,
+    jsonBodyLimit,
+    enforceRateLimit,
+    deliverPasswordResetFn = deliverPasswordReset,
+  } = args;
 
   const requireUserStore = (ctx: RouteCtx): boolean => {
     if (userStore) return true;
@@ -220,16 +229,29 @@ export const registerAuthRoutes = (args: {
     const result = await store.createPasswordResetToken(String(body.login ?? ''));
     if (result) {
       try {
-        await deliverPasswordReset({
+        const delivery = await deliverPasswordResetFn({
           usernameOrEmail: String(body.login ?? ''),
           token: result.token,
           expiresAt: result.expiresAt,
           logLine,
         });
+        if (delivery.mode === 'log') {
+          markPasswordResetDeliveryDegraded({ mode: 'log' });
+          await logLine(
+            'ERROR',
+            'password-reset-delivery-degraded mode=log',
+          );
+        } else {
+          markPasswordResetDeliveryHealthy();
+        }
       } catch (error) {
+        markPasswordResetDeliveryDegraded({
+          mode: 'error',
+          error: String(error instanceof Error ? error.message : error),
+        });
         await logLine(
-          'WARN',
-          `password reset delivery failed for ${String(body.login ?? '')}: ${String(error instanceof Error ? error.message : error)}`,
+          'ERROR',
+          `password-reset-delivery-degraded mode=error reason=${String(error instanceof Error ? error.message : error)}`,
         );
       }
     }

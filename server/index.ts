@@ -266,6 +266,7 @@ void (async () => {
       adminDbUiConfigPath,
       importJsonConfigToDb: syncCurrentJsonToPostgres,
       userStore,
+      
     });
     registerSharedRoutes({
       router,
