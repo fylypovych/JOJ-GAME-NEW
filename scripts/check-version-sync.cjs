@@ -11,7 +11,7 @@ const packageLockPath = path.join(repoRoot, 'package-lock.json');
 
 const getValidationErrorText = (version) => [
   `[version-check] aborted: staged package version does not match ${version}.`,
-  `[version-check] run npm run set:version -- "v=${version}" and retry the commit.`,
+  `[version-check] hook auto-sync works only when package files are clean; otherwise run npm run set:version -- "v=${version}" and retry the commit.`,
 ];
 
 const main = () => {

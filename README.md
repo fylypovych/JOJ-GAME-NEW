@@ -36,7 +36,7 @@ set FRONTEND_ORIGIN=http://192.168.0.25:5173 && npm run dev:server
 
 ## Version Sync From Commit Message
 
-If a commit message contains a marker like `v=0.0.0.26`, the local `commit-msg` hook validates that the staged versions in `package.json` and `package-lock.json` match that marker.
+If a commit message contains a marker like `v=0.0.0.26`, the local `commit-msg` hook first tries to sync `package.json` and `package-lock.json` automatically, then validates that the staged versions match that marker.
 
 Examples:
 
@@ -50,9 +50,16 @@ npm run setup:git-hooks
 ```
 
 Hooks are configured explicitly; `npm install` does not modify your git hooks automatically.
-The `commit-msg` hook only validates version sync. It does not edit files.
 
-Before committing a versioned change, sync version explicitly:
+Normal flow:
+
+```bash
+git commit -m "v=0.0.0.95"
+```
+
+If `package.json` / `package-lock.json` are clean, the hook updates and stages them automatically.
+
+If those files already contain unstaged manual edits, auto-sync is blocked on purpose. In that case sync version explicitly:
 
 ```bash
 npm run set:version -- "v=0.0.0.94"

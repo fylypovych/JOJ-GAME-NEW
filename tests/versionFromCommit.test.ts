@@ -76,6 +76,6 @@ test('resolveVersionFromInput parses raw commit message argument', () => {
 test('getValidationErrorText explains how to repair staged version mismatch', () => {
   assert.deepEqual(getValidationErrorText('0.0.0.95'), [
     '[version-check] aborted: staged package version does not match 0.0.0.95.',
-    '[version-check] run npm run set:version -- "v=0.0.0.95" and retry the commit.',
+    '[version-check] hook auto-sync works only when package files are clean; otherwise run npm run set:version -- "v=0.0.0.95" and retry the commit.',
   ]);
 });

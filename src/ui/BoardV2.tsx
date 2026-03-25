@@ -29,7 +29,6 @@ export const BoardV2 = ({
   moves,
   playerID,
   lang = 'uk',
-  uiVariant = 'v2',
   playerName = '',
   knownPlayerNames = {},
   sharedRanks = [],
@@ -260,11 +259,6 @@ export const BoardV2 = ({
 
   const currentStageFocus =
     stage === 'draw' ? v2.stageFocusDraw : stage === 'play' ? v2.stageFocusPlay : stage === 'end' ? v2.stageFocusEnd : '';
-  const activeArenaPlayerId = selectedTargetId ?? ctx.currentPlayer ?? null;
-  const activeArenaPlayerName = playerLabelById(activeArenaPlayerId);
-  const latestArenaEvent = latestEvents[0]?.text
-    ? (latestEvents[0].type === 'system' ? latestEvents[0].text : `${playerLabelById(latestEvents[0].playerID)}: ${latestEvents[0].text}`)
-    : '';
   const turnHelpItems = buildTurnHelpItems({
     stage,
     stageLabel: stageLabel(stage, t),
@@ -288,10 +282,9 @@ export const BoardV2 = ({
   });
   const stageClass = stage ? `is-stage-${stage}` : 'is-stage-waiting';
   return (
-    <section className={`game-ui-v2-shell${uiVariant === 'v3' ? ' game-ui-v3-shell' : ''} ${stageClass}${compactMode ? ' is-compact' : ''}${isSpectator ? ' is-spectator' : ''}`}>
+    <section className={`game-ui-v2-shell ${stageClass}${compactMode ? ' is-compact' : ''}${isSpectator ? ' is-spectator' : ''}`}>
       <BoardV2Header
         title={isCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle}
-        uiVariant={uiVariant}
         roomMeta={roomMeta}
         playerName={playerName}
         spectatorLabel={t.spectatorJoinedLabel}
@@ -310,27 +303,6 @@ export const BoardV2 = ({
         }}
         requestEndGameDisabled={endGameVoteActive || Boolean(ctx?.gameover)}
       />
-
-      {uiVariant === 'v3' ? (
-        <section className="game-ui-v3-stage-rail" aria-label="v3 tactical rail">
-          <div className="game-ui-v3-stage-card">
-            <span className="game-ui-v3-stage-label">{t.turnStage}</span>
-            <strong>{stageLabel(stage, t)}</strong>
-          </div>
-          <div className="game-ui-v3-stage-card">
-            <span className="game-ui-v3-stage-label">{t.yourRank}</span>
-            <strong>{rankName}</strong>
-          </div>
-          <div className="game-ui-v3-stage-card">
-            <span className="game-ui-v3-stage-label">{t.drawPile}</span>
-            <strong>{G.deck?.length ?? 0}</strong>
-          </div>
-          <div className="game-ui-v3-stage-card">
-            <span className="game-ui-v3-stage-label">{t.discardPile}</span>
-            <strong>{G.discard?.length ?? 0}</strong>
-          </div>
-        </section>
-      ) : null}
 
       {hasBotPlayers && !isSpectator ? (
         <section className="game-ui-v2-bot-strip">
@@ -557,30 +529,6 @@ export const BoardV2 = ({
           {(!isSpectator || spectatorView === 'live') ? (
           <section className="game-ui-v2-piles">
             <h3>{v2.tableState}</h3>
-            {uiVariant === 'v3' ? (
-              <div className="game-ui-v3-arena">
-                <div className="game-ui-v3-arena-main">
-                  <p className="game-ui-v2-kicker">{v2.commandCenter}</p>
-                  <h4>{activeArenaPlayerName}</h4>
-                  <p className="game-ui-v2-subtle">
-                    {selectedTargetId ? v2.pickTarget : (isCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle)}
-                  </p>
-                  {latestArenaEvent ? (
-                    <div className="game-ui-v3-arena-feed">
-                      <span className="game-ui-v3-stage-label">{v2.recentEvents}</span>
-                      <strong>{latestArenaEvent}</strong>
-                    </div>
-                  ) : null}
-                </div>
-                <div className="game-ui-v3-arena-side">
-                  <span className="game-ui-v3-stage-label">{hasBotPlayers ? v2.botControlsTitle : v2.playersOverview}</span>
-                  <strong>{botThinkingPlayerName || playerLabelById(ctx.currentPlayer)}</strong>
-                  <p className="game-ui-v2-subtle">
-                    {botThinkingPlayerName ? `${v2.botThinkingPrefix}: ${botThinkingPlayerName}` : currentStageFocus}
-                  </p>
-                </div>
-              </div>
-            ) : null}
             <div className="play-area">
               <div className="pile">
                 <p>{t.drawPile} ({G.deck?.length ?? 0})</p>

@@ -13,12 +13,70 @@ type Snapshot = {
   ctx: PlaybackCtx;
 };
 
+type QueuedSnapshot = Snapshot & {
+  shouldDelay: boolean;
+  actorName: string;
+};
+
 type BotPlaybackSpeed = 'fast' | 'normal' | 'slow';
 
 const BOT_DELAY_BY_SPEED: Record<BotPlaybackSpeed, number> = {
   fast: 250,
   normal: 850,
   slow: 1600,
+};
+
+export const createPlaybackSignature = (args: {
+  G: JojGameState;
+  ctx: PlaybackCtx;
+  playerID?: string | null;
+}) => {
+  const { G, ctx, playerID } = args;
+  const discardTop = G?.discard?.length ? G.discard[G.discard.length - 1] : null;
+  const chatTail = (G?.chat ?? []).slice(-3).map((row) => ({
+    id: row.id,
+    type: row.type,
+    text: row.text,
+    playerID: row.playerID ?? '',
+  }));
+  const handSizes = Object.keys(G?.hands ?? {})
+    .sort()
+    .map((pid) => `${pid}:${G.hands?.[pid]?.length ?? 0}`);
+  const legendaryHandSizes = Object.keys(G?.legendaryHands ?? {})
+    .sort()
+    .map((pid) => `${pid}:${G.legendaryHands?.[pid]?.length ?? 0}`);
+  return JSON.stringify({
+    turn: ctx?.turn ?? '',
+    currentPlayer: ctx?.currentPlayer ?? '',
+    activePlayers: ctx?.activePlayers ?? null,
+    gameover: ctx?.gameover ?? null,
+    discardTopId: discardTop?.id ?? '',
+    discardCount: G?.discard?.length ?? 0,
+    deckCount: G?.deck?.length ?? 0,
+    chatTail,
+    ranks: G?.ranks ?? {},
+    resources: G?.resources ?? {},
+    promotedThisTurn: G?.promotedThisTurn ?? {},
+    handSizes,
+    legendaryHandSizes,
+    focusedPlayerHandSize: playerID ? (G?.hands?.[playerID]?.length ?? 0) : null,
+  });
+};
+
+export const resolveBotPlaybackMeta = (args: {
+  previousCurrentPlayer: string;
+  nextSnapshot: Snapshot;
+}) => {
+  const actingBot = args.previousCurrentPlayer
+    ? args.nextSnapshot.G?.botPlayers?.[args.previousCurrentPlayer] ?? null
+    : null;
+  const actorName = actingBot
+    ? String(args.nextSnapshot.G?.playerNames?.[args.previousCurrentPlayer] ?? actingBot.name ?? args.previousCurrentPlayer)
+    : '';
+  return {
+    shouldDelay: Boolean(actingBot),
+    actorName,
+  };
 };
 
 export const useBotPlaybackQueue = (args: {
@@ -34,9 +92,10 @@ export const useBotPlaybackQueue = (args: {
     G: incomingG,
     ctx: incomingCtx,
   }));
-  const snapshotQueueRef = useRef<Snapshot[]>([]);
+  const snapshotQueueRef = useRef<QueuedSnapshot[]>([]);
   const processingQueueRef = useRef(false);
   const lastSnapshotSignatureRef = useRef('');
+  const previousIncomingCurrentPlayerRef = useRef(incomingCtx?.currentPlayer ?? '');
   const delayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const botAutoplayEnabledRef = useRef(true);
   const botDelayMsRef = useRef(BOT_DELAY_BY_SPEED.normal);
@@ -60,14 +119,8 @@ export const useBotPlaybackQueue = (args: {
       setBotThinkingPlayerName('');
       return;
     }
-    const nextCurrentPlayer = nextSnapshot.ctx?.currentPlayer ?? '';
-    const nextBot = nextCurrentPlayer ? nextSnapshot.G?.botPlayers?.[nextCurrentPlayer] : null;
-    const nextBotName = nextCurrentPlayer
-      ? String(nextSnapshot.G?.playerNames?.[nextCurrentPlayer] ?? nextBot?.name ?? nextCurrentPlayer)
-      : '';
-    const shouldDelay = Boolean(nextBot);
-    if (shouldDelay && !botAutoplayEnabledRef.current) {
-      setBotThinkingPlayerName(nextBotName);
+    if (nextSnapshot.shouldDelay && !botAutoplayEnabledRef.current) {
+      setBotThinkingPlayerName(nextSnapshot.actorName);
       return;
     }
     snapshotQueueRef.current.shift();
@@ -78,8 +131,8 @@ export const useBotPlaybackQueue = (args: {
       setBotThinkingPlayerName('');
       if (snapshotQueueRef.current.length) processSnapshotQueue();
     };
-    if (shouldDelay) {
-      setBotThinkingPlayerName(nextBotName);
+    if (nextSnapshot.shouldDelay) {
+      setBotThinkingPlayerName(nextSnapshot.actorName);
       delayTimerRef.current = setTimeout(() => {
         delayTimerRef.current = null;
         finish();
@@ -94,20 +147,25 @@ export const useBotPlaybackQueue = (args: {
   }, [botAutoplayEnabled, processSnapshotQueue]);
 
   useEffect(() => {
-    const currentPlayer = incomingCtx?.currentPlayer ?? '';
-    const stage = currentPlayer ? incomingCtx?.activePlayers?.[currentPlayer] ?? '' : '';
-    const signature = [
-      incomingCtx?.turn ?? '',
-      currentPlayer,
-      stage,
-      incomingG?.chat?.length ?? '',
-      incomingG?.discard?.length ?? '',
-      incomingG?.deck?.length ?? '',
-      playerID ? incomingG?.hands?.[playerID]?.length ?? '' : '',
-    ].join('|');
+    const signature = createPlaybackSignature({
+      G: incomingG,
+      ctx: incomingCtx,
+      playerID,
+    });
     if (lastSnapshotSignatureRef.current === signature) return;
     lastSnapshotSignatureRef.current = signature;
-    snapshotQueueRef.current.push({ G: incomingG, ctx: incomingCtx });
+    const previousCurrentPlayer = previousIncomingCurrentPlayerRef.current;
+    const playbackMeta = resolveBotPlaybackMeta({
+      previousCurrentPlayer,
+      nextSnapshot: { G: incomingG, ctx: incomingCtx },
+    });
+    previousIncomingCurrentPlayerRef.current = incomingCtx?.currentPlayer ?? '';
+    snapshotQueueRef.current.push({
+      G: incomingG,
+      ctx: incomingCtx,
+      shouldDelay: playbackMeta.shouldDelay,
+      actorName: playbackMeta.actorName,
+    });
     processSnapshotQueue();
   }, [incomingG, incomingCtx, playerID, processSnapshotQueue]);
 

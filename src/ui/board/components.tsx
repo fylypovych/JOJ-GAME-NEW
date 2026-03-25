@@ -12,6 +12,7 @@ type PilePreviewProps = {
   onTogglePreview: (key: string) => void;
   onClosePreview: () => void;
   fallback?: ReactNode;
+  variant?: 'default' | 'v3';
 };
 
 export const PilePreview = ({
@@ -22,13 +23,14 @@ export const PilePreview = ({
   onTogglePreview,
   onClosePreview,
   fallback,
+  variant = 'default',
 }: PilePreviewProps) => {
   if (!imageSrc) return <>{fallback ?? null}</>;
   return (
-    <div className="pile-preview">
+    <div className={`pile-preview${variant === 'v3' ? ' is-v3' : ''}`}>
       <img src={imageSrc} alt={alt} onClick={(e) => { e.stopPropagation(); onTogglePreview(previewKey); }} />
       <div
-        className={`game-card-popover${openPreviewKey === previewKey ? ' is-open' : ''}`}
+        className={`game-card-popover${variant === 'v3' ? ' is-v3' : ''}${openPreviewKey === previewKey ? ' is-open' : ''}`}
         aria-hidden={openPreviewKey !== previewKey}
         onClick={(e) => { e.stopPropagation(); onClosePreview(); }}
       >
@@ -66,6 +68,7 @@ type GameCardTileProps = {
   badges?: string[];
   helperText?: string;
   previewText?: string;
+  variant?: 'default' | 'v3';
 };
 
 export const GameCardTile = ({
@@ -87,6 +90,7 @@ export const GameCardTile = ({
   badges,
   helperText,
   previewText,
+  variant = 'default',
 }: GameCardTileProps) => {
   const imageSrc = normalizeImagePath(resolvedImage) ?? normalizeImagePath(card.image) ?? `/cards/${card.id}.png`;
   const withCacheBust = (src: string) => `${src}${src.includes('?') ? '&' : '?'}v=${Date.now()}`;
@@ -103,10 +107,10 @@ export const GameCardTile = ({
   const flavorText = cardFlavor(card.flavor, lang, card.flavorEn);
   const effectEntries = card.effects ?? [];
   return (
-    <div className="game-card">
+    <div className={`game-card${variant === 'v3' ? ' is-v3' : ''}`}>
       <button
         type="button"
-        className="game-card-inline-action"
+        className={`game-card-inline-action${variant === 'v3' ? ' is-v3' : ''}`}
         onClick={onAction}
         disabled={actionDisabled}
         title={actionTitle}
@@ -116,7 +120,7 @@ export const GameCardTile = ({
       {extraAction ? (
         <button
           type="button"
-          className={`game-card-inline-action ${extraAction.className ?? ''}`.trim()}
+          className={`game-card-inline-action${variant === 'v3' ? ' is-v3' : ''} ${extraAction.className ?? ''}`.trim()}
           onClick={extraAction.onClick}
           disabled={extraAction.disabled}
         >
@@ -126,13 +130,13 @@ export const GameCardTile = ({
       {utilityAction ? (
         <button
           type="button"
-          className={`game-card-inline-action ${utilityAction.className ?? ''}`.trim()}
+          className={`game-card-inline-action${variant === 'v3' ? ' is-v3' : ''} ${utilityAction.className ?? ''}`.trim()}
           onClick={utilityAction.onClick}
         >
           {utilityAction.label}
         </button>
       ) : null}
-      <div className="game-card-media">
+      <div className={`game-card-media${variant === 'v3' ? ' is-v3' : ''}`}>
         <img
           src={imageSrc}
           alt={title}
@@ -144,7 +148,7 @@ export const GameCardTile = ({
         />
       </div>
       <div
-        className={`game-card-popover${openPreviewKey === previewKey ? ' is-open' : ''}`}
+        className={`game-card-popover${variant === 'v3' ? ' is-v3' : ''}${openPreviewKey === previewKey ? ' is-open' : ''}`}
         aria-hidden={openPreviewKey !== previewKey}
         onClick={(e) => { e.stopPropagation(); onClosePreview(); }}
       >
@@ -154,7 +158,7 @@ export const GameCardTile = ({
           onError={handleCardImageError}
         />
       </div>
-      <div className="game-card-body">
+      <div className={`game-card-body${variant === 'v3' ? ' is-v3' : ''}`}>
         <strong>{title}</strong>
         <small>{categoryText || categoryLabel(card.category, lang)}</small>
         {badges?.length ? (
