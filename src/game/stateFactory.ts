@@ -63,6 +63,7 @@ export const createEmptyGameState = (args: {
   },
   playerGameStats: {},
   noPlayablePassStreak: 0,
+  skippedTurnCounts: {},
   endGameVote: {
     active: false,
     requestedBy: null,
@@ -116,6 +117,8 @@ export const initializePlayerInGameState = (args: {
   G.sukhpayZsuPendingBonus[playerID] = false;
   G.legendaryDraftCompleted[playerID] = legendaryDraftCompleted;
   G.playerGameStats[playerID] = createBasePlayerGameStats();
+  if (!G.skippedTurnCounts) G.skippedTurnCounts = {};
+  G.skippedTurnCounts[playerID] = 0;
 
   drawCards(G, playerID, startingHandSize);
   if (drawLegendaryCards && legendarySourceCards && legendarySourceCards.length > 0) {

@@ -178,6 +178,7 @@ export const handleVvnzPlay = (args: {
   invalidMove: () => 'INVALID_MOVE';
 }) => {
   const { d, moveArgs, playerID, card, invalidMove } = args;
+  if (moveArgs.G.promotedThisTurn?.[playerID]) return invalidMove();
   const beforeRankId = moveArgs.G.ranks[playerID];
   const playerCount = Object.keys(moveArgs.G.players).length || Number(moveArgs.ctx.numPlayers ?? 0) || 2;
   const promoted = d.promoteToSpecificRank(moveArgs.G, playerID, card.grantRank!, playerCount);

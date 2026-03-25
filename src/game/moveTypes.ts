@@ -22,7 +22,7 @@ export type MoveArgs = {
 };
 
 export type ReplacementByTarget = Record<string, ResourceKey[]>;
-export type EffectSummary = { resources: Partial<Record<ResourceKey, number>>; rank: number };
+export type EffectSummary = { resources: Partial<Record<ResourceKey, number>>; rank: number; skipsNextTurn?: boolean };
 export type PromotionRankSnapshot = { cost?: Partial<Record<ResourceKey, number>>; bonus?: Partial<Record<ResourceKey, number>> };
 
 export type JojMovesDeps = {
@@ -51,6 +51,10 @@ export type JojMovesDeps = {
     replacementResources?: ResourceKey[],
   ) => boolean;
   applyCardEffectsSoft: (G: JojGameState, playerID: string, effects: CardDefinition['effects']) => EffectSummary;
+  planReplacementResources: (
+    resources: Record<ResourceKey, number>,
+    effects: CardDefinition['effects'],
+  ) => ResourceKey[] | null;
   getReplacementUnitsForCard: (resources: Record<ResourceKey, number>, card: CardDefinition) => number;
   summarizeAppliedDiff: (
     beforeResources: Record<ResourceKey, number>,

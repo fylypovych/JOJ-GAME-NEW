@@ -89,7 +89,7 @@ export const getPromoteActionState = (args: {
 
 export const getVvnzPlayBlockedReason = (args: {
   card: Pick<CardDefinition, 'category' | 'grantRank'>;
-  G: Pick<JojGameState, 'players' | 'ranks' | 'resources'>;
+  G: Pick<JojGameState, 'players' | 'ranks' | 'resources' | 'promotedThisTurn'>;
   playerID: string;
   ranks: RankDefinition[];
   resourceLabels: ResourceLabels;
@@ -97,6 +97,11 @@ export const getVvnzPlayBlockedReason = (args: {
 }): string | null => {
   const { card, G, playerID, ranks, resourceLabels, lang = 'uk' } = args;
   if (card.category !== 'VVNZ') return null;
+  if (G.promotedThisTurn?.[playerID]) {
+    return lang === 'uk'
+      ? 'Цього ходу ви вже отримували підвищення.'
+      : 'You have already received a promotion this turn.';
+  }
   if (!card.grantRank) {
     return lang === 'uk'
       ? 'Для цієї ВВНЗ-карти не задано цільове звання (grantRank).'
@@ -142,7 +147,7 @@ export const getVvnzPlayBlockedReason = (args: {
 
 export const getHandCardActionState = (args: {
   card: CardDefinition;
-  G: Pick<JojGameState, 'players' | 'ranks' | 'resources'>;
+  G: Pick<JojGameState, 'players' | 'ranks' | 'resources' | 'promotedThisTurn'>;
   playerID: string;
   ranks: RankDefinition[];
   resourceLabels: ResourceLabels;

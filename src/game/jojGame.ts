@@ -470,6 +470,21 @@ export const jojGame: Game<JojGameState> = {
       Object.keys(G.promotedThisTurn).forEach((pid) => {
         G.promotedThisTurn[pid] = false;
       });
+      if ((G.skippedTurnCounts?.[ctx.currentPlayer] ?? 0) > 0) {
+        G.skippedTurnCounts![ctx.currentPlayer] = Math.max(0, (G.skippedTurnCounts?.[ctx.currentPlayer] ?? 0) - 1);
+        G.gameStats.turnsCompleted = (G.gameStats.turnsCompleted ?? 0) + 1;
+        if (G.playerGameStats?.[ctx.currentPlayer]) {
+          G.playerGameStats[ctx.currentPlayer].turnsTaken = (G.playerGameStats[ctx.currentPlayer].turnsTaken ?? 0) + 1;
+        }
+        syncPlayerState(G, ctx.currentPlayer);
+        const seq = nextSystemMessageSeq(G);
+        appendChat(G, {
+          type: 'system',
+          text: `⏭️ [${seq}] ${getPlayerLabel(G, ctx.currentPlayer)} пропускає хід через нестачу ресурсів для обов'язкового списання.`,
+        });
+        events?.endTurn?.();
+        return;
+      }
       const value: Record<string, string> = {};
       ctx.playOrder.forEach((pid) => {
         value[pid] = IDLE_STAGE;
@@ -511,6 +526,7 @@ export const jojGame: Game<JojGameState> = {
     triggerSukhpayZsuOnScandal,
     applyCardEffects,
     applyCardEffectsSoft,
+    planReplacementResources,
     getReplacementUnitsForCard,
     summarizeAppliedDiff,
     effectSummaryToText,

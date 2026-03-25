@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { JojGameState } from '../src/game/types';
-import { createPlaybackSignature, resolveBotPlaybackMeta } from '../src/ui/board/useBotPlaybackQueue';
+import { buildBotPlaybackQueuedSnapshots, clonePlaybackSnapshot, createPlaybackSignature, resolveBotPlaybackMeta } from '../src/ui/board/useBotPlaybackQueue';
+import { extractPlaybackCardTitle } from '../src/ui/board/playbackCardMeta';
 
 const createGameState = (): JojGameState => ({
   players: { '0': {}, '1': {} },
@@ -68,4 +69,42 @@ test('resolveBotPlaybackMeta does not delay human-origin snapshot', () => {
     shouldDelay: false,
     actorName: '',
   });
+});
+
+test('clonePlaybackSnapshot freezes queued bot frame from later incoming mutations', () => {
+  const state = createGameState();
+  const cloned = clonePlaybackSnapshot({
+    G: state,
+    ctx: { currentPlayer: '1', turn: 2 },
+  });
+
+  state.discard = [{ id: 'support-9', title: 'Late state', category: 'SUPPORT', effects: [] }] as never;
+  state.resources['1'].time = 5;
+
+  assert.equal(cloned.G.discard.length, 0);
+  assert.equal(cloned.G.resources['1'].time, 1);
+});
+
+test('buildBotPlaybackQueuedSnapshots keeps final ctx and final board state for every delayed bot event frame', () => {
+  const finalState = createGameState();
+  finalState.discard = [{ id: 'card-final', title: 'Final', category: 'SUPPORT', effects: [] }] as never;
+
+  const queued = buildBotPlaybackQueuedSnapshots({
+    botPlaybackEvents: [
+      { actorName: 'Bot Alpha', text: 'Bot Alpha played first card' },
+      { actorName: 'Bot Alpha', text: 'Bot Alpha played second card' },
+    ],
+    queuedSnapshot: { G: finalState, ctx: { currentPlayer: '0', turn: 2 } },
+  });
+
+  assert.equal(queued.length, 2);
+  assert.equal(queued[0]?.ctx.turn, 2);
+  assert.equal(queued[1]?.ctx.turn, 2);
+  assert.equal(queued[0]?.G.discard[0]?.id, 'card-final');
+  assert.equal(queued[1]?.G.discard[0]?.id, 'card-final');
+});
+
+test('extractPlaybackCardTitle reads quoted card title from system playback event', () => {
+  const title = extractPlaybackCardTitle('📣 [160] Бібік урочисто вніс драму в порядок денний карткою «Колаборант» (СКАНДАЛ).');
+  assert.equal(title, 'Колаборант');
 });

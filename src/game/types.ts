@@ -99,6 +99,7 @@ export interface JOJState {
     turnsTaken: number;
   }>;
   noPlayablePassStreak: number;
+  skippedTurnCounts?: Record<string, number>;
   endGameVote: {
     active: boolean;
     requestedBy: string | null;

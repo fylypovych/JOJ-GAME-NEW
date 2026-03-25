@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createJojMoves } from '../src/game/moves';
-import { drawCardHandler, endTurnHandler, passHandler, playCardHandler, playLegendaryCardHandler, resolveDrawAutoCardHandler } from '../src/game/moveHandlers';
+import { drawCardHandler, endTurnHandler, passHandler, playCardHandler, playLegendaryCardHandler, promoteHandler, resolveDrawAutoCardHandler } from '../src/game/moveHandlers';
 import type { JojMovesDeps, MoveArgs } from '../src/game/moveTypes';
 import type { CardDefinition, JojGameState, ResourceKey } from '../src/game/types';
 import { createEmptyGameState } from '../src/game/stateFactory';
@@ -245,6 +245,97 @@ test('playCardHandler rolls back scandal on invalid multi-target resolution', ()
   assert.equal(G.resources['2'].time, 1);
 });
 
+test('drawCardHandler ends current turn immediately after partial forced resource loss', () => {
+  const G = makeState();
+  const lyap: CardDefinition = {
+    id: 'lyap-force-skip',
+    title: 'Ляп',
+    category: 'LYAP',
+    effects: [{ resource: 'time', value: -2 }],
+  };
+  G.deck = [{ ...lyap }];
+  G.resources['0'] = { time: 0, reputation: 0, discipline: 0, documents: 1, tech: 0 };
+  G.players['0'].resources = { ...G.resources['0'] };
+  let ended = false;
+  let nextStage = '';
+
+  const args: MoveArgs = {
+    G,
+    ctx: { currentPlayer: '0', activePlayers: { '0': 'draw' }, turn: 1 },
+    playerID: '0',
+    events: {
+      setStage: (stage: string) => { nextStage = stage; },
+      endTurn: () => { ended = true; },
+    },
+  };
+
+  const result = drawCardHandler(makeDeps({
+    getReplacementUnitsForCard: () => 0,
+    applyCardEffects: (state: JojGameState, targetPlayerID: string) => {
+      state.resources[targetPlayerID] = { time: 0, reputation: 0, discipline: 0, documents: 0, tech: 0 };
+      state.players[targetPlayerID].resources = { ...state.resources[targetPlayerID] };
+      state.skippedTurnCounts = { ...(state.skippedTurnCounts ?? {}), [targetPlayerID]: 1 };
+      return true;
+    },
+    snapshotResourcesForStats: () => ({ '0': { ...G.resources['0'] }, '1': { ...G.resources['1'] } }),
+  }), args);
+
+  assert.equal(result, undefined);
+  assert.equal(ended, true);
+  assert.equal(nextStage, '');
+  assert.deepEqual(G.resources['0'], { time: 0, reputation: 0, discipline: 0, documents: 0, tech: 0 });
+  assert.equal(G.skippedTurnCounts?.['0'] ?? 0, 0);
+  assert.equal(G.discard.at(-1)?.id, 'lyap-force-skip');
+});
+
+test('playCardHandler applies hand scandal to all other players except source player', () => {
+  const G = makeState();
+  G.playerNames['2'] = 'P3';
+  G.players['2'] = { hand: [], rankId: 'recruit', resources: { time: 2, reputation: 1, discipline: 1, documents: 1, tech: 1 } };
+  G.hands['2'] = [];
+  G.legendaryHands['2'] = [];
+  G.ranks['2'] = 'recruit';
+  G.resources['2'] = { time: 2, reputation: 1, discipline: 1, documents: 1, tech: 1 };
+  G.promotedThisTurn['2'] = false;
+  G.lyapScandalShieldUntilTurn['2'] = 0;
+  G.extraHandPlayTokens['2'] = 0;
+  G.sukhpayZsuWatchUntilTurn['2'] = 0;
+  G.sukhpayZsuPendingBonus['2'] = false;
+  G.hands['0'] = [{ id: 'scandal-all-others', title: 'Scandal All Others', category: 'SCANDAL', effects: [{ resource: 'time', value: -1 }] }];
+  G.players['0'].hand = G.hands['0'];
+  G.resources['0'].time = 2;
+  G.players['0'].resources.time = 2;
+  G.resources['1'].time = 2;
+  G.players['1'].resources.time = 2;
+
+  const affectedPlayers: string[] = [];
+  const args: MoveArgs = {
+    G,
+    ctx: { currentPlayer: '0', activePlayers: { '0': 'play' }, turn: 1 },
+    playerID: '0',
+    events: { setStage: () => undefined },
+  };
+  const deps = makeDeps({
+    applyCardEffects: (state: JojGameState, playerID: string, effects) => {
+      affectedPlayers.push(playerID);
+      const timeLoss = effects.find((effect) => effect.resource === 'time')?.value ?? 0;
+      state.resources[playerID].time += timeLoss;
+      return true;
+    },
+    snapshotResourcesForStats: () => ({ '0': { ...G.resources['0'] }, '1': { ...G.resources['1'] }, '2': { ...G.resources['2'] } }),
+  });
+
+  const result = playCardHandler(deps, args, 'scandal-all-others', [], undefined, { '1': [], '2': [] });
+
+  assert.equal(result, undefined);
+  assert.deepEqual(affectedPlayers.sort(), ['1', '2']);
+  assert.equal(G.resources['0'].time, 2);
+  assert.equal(G.resources['1'].time, 1);
+  assert.equal(G.resources['2'].time, 1);
+  assert.equal(G.hands['0'].length, 0);
+  assert.equal(G.discard.at(-1)?.id, 'scandal-all-others');
+});
+
 test('playCardHandler rolls back command soft effects when self-resolution fails', () => {
   const G = makeState();
   G.hands['0'] = [{ id: 'command-play', title: 'Command', category: 'COMMAND', effects: [{ resource: 'time', value: -1 }] }];
@@ -335,6 +426,70 @@ test('playLegendaryCardHandler rejects legendary play outside acting player turn
   assert.equal(G.legendaryHands['0'].length, 1);
   assert.equal(G.legendaryDiscard.length, 0);
   assert.equal(G.extraHandPlayTokens['0'], 0);
+});
+
+test('playLegendaryCardHandler allows legendary play during draw stage of own turn', () => {
+  const G = makeState();
+  G.legendaryHands['0'] = [{ id: 'legendary-03', title: 'Legendary', category: 'LEGENDARY', effects: [] }];
+  const args: MoveArgs = {
+    G,
+    ctx: { currentPlayer: '0', activePlayers: { '0': 'draw' }, turn: 1, numPlayers: 2 },
+    playerID: '0',
+  };
+
+  const result = playLegendaryCardHandler(makeDeps({
+    applyCardEffects: () => true,
+  }), args, 'legendary-03');
+
+  assert.equal(result, undefined);
+  assert.equal(G.legendaryHands['0'].length, 0);
+  assert.equal(G.legendaryDiscard.length, 1);
+});
+
+test('promoteHandler moves player to end stage after successful promotion', () => {
+  const G = makeState();
+  let nextStage = '';
+  const args: MoveArgs = {
+    G,
+    ctx: { currentPlayer: '0', activePlayers: { '0': 'play' }, turn: 1, numPlayers: 2 },
+    playerID: '0',
+    events: { setStage: (stage: string) => { nextStage = stage; } },
+  };
+
+  const result = promoteHandler(makeDeps({
+    promoteRank: (state: JojGameState, playerID: string) => {
+      state.ranks[playerID] = 'soldier';
+      state.promotedThisTurn[playerID] = true;
+      return true;
+    },
+    getActiveRanks: () => [{ id: 'recruit' }, { id: 'soldier', cost: {}, bonus: {} }] as never,
+    buildPromotionSystemMessage: () => '',
+  }), args);
+
+  assert.equal(result, undefined);
+  assert.equal(nextStage, 'end');
+});
+
+test('playCardHandler rejects VVNZ when player already received promotion this turn', () => {
+  const G = makeState();
+  G.promotedThisTurn['0'] = true;
+  G.hands['0'] = [{ id: 'vvnz-blocked', title: 'VVNZ', category: 'VVNZ', grantRank: 'soldier', effects: [] }];
+  G.players['0'].hand = G.hands['0'];
+  const args: MoveArgs = {
+    G,
+    ctx: { currentPlayer: '0', activePlayers: { '0': 'play' }, turn: 1, numPlayers: 2 },
+    playerID: '0',
+    events: { setStage: () => undefined },
+  };
+
+  const result = playCardHandler(makeDeps({
+    promoteToSpecificRank: () => ({ ok: true, rank: { cost: {}, bonus: {} } }),
+    applyCardEffects: () => true,
+  }), args, 'vvnz-blocked');
+
+  assert.equal(result, 'INVALID_MOVE');
+  assert.equal(G.hands['0'].length, 1);
+  assert.equal(G.discard.length, 0);
 });
 
 test('createEmptyGameState starts resource flow stats at zero', () => {

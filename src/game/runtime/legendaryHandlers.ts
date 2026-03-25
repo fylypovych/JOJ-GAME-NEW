@@ -2,7 +2,7 @@ import type { CardDefinition, ResourceKey } from '../types';
 import type { JojMovesDeps, MoveArgs } from '../moveTypes';
 import { applyLegendaryAbility } from '../legendaryAbilities';
 import { validateMoveAction } from '../actionRules';
-import { createInvalidMoveRollback } from './runtimeHelpers';
+import { consumeImmediateSkipForCurrentPlayer, createInvalidMoveRollback } from './runtimeHelpers';
 
 export const applyLegendaryCardEffects = (
   d: JojMovesDeps,
@@ -37,6 +37,7 @@ export const playLegendaryCardHandler = (
   const idx = hand.findIndex((card: CardDefinition) => card.id === cardId);
   if (idx === -1) return d.INVALID_MOVE;
   const beforeResources = d.snapshotResourcesForStats(args.G);
+  const skippedTurnsBeforeMove = args.G.skippedTurnCounts?.[playerID] ?? 0;
   const invalidMove = createInvalidMoveRollback(d, args.G);
   const card = hand[idx];
   const playerLabel = d.getPlayerLabel(args.G, playerID);
@@ -59,5 +60,9 @@ export const playLegendaryCardHandler = (
     type: 'system',
     text: d.buildLegendaryPlayedMessageText({ seq, playerLabel, cardTitle: card.title, specialMessage }),
   });
+  if (consumeImmediateSkipForCurrentPlayer(args.G, args.ctx.currentPlayer, playerID, skippedTurnsBeforeMove)) {
+    d.incrementTurnsCompleted(args.G, playerID);
+    args.events?.endTurn?.();
+  }
   return undefined;
 };

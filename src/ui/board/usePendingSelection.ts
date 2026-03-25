@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { cardNeedsResourceSelection, cardNeedsTargetSelection, getCardPlayBehavior } from '../../game/cardRules';
 import type { CardDefinition, JojGameState, ResourceKey } from '../../game/types';
-import { buildReplacementSlots, isReplacementPrefixValid } from './replacement';
+import { buildReplacementSlots, getRequiredReplacementSelectionCount, isReplacementPrefixValid } from './replacement';
 import type { JojMoveApi } from './types';
 import type { Language } from '../i18n';
 
@@ -28,6 +28,65 @@ type UsePendingSelectionArgs = {
   postNotice: (type: NoticeKind, msg: string) => void;
   playerLabelById: (id: string | null | undefined) => string;
   cardTitle: (id: string, title: string, lang: Language) => string;
+};
+
+const hasActiveShield = (
+  shieldUntilTurn: number | undefined,
+  currentTurn: number | undefined,
+) => Number(shieldUntilTurn ?? 0) > Number(currentTurn ?? 0);
+
+export const targetNeedsReplacementSelection = (
+  resources: Record<ResourceKey, number> | null | undefined,
+  effects: CardDefinition['effects'] | null | undefined,
+) => {
+  if (!resources || !effects) return false;
+  return getRequiredReplacementSelectionCount(resources, effects) > 0;
+};
+
+export const getPendingReplacementTargetIds = (args: {
+  pendingSelection: PendingSelection | null;
+  currentPendingCard: CardDefinition | null;
+  selectedTargetId: string | null;
+  shieldByPlayer?: Record<string, number>;
+  allPlayerIds: string[];
+  opponentIds: string[];
+  resourcesByPlayer?: Record<string, Record<ResourceKey, number>>;
+  currentTurn?: number;
+  selfPlayerId: string;
+}) => {
+  const {
+    pendingSelection,
+    currentPendingCard,
+    selectedTargetId,
+    shieldByPlayer,
+    allPlayerIds,
+    opponentIds,
+    resourcesByPlayer,
+    currentTurn,
+    selfPlayerId,
+  } = args;
+  if (!pendingSelection || !currentPendingCard) return [] as string[];
+
+  const candidateIds = (() => {
+    if (pendingSelection.type === 'hand-lyap') {
+      return selectedTargetId ? [selectedTargetId] : [];
+    }
+    if (pendingSelection.type === 'hand-scandal') {
+      return opponentIds;
+    }
+    if (pendingSelection.type === 'draw-lyap') {
+      return [selfPlayerId];
+    }
+    if (pendingSelection.type === 'draw-scandal') {
+      return allPlayerIds;
+    }
+    return [] as string[];
+  })();
+
+  return candidateIds.filter((playerId) => {
+    if (hasActiveShield(shieldByPlayer?.[playerId], currentTurn)) return false;
+    return targetNeedsReplacementSelection(resourcesByPlayer?.[playerId], currentPendingCard.effects);
+  });
 };
 
 const resetSelectionState = (
@@ -85,11 +144,19 @@ export const usePendingSelection = ({
       return false;
     }
     if (getCardPlayBehavior(card) === 'scandal') {
-      const targets = opponentIds.filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
+      const targetsNeedingReplacement = opponentIds.filter((pid) => (
+        !hasActiveShield(G?.lyapScandalShieldUntilTurn?.[pid], ctx?.turn)
+        && targetNeedsReplacementSelection(G?.resources?.[pid], card.effects)
+      ));
+      if (targetsNeedingReplacement.length === 0) {
+        moves.playCard(card.id, [], undefined, {});
+        postNotice('info', '');
+        return true;
+      }
       setPendingSelection({ type: 'hand-scandal', cardId: card.id });
       setSelectedTargetId(null);
       setReplacementSelectionsByTarget({});
-      setActiveReplacementTargetId(targets[0] ?? null);
+      setActiveReplacementTargetId(targetsNeedingReplacement[0] ?? null);
       postNotice('info', `${v2.pickResource}: ${cardTitle(card.id, card.title, lang)}`);
       return false;
     }
@@ -126,25 +193,27 @@ export const usePendingSelection = ({
     [G?.pendingDrawAutoResolution?.card, hand, legendaryHand, pendingSelection],
   );
 
-  const replacementTargetIds = useMemo(() => {
-    if (!pendingSelection || !currentPendingCard) return [] as string[];
-    if (pendingSelection.type === 'hand-lyap') {
-      if (!selectedTargetId) return [] as string[];
-      const shielded = Number(G?.lyapScandalShieldUntilTurn?.[selectedTargetId] ?? 0) > Number(ctx?.turn ?? 0);
-      return shielded ? [] as string[] : [selectedTargetId];
-    }
-    if (pendingSelection.type === 'hand-scandal') {
-      return opponentIds.filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
-    }
-    if (pendingSelection.type === 'draw-lyap') {
-      const shielded = Number(G?.lyapScandalShieldUntilTurn?.[id] ?? 0) > Number(ctx?.turn ?? 0);
-      return shielded ? [] as string[] : [id];
-    }
-    if (pendingSelection.type === 'draw-scandal') {
-      return Object.keys(G?.players ?? {}).filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
-    }
-    return [] as string[];
-  }, [pendingSelection, currentPendingCard, selectedTargetId, G?.lyapScandalShieldUntilTurn, G?.players, ctx?.turn, opponentIds, id]);
+  const replacementTargetIds = useMemo(() => getPendingReplacementTargetIds({
+    pendingSelection,
+    currentPendingCard,
+    selectedTargetId,
+    shieldByPlayer: G?.lyapScandalShieldUntilTurn,
+    allPlayerIds: Object.keys(G?.players ?? {}),
+    opponentIds,
+    resourcesByPlayer: G?.resources,
+    currentTurn: ctx?.turn,
+    selfPlayerId: id,
+  }), [
+    pendingSelection,
+    currentPendingCard,
+    selectedTargetId,
+    G?.lyapScandalShieldUntilTurn,
+    G?.players,
+    G?.resources,
+    ctx?.turn,
+    opponentIds,
+    id,
+  ]);
 
   const replacementActiveTargetId = (pendingSelection?.type === 'hand-lyap' || pendingSelection?.type === 'draw-lyap')
     ? ((pendingSelection?.type === 'draw-lyap'
@@ -155,7 +224,9 @@ export const usePendingSelection = ({
       : (replacementTargetIds[0] ?? null));
   const replacementActiveTargetResources = replacementActiveTargetId ? (G?.resources?.[replacementActiveTargetId] ?? null) : null;
   const replacementActiveSlots = (replacementActiveTargetResources && currentPendingCard)
-    ? buildReplacementSlots(replacementActiveTargetResources, currentPendingCard.effects).slots
+    ? (getRequiredReplacementSelectionCount(replacementActiveTargetResources, currentPendingCard.effects) > 0
+      ? buildReplacementSlots(replacementActiveTargetResources, currentPendingCard.effects).slots
+      : [])
     : [];
   const replacementActiveSelected = replacementActiveTargetId ? (replacementSelectionsByTarget[replacementActiveTargetId] ?? []) : [];
 
@@ -183,13 +254,13 @@ export const usePendingSelection = ({
       if (!selectedTargetId) return postNotice('error', v2.targetRequired);
       const selectedCard = hand.find((card) => card.id === pendingSelection.cardId);
       if (!selectedCard) return postNotice('error', v2.actionUnavailable);
-      const shielded = Number(G?.lyapScandalShieldUntilTurn?.[selectedTargetId] ?? 0) > Number(ctx?.turn ?? 0);
+      const shielded = hasActiveShield(G?.lyapScandalShieldUntilTurn?.[selectedTargetId], ctx?.turn);
       const targetResources = G?.resources?.[selectedTargetId];
       if (!targetResources) return postNotice('error', v2.actionUnavailable);
       if (shielded) {
         moves.playCard(pendingSelection.cardId, [], selectedTargetId);
       } else {
-        const required = buildReplacementSlots(targetResources, selectedCard.effects).slots.length;
+        const required = getRequiredReplacementSelectionCount(targetResources, selectedCard.effects);
         const selected = replacementSelectionsByTarget[selectedTargetId] ?? [];
         if (selected.length !== required) return postNotice('error', v2.replacementIncomplete);
         if (!isReplacementPrefixValid(targetResources, selectedCard.effects, selected)) {
@@ -206,7 +277,7 @@ export const usePendingSelection = ({
       for (const pid of targets) {
         const targetResources = G?.resources?.[pid];
         if (!targetResources) continue;
-        const required = buildReplacementSlots(targetResources, selectedCard.effects).slots.length;
+        const required = getRequiredReplacementSelectionCount(targetResources, selectedCard.effects);
         const selected = replacementSelectionsByTarget[pid] ?? [];
         if (selected.length !== required) {
           setActiveReplacementTargetId(pid);
@@ -225,7 +296,7 @@ export const usePendingSelection = ({
       if (!pendingCard) return postNotice('error', v2.actionUnavailable);
       const targetResources = G?.resources?.[id];
       if (!targetResources) return postNotice('error', v2.actionUnavailable);
-      const required = buildReplacementSlots(targetResources, pendingCard.effects).slots.length;
+      const required = getRequiredReplacementSelectionCount(targetResources, pendingCard.effects);
       const selected = replacementSelectionsByTarget[id] ?? [];
       if (selected.length !== required) return postNotice('error', v2.replacementIncomplete);
       if (!isReplacementPrefixValid(targetResources, pendingCard.effects, selected)) {
@@ -241,7 +312,7 @@ export const usePendingSelection = ({
       for (const pid of targets) {
         const targetResources = G?.resources?.[pid];
         if (!targetResources) continue;
-        const required = buildReplacementSlots(targetResources, pendingCard.effects).slots.length;
+        const required = getRequiredReplacementSelectionCount(targetResources, pendingCard.effects);
         const selected = replacementSelectionsByTarget[pid] ?? [];
         if (selected.length !== required) {
           setActiveReplacementTargetId(pid);
@@ -277,6 +348,25 @@ export const usePendingSelection = ({
     }
   }, [pendingSelection, replacementTargetIds, activeReplacementTargetId]);
 
+  useEffect(() => {
+    if (pendingSelection?.type !== 'hand-lyap' || !selectedTargetId || !currentPendingCard) return;
+    const shielded = hasActiveShield(G?.lyapScandalShieldUntilTurn?.[selectedTargetId], ctx?.turn);
+    if (shielded) return;
+    const targetResources = G?.resources?.[selectedTargetId];
+    if (!targetResources) return;
+    if (getRequiredReplacementSelectionCount(targetResources, currentPendingCard.effects) > 0) return;
+    moves.playCard(pendingSelection.cardId, [], selectedTargetId);
+    clearPendingSelection();
+  }, [
+    pendingSelection,
+    selectedTargetId,
+    currentPendingCard,
+    G?.lyapScandalShieldUntilTurn,
+    G?.resources,
+    ctx?.turn,
+    moves,
+  ]);
+
   return {
     pendingSelection,
     setPendingSelection,
@@ -302,11 +392,7 @@ export const usePendingSelection = ({
     undoReplacementResource,
     activeSelectionNeedsTarget: pendingSelection?.type === 'hand-lyap' || pendingSelection?.type === 'legendary-drone',
     activeSelectionNeedsResource: pendingSelection?.type === 'legendary-water',
-    activeSelectionNeedsReplacement:
-      pendingSelection?.type === 'hand-lyap'
-      || pendingSelection?.type === 'hand-scandal'
-      || pendingSelection?.type === 'draw-lyap'
-      || pendingSelection?.type === 'draw-scandal',
+    activeSelectionNeedsReplacement: replacementTargetIds.length > 0,
     pickTargetNotice: (targetId: string) => postNotice('info', `${v2.pickTarget}: ${playerLabelById(targetId)}`),
   };
 };

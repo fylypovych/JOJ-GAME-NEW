@@ -30,10 +30,36 @@ const estimateRoomDurationLabel = (t: T, players: number, gameMode: GameMode) =>
   return t.roomDurationMedium;
 };
 
+const buildRoomShareLink = (matchID: string) => {
+  const url = new URL(window.location.href);
+  url.searchParams.set('room', matchID);
+  return url.toString();
+};
+
 const copyText = async (value: string) => {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(value);
-    return;
+  if (navigator.clipboard?.writeText && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return;
+    } catch {
+      // Fall through to legacy copy path below.
+    }
+  }
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', 'true');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  textarea.style.pointerEvents = 'none';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+  try {
+    const copied = document.execCommand('copy');
+    if (copied) return;
+  } finally {
+    document.body.removeChild(textarea);
   }
   window.prompt('Copy text', value);
 };
@@ -267,8 +293,8 @@ export const LobbySection = ({
           const optionalModules = match.setupData?.gameSetup?.optionalMainDeckModuleIds ?? [];
           const freePlayer = match.players.find((player) => !player.name);
           const almostReady = hasFree && taken + 1 === capacity;
-          const shareLink = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(match.matchID)}`;
-          const inviteText = `${t.activeRoom}: ${match.matchID} · ${t.gameModeLabel}: ${formatGameModeLabel(t, gameModeValue)} · ${t.roomSummaryPlayers}: ${taken}/${capacity}`;
+          const shareLink = buildRoomShareLink(match.matchID);
+          const inviteText = `${t.activeRoom}: ${match.matchID}\n${t.gameModeLabel}: ${formatGameModeLabel(t, gameModeValue)}\n${t.roomSummaryPlayers}: ${taken}/${capacity}\n${shareLink}`;
           return (
             <article key={match.matchID} className={`lobby-room-card${almostReady ? ' is-almost-ready' : ''}${invitedRoomId === match.matchID ? ' is-invited' : ''}`}>
               <div className="lobby-room-card-head">
@@ -312,13 +338,6 @@ export const LobbySection = ({
                   disabled={loading}
                 >
                   {t.spectateRoom}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { void copyText(match.matchID); }}
-                  disabled={loading}
-                >
-                  {t.copyRoomId}
                 </button>
                 <button
                   type="button"
@@ -547,7 +566,7 @@ export const ActiveSessionSection = ({
     });
   }, [activeMatch, t]);
 
-  const shareLink = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(session.matchID)}`;
+  const shareLink = buildRoomShareLink(session.matchID);
   const activeGameMode = activeMatch?.setupData?.gameMode ?? 'standard';
   const activePlayerCount = activeMatch?.players.length ?? 0;
   const botsCount = Math.max(0, Math.min(Math.max(0, activePlayerCount - 1), Math.floor(activeMatch?.setupData?.bots?.count ?? 0)));
@@ -567,7 +586,7 @@ export const ActiveSessionSection = ({
       : []),
     ...(!sessionBroken && session.spectator && activeMatch ? [t.roomSpectatorHint] : []),
   ];
-  const inviteText = `${t.activeRoom}: ${session.matchID} · ${t.gameModeLabel}: ${formatGameModeLabel(t, activeGameMode)} · ${t.roomSummaryPlayers}: ${activeMatch ? `${activeMatch.players.filter((player) => Boolean(player.name?.trim())).length}/${activeMatch.players.length}` : '-'}`;
+  const inviteText = `${t.activeRoom}: ${session.matchID}\n${t.gameModeLabel}: ${formatGameModeLabel(t, activeGameMode)}\n${t.roomSummaryPlayers}: ${activeMatch ? `${activeMatch.players.filter((player) => Boolean(player.name?.trim())).length}/${activeMatch.players.length}` : '-'}\n${shareLink}`;
 
   return (
     <section className={`board${uiVariant === 'v2' ? ' board-v2-panel' : ''}${uiVariant === 'v3' ? ' board-v3-panel lobby-v3-panel' : ''}`}>
@@ -660,9 +679,6 @@ export const ActiveSessionSection = ({
         </div>
       ) : null}
       <p className="admin-controls">
-        <button type="button" onClick={() => { void copyText(session.matchID); }} disabled={loading}>
-          {t.copyRoomId}
-        </button>
         <button type="button" onClick={() => { void copyText(inviteText); }} disabled={loading}>
           {t.copyInviteText}
         </button>

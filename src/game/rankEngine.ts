@@ -44,6 +44,7 @@ export const createRankEngine = ({
     rankSeatLimitForRank(playerCount, targetRankId, ranks);
 
   const promoteRank = (G: JojGameState, playerID: string, playerCount: number): boolean => {
+    if (G.promotedThisTurn?.[playerID]) return false;
     const ranks = getActiveRanks();
     const currentRankId = G.ranks[playerID];
     const currentRankIdx = Math.max(0, ranks.findIndex((r) => r.id === currentRankId));
@@ -62,6 +63,7 @@ export const createRankEngine = ({
     applyResourceDelta(playerResources, nextRank.bonus);
     clampNonNegativeResources(playerResources);
     G.ranks[playerID] = nextRank.id;
+    G.promotedThisTurn[playerID] = true;
     onRankChanged?.(G, playerID, currentRankId, nextRank.id);
     syncPlayerState(G, playerID);
     return true;
@@ -73,6 +75,7 @@ export const createRankEngine = ({
     targetRankId: string,
     playerCount: number,
   ): { ok: true; rank: RankDefinition } | { ok: false } => {
+    if (G.promotedThisTurn?.[playerID]) return { ok: false };
     const ranks = getActiveRanks();
     const currentRankId = G.ranks[playerID];
     const currentRankIdx = Math.max(0, ranks.findIndex((r) => r.id === currentRankId));
@@ -94,6 +97,7 @@ export const createRankEngine = ({
     applyResourceDelta(playerResources, targetRank.bonus);
     clampNonNegativeResources(playerResources);
     G.ranks[playerID] = targetRank.id;
+    G.promotedThisTurn[playerID] = true;
     onRankChanged?.(G, playerID, currentRankId, targetRank.id);
     syncPlayerState(G, playerID);
     return { ok: true, rank: targetRank };
@@ -106,6 +110,7 @@ export const createRankEngine = ({
     playerCount: number,
   ): { ok: true; rank: RankDefinition; fromRankId: string; applied: boolean }
     | { ok: false; reason: 'invalid-rank' | 'no-seat' } => {
+    if (G.promotedThisTurn?.[playerID]) return { ok: false, reason: 'invalid-rank' };
     const ranks = getActiveRanks();
     const currentRankId = G.ranks[playerID];
     const currentRankIdx = ranks.findIndex((r) => r.id === currentRankId);
@@ -127,6 +132,7 @@ export const createRankEngine = ({
     applyResourceDelta(playerResources, targetRank.bonus);
     clampNonNegativeResources(playerResources);
     G.ranks[playerID] = targetRank.id;
+    G.promotedThisTurn[playerID] = true;
     onRankChanged?.(G, playerID, currentRankId, targetRank.id);
     syncPlayerState(G, playerID);
     return { ok: true, rank: targetRank, fromRankId: currentRankId, applied: true };

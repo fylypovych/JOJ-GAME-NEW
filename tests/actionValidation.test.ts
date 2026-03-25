@@ -117,6 +117,25 @@ test('getVvnzPlayBlockedReason checks only target rank resources', () => {
   assert.equal(reason, null);
 });
 
+test('getVvnzPlayBlockedReason blocks VVNZ after any promotion already happened this turn', () => {
+  const G = makeState({
+    promotedThisTurn: { '0': true, '1': false },
+    resources: {
+      '0': { time: 2, reputation: 7, discipline: 5, documents: 0, tech: 0 },
+      '1': { time: 2, reputation: 2, discipline: 2, documents: 0, tech: 0 },
+    },
+  });
+  const reason = getVvnzPlayBlockedReason({
+    card: { category: 'VVNZ', grantRank: 'senior_sergeant' },
+    G,
+    playerID: '0',
+    ranks,
+    resourceLabels: labels,
+    lang: 'uk',
+  });
+  assert.match(reason ?? '', /вже отримували підвищення/i);
+});
+
 test('getPromoteBlockedReason reports already promoted this turn', () => {
   const G = makeState({
     promotedThisTurn: { '0': true, '1': false },

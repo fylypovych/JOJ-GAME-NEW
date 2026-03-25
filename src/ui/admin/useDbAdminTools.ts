@@ -9,9 +9,10 @@ type Args = {
   lang: Language;
   adminFetch: AdminFetch;
   serverUrl: string;
+  enabled: boolean;
 };
 
-export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
+export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) => {
   const api = createAdminDbApiUrls(serverUrl);
   const dbText = dbAdminText(lang);
 
@@ -66,6 +67,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
   };
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     const loadServerDbUiConfig = async () => {
       try {
@@ -97,9 +99,10 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
     return () => {
       cancelled = true;
     };
-  }, [api.uiConfig]);
+  }, [api.uiConfig, enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
     void (async () => {
       try {
         await adminFetchRef.current(api.uiConfig, {
@@ -114,7 +117,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl }: Args) => {
         // localStorage still preserves mode on same browser
       }
     })();
-  }, [api.uiConfig, adminStorageMode]);
+  }, [api.uiConfig, adminStorageMode, adminDbConfigDraft, enabled]);
 
   const saveDbConfigDraftAndServer = () => {
     saveDbConfigDraft();

@@ -34,7 +34,7 @@ export const validateMoveAction = (
     if (args.G.gameMode === 'simplified') return false;
     if (args.ctx.currentPlayer !== playerID) return false;
     const stage = args.ctx.activePlayers?.[playerID] as string | undefined;
-    return stage === d.PLAY_STAGE || stage === d.END_STAGE;
+    return stage === d.DRAW_STAGE || stage === d.PLAY_STAGE || stage === d.END_STAGE;
   }
 
   if (args.ctx.currentPlayer !== playerID) return false;

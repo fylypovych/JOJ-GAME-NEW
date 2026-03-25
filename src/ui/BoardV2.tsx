@@ -8,6 +8,7 @@ import { BoardV2HandSection, BoardV2NoticeStack, BoardV2PlayerOverview, BoardV2S
 import { BoardV2EndVoteModal, BoardV2GameoverModal, BoardV2Header, BoardV2StandingsSummary } from './board/v2ShellSections';
 import { useBoardV2DerivedState } from './board/useBoardV2DerivedState';
 import { useBotPlaybackQueue } from './board/useBotPlaybackQueue';
+import { resolvePlaybackCardMeta } from './board/playbackCardMeta';
 import { usePendingSelection } from './board/usePendingSelection';
 import { useBoardV2StageState } from './board/useBoardV2StageState';
 import { useBoardV2Sync } from './board/useBoardV2Sync';
@@ -49,6 +50,9 @@ export const BoardV2 = ({
     botAutoplayEnabled,
     setBotAutoplayEnabled,
     botThinkingPlayerName,
+    botPlaybackEventText,
+    botPlaybackCardTitle,
+    isBotPlaybackActive,
   } = useBotPlaybackQueue({
     incomingG,
     incomingCtx,
@@ -240,7 +244,17 @@ export const BoardV2 = ({
   });
 
   if (!G || !ctx || !resources) {
-    return <section className="board"><p>{t.loading}</p></section>;
+    return (
+      <section className="board">
+        <p>{t.loading}</p>
+        {roomMeta ? <p>{t.activeRoom}: <strong>{roomMeta.matchID}</strong></p> : null}
+        {onLeaveRoom ? (
+          <p>
+            <button type="button" onClick={onLeaveRoom}>{t.leaveRoom}</button>
+          </p>
+        ) : null}
+      </section>
+    );
   }
 
   const promoteReason = getBoardPromoteReason({ G, playerID: id, sharedRanks, resourceLabels, lang });
@@ -256,9 +270,25 @@ export const BoardV2 = ({
     resources,
     selectedResource,
   });
+  const lastDiscardTitle = lastDiscard ? cardTitle(lastDiscard.id, lastDiscard.title, lang) : '';
+  const playbackCardMeta = resolvePlaybackCardMeta({
+    eventText: botPlaybackEventText,
+    G,
+    cardImageById,
+    lastDiscard,
+    lastDiscardImage,
+  });
+  const displayedDiscardTitle = botPlaybackCardTitle || playbackCardMeta.title || lastDiscardTitle;
+  const displayedDiscardImage = (botPlaybackCardTitle || playbackCardMeta.title) ? playbackCardMeta.imageSrc : lastDiscardImage;
 
-  const currentStageFocus =
-    stage === 'draw' ? v2.stageFocusDraw : stage === 'play' ? v2.stageFocusPlay : stage === 'end' ? v2.stageFocusEnd : '';
+  const botPlaybackControlLabel = botThinkingPlayerName
+    ? `${v2.botThinkingPrefix}: ${botThinkingPlayerName}`
+    : botPlaybackEventText || v2.waitingAction;
+  const blockPlayerTurnControls = !isSpectator && isBotPlaybackActive;
+  const effectiveIsCurrentPlayer = isCurrentPlayer && !blockPlayerTurnControls;
+  const currentStageFocus = blockPlayerTurnControls
+    ? botPlaybackControlLabel
+    : stage === 'draw' ? v2.stageFocusDraw : stage === 'play' ? v2.stageFocusPlay : stage === 'end' ? v2.stageFocusEnd : '';
   const turnHelpItems = buildTurnHelpItems({
     stage,
     stageLabel: stageLabel(stage, t),
@@ -284,7 +314,7 @@ export const BoardV2 = ({
   return (
     <section className={`game-ui-v2-shell ${stageClass}${compactMode ? ' is-compact' : ''}${isSpectator ? ' is-spectator' : ''}`}>
       <BoardV2Header
-        title={isCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle}
+        title={blockPlayerTurnControls ? botPlaybackControlLabel : effectiveIsCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle}
         roomMeta={roomMeta}
         playerName={playerName}
         spectatorLabel={t.spectatorJoinedLabel}
@@ -312,6 +342,9 @@ export const BoardV2 = ({
               <p className="game-ui-v2-subtle game-ui-v2-bot-thinking">
                 {v2.botThinkingPrefix}: <strong>{botThinkingPlayerName}</strong>...
               </p>
+            ) : null}
+            {botPlaybackEventText ? (
+              <p className="game-ui-v2-subtle game-ui-v2-bot-thinking">{botPlaybackEventText}</p>
             ) : null}
           </div>
           <div className="game-ui-v2-bot-strip-actions">
@@ -430,18 +463,26 @@ export const BoardV2 = ({
             <div className="game-ui-v2-command-top">
               <div>
                 <p className="game-ui-v2-kicker">{v2.commandCenter}</p>
-                <h3>{playerLabelById(ctx.currentPlayer)}</h3>
-                <p className="game-ui-v2-subtle">{t.turnStage}: {stageLabel(stage, t)} В· {t.yourRank}: {rankName}</p>
+                <h3>{blockPlayerTurnControls ? botPlaybackControlLabel : playerLabelById(ctx.currentPlayer)}</h3>
+                <p className="game-ui-v2-subtle">
+                  {blockPlayerTurnControls ? v2.recentEvents : `${t.turnStage}: ${stageLabel(stage, t)} В· ${t.yourRank}: ${rankName}`}
+                </p>
                 {rankImage ? <p><img src={rankImage} alt={rankName} style={{ maxHeight: 84, borderRadius: 6 }} /></p> : null}
               </div>
               <div className="game-ui-v2-command-buttons">
                 <button type="button" onClick={() => {
                   handleDraw();
-                }} disabled={!canDraw}>{t.draw}</button>
+                }} disabled={!canDraw || blockPlayerTurnControls}>{t.draw}</button>
                 <button type="button" onClick={() => {
                   handlePromote(promoteReason);
-                }} disabled={!canPlay}>{t.promote}</button>
-                <button type="button" onClick={() => { handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn); }} disabled={!canEndTurn}>{passButtonLabel}</button>
+                }} disabled={!canPlay || blockPlayerTurnControls}>{t.promote}</button>
+                <button
+                  type="button"
+                  onClick={() => { handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn); }}
+                  disabled={!canEndTurn || blockPlayerTurnControls}
+                >
+                  {blockPlayerTurnControls ? botPlaybackControlLabel : passButtonLabel}
+                </button>
               </div>
             </div>
             <div className="game-ui-v2-resources-grid">
@@ -547,18 +588,18 @@ export const BoardV2 = ({
               <div className="pile">
                 <p>{t.discardPile} ({G.discard?.length ?? 0})</p>
                 <div className="pile-card">
-                  {lastDiscard ? (
+                  {displayedDiscardTitle ? (
                     <PilePreview
-                      imageSrc={lastDiscardImage}
-                      alt={cardTitle(lastDiscard.id, lastDiscard.title, lang)}
-                      previewKey={`v2-discard-${lastDiscard.id}`}
+                      imageSrc={displayedDiscardImage}
+                      alt={displayedDiscardTitle}
+                      previewKey={`v2-discard-${botPlaybackCardTitle || lastDiscard?.id || displayedDiscardTitle}`}
                       openPreviewKey={openPreviewKey}
                       onTogglePreview={togglePreview}
                       onClosePreview={() => setOpenPreviewKey(null)}
                     />
                   ) : <div className="pile-empty">{t.noCardsInDiscard}</div>}
                 </div>
-                <p>{lastDiscard ? cardTitle(lastDiscard.id, lastDiscard.title, lang) : t.noCardsInDiscard}</p>
+                <p>{displayedDiscardTitle || t.noCardsInDiscard}</p>
               </div>
               <div className="pile">
                 <p>{v2.playersOverview} ({opponentIds.length})</p>
@@ -733,9 +774,11 @@ export const BoardV2 = ({
 
       {!isSpectator ? (
       <div className="game-ui-v2-mobile-bar" aria-label={v2.mobileActions}>
-        <button type="button" onClick={handleDraw} disabled={!canDraw}>{t.draw}</button>
-        <button type="button" onClick={() => handlePromote(promoteReason)} disabled={!canPlay || Boolean(promoteReason)}>{t.promote}</button>
-        <button type="button" onClick={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)} disabled={!canEndTurn}>{passButtonLabel}</button>
+        <button type="button" onClick={handleDraw} disabled={!canDraw || blockPlayerTurnControls}>{t.draw}</button>
+        <button type="button" onClick={() => handlePromote(promoteReason)} disabled={!canPlay || Boolean(promoteReason) || blockPlayerTurnControls}>{t.promote}</button>
+        <button type="button" onClick={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)} disabled={!canEndTurn || blockPlayerTurnControls}>
+          {blockPlayerTurnControls ? botPlaybackControlLabel : passButtonLabel}
+        </button>
       </div>
       ) : null}
     </section>

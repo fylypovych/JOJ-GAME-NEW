@@ -4,6 +4,7 @@ import { findLastAppliedEffect, markAppliedEffectCanceled, toLoggedCardDefinitio
 export type EffectSummary = {
   resources: Partial<Record<ResourceKey, number>>;
   rank: number;
+  skipsNextTurn?: boolean;
 };
 
 type EffectsEngineDeps = {
@@ -93,7 +94,11 @@ export const createEffectsEngine = ({
   const getReplacementUnitsForCard = (
     resources: Record<ResourceKey, number>,
     card: CardDefinition,
-  ): number => replacementCostUnits(resources, card.effects);
+  ): number => {
+    const replacementUnits = replacementCostUnits(resources, card.effects);
+    if (replacementUnits === 0) return 0;
+    return planReplacementResources(resources, card.effects) ? replacementUnits : 0;
+  };
 
   const shiftRank = (G: JojGameState, playerID: string, delta: number) => {
     if (delta === 0) return;
@@ -146,10 +151,13 @@ export const createEffectsEngine = ({
     if (!effects?.length) return true;
     const playerResources = G.resources[playerID];
     const nextResources = { ...playerResources };
+    const hasNegativeLoss = effects.some((effect) => effect.resource !== 'rank' && effect.value < 0);
+    const autoPlan = hasNegativeLoss ? planReplacementResources(playerResources, effects) : [];
     const planned = replacementResources.length > 0
       ? [...replacementResources]
-      : (planReplacementResources(playerResources, effects) ?? []);
+      : (autoPlan ?? []);
     let replacementIndex = 0;
+    let interruptedByInsufficientLoss = false;
     const consumeReplacement = (forbidden: ResourceKey): boolean => {
       if (replacementResources.length > 0) {
         const key = planned[replacementIndex];
@@ -184,6 +192,7 @@ export const createEffectsEngine = ({
         const okSecond = okFirst ? consumeReplacement(effect.resource) : false;
         if (!okFirst || !okSecond) {
           if (replacementResources.length > 0) return false;
+          interruptedByInsufficientLoss = true;
           break;
         }
         missing -= 1;
@@ -198,6 +207,10 @@ export const createEffectsEngine = ({
         shiftRank(G, playerID, effect.value);
       }
     });
+    if (interruptedByInsufficientLoss) {
+      if (!G.skippedTurnCounts) G.skippedTurnCounts = {};
+      G.skippedTurnCounts[playerID] = (G.skippedTurnCounts[playerID] ?? 0) + 1;
+    }
     clampNonNegativeResources(playerResources);
     return true;
   };
@@ -211,10 +224,13 @@ export const createEffectsEngine = ({
     if (!effects?.length) return summary;
     const beforeResources = { ...G.resources[playerID] };
     const beforeRankId = G.ranks[playerID];
+    const beforeSkippedTurns = G.skippedTurnCounts?.[playerID] ?? 0;
     try {
       const applied = applyCardEffects(G, playerID, effects, []);
       if (applied) {
-        return summarizeAppliedDiff(beforeResources, G.resources[playerID], beforeRankId, G.ranks[playerID]);
+        const appliedSummary = summarizeAppliedDiff(beforeResources, G.resources[playerID], beforeRankId, G.ranks[playerID]);
+        if ((G.skippedTurnCounts?.[playerID] ?? 0) > beforeSkippedTurns) appliedSummary.skipsNextTurn = true;
+        return appliedSummary;
       }
     } catch {
       // fallback to safe clamp below

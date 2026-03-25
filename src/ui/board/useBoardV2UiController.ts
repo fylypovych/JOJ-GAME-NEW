@@ -11,7 +11,7 @@ type HandSort = 'default' | 'playable' | 'category' | 'title';
 type SidePanelTab = 'events' | 'chat' | 'help';
 
 export const useBoardV2UiController = (args: {
-  G: Pick<JojGameState, 'players' | 'ranks' | 'resources'> | null | undefined;
+  G: Pick<JojGameState, 'players' | 'ranks' | 'resources' | 'promotedThisTurn'> | null | undefined;
   id: string;
   knownPlayerNames: Record<string, string>;
   playerNames?: Record<string, string>;

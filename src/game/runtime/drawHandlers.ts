@@ -2,7 +2,7 @@ import type { ResourceKey } from '../types';
 import type { JojMovesDeps, MoveArgs, ReplacementByTarget } from '../moveTypes';
 import { validateMoveAction } from '../actionRules';
 import { appendAppliedEffectLog } from '../effectLog';
-import { createInvalidMoveRollback, summarizeCardEffectForPlayer } from './runtimeHelpers';
+import { consumeImmediateSkipForCurrentPlayer, createInvalidMoveRollback, summarizeCardEffectForPlayer } from './runtimeHelpers';
 
 export { isLegendaryDraftPending, isDrawAutoResolutionPending } from '../actionRules';
 
@@ -12,6 +12,7 @@ export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
   if (!validateMoveAction(d, args, 'draw-card')) return d.INVALID_MOVE;
 
   const beforeResources = d.snapshotResourcesForStats(args.G);
+  const skippedTurnsBeforeMove = args.G.skippedTurnCounts?.[playerID] ?? 0;
   const invalidMove = createInvalidMoveRollback(d, args.G);
   const hand = args.G.hands[playerID];
   let autoPlayed = false;
@@ -130,6 +131,11 @@ export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
   d.recordResourceFlowStats(args.G, beforeResources);
   d.resetNoPlayablePassStreak(args.G);
   d.resetEndGameVote(args.G);
+  if (consumeImmediateSkipForCurrentPlayer(args.G, args.ctx.currentPlayer, playerID, skippedTurnsBeforeMove)) {
+    d.incrementTurnsCompleted(args.G, playerID);
+    args.events?.endTurn?.();
+    return undefined;
+  }
   if (pendingAutoResolution) args.events?.setStage?.(d.DRAW_STAGE);
   else args.events?.setStage?.(autoPlayed ? d.END_STAGE : d.PLAY_STAGE);
   return undefined;
@@ -148,6 +154,7 @@ export const resolveDrawAutoCardHandler = (
   if (!pending || pending.sourcePlayerID !== playerID) return d.INVALID_MOVE;
   const card = pending.card;
   const beforeResources = d.snapshotResourcesForStats(args.G);
+  const skippedTurnsBeforeMove = args.G.skippedTurnCounts?.[playerID] ?? 0;
   const invalidMove = createInvalidMoveRollback(d, args.G);
   if (pending.kind === 'LYAP') {
     const protectedSelf = d.isProtectedFromLyapScandal(args.G, args.ctx, playerID);
@@ -187,6 +194,11 @@ export const resolveDrawAutoCardHandler = (
     d.recordResourceFlowStats(args.G, beforeResources);
     d.resetNoPlayablePassStreak(args.G);
     d.resetEndGameVote(args.G);
+    if (consumeImmediateSkipForCurrentPlayer(args.G, args.ctx.currentPlayer, playerID, skippedTurnsBeforeMove)) {
+      d.incrementTurnsCompleted(args.G, playerID);
+      args.events?.endTurn?.();
+      return undefined;
+    }
     args.events?.setStage?.(d.END_STAGE);
     return undefined;
   }
@@ -240,6 +252,11 @@ export const resolveDrawAutoCardHandler = (
     d.recordResourceFlowStats(args.G, beforeResources);
     d.resetNoPlayablePassStreak(args.G);
     d.resetEndGameVote(args.G);
+    if (consumeImmediateSkipForCurrentPlayer(args.G, args.ctx.currentPlayer, playerID, skippedTurnsBeforeMove)) {
+      d.incrementTurnsCompleted(args.G, playerID);
+      args.events?.endTurn?.();
+      return undefined;
+    }
     args.events?.setStage?.(d.END_STAGE);
     return undefined;
   }

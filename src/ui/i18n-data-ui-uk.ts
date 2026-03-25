@@ -361,7 +361,7 @@ export const uiUkData = {
     moduleTargetLabel: 'Ціль',
     moduleDefaultCategoryLabel: 'Категорія за замовчуванням',
     moduleBackImagePathLabel: 'Сорочка модуля (шлях)',
-    moduleCardIdsLabel: 'Card IDs (по одному в рядок або через кому)',
+    moduleCardIdsLabel: 'ID карток (по одному в рядок або через кому)',
     saveModule: 'Зберегти модуль',
     cardsEditorTitle: 'Редактор карт',
     moduleLabel: 'Модуль',

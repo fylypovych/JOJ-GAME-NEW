@@ -70,6 +70,43 @@ test('promoteRank spends cost and upgrades when requirements are met', () => {
   assert.equal(ok, true);
   assert.equal(G.ranks['0'], 'soldier');
   assert.equal(G.resources['0'].time, 1);
+  assert.equal(G.promotedThisTurn['0'], true);
+});
+
+test('promoteRank rejects second promotion in the same turn', () => {
+  const engine = createRankEngine({
+    getActiveRanks: () => ranks,
+    hasResources: (row, cost) => (Object.entries(cost) as Array<[ResourceKey, number]>).every(([k, v]) => (row[k] ?? 0) >= (v ?? 0)),
+    spendResources: (row, cost) => { (Object.entries(cost) as Array<[ResourceKey, number]>).forEach(([k, v]) => { row[k] -= (v ?? 0); }); },
+    applyResourceDelta: () => {},
+    clampNonNegativeResources: () => {},
+    syncPlayerState: () => {},
+  });
+  const G = mkState();
+  G.promotedThisTurn['0'] = true;
+
+  const ok = engine.promoteRank(G, '0', 2);
+
+  assert.equal(ok, false);
+  assert.equal(G.ranks['0'], 'recruit');
+});
+
+test('grantSpecificRankIgnoringRequirements marks promotion as used for the turn', () => {
+  const engine = createRankEngine({
+    getActiveRanks: () => ranks,
+    hasResources: () => true,
+    spendResources: () => {},
+    applyResourceDelta: () => {},
+    clampNonNegativeResources: () => {},
+    syncPlayerState: () => {},
+  });
+  const G = mkState();
+
+  const result = engine.grantSpecificRankIgnoringRequirements(G, '0', 'soldier', 2);
+
+  assert.equal(result.ok, true);
+  assert.equal(G.ranks['0'], 'soldier');
+  assert.equal(G.promotedThisTurn['0'], true);
 });
 
 test('promoteRank respects seat limit for 4 players', () => {

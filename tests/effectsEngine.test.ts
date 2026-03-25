@@ -95,6 +95,21 @@ test('applyCardEffects auto-replaces missing resources when no explicit replacem
   assert.equal(G.resources['0'].discipline, 1);
 });
 
+test('applyCardEffects marks skip turn when resource loss cannot be paid even with replacement', () => {
+  const G = makeState();
+  G.resources['0'] = { time: 0, reputation: 0, discipline: 0, documents: 1, tech: 0 };
+
+  const ok = engine.applyCardEffects(
+    G,
+    '0',
+    [{ resource: 'time', value: -2 }],
+  );
+
+  assert.equal(ok, true);
+  assert.deepEqual(G.resources['0'], { time: 0, reputation: 0, discipline: 0, documents: 0, tech: 0 });
+  assert.equal(G.skippedTurnCounts?.['0'] ?? 0, 1);
+});
+
 test('cancelLastScandalForPlayer reverts last scandal effects for the player', () => {
   const G = makeState();
   G.discard.push({

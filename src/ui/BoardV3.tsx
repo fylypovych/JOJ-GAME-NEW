@@ -8,6 +8,7 @@ import { BoardV3HandSection, BoardV3NoticeStack, BoardV3PlayerOverview, BoardV3S
 import { BoardV3EndVoteModal, BoardV3GameoverModal, BoardV3Header, BoardV3StandingsSummary } from './board/v3ShellSections';
 import { useBoardV2DerivedState } from './board/useBoardV2DerivedState';
 import { useBotPlaybackQueue } from './board/useBotPlaybackQueue';
+import { resolvePlaybackCardMeta } from './board/playbackCardMeta';
 import { usePendingSelection } from './board/usePendingSelection';
 import { useBoardV2StageState } from './board/useBoardV2StageState';
 import { useBoardV2Sync } from './board/useBoardV2Sync';
@@ -22,6 +23,32 @@ type BotPlaybackSpeed = 'fast' | 'normal' | 'slow';
 
 const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
   stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
+
+const buildV3OpponentLayout = (opponentIds: string[]) => {
+  if (opponentIds.length <= 3) {
+    return {
+      topIds: opponentIds,
+      leftIds: [] as string[],
+      rightIds: [] as string[],
+    };
+  }
+
+  if (opponentIds.length === 4) {
+    return {
+      topIds: opponentIds.slice(0, 2),
+      leftIds: opponentIds.slice(2, 3),
+      rightIds: opponentIds.slice(3, 4),
+    };
+  }
+
+  const remaining = opponentIds.slice(3);
+  const leftCount = Math.ceil(remaining.length / 2);
+  return {
+    topIds: opponentIds.slice(0, 3),
+    leftIds: remaining.slice(0, leftCount),
+    rightIds: remaining.slice(leftCount),
+  };
+};
 
 export const BoardV3 = ({
   G: incomingG,
@@ -41,12 +68,6 @@ export const BoardV3 = ({
   const v2 = t.v2;
   const isSpectator = !playerID;
   const [spectatorView, setSpectatorView] = useState<'live' | 'summary'>('live');
-  const [arenaSplash, setArenaSplash] = useState<{
-    id: string;
-    label: string;
-    text: string;
-    tone: 'neutral' | 'warn' | 'good' | 'legendary';
-  } | null>(null);
   const [impactPulse, setImpactPulse] = useState<{
     id: string;
     label: string;
@@ -62,6 +83,9 @@ export const BoardV3 = ({
     botAutoplayEnabled,
     setBotAutoplayEnabled,
     botThinkingPlayerName,
+    botPlaybackEventText,
+    botPlaybackCardTitle,
+    isBotPlaybackActive,
   } = useBotPlaybackQueue({
     incomingG,
     incomingCtx,
@@ -253,7 +277,17 @@ export const BoardV3 = ({
   });
 
   if (!G || !ctx || !resources) {
-    return <section className="board"><p>{t.loading}</p></section>;
+    return (
+      <section className="board">
+        <p>{t.loading}</p>
+        {roomMeta ? <p>{t.activeRoom}: <strong>{roomMeta.matchID}</strong></p> : null}
+        {onLeaveRoom ? (
+          <p>
+            <button type="button" onClick={onLeaveRoom}>{t.leaveRoom}</button>
+          </p>
+        ) : null}
+      </section>
+    );
   }
 
   const promoteReason = getBoardPromoteReason({ G, playerID: id, sharedRanks, resourceLabels, lang });
@@ -270,8 +304,14 @@ export const BoardV3 = ({
     selectedResource,
   });
 
-  const currentStageFocus =
-    stage === 'draw' ? v2.stageFocusDraw : stage === 'play' ? v2.stageFocusPlay : stage === 'end' ? v2.stageFocusEnd : '';
+  const botPlaybackControlLabel = botThinkingPlayerName
+    ? `${v2.botThinkingPrefix}: ${botThinkingPlayerName}`
+    : botPlaybackEventText || v2.waitingAction;
+  const blockPlayerTurnControls = !isSpectator && isBotPlaybackActive;
+  const effectiveIsCurrentPlayer = isCurrentPlayer && !blockPlayerTurnControls;
+  const currentStageFocus = blockPlayerTurnControls
+    ? botPlaybackControlLabel
+    : stage === 'draw' ? v2.stageFocusDraw : stage === 'play' ? v2.stageFocusPlay : stage === 'end' ? v2.stageFocusEnd : '';
   const activeArenaPlayerId = selectedTargetId ?? ctx.currentPlayer ?? null;
   const activeArenaPlayerName = playerLabelById(activeArenaPlayerId);
   const activeArenaResources = activeArenaPlayerId ? G.resources?.[activeArenaPlayerId] ?? null : null;
@@ -280,31 +320,23 @@ export const BoardV3 = ({
     ? sharedRanks.find((rank) => rank.id === activeArenaRankId)?.name ?? rankLabel(activeArenaRankId, lang)
     : '';
   const latestArenaRow = latestEvents[0] ?? null;
-  const latestArenaEvent = latestEvents[0]?.text
-    ? (latestEvents[0].type === 'system' ? latestEvents[0].text : `${playerLabelById(latestEvents[0].playerID)}: ${latestEvents[0].text}`)
-    : '';
   const lastDiscardTitle = lastDiscard ? cardTitle(lastDiscard.id, lastDiscard.title, lang) : '';
+  const playbackCardMeta = resolvePlaybackCardMeta({
+    eventText: botPlaybackEventText,
+    G,
+    cardImageById,
+    lastDiscard,
+    lastDiscardImage,
+  });
+  const displayedDiscardTitle = botPlaybackCardTitle || playbackCardMeta.title || lastDiscardTitle;
+  const displayedDiscardImage = (botPlaybackCardTitle || playbackCardMeta.title) ? playbackCardMeta.imageSrc : lastDiscardImage;
   const focusPrimaryLabel = lastDiscardTitle || activeArenaPlayerName;
   const focusSecondaryLabel = activeArenaRankName || rankName;
-  const focusSupportingText = latestArenaEvent || currentStageFocus;
+  const focusSupportingText = currentStageFocus;
   const currentTurnOwnerResources = ctx.currentPlayer ? G.resources?.[ctx.currentPlayer] ?? null : null;
-
-  useEffect(() => {
-    if (!latestArenaRow?.id) return;
-    const splashText = latestArenaRow.type === 'system'
-      ? latestArenaRow.text
-      : `${playerLabelById(latestArenaRow.playerID)}: ${latestArenaRow.text}`;
-    setArenaSplash({
-      id: latestArenaRow.id,
-      label: latestArenaRow.label,
-      text: splashText,
-      tone: latestArenaRow.tone,
-    });
-    const timeoutId = window.setTimeout(() => {
-      setArenaSplash((current) => (current?.id === latestArenaRow.id ? null : current));
-    }, 1800);
-    return () => window.clearTimeout(timeoutId);
-  }, [latestArenaRow?.id, latestArenaRow?.label, latestArenaRow?.text, latestArenaRow?.tone, latestArenaRow?.type, latestArenaRow?.playerID, playerLabelById]);
+  const opponentLayout = buildV3OpponentLayout(opponentIds);
+  const hasLeftFlank = opponentLayout.leftIds.length > 0;
+  const hasRightFlank = opponentLayout.rightIds.length > 0;
 
   useEffect(() => {
     if (!latestArenaRow?.id) return;
@@ -323,6 +355,22 @@ export const BoardV3 = ({
     }, 2400);
     return () => window.clearTimeout(timeoutId);
   }, [latestArenaRow?.id, latestArenaRow?.label, latestArenaRow?.text, latestArenaRow?.tone, latestArenaRow?.type, latestArenaRow?.playerID, playerLabelById, lastDiscardImage]);
+
+  useEffect(() => {
+    if (!botPlaybackEventText) return;
+    const syntheticId = `bot-playback-${botPlaybackEventText}`;
+    setImpactPulse({
+      id: syntheticId,
+      label: v2.recentEvents,
+      text: botPlaybackEventText,
+      tone: 'warn',
+      imageSrc: displayedDiscardImage,
+    });
+    const timeoutId = window.setTimeout(() => {
+      setImpactPulse((current) => (current?.id === syntheticId ? null : current));
+    }, 1800);
+    return () => window.clearTimeout(timeoutId);
+  }, [botPlaybackEventText, displayedDiscardImage, v2.recentEvents]);
 
   const turnHelpItems = buildTurnHelpItems({
     stage,
@@ -349,7 +397,7 @@ export const BoardV3 = ({
   return (
     <section className={`game-ui-v3-shell ${stageClass}${compactMode ? ' is-compact' : ''}${isSpectator ? ' is-spectator' : ''}`}>
       <BoardV3Header
-        title={isCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle}
+        title={blockPlayerTurnControls ? botPlaybackControlLabel : effectiveIsCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle}
         uiVariant="v3"
         roomMeta={roomMeta}
         playerName={playerName}
@@ -396,6 +444,9 @@ export const BoardV3 = ({
               <p className="game-ui-v3-subtle game-ui-v3-bot-thinking">
                 {v2.botThinkingPrefix}: <strong>{botThinkingPlayerName}</strong>...
               </p>
+            ) : null}
+            {botPlaybackEventText ? (
+              <p className="game-ui-v3-subtle game-ui-v3-bot-thinking">{botPlaybackEventText}</p>
             ) : null}
           </div>
           <div className="game-ui-v3-bot-strip-actions">
@@ -514,7 +565,7 @@ export const BoardV3 = ({
             <div className="game-ui-v3-command-top">
               <div className="game-ui-v3-command-lead">
                 <p className="game-ui-v3-kicker">{v2.commandCenter}</p>
-                <h3>{playerLabelById(ctx.currentPlayer)}</h3>
+                <h3>{blockPlayerTurnControls ? botPlaybackControlLabel : playerLabelById(ctx.currentPlayer)}</h3>
                 <p className="game-ui-v3-subtle">{t.turnStage}: {stageLabel(stage, t)} В· {t.yourRank}: {rankName}</p>
                 <div className="game-ui-v3-command-hero">
                   {rankImage ? (
@@ -524,18 +575,24 @@ export const BoardV3 = ({
                   ) : null}
                   <div className="game-ui-v3-command-hero-meta">
                     <strong>{rankName}</strong>
-                    <span>{isCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle}</span>
+                    <span>{blockPlayerTurnControls ? v2.botControlsTitle : effectiveIsCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle}</span>
                   </div>
                 </div>
               </div>
               <div className="game-ui-v3-command-buttons">
                 <button type="button" onClick={() => {
                   handleDraw();
-                }} disabled={!canDraw}>{t.draw}</button>
+                }} disabled={!canDraw || blockPlayerTurnControls}>{t.draw}</button>
                 <button type="button" onClick={() => {
                   handlePromote(promoteReason);
-                }} disabled={!canPlay}>{t.promote}</button>
-                <button type="button" onClick={() => { handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn); }} disabled={!canEndTurn}>{passButtonLabel}</button>
+                }} disabled={!canPlay || blockPlayerTurnControls}>{t.promote}</button>
+                <button
+                  type="button"
+                  onClick={() => { handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn); }}
+                  disabled={!canEndTurn || blockPlayerTurnControls}
+                >
+                  {blockPlayerTurnControls ? botPlaybackControlLabel : passButtonLabel}
+                </button>
               </div>
             </div>
             <div className="game-ui-v3-resources-grid">
@@ -630,54 +687,61 @@ export const BoardV3 = ({
               <span className="game-ui-v3-board-glow game-ui-v3-board-glow-left" />
               <span className="game-ui-v3-board-glow game-ui-v3-board-glow-right" />
             </div>
-            <div className="game-ui-v3-pressure-lane">
-            <div className="game-ui-v3-opponent-lane">
-              <div className="game-ui-v3-zone-head">
-                <span className="game-ui-v3-stage-label">{v2.playersOverview}</span>
-                <strong>{opponentIds.length}</strong>
+            <div className={`game-ui-v3-battlefield-shell is-opponents-${opponentIds.length}`}>
+              <div className="game-ui-v3-pressure-lane">
+                <div className="game-ui-v3-zone-head game-ui-v3-opponent-summary">
+                  <span className="game-ui-v3-stage-label">{v2.playersOverview}</span>
+                  <strong>{opponentIds.length}</strong>
+                </div>
+                <div className="game-ui-v3-opponent-top">
+                  <BoardV3PlayerOverview
+                    opponentIds={opponentLayout.topIds}
+                    G={G}
+                    sharedRanks={sharedRanks}
+                    ctxCurrentPlayer={ctx.currentPlayer}
+                    lang={lang}
+                    selectedTargetId={selectedTargetId}
+                    activeSelectionNeedsTarget={activeSelectionNeedsTarget}
+                    setSelectedTargetId={setSelectedTargetId}
+                    postTargetPick={(pid) => postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`)}
+                    playerLabelById={playerLabelById}
+                    resourceLabels={resourceLabels}
+                    v2={v2}
+                    getNextRankSeatMeta={getNextRankSeatMeta}
+                    layout="lane"
+                  />
+                </div>
               </div>
-              <BoardV3PlayerOverview
-                opponentIds={opponentIds}
-                G={G}
-                sharedRanks={sharedRanks}
-                ctxCurrentPlayer={ctx.currentPlayer}
-                lang={lang}
-                selectedTargetId={selectedTargetId}
-                activeSelectionNeedsTarget={activeSelectionNeedsTarget}
-                setSelectedTargetId={setSelectedTargetId}
-                postTargetPick={(pid) => postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`)}
-                playerLabelById={playerLabelById}
-                resourceLabels={resourceLabels}
-                v2={v2}
-                getNextRankSeatMeta={getNextRankSeatMeta}
-                layout="lane"
-              />
-            </div>
-            <article className={`game-ui-v3-pressure-pulse${latestArenaRow ? ` is-${latestArenaRow.tone}` : ''}`}>
-              <span className="game-ui-v3-stage-label">{latestArenaRow?.label ?? t.turnStage}</span>
-              <strong>
-                {botThinkingPlayerName
-                  ? `${v2.botThinkingPrefix}: ${botThinkingPlayerName}`
-                  : `${playerLabelById(ctx.currentPlayer)} · ${stageLabel(stage, t)}`}
-              </strong>
-              <p className="game-ui-v3-subtle">{focusSupportingText}</p>
-            </article>
-            </div>
-            <div className="game-ui-v3-altar-lane">
+              <div className={`game-ui-v3-center-row${hasLeftFlank ? ' has-left-flank' : ''}${hasRightFlank ? ' has-right-flank' : ''}`}>
+                {hasLeftFlank ? (
+                  <aside className="game-ui-v3-opponent-flank is-left">
+                    <BoardV3PlayerOverview
+                      opponentIds={opponentLayout.leftIds}
+                      G={G}
+                      sharedRanks={sharedRanks}
+                      ctxCurrentPlayer={ctx.currentPlayer}
+                      lang={lang}
+                      selectedTargetId={selectedTargetId}
+                      activeSelectionNeedsTarget={activeSelectionNeedsTarget}
+                      setSelectedTargetId={setSelectedTargetId}
+                      postTargetPick={(pid) => postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`)}
+                      playerLabelById={playerLabelById}
+                      resourceLabels={resourceLabels}
+                      v2={v2}
+                      getNextRankSeatMeta={getNextRankSeatMeta}
+                      layout="lane"
+                    />
+                  </aside>
+                ) : null}
+                <div className="game-ui-v3-altar-lane">
             <div className="game-ui-v3-arena">
               <div className="game-ui-v3-arena-main">
-                {arenaSplash ? (
-                  <div className={`game-ui-v3-arena-splash is-visible is-${arenaSplash.tone}`} aria-live="polite">
-                    <span className="game-ui-v3-stage-label">{arenaSplash.label}</span>
-                    <strong>{arenaSplash.text}</strong>
-                  </div>
-                ) : null}
                 {impactPulse ? (
                   <div className={`game-ui-v3-impact-pulse is-${impactPulse.tone}`} aria-live="polite">
                     <div className="game-ui-v3-impact-beam" aria-hidden="true" />
                     {impactPulse.imageSrc ? (
                       <div className="game-ui-v3-impact-card">
-                        <img src={impactPulse.imageSrc} alt={focusPrimaryLabel} />
+                        <img src={impactPulse.imageSrc} alt={displayedDiscardTitle || focusPrimaryLabel} />
                       </div>
                     ) : null}
                     <div className="game-ui-v3-impact-copy">
@@ -687,68 +751,19 @@ export const BoardV3 = ({
                     </div>
                   </div>
                 ) : null}
-                <p className="game-ui-v3-kicker">{v2.commandCenter}</p>
                 <h4>{activeArenaPlayerName}</h4>
                 <p className="game-ui-v3-subtle">
-                  {selectedTargetId ? v2.pickTarget : (isCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle)}
+                  {selectedTargetId ? v2.pickTarget : (blockPlayerTurnControls ? v2.botControlsTitle : effectiveIsCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle)}
                 </p>
                 <div className={`game-ui-v3-combat-banner${latestArenaRow ? ` is-${latestArenaRow.tone}` : ''}`}>
                   <span className="game-ui-v3-stage-label">
-                    {latestArenaRow?.label ?? t.turnStage}
+                    {botPlaybackEventText ? v2.recentEvents : (latestArenaRow?.label ?? t.turnStage)}
                   </span>
-                  <strong>
-                    {botThinkingPlayerName
-                      ? `${v2.botThinkingPrefix}: ${botThinkingPlayerName}`
-                      : `${playerLabelById(ctx.currentPlayer)} · ${stageLabel(stage, t)}`}
-                  </strong>
+                  <strong>{blockPlayerTurnControls ? botPlaybackControlLabel : `${playerLabelById(ctx.currentPlayer)} · ${stageLabel(stage, t)}`}</strong>
                 </div>
-                {latestArenaEvent ? (
-                  <div className="game-ui-v3-arena-feed">
-                    <span className="game-ui-v3-stage-label">{v2.recentEvents}</span>
-                    <strong>{latestArenaEvent}</strong>
-                  </div>
-                ) : null}
-              </div>
-              <div className="game-ui-v3-arena-side">
-                <span className="game-ui-v3-stage-label">{hasBotPlayers ? v2.botControlsTitle : v2.playersOverview}</span>
-                <strong>{botThinkingPlayerName || playerLabelById(ctx.currentPlayer)}</strong>
-                <p className="game-ui-v3-subtle">
-                  {botThinkingPlayerName ? `${v2.botThinkingPrefix}: ${botThinkingPlayerName}` : currentStageFocus}
-                </p>
               </div>
             </div>
             <div className="game-ui-v3-altar-focus-shell">
-            <div className="game-ui-v3-altar-status">
-              <span className="game-ui-v3-altar-status-chip">
-                <span className="game-ui-v3-stage-label">{t.turnStage}</span>
-                <strong>{stageLabel(stage, t)}</strong>
-              </span>
-              <span className="game-ui-v3-altar-status-chip">
-                <span className="game-ui-v3-stage-label">{selectedTargetId ? v2.pickTarget : v2.commandCenter}</span>
-                <strong>{activeArenaPlayerName}</strong>
-              </span>
-              <span className={`game-ui-v3-altar-status-chip${latestArenaRow ? ` is-${latestArenaRow.tone}` : ''}`}>
-                <span className="game-ui-v3-stage-label">{latestArenaRow?.label ?? v2.recentEvents}</span>
-                <strong>{focusPrimaryLabel}</strong>
-              </span>
-            </div>
-            <div className="game-ui-v3-threat-strip">
-              <div className="game-ui-v3-threat-card">
-                <span className="game-ui-v3-stage-label">{t.turnStage}</span>
-                <strong>{playerLabelById(ctx.currentPlayer)}</strong>
-                <small>{stageLabel(stage, t)}</small>
-              </div>
-              <div className="game-ui-v3-threat-card">
-                <span className="game-ui-v3-stage-label">{selectedTargetId ? v2.pickTarget : v2.commandCenter}</span>
-                <strong>{activeArenaPlayerName}</strong>
-                <small>{focusSecondaryLabel}</small>
-              </div>
-              <div className={`game-ui-v3-threat-card${latestArenaRow ? ` is-${latestArenaRow.tone}` : ''}`}>
-                <span className="game-ui-v3-stage-label">{latestArenaRow?.label ?? v2.recentEvents}</span>
-                <strong>{focusPrimaryLabel}</strong>
-                <small>{focusSupportingText}</small>
-              </div>
-            </div>
             <div className="game-ui-v3-table">
               <article className="game-ui-v3-zone game-ui-v3-zone-deck">
                 <div className="game-ui-v3-zone-head">
@@ -771,16 +786,16 @@ export const BoardV3 = ({
               </article>
               <article className="game-ui-v3-zone game-ui-v3-zone-focus">
                 <div className="game-ui-v3-zone-head">
-                  <span className="game-ui-v3-stage-label">{selectedTargetId ? v2.pickTarget : v2.commandCenter}</span>
+                  <span className="game-ui-v3-stage-label">{selectedTargetId ? v2.pickTarget : v2.tableState}</span>
                   <strong>{activeArenaPlayerName}</strong>
                 </div>
                 <div className="game-ui-v3-focus-body">
                   <div className="game-ui-v3-focus-card">
-                    {lastDiscard ? (
+                    {displayedDiscardTitle ? (
                       <PilePreview
-                      imageSrc={lastDiscardImage}
-                      alt={lastDiscardTitle}
-                      previewKey={`v3-focus-${lastDiscard.id}`}
+                      imageSrc={displayedDiscardImage}
+                      alt={displayedDiscardTitle}
+                      previewKey={`v3-focus-${botPlaybackCardTitle || lastDiscard?.id || displayedDiscardTitle}`}
                       openPreviewKey={openPreviewKey}
                       onTogglePreview={togglePreview}
                       onClosePreview={() => setOpenPreviewKey(null)}
@@ -791,7 +806,7 @@ export const BoardV3 = ({
                     )}
                   </div>
                   <div className="game-ui-v3-focus-meta">
-                    <strong>{focusPrimaryLabel}</strong>
+                    <strong>{displayedDiscardTitle || focusPrimaryLabel}</strong>
                     <span>{focusSecondaryLabel}</span>
                     <div className={`game-ui-v3-focus-tone${latestArenaRow ? ` is-${latestArenaRow.tone}` : ''}`}>
                       {latestArenaRow?.label ?? v2.waitingAction}
@@ -815,11 +830,11 @@ export const BoardV3 = ({
                   <strong>{G.discard?.length ?? 0}</strong>
                 </div>
                 <div className="game-ui-v3-zone-card">
-                  {lastDiscard ? (
+                  {displayedDiscardTitle ? (
                     <PilePreview
-                      imageSrc={lastDiscardImage}
-                      alt={lastDiscardTitle}
-                      previewKey={`v3-discard-${lastDiscard.id}`}
+                      imageSrc={displayedDiscardImage}
+                      alt={displayedDiscardTitle}
+                      previewKey={`v3-discard-${botPlaybackCardTitle || lastDiscard?.id || displayedDiscardTitle}`}
                       openPreviewKey={openPreviewKey}
                       onTogglePreview={togglePreview}
                       onClosePreview={() => setOpenPreviewKey(null)}
@@ -827,27 +842,39 @@ export const BoardV3 = ({
                     />
                   ) : <div className="pile-empty">{t.noCardsInDiscard}</div>}
                 </div>
-                <p className="game-ui-v3-zone-meta">{lastDiscardTitle || t.noCardsInDiscard}</p>
+                <p className="game-ui-v3-zone-meta">{displayedDiscardTitle || t.noCardsInDiscard}</p>
               </article>
             </div>
             </div>
+            </div>
+                {hasRightFlank ? (
+                  <aside className="game-ui-v3-opponent-flank is-right">
+                    <BoardV3PlayerOverview
+                      opponentIds={opponentLayout.rightIds}
+                      G={G}
+                      sharedRanks={sharedRanks}
+                      ctxCurrentPlayer={ctx.currentPlayer}
+                      lang={lang}
+                      selectedTargetId={selectedTargetId}
+                      activeSelectionNeedsTarget={activeSelectionNeedsTarget}
+                      setSelectedTargetId={setSelectedTargetId}
+                      postTargetPick={(pid) => postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`)}
+                      playerLabelById={playerLabelById}
+                      resourceLabels={resourceLabels}
+                      v2={v2}
+                      getNextRankSeatMeta={getNextRankSeatMeta}
+                      layout="lane"
+                    />
+                  </aside>
+                ) : null}
             </div>
             <div className="game-ui-v3-tactical-lane">
               <article className="game-ui-v3-tactical-card">
-                <span className="game-ui-v3-stage-label">{hasBotPlayers ? v2.botControlsTitle : v2.commandCenter}</span>
-                <strong>{botThinkingPlayerName || playerLabelById(ctx.currentPlayer)}</strong>
+                <span className="game-ui-v3-stage-label">{v2.tableState}</span>
+                <strong>{blockPlayerTurnControls ? botPlaybackControlLabel : playerLabelById(ctx.currentPlayer)}</strong>
                 <p className="game-ui-v3-subtle">
-                  {botThinkingPlayerName ? `${v2.botThinkingPrefix}: ${botThinkingPlayerName}` : currentStageFocus}
+                  {t.drawPile}: {G.deck?.length ?? 0} · {t.discardPile}: {G.discard?.length ?? 0}
                 </p>
-              </article>
-              <article className="game-ui-v3-tactical-card">
-                <span className="game-ui-v3-stage-label">{v2.recentEvents}</span>
-                <strong>{latestEvents.length}</strong>
-                <p className="game-ui-v3-subtle">{focusSupportingText}</p>
-              </article>
-              <article className="game-ui-v3-tactical-card">
-                <span className="game-ui-v3-stage-label">{v2.nextRankProgress}</span>
-                <strong>{playerLabelById(ctx.currentPlayer)}</strong>
                 <div className="game-ui-v3-tactical-resources">
                   {RESOURCE_ORDER.map((key) => (
                     <span key={`turn-owner-resource-${key}`}>
@@ -856,6 +883,7 @@ export const BoardV3 = ({
                   ))}
                 </div>
               </article>
+            </div>
             </div>
           </section>
           ) : null}
@@ -879,14 +907,6 @@ export const BoardV3 = ({
                 <div className={`game-ui-v3-hand-rail-chip${mustDiscardOverflow ? ' is-warn' : ''}`}>
                   <span className="game-ui-v3-stage-label">{v2.play}</span>
                   <strong>{canPlayHandCard ? v2.canPlayNow : v2.actionUnavailable}</strong>
-                </div>
-              </div>
-              <div className={`game-ui-v3-play-echo${latestArenaRow ? ` is-${latestArenaRow.tone}` : ''}`}>
-                <div className="game-ui-v3-play-echo-line" aria-hidden="true" />
-                <div className="game-ui-v3-play-echo-card">
-                  <span className="game-ui-v3-stage-label">{latestArenaRow?.label ?? v2.recentEvents}</span>
-                  <strong>{lastDiscard ? cardTitle(lastDiscard.id, lastDiscard.title, lang) : (latestArenaRow?.label ?? v2.waitingAction)}</strong>
-                  <p className="game-ui-v3-subtle">{latestArenaEvent || currentStageFocus}</p>
                 </div>
               </div>
               <div className="game-ui-v3-hand-head">
@@ -947,16 +967,6 @@ export const BoardV3 = ({
               />
             </div>
             <aside className="game-ui-v3-player-dock-side">
-              <section className="game-ui-v3-panel game-ui-v3-dock-status">
-                <span className="game-ui-v3-stage-label">{v2.commandCenter}</span>
-                <strong>{rankName}</strong>
-                <p className="game-ui-v3-subtle">{currentStageFocus}</p>
-                <div className="game-ui-v3-dock-status-grid">
-                  <span>{t.drawPile}</span><strong>{G.deck?.length ?? 0}</strong>
-                  <span>{t.discardPile}</span><strong>{G.discard?.length ?? 0}</strong>
-                  <span>{v2.recentEvents}</span><strong>{latestEvents.length}</strong>
-                </div>
-              </section>
               {!isSimplifiedMode ? (
                 <section className="game-ui-v3-panel game-ui-v3-legendary-frame">
                   <BoardV3HandSection
@@ -1052,9 +1062,11 @@ export const BoardV3 = ({
 
       {!isSpectator ? (
       <div className="game-ui-v3-mobile-bar" aria-label={v2.mobileActions}>
-        <button type="button" onClick={handleDraw} disabled={!canDraw}>{t.draw}</button>
-        <button type="button" onClick={() => handlePromote(promoteReason)} disabled={!canPlay || Boolean(promoteReason)}>{t.promote}</button>
-        <button type="button" onClick={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)} disabled={!canEndTurn}>{passButtonLabel}</button>
+        <button type="button" onClick={handleDraw} disabled={!canDraw || blockPlayerTurnControls}>{t.draw}</button>
+        <button type="button" onClick={() => handlePromote(promoteReason)} disabled={!canPlay || Boolean(promoteReason) || blockPlayerTurnControls}>{t.promote}</button>
+        <button type="button" onClick={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)} disabled={!canEndTurn || blockPlayerTurnControls}>
+          {blockPlayerTurnControls ? botPlaybackControlLabel : passButtonLabel}
+        </button>
       </div>
       ) : null}
     </section>

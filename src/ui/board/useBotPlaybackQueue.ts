@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { JojGameState } from '../../game/types';
+import { extractPlaybackCardTitle } from './playbackCardMeta';
 
 type PlaybackCtx = {
   currentPlayer?: string;
@@ -16,6 +17,8 @@ type Snapshot = {
 type QueuedSnapshot = Snapshot & {
   shouldDelay: boolean;
   actorName: string;
+  eventText: string;
+  eventCardTitle: string;
 };
 
 type BotPlaybackSpeed = 'fast' | 'normal' | 'slow';
@@ -25,6 +28,58 @@ const BOT_DELAY_BY_SPEED: Record<BotPlaybackSpeed, number> = {
   normal: 850,
   slow: 1600,
 };
+
+export const clonePlaybackSnapshot = (snapshot: Snapshot): Snapshot => {
+  if (typeof structuredClone === 'function') {
+    return structuredClone(snapshot);
+  }
+  return JSON.parse(JSON.stringify(snapshot)) as Snapshot;
+};
+
+const collectNewChatRows = (
+  chat: JojGameState['chat'] | undefined,
+  lastSeenChatId: string,
+) => {
+  const rows = chat ?? [];
+  if (!rows.length) return [] as NonNullable<JojGameState['chat']>;
+  if (!lastSeenChatId) return rows;
+  const lastSeenIndex = rows.findIndex((row) => row.id === lastSeenChatId);
+  if (lastSeenIndex < 0) return rows;
+  return rows.slice(lastSeenIndex + 1);
+};
+
+const resolveBotActorNameFromText = (text: string, G: JojGameState) => {
+  const botIds = Object.keys(G?.botPlayers ?? {});
+  for (const playerID of botIds) {
+    const botName = String(G?.playerNames?.[playerID] ?? G?.botPlayers?.[playerID]?.name ?? '').trim();
+    if (botName && text.includes(botName)) return botName;
+  }
+  return '';
+};
+
+const collectBotPlaybackEvents = (G: JojGameState, lastSeenChatId: string) =>
+  collectNewChatRows(G?.chat, lastSeenChatId)
+    .filter((row) => row.type === 'system')
+    .map((row) => ({
+      id: row.id,
+      text: row.text,
+      actorName: resolveBotActorNameFromText(row.text, G),
+    }))
+    .filter((row) => row.actorName);
+
+export const buildBotPlaybackQueuedSnapshots = (args: {
+  botPlaybackEvents: Array<{ actorName: string; text: string }>;
+  queuedSnapshot: Snapshot;
+}) => args.botPlaybackEvents.map((event) => {
+  return {
+    G: args.queuedSnapshot.G,
+    ctx: args.queuedSnapshot.ctx,
+    shouldDelay: true,
+    actorName: event.actorName,
+    eventText: event.text,
+    eventCardTitle: extractPlaybackCardTitle(event.text),
+  };
+});
 
 export const createPlaybackSignature = (args: {
   G: JojGameState;
@@ -88,14 +143,22 @@ export const useBotPlaybackQueue = (args: {
   const [botPlaybackSpeed, setBotPlaybackSpeed] = useState<BotPlaybackSpeed>('normal');
   const [botAutoplayEnabled, setBotAutoplayEnabled] = useState(true);
   const [botThinkingPlayerName, setBotThinkingPlayerName] = useState('');
-  const [renderSnapshot, setRenderSnapshot] = useState<Snapshot>(() => ({
+  const [botPlaybackEventText, setBotPlaybackEventText] = useState('');
+  const [botPlaybackCardTitle, setBotPlaybackCardTitle] = useState('');
+  const [isBotPlaybackActive, setIsBotPlaybackActive] = useState(false);
+  const [renderSnapshot, setRenderSnapshot] = useState<Snapshot>(() => clonePlaybackSnapshot({
     G: incomingG,
     ctx: incomingCtx,
   }));
   const snapshotQueueRef = useRef<QueuedSnapshot[]>([]);
+  const renderSnapshotRef = useRef<Snapshot>(clonePlaybackSnapshot({
+    G: incomingG,
+    ctx: incomingCtx,
+  }));
   const processingQueueRef = useRef(false);
   const lastSnapshotSignatureRef = useRef('');
   const previousIncomingCurrentPlayerRef = useRef(incomingCtx?.currentPlayer ?? '');
+  const lastSeenChatIdRef = useRef((incomingG?.chat ?? []).slice(-1)[0]?.id ?? '');
   const delayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const botAutoplayEnabledRef = useRef(true);
   const botDelayMsRef = useRef(BOT_DELAY_BY_SPEED.normal);
@@ -117,28 +180,42 @@ export const useBotPlaybackQueue = (args: {
     const nextSnapshot = snapshotQueueRef.current[0];
     if (!nextSnapshot) {
       setBotThinkingPlayerName('');
+      setBotPlaybackEventText('');
+      setBotPlaybackCardTitle('');
+      setIsBotPlaybackActive(false);
       return;
     }
     if (nextSnapshot.shouldDelay && !botAutoplayEnabledRef.current) {
       setBotThinkingPlayerName(nextSnapshot.actorName);
+      setBotPlaybackEventText(nextSnapshot.eventText);
+      setBotPlaybackCardTitle(nextSnapshot.eventCardTitle);
+      setIsBotPlaybackActive(true);
       return;
     }
     snapshotQueueRef.current.shift();
     processingQueueRef.current = true;
     const finish = () => {
       setRenderSnapshot(nextSnapshot);
+      renderSnapshotRef.current = nextSnapshot;
       processingQueueRef.current = false;
       setBotThinkingPlayerName('');
+      setBotPlaybackEventText(nextSnapshot.eventText);
+      setBotPlaybackCardTitle(nextSnapshot.eventCardTitle);
+      setIsBotPlaybackActive(snapshotQueueRef.current.length > 0);
       if (snapshotQueueRef.current.length) processSnapshotQueue();
     };
     if (nextSnapshot.shouldDelay) {
       setBotThinkingPlayerName(nextSnapshot.actorName);
+      setBotPlaybackEventText(nextSnapshot.eventText);
+      setBotPlaybackCardTitle(nextSnapshot.eventCardTitle);
+      setIsBotPlaybackActive(true);
       delayTimerRef.current = setTimeout(() => {
         delayTimerRef.current = null;
         finish();
       }, botDelayMsRef.current);
       return;
     }
+    setIsBotPlaybackActive(snapshotQueueRef.current.length > 0);
     finish();
   }, []);
 
@@ -160,12 +237,27 @@ export const useBotPlaybackQueue = (args: {
       nextSnapshot: { G: incomingG, ctx: incomingCtx },
     });
     previousIncomingCurrentPlayerRef.current = incomingCtx?.currentPlayer ?? '';
-    snapshotQueueRef.current.push({
+    const queuedSnapshot = clonePlaybackSnapshot({
       G: incomingG,
       ctx: incomingCtx,
-      shouldDelay: playbackMeta.shouldDelay,
-      actorName: playbackMeta.actorName,
     });
+    const botPlaybackEvents = collectBotPlaybackEvents(incomingG, lastSeenChatIdRef.current);
+    lastSeenChatIdRef.current = (incomingG?.chat ?? []).slice(-1)[0]?.id ?? lastSeenChatIdRef.current;
+    if (botPlaybackEvents.length > 0) {
+      snapshotQueueRef.current.push(...buildBotPlaybackQueuedSnapshots({
+        botPlaybackEvents,
+        queuedSnapshot,
+      }));
+    } else {
+      snapshotQueueRef.current.push({
+        G: queuedSnapshot.G,
+        ctx: queuedSnapshot.ctx,
+        shouldDelay: playbackMeta.shouldDelay,
+        actorName: playbackMeta.actorName,
+        eventText: '',
+        eventCardTitle: '',
+      });
+    }
     processSnapshotQueue();
   }, [incomingG, incomingCtx, playerID, processSnapshotQueue]);
 
@@ -177,5 +269,8 @@ export const useBotPlaybackQueue = (args: {
     botAutoplayEnabled,
     setBotAutoplayEnabled,
     botThinkingPlayerName,
+    botPlaybackEventText,
+    botPlaybackCardTitle,
+    isBotPlaybackActive,
   };
 };

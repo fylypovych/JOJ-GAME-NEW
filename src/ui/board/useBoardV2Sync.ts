@@ -1,6 +1,7 @@
 import { useEffect, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import type { JojGameState, ResourceKey } from '../../game/types';
 import type { JojMoveApi } from './types';
+import { getPendingReplacementTargetIds } from './usePendingSelection';
 
 type PendingSelection =
   | { type: 'hand-lyap'; cardId: string }
@@ -130,16 +131,41 @@ export const useBoardV2Sync = (args: {
       return;
     }
     const nextType = pending.kind === 'LYAP' ? 'draw-lyap' : 'draw-scandal';
+    const replacementTargetIds = getPendingReplacementTargetIds({
+      pendingSelection: { type: nextType, cardId: pending.card.id },
+      currentPendingCard: pending.card,
+      selectedTargetId: null,
+      shieldByPlayer: args.G?.lyapScandalShieldUntilTurn,
+      allPlayerIds: Object.keys(args.G?.players ?? {}),
+      opponentIds: Object.keys(args.G?.players ?? {}).filter((pid) => pid !== args.id),
+      resourcesByPlayer: args.G?.resources,
+      currentTurn: args.ctx?.turn,
+      selfPlayerId: args.id,
+    });
+    if (replacementTargetIds.length === 0) {
+      args.setPendingSelection((prev) => (
+        prev?.type === 'draw-lyap' || prev?.type === 'draw-scandal' ? null : prev
+      ));
+      args.setSelectedTargetId(null);
+      args.setSelectedResource(null);
+      args.setReplacementSelectionsByTarget({});
+      args.setActiveReplacementTargetId(null);
+      runMove(
+        () => args.moves.resolveDrawAutoCard?.([], {}),
+        args.v2.actionUnavailable,
+      );
+      return;
+    }
     args.setPendingSelection((prev) => {
       if (prev?.type === nextType && prev.cardId === pending.card.id) return prev;
       args.setSelectedTargetId(null);
       args.setSelectedResource(null);
       args.setReplacementSelectionsByTarget({});
-      args.setActiveReplacementTargetId(pending.kind === 'SCANDAL' ? (Object.keys(args.G?.players ?? {})[0] ?? null) : args.id);
+      args.setActiveReplacementTargetId(replacementTargetIds[0] ?? null);
       args.postNotice('info', `${args.v2.replacementSelection}: ${args.cardTitle(pending.card.id, pending.card.title, args.lang)}`);
       return { type: nextType, cardId: pending.card.id };
     });
-  }, [args.G?.pendingDrawAutoResolution, args.G?.players, args.id, args.stage, args.lang]);
+  }, [args.G?.pendingDrawAutoResolution, args.G?.players, args.G?.lyapScandalShieldUntilTurn, args.G?.resources, args.ctx?.turn, args.id, args.stage, args.lang]);
 
   useEffect(() => {
     args.setGameoverModalClosed(false);

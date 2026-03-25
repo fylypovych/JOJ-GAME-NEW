@@ -398,7 +398,7 @@ export const BoardV3PlayerOverview = (props: {
             </div>
             <div className="game-ui-v3-player-rank">{pRank}</div>
             <div className="game-ui-v3-player-badges">
-              {active ? <span className="pill pill-badge">{v2.currentTurn ?? 'Current turn'}</span> : null}
+              {active ? <span className="pill pill-badge">{v2.currentTurn}</span> : null}
               {selectable ? <span className="pill pill-badge">{v2.targetableNow}</span> : null}
               {pMeta.seatBlocked ? <span className="pill pill-badge">{v2.seatBlocked}</span> : null}
               {(G.lyapScandalShieldUntilTurn?.[pid] ?? 0) > 0 ? <span className="pill pill-badge">{v2.shieldUntil}: {G.lyapScandalShieldUntilTurn?.[pid] ?? 0}</span> : null}

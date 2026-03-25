@@ -204,7 +204,12 @@ export const App = () => {
     exportDbBackup,
     restoreDbBackup,
     ADMIN_STORAGE_MODE_STORAGE_KEY,
-  } = useDbAdminTools({ lang, adminFetch, serverUrl: SERVER_URL });
+  } = useDbAdminTools({
+    lang,
+    adminFetch,
+    serverUrl: SERVER_URL,
+    enabled: isAdminRoute && adminAuthorized,
+  });
   const {
     sharedDeckTemplate,
     cardCatalog,
