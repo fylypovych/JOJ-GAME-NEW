@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 export const BoardV3Header = (props: {
   title: string;
   uiVariant?: 'v2' | 'v3';
@@ -15,6 +17,7 @@ export const BoardV3Header = (props: {
   requestEndGameLabel: string;
   onRequestEndGame: () => void;
   requestEndGameDisabled: boolean;
+  sideContent?: ReactNode;
 }) => {
   const {
     title,
@@ -33,10 +36,11 @@ export const BoardV3Header = (props: {
     requestEndGameLabel,
     onRequestEndGame,
     requestEndGameDisabled,
+    sideContent,
   } = props;
   return (
     <header className="game-ui-v3-header">
-      <div>
+      <div className="game-ui-v3-header-main">
         <p className="game-ui-v3-kicker">{uiVariant === 'v3' ? 'JOJ V3 TCG' : 'JOJ V2'}</p>
         <h2>{title}</h2>
         {roomMeta ? (
@@ -51,19 +55,22 @@ export const BoardV3Header = (props: {
         {seatConnectionMissing ? <p className="admin-error">{seatConnectionMissingText}</p> : null}
       </div>
       <div className="game-ui-v3-header-actions">
-        {onLeaveRoom ? (
-          <button type="button" className="game-ui-v3-header-leave" onClick={onLeaveRoom}>
-            {leaveRoomLabel}
+        {sideContent ? <div className="game-ui-v3-header-tools">{sideContent}</div> : null}
+        <div className="game-ui-v3-header-button-row">
+          {onLeaveRoom ? (
+            <button type="button" className="game-ui-v3-header-leave" onClick={onLeaveRoom}>
+              {leaveRoomLabel}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="game-ui-v3-header-leave"
+            onClick={onRequestEndGame}
+            disabled={requestEndGameDisabled}
+          >
+            {requestEndGameLabel}
           </button>
-        ) : null}
-        <button
-          type="button"
-          className="game-ui-v3-header-leave"
-          onClick={onRequestEndGame}
-          disabled={requestEndGameDisabled}
-        >
-          {requestEndGameLabel}
-        </button>
+        </div>
       </div>
     </header>
   );

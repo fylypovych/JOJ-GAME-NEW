@@ -35,10 +35,11 @@ export const buildGameoverPlayerSummaries = (args: {
       const playerResources = G.resources?.[pid] ?? {};
       const statRow = G.playerGameStats?.[pid];
       const resourcesText = RESOURCE_ORDER.map((key) => `${resourceLabels[key]} ${playerResources[key] ?? 0}`).join(', ');
+      const rankId = G.ranks?.[pid] ?? '';
       return {
         playerID: pid,
         name: playerLabelById(pid),
-        rankName: rankLabel(G.ranks?.[pid] ?? '', lang),
+        rankName: sharedRanks.find((row) => row.id === rankId)?.name ?? rankLabel(rankId, lang),
         resourcesText,
         turnsTaken: statRow?.turnsTaken ?? 0,
         resourcesGainedTotal: statRow?.resourcesGainedTotal ?? 0,
@@ -46,7 +47,7 @@ export const buildGameoverPlayerSummaries = (args: {
         lyapsPlayedOnOthers: statRow?.lyapsPlayedOnOthers ?? 0,
         scandalsPlayedOnOthers: statRow?.scandalsPlayedOnOthers ?? 0,
         winner: pid === winnerPlayerID,
-        rankId: G.ranks?.[pid] ?? '',
+        rankId,
         reputation: playerResources.reputation ?? 0,
       };
     })

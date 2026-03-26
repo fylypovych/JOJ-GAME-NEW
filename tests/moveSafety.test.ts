@@ -431,10 +431,14 @@ test('playLegendaryCardHandler rejects legendary play outside acting player turn
 test('playLegendaryCardHandler allows legendary play during draw stage of own turn', () => {
   const G = makeState();
   G.legendaryHands['0'] = [{ id: 'legendary-03', title: 'Legendary', category: 'LEGENDARY', effects: [] }];
+  let nextStage = '';
   const args: MoveArgs = {
     G,
     ctx: { currentPlayer: '0', activePlayers: { '0': 'draw' }, turn: 1, numPlayers: 2 },
     playerID: '0',
+    events: {
+      setStage: (stage: string) => { nextStage = stage; },
+    },
   };
 
   const result = playLegendaryCardHandler(makeDeps({
@@ -442,8 +446,68 @@ test('playLegendaryCardHandler allows legendary play during draw stage of own tu
   }), args, 'legendary-03');
 
   assert.equal(result, undefined);
+  assert.equal(nextStage, 'draw');
   assert.equal(G.legendaryHands['0'].length, 0);
   assert.equal(G.legendaryDiscard.length, 1);
+});
+
+test('playLegendaryCardHandler keeps current turn active when card causes future skip', () => {
+  const G = makeState();
+  G.legendaryHands['0'] = [{ id: 'legendary-11', title: 'Legendary Skip', category: 'LEGENDARY', effects: [{ resource: 'tech', value: -2 }] }];
+  let ended = false;
+  const args: MoveArgs = {
+    G,
+    ctx: { currentPlayer: '0', activePlayers: { '0': 'play' }, turn: 1, numPlayers: 2 },
+    playerID: '0',
+    events: { endTurn: () => { ended = true; } },
+  };
+
+  const result = playLegendaryCardHandler(makeDeps({
+    applyCardEffects: (state: JojGameState, playerID: string) => {
+      state.resources[playerID].tech = 0;
+      state.skippedTurnCounts = { ...(state.skippedTurnCounts ?? {}), [playerID]: 1 };
+      return true;
+    },
+    snapshotResourcesForStats: () => ({ '0': { ...G.resources['0'] }, '1': { ...G.resources['1'] } }),
+  }), args, 'legendary-11');
+
+  assert.equal(result, undefined);
+  assert.equal(ended, false);
+  assert.equal(G.skippedTurnCounts?.['0'], 1);
+  assert.equal(G.legendaryHands['0'].length, 0);
+  assert.equal(G.legendaryDiscard.at(-1)?.id, 'legendary-11');
+});
+
+test('playLegendaryCardHandler keeps draw stage and does not end turn when played legendary adds future skip', () => {
+  const G = makeState();
+  G.legendaryHands['0'] = [{ id: 'legendary-11', title: 'Legendary Skip', category: 'LEGENDARY', effects: [{ resource: 'tech', value: -2 }] }];
+  let ended = false;
+  let nextStage = '';
+  const args: MoveArgs = {
+    G,
+    ctx: { currentPlayer: '0', activePlayers: { '0': 'draw' }, turn: 1, numPlayers: 2 },
+    playerID: '0',
+    events: {
+      endTurn: () => { ended = true; },
+      setStage: (stage: string) => { nextStage = stage; },
+    },
+  };
+
+  const result = playLegendaryCardHandler(makeDeps({
+    applyCardEffects: (state: JojGameState, playerID: string) => {
+      state.resources[playerID].tech = 0;
+      state.skippedTurnCounts = { ...(state.skippedTurnCounts ?? {}), [playerID]: 1 };
+      return true;
+    },
+    snapshotResourcesForStats: () => ({ '0': { ...G.resources['0'] }, '1': { ...G.resources['1'] } }),
+  }), args, 'legendary-11');
+
+  assert.equal(result, undefined);
+  assert.equal(ended, false);
+  assert.equal(nextStage, 'draw');
+  assert.equal(G.skippedTurnCounts?.['0'], 1);
+  assert.equal(G.legendaryHands['0'].length, 0);
+  assert.equal(G.legendaryDiscard.at(-1)?.id, 'legendary-11');
 });
 
 test('promoteHandler moves player to end stage after successful promotion', () => {
@@ -490,6 +554,39 @@ test('playCardHandler rejects VVNZ when player already received promotion this t
   assert.equal(result, 'INVALID_MOVE');
   assert.equal(G.hands['0'].length, 1);
   assert.equal(G.discard.length, 0);
+});
+
+test('playCardHandler keeps current turn active when played card causes future skip', () => {
+  const G = makeState();
+  G.hands['0'] = [{ id: 'support-skip', title: 'Support Skip', category: 'SUPPORT', effects: [{ resource: 'tech', value: -2 }] }];
+  G.players['0'].hand = G.hands['0'];
+  let ended = false;
+  let nextStage = '';
+  const args: MoveArgs = {
+    G,
+    ctx: { currentPlayer: '0', activePlayers: { '0': 'play' }, turn: 1 },
+    playerID: '0',
+    events: {
+      endTurn: () => { ended = true; },
+      setStage: (stage: string) => { nextStage = stage; },
+    },
+  };
+
+  const result = playCardHandler(makeDeps({
+    applyCardEffects: (state: JojGameState, playerID: string) => {
+      state.resources[playerID].tech = 0;
+      state.skippedTurnCounts = { ...(state.skippedTurnCounts ?? {}), [playerID]: 1 };
+      return true;
+    },
+    snapshotResourcesForStats: () => ({ '0': { ...G.resources['0'] }, '1': { ...G.resources['1'] } }),
+  }), args, 'support-skip');
+
+  assert.equal(result, undefined);
+  assert.equal(ended, false);
+  assert.equal(nextStage, 'end');
+  assert.equal(G.skippedTurnCounts?.['0'], 1);
+  assert.equal(G.hands['0'].length, 0);
+  assert.equal(G.discard.at(-1)?.id, 'support-skip');
 });
 
 test('createEmptyGameState starts resource flow stats at zero', () => {

@@ -87,6 +87,7 @@ const classifySystemEvent = (textValue: string, lang: 'uk' | 'en') => {
 export const useBoardV2DerivedState = (args: {
   G: JojGameState;
   ctx: { gameover?: unknown };
+  stage?: string;
   id: string;
   hand: CardDefinition[];
   legendaryHand: CardDefinition[];
@@ -100,7 +101,7 @@ export const useBoardV2DerivedState = (args: {
   v2: Record<string, string>;
   endTurnLabel: string;
 }) => {
-  const { G, ctx, id, hand, legendaryHand, canPlay, canPlayHandCard, sharedRanks, resourceLabels, lang, handFilter, handSort, v2, endTurnLabel } = args;
+  const { G, ctx, stage, id, hand, legendaryHand, canPlay, canPlayHandCard, sharedRanks, resourceLabels, lang, handFilter, handSort, v2, endTurnLabel } = args;
 
   const nextRankMeta = useMemo(() => getNextRankSeatMeta({ G, playerID: id, sharedRanks }), [G, id, sharedRanks]);
   const gameoverMeta = (ctx?.gameover ?? null) as { winner?: string; endReason?: string } | null;
@@ -182,7 +183,10 @@ export const useBoardV2DerivedState = (args: {
     [allHandCardsView],
   );
   const hasPlayableLegendaryCard = canPlay && legendaryHand.length > 0;
-  const shouldShowSkipTurnLabel = (G.deck?.length ?? 0) === 0 && !hasPlayableHandCard && !hasPlayableLegendaryCard;
+  const shouldShowSkipTurnLabel = stage === 'play'
+    && (G.deck?.length ?? 0) === 0
+    && !hasPlayableHandCard
+    && !hasPlayableLegendaryCard;
   const passButtonLabel = shouldShowSkipTurnLabel ? v2.skipTurn : endTurnLabel;
 
   return {

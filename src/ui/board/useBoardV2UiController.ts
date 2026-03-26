@@ -149,6 +149,22 @@ export const useBoardV2UiController = (args: {
     runMove(endTurn, v2.actionUnavailable);
   };
 
+  const handleRequestEndGameVote = () => {
+    if (typeof moves.requestEndGameVote !== 'function') {
+      postNotice('error', v2.actionUnavailable);
+      return;
+    }
+    runMove(() => moves.requestEndGameVote?.(), v2.actionUnavailable);
+  };
+
+  const handleRespondEndGameVote = (agree: boolean) => {
+    if (typeof moves.respondEndGameVote !== 'function') {
+      postNotice('error', v2.actionUnavailable);
+      return;
+    }
+    runMove(() => moves.respondEndGameVote?.(agree), v2.actionUnavailable);
+  };
+
   const handleDraftToggle = (cardId: string) => {
     setDraftSelection((prev) => {
       if (prev.includes(cardId)) return prev.filter((idValue) => idValue !== cardId);
@@ -226,6 +242,8 @@ export const useBoardV2UiController = (args: {
     handleDraw,
     handlePromote,
     handlePass,
+    handleRequestEndGameVote,
+    handleRespondEndGameVote,
     handleDraftToggle,
     getHandBadges,
     getHandHelperText,

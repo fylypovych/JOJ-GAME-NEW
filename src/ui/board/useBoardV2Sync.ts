@@ -39,6 +39,14 @@ export const useBoardV2Sync = (args: {
   syncedNamesSignatureRef: MutableRefObject<string>;
   chatLogRef: MutableRefObject<HTMLDivElement | null>;
 }) => {
+  const isInteractiveTarget = (target: EventTarget | null) => {
+    const element = target as HTMLElement | null;
+    if (!element) return false;
+    const tagName = element.tagName;
+    if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT' || tagName === 'BUTTON') return true;
+    return Boolean(element.closest('[contenteditable="true"], [role="button"]'));
+  };
+
   const resolveMoveErrorText = (error: unknown, fallback: string) => {
     if (error instanceof Error && error.message.trim()) return error.message.trim();
     if (typeof error === 'string' && error.trim()) return error.trim();
@@ -87,7 +95,7 @@ export const useBoardV2Sync = (args: {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.target as HTMLElement | null)?.tagName === 'INPUT') return;
+      if (event.repeat || event.isComposing || isInteractiveTarget(event.target)) return;
       if (event.key === 'Escape') {
         args.setOpenPreviewKey(null);
         args.setPendingSelection(null);

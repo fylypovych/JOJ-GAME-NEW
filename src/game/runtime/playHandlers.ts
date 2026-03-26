@@ -4,7 +4,7 @@ import { validateMoveAction } from '../actionRules';
 import {
   executeHandCardByBehavior,
 } from './playCardCategoryHandlers';
-import { consumeImmediateSkipForCurrentPlayer, createInvalidMoveRollback } from './runtimeHelpers';
+import { createInvalidMoveRollback } from './runtimeHelpers';
 
 export const playCardHandler = (
   d: JojMovesDeps,
@@ -24,7 +24,6 @@ export const playCardHandler = (
   const idx = hand.findIndex((card: CardDefinition) => card.id === cardId);
   if (idx === -1) return d.INVALID_MOVE;
   const beforeResources = d.snapshotResourcesForStats(args.G);
-  const skippedTurnsBeforeMove = args.G.skippedTurnCounts?.[playerID] ?? 0;
   const invalidMove = createInvalidMoveRollback(d, args.G);
   const card = hand[idx];
   const allPlayerIDs = Object.keys(args.G.players);
@@ -47,11 +46,6 @@ export const playCardHandler = (
   d.recordResourceFlowStats(args.G, beforeResources);
   d.resetNoPlayablePassStreak(args.G);
   d.resetEndGameVote(args.G);
-  if (consumeImmediateSkipForCurrentPlayer(args.G, args.ctx.currentPlayer, playerID, skippedTurnsBeforeMove)) {
-    d.incrementTurnsCompleted(args.G, playerID);
-    args.events?.endTurn?.();
-    return undefined;
-  }
   if (usingExtraToken) args.G.extraHandPlayTokens[playerID] = Math.max(0, (args.G.extraHandPlayTokens[playerID] ?? 0) - 1);
   else args.events?.setStage?.(d.END_STAGE);
   return undefined;

@@ -125,6 +125,8 @@ export const BoardV2 = ({
     handleDraw,
     handlePromote,
     handlePass,
+    handleRequestEndGameVote,
+    handleRespondEndGameVote,
     handleDraftToggle,
   } = useBoardV2UiController({
     G,
@@ -229,6 +231,7 @@ export const BoardV2 = ({
   } = useBoardV2DerivedState({
     G,
     ctx,
+    stage,
     id,
     hand,
     legendaryHand,
@@ -327,11 +330,8 @@ export const BoardV2 = ({
         onLeaveRoom={onLeaveRoom}
         leaveRoomLabel={v2.leaveRoom}
         requestEndGameLabel={v2.requestEndGame}
-        onRequestEndGame={() => {
-          if (typeof moves.requestEndGameVote !== 'function') return;
-          moves.requestEndGameVote();
-        }}
-        requestEndGameDisabled={endGameVoteActive || Boolean(ctx?.gameover)}
+        onRequestEndGame={handleRequestEndGameVote}
+        requestEndGameDisabled={isSpectator || seatConnectionMissing || typeof moves.requestEndGameVote !== 'function' || endGameVoteActive || Boolean(ctx?.gameover)}
       />
 
       {hasBotPlayers && !isSpectator ? (
@@ -377,8 +377,8 @@ export const BoardV2 = ({
         hasVotedAgree={hasVotedAgree}
         agreeLabel={v2.agreeEndGame}
         declineLabel={v2.declineEndGame}
-        onAgree={() => moves.respondEndGameVote?.(true)}
-        onDecline={() => moves.respondEndGameVote?.(false)}
+        onAgree={() => handleRespondEndGameVote(true)}
+        onDecline={() => handleRespondEndGameVote(false)}
       />
 
       {isSpectator ? (
