@@ -11,8 +11,8 @@ import type {
 
 export const createUserAdminStore = (args: {
   pool: Pool;
+  withTransaction: <T>(run: (client: Pool) => Promise<T>) => Promise<T>;
   getUserWithStatusById: (userId: string) => Promise<(UserRecord & { status: 'active' | 'disabled' }) | null>;
-  deleteAllSessionsForUser: (userId: string) => Promise<void>;
   listUserSessions: (userId: string) => Promise<UserSessionRecord[]>;
   listUserMatchLinks: (userId: string) => Promise<Array<{
     match_id: string;
@@ -30,8 +30,8 @@ export const createUserAdminStore = (args: {
 }) => {
   const {
     pool,
+    withTransaction,
     getUserWithStatusById,
-    deleteAllSessionsForUser,
     listUserSessions,
     listUserMatchLinks,
     getUserStatsSummary,
@@ -75,15 +75,17 @@ export const createUserAdminStore = (args: {
   };
 
   const updateUserStatus = async (userId: string, status: 'active' | 'disabled') => {
-    await pool.query(`
-      UPDATE app_users
-      SET status = $2,
-          updated_at = now()
-      WHERE id = $1
-    `, [userId, status]);
-    if (status === 'disabled') {
-      await deleteAllSessionsForUser(userId);
-    }
+    await withTransaction(async (client) => {
+      await client.query(`
+        UPDATE app_users
+        SET status = $2,
+            updated_at = now()
+        WHERE id = $1
+      `, [userId, status]);
+      if (status === 'disabled') {
+        await client.query('DELETE FROM user_sessions WHERE user_id = $1', [userId]);
+      }
+    });
     return getUserWithStatusById(userId);
   };
 
@@ -122,28 +124,30 @@ export const createUserAdminStore = (args: {
     if (duplicate.rowCount) {
       throw new Error('Username or email already exists.');
     }
-    await pool.query(`
-      UPDATE app_users
-      SET username = $2,
-          email = $3,
-          updated_at = now()
-      WHERE id = $1
-    `, [input.userId, normalizedUsername, normalizedEmail]);
-    await pool.query(`
-      UPDATE user_profiles
-      SET display_name = $2,
-          bio = $3,
-          avatar_url = $4,
-          preferred_lang = $5,
-          updated_at = now()
-      WHERE user_id = $1
-    `, [
-      input.userId,
-      input.displayName.trim() || input.username.trim(),
-      input.bio.trim(),
-      input.avatarUrl?.trim() || null,
-      input.preferredLang === 'en' ? 'en' : 'uk',
-    ]);
+    await withTransaction(async (client) => {
+      await client.query(`
+        UPDATE app_users
+        SET username = $2,
+            email = $3,
+            updated_at = now()
+        WHERE id = $1
+      `, [input.userId, normalizedUsername, normalizedEmail]);
+      await client.query(`
+        UPDATE user_profiles
+        SET display_name = $2,
+            bio = $3,
+            avatar_url = $4,
+            preferred_lang = $5,
+            updated_at = now()
+        WHERE user_id = $1
+      `, [
+        input.userId,
+        input.displayName.trim() || input.username.trim(),
+        input.bio.trim(),
+        input.avatarUrl?.trim() || null,
+        input.preferredLang === 'en' ? 'en' : 'uk',
+      ]);
+    });
     return getUserWithStatusById(input.userId);
   };
 

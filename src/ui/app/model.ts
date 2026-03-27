@@ -63,6 +63,7 @@ export type LobbyPlayer = {
 
 export type LobbyMatch = {
   matchID: string;
+  createdAt?: number | string;
   players: LobbyPlayer[];
   setupData?: {
     gameMode?: GameMode;

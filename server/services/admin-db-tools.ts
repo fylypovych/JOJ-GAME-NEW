@@ -131,7 +131,12 @@ export const registerAdminDbToolRoutes = ({
       ctx.body = {
         ok: true,
         storageMode: parsed.storageMode === 'db' ? 'db' : 'file',
-        dbConfig: parsed.dbConfig ?? null,
+        dbConfig: parsed.dbConfig
+          ? {
+            ...parsed.dbConfig,
+            password: '',
+          }
+          : null,
       };
     } catch {
       ctx.body = { ok: true, storageMode: 'file', dbConfig: null };
@@ -161,7 +166,14 @@ export const registerAdminDbToolRoutes = ({
       await mkdir(dir, { recursive: true });
       await writeFile(
         adminDbUiConfigPath,
-        JSON.stringify({ storageMode, dbConfig: normalizedDbConfig, updatedAt: Date.now() }, null, 2),
+        JSON.stringify({
+          storageMode,
+          dbConfig: {
+            ...normalizedDbConfig,
+            password: '',
+          },
+          updatedAt: Date.now(),
+        }, null, 2),
         'utf8',
       );
       ctx.body = { ok: true, message: 'Admin DB UI config saved' };

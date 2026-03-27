@@ -64,13 +64,14 @@ export const useSharedConfigSync = (args: {
     }
   };
 
-  const refreshSharedDeckTemplate = (sync = true) => {
+  const refreshSharedDeckTemplate = async (sync = true) => {
     setSharedDeckTemplate(getSharedDeckTemplate());
     setCardCatalog(getCardCatalog());
     const json = exportSharedDeckTemplateJson();
     window.localStorage.setItem(sharedTemplateStorageKey, json);
     setSharedDeckVersion((v) => v + 1);
-    if (sync) void syncTemplateToServer(json);
+    if (!sync) return true;
+    return syncTemplateToServer(json);
   };
 
   const loadTemplateFromServer = async (): Promise<boolean> => {
@@ -114,7 +115,7 @@ export const useSharedConfigSync = (args: {
         const saved = window.localStorage.getItem(sharedTemplateStorageKey);
         if (saved) {
           const result = importSharedDeckTemplateJson(saved);
-          if (result.ok) refreshSharedDeckTemplate(false);
+          if (result.ok) void refreshSharedDeckTemplate(false);
         }
       }
       const loadedRanksFromServer = await loadRanksFromServer();

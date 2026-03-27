@@ -269,7 +269,7 @@ export const App = () => {
     joinFailedText: t.joinFailed,
     onSessionEstablished: (nextSession, nextPlayerName) => {
       if (!nextSession.playerID || !nextSession.credentials) return;
-      return bindMatchSession({
+      void bindMatchSession({
         matchID: nextSession.matchID,
         playerID: nextSession.playerID,
         credentials: nextSession.credentials,
@@ -278,6 +278,21 @@ export const App = () => {
     },
   });
   const sharedDeckStats = getSharedDeckTemplateStats();
+  const rollbackTemplate = (json: string) => {
+    const result = importSharedDeckTemplateJson(json);
+    if (result.ok) void refreshSharedDeckTemplate(false);
+  };
+  const applyTemplateChange = async (mutate: () => void, previousJson = exportSharedDeckTemplateJson()) => {
+    mutate();
+    const ok = await refreshSharedDeckTemplate();
+    if (!ok) rollbackTemplate(previousJson);
+    return ok;
+  };
+  const rollbackRanks = (previousRanks: RankDefinition[]) => {
+    if (!setSharedRanks(previousRanks)) return;
+    setSharedRanksState(getSharedRanks());
+    window.localStorage.setItem(RANKS_STORAGE_KEY, exportSharedRanksJson());
+  };
   const optionalLobbyModules = useMemo(
     () => (sharedDeckTemplate.modules ?? [])
       .filter((module) => module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
@@ -762,7 +777,14 @@ export const App = () => {
           dbRestoreBackupStatus={dbRestoreBackupStatus}
           dbRestoreBackupError={dbRestoreBackupError}
           dbRestoreBackupRunning={dbRestoreBackupRunning}
-          matches={matches.map((m) => ({ id: m.matchID, createdAt: Date.now() }))}
+          matches={matches.map((m) => ({
+            id: m.matchID,
+            createdAt: typeof m.createdAt === 'number'
+              ? m.createdAt
+              : typeof m.createdAt === 'string'
+                ? (Date.parse(m.createdAt) || 0)
+                : 0,
+          }))}
           activeMatchId={adminMatchID}
           onActiveMatchIdChange={setAdminSelectedMatchID}
           snapshot={snapshot}
@@ -834,56 +856,76 @@ export const App = () => {
             }
           }}
           onShuffleDeck={() => {
-            shuffleSharedDeckTemplate();
-            refreshSharedDeckTemplate();
+            void applyTemplateChange(() => {
+              shuffleSharedDeckTemplate();
+            });
           }}
           onAddCard={(target: DeckTarget, cardId: string) => {
+            const previousJson = exportSharedDeckTemplateJson();
             const added = addCardToSharedDeckTemplate(target, cardId);
-            if (added) refreshSharedDeckTemplate();
+            if (added) void refreshSharedDeckTemplate().then((ok) => {
+              if (!ok) rollbackTemplate(previousJson);
+            });
             return added;
           }}
           onAddCustomCard={(target: DeckTarget, card: CardDefinition) => {
-            addCustomCardToSharedDeckTemplate(target, card);
-            refreshSharedDeckTemplate();
+            void applyTemplateChange(() => {
+              addCustomCardToSharedDeckTemplate(target, card);
+            });
           }}
           onUpdateCard={(target: DeckTarget, index: number, card: CardDefinition) => {
-            updateCardAtInSharedDeckTemplate(target, index, card);
-            refreshSharedDeckTemplate();
+            void applyTemplateChange(() => {
+              updateCardAtInSharedDeckTemplate(target, index, card);
+            });
           }}
           onRemoveCard={(target: DeckTarget, index: number) => {
-            removeCardAtFromSharedDeckTemplate(target, index);
-            refreshSharedDeckTemplate();
+            void applyTemplateChange(() => {
+              removeCardAtFromSharedDeckTemplate(target, index);
+            });
           }}
           onResetTemplate={() => {
-            resetSharedDeckTemplate();
-            refreshSharedDeckTemplate();
+            void applyTemplateChange(() => {
+              resetSharedDeckTemplate();
+            });
           }}
           onSetDeckBackImage={(path?: string) => {
-            setSharedDeckBackImage(path);
-            refreshSharedDeckTemplate();
+            void applyTemplateChange(() => {
+              setSharedDeckBackImage(path);
+            });
           }}
           onExportTemplate={() => exportSharedDeckTemplateJson()}
           onImportTemplate={(json: string) => {
+            const previousJson = exportSharedDeckTemplateJson();
             const result = importSharedDeckTemplateJson(json);
             if (!result.ok) return result.error;
-            refreshSharedDeckTemplate();
+            void refreshSharedDeckTemplate().then((ok) => {
+              if (!ok) rollbackTemplate(previousJson);
+            });
             return null;
           }}
           onUpdateRanks={(nextRanks: RankDefinition[]) => {
+            const previousRanks = sharedRanks.map((rank) => ({ ...rank }));
             const ok = setSharedRanks(nextRanks);
             if (!ok) return false;
             const normalized = getSharedRanks();
             setSharedRanksState(normalized);
             window.localStorage.setItem(RANKS_STORAGE_KEY, exportSharedRanksJson());
-            void syncRanksToServer(normalized);
+            void syncRanksToServer(normalized).then((saved) => {
+              if (!saved) rollbackRanks(previousRanks);
+            });
             return true;
           }}
           onResetRanks={() => {
+            const previousRanks = sharedRanks.map((rank) => ({ ...rank }));
             resetSharedRanks();
             const normalized = getSharedRanks();
             setSharedRanksState(normalized);
             window.localStorage.setItem(RANKS_STORAGE_KEY, exportSharedRanksJson());
-            void adminFetch(`${RANKS_API}/reset`, { method: 'POST' });
+            void adminFetch(`${RANKS_API}/reset`, { method: 'POST' }).then((response) => {
+              if (!response.ok) rollbackRanks(previousRanks);
+            }).catch(() => {
+              rollbackRanks(previousRanks);
+            });
           }}
           onStopGame={async (matchID: string) => {
             try {

@@ -10,6 +10,7 @@ import {
   type PublicPasswordResetDeliveryHealth,
 } from '../services/password-reset-health';
 import type { UserStore } from '../services/user-store';
+import { deliverPasswordReset } from '../services/user-recovery';
 
 type CmdResult = { ok: true; stdout: string; stderr: string } | { ok: false; error: string };
 type RunGit = (args: string[]) => Promise<CmdResult>;
@@ -66,6 +67,7 @@ type AdminRoutesDeps = {
   userStore?: UserStore | null;
   getPasswordResetDeliveryHealth?: () => PasswordResetDeliveryHealth;
   getPublicPasswordResetDeliveryHealth?: () => PublicPasswordResetDeliveryHealth;
+  deliverPasswordResetFn?: typeof deliverPasswordReset;
 };
 
 export const registerAdminRoutes = ({
@@ -88,6 +90,7 @@ export const registerAdminRoutes = ({
   userStore,
   getPasswordResetDeliveryHealth: getPasswordResetDeliveryHealthFn = getPasswordResetDeliveryHealth,
   getPublicPasswordResetDeliveryHealth: getPublicPasswordResetDeliveryHealthFn = getPublicPasswordResetDeliveryHealth,
+  deliverPasswordResetFn = deliverPasswordReset,
 }: AdminRoutesDeps) => {
   const requireAdminWriteAccess = (ctx: RouteCtx, routeLabel: string) =>
     requireAdminMutationAuth(ctx, routeLabel, requireAdminAuth);
@@ -349,6 +352,20 @@ export const registerAdminRoutes = ({
       return;
     }
     const result = await userStore.createPasswordResetToken(login);
+    if (result) {
+      try {
+        await deliverPasswordResetFn({
+          usernameOrEmail: login,
+          token: result.token,
+          expiresAt: result.expiresAt,
+          logLine,
+        });
+      } catch (error) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: String(error instanceof Error ? error.message : error) };
+        return;
+      }
+    }
     ctx.body = {
       ok: true,
       created: Boolean(result),

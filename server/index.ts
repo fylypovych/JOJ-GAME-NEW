@@ -39,6 +39,7 @@ import {
   uploadsDir,
 } from './bootstrap-config';
 import { initializePasswordResetDeliveryHealth } from './services/password-reset-health';
+import { deliverPasswordReset } from './services/user-recovery';
 import {
   exportSharedDeckTemplateJson,
   exportSharedRanksJson,
@@ -269,7 +270,7 @@ void (async () => {
       adminDbUiConfigPath,
       importJsonConfigToDb: syncCurrentJsonToPostgres,
       userStore,
-      
+      deliverPasswordResetFn: deliverPasswordReset,
     });
     registerSharedRoutes({
       router,

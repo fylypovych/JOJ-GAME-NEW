@@ -133,6 +133,9 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     if (csrfToken.trim()) return csrfToken;
     const response = await fetch(`${authBase}/me`, { credentials: 'include' });
     const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(String((payload as { error?: string }).error ?? USER_ACCOUNT_ERRORS.genericRequest));
+    }
     applyPayloadCsrf(payload);
     const nextCsrf = typeof (payload as { csrfToken?: string }).csrfToken === 'string'
       ? String((payload as { csrfToken?: string }).csrfToken)
@@ -159,24 +162,28 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     return payload as Record<string, unknown>;
   };
 
+  const fetchJson = async (url: string) => {
+    const response = await fetch(url, { credentials: 'include' });
+    const payload = await response.json().catch(() => ({}));
+    applyPayloadCsrf(payload);
+    if (!response.ok) {
+      throw new Error(String((payload as { error?: string }).error ?? USER_ACCOUNT_ERRORS.genericRequest));
+    }
+    return payload as Record<string, unknown>;
+  };
+
   const refreshUser = async () => {
     setLoading(true);
     try {
-      const meResponse = await fetch(`${authBase}/me`, { credentials: 'include' });
-      const mePayload = await meResponse.json().catch(() => ({}));
-      applyPayloadCsrf(mePayload);
+      const mePayload = await fetchJson(`${authBase}/me`);
       const nextUser = (mePayload as { user?: AuthUser | null }).user ?? null;
       setUser(nextUser);
       if (nextUser) {
-        const profileResponse = await fetch(`${profileBase}/me`, { credentials: 'include' });
-        const profilePayload = await profileResponse.json().catch(() => ({}));
-        applyPayloadCsrf(profilePayload);
+        const profilePayload = await fetchJson(`${profileBase}/me`);
         setStats((profilePayload as { stats?: UserStats | null }).stats ?? null);
         setAwards((profilePayload as { awards?: UserAward[] }).awards ?? []);
         setMatchHistory((profilePayload as { matchHistory?: UserMatchHistoryItem[] }).matchHistory ?? []);
-        const sessionsResponse = await fetch(`${profileBase}/sessions`, { credentials: 'include' });
-        const sessionsPayload = await sessionsResponse.json().catch(() => ({}));
-        applyPayloadCsrf(sessionsPayload);
+        const sessionsPayload = await fetchJson(`${profileBase}/sessions`);
         setSessions((sessionsPayload as { sessions?: UserSession[] }).sessions ?? []);
       } else {
         setStats(null);
@@ -262,8 +269,11 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     if (!user) return;
     try {
       await postJsonWithCsrf(`${profileBase}/bind-session-match`, input);
-    } catch {
-      // keep binding best-effort to avoid breaking room join flow
+      setError('');
+      return true;
+    } catch (nextError) {
+      setError(String(nextError instanceof Error ? nextError.message : nextError));
+      return false;
     }
   };
 
@@ -301,9 +311,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
       setSessions([]);
       return;
     }
-    const response = await fetch(`${profileBase}/sessions`, { credentials: 'include' });
-    const payload = await response.json().catch(() => ({}));
-    applyPayloadCsrf(payload);
+    const payload = await fetchJson(`${profileBase}/sessions`);
     setSessions((payload as { sessions?: UserSession[] }).sessions ?? []);
   };
 

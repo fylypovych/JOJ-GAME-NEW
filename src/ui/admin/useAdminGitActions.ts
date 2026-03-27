@@ -12,7 +12,7 @@ type UseAdminGitActionsParams = {
 const createGitActionErrors = (lang: Language) => ({
   checkUpdates: lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates',
   updateFiles: lang === 'uk' ? 'Не вдалося оновити файли' : 'Failed to update files',
-  deployProject: lang === 'uk' ? 'Не вдалося оновити/зібрати проект' : 'Failed to update/build project',
+  deployProject: lang === 'uk' ? 'Не вдалося оновити або зібрати проєкт' : 'Failed to update/build project',
 });
 
 export const useAdminGitActions = ({

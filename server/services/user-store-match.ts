@@ -10,8 +10,9 @@ import { getRankOrder, RANK_ORDER } from './user-store-shared';
 
 export const createUserMatchStore = (args: {
   pool: Pool;
+  withTransaction: <T>(run: (client: Pool) => Promise<T>) => Promise<T>;
 }) => {
-  const { pool } = args;
+  const { pool, withTransaction } = args;
 
   const linkUserToMatch = async (input: {
     userId: string;
@@ -69,8 +70,6 @@ export const createUserMatchStore = (args: {
 
   const persistMatchResultIfFinished = async (matchId: string, state: PersistableMatchState | null | undefined) => {
     if (!matchId || !state?.ctx?.gameover) return false;
-    const already = await pool.query('SELECT 1 FROM persisted_match_results WHERE match_id = $1 LIMIT 1', [matchId]);
-    if (already.rowCount) return true;
     const gameover = state.ctx.gameover;
     const turnsCompleted = Number(state.G?.gameStats?.turnsCompleted ?? 0);
     const playerNames = state.G?.playerNames ?? {};
@@ -82,72 +81,75 @@ export const createUserMatchStore = (args: {
     const playerCount = Object.keys(ranks).length;
     const botCount = botIds.length;
     const botDifficulty = botIds.length > 0 ? String(botPlayers[botIds[0]]?.difficulty ?? '').trim() || null : null;
-    await pool.query(`
-      INSERT INTO persisted_match_results (
-        match_id,
-        winner_player_id,
-        winner_player_name,
-        end_reason,
-        game_mode,
-        player_count,
-        bot_count,
-        bot_difficulty,
-        turns_completed
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      ON CONFLICT (match_id) DO NOTHING
-    `, [
-      matchId,
-      winnerPlayerId,
-      winnerPlayerName,
-      gameover.endReason ? String(gameover.endReason) : null,
-      state.G?.gameMode ?? 'standard',
-      playerCount,
-      botCount,
-      botDifficulty,
-      turnsCompleted,
-    ]);
-
     const resources = state.G?.resources ?? {};
     const playerStats = state.G?.playerGameStats ?? {};
-    for (const playerId of Object.keys(ranks)) {
-      const stats = playerStats[playerId] ?? {};
-      await pool.query(`
-        INSERT INTO persisted_match_participants (
+    await withTransaction(async (client) => {
+      const inserted = await client.query(`
+        INSERT INTO persisted_match_results (
           match_id,
-          player_id,
-          player_name,
-          final_rank_id,
-          final_resources,
-          resources_gained_total,
-          resources_lost_total,
-          lyaps_played_on_others,
-          scandals_played_on_others,
-          turns_taken
+          winner_player_id,
+          winner_player_name,
+          end_reason,
+          game_mode,
+          player_count,
+          bot_count,
+          bot_difficulty,
+          turns_completed
         )
-        VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10)
-        ON CONFLICT (match_id, player_id) DO UPDATE SET
-          player_name = EXCLUDED.player_name,
-          final_rank_id = EXCLUDED.final_rank_id,
-          final_resources = EXCLUDED.final_resources,
-          resources_gained_total = EXCLUDED.resources_gained_total,
-          resources_lost_total = EXCLUDED.resources_lost_total,
-          lyaps_played_on_others = EXCLUDED.lyaps_played_on_others,
-          scandals_played_on_others = EXCLUDED.scandals_played_on_others,
-          turns_taken = EXCLUDED.turns_taken
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        ON CONFLICT (match_id) DO NOTHING
+        RETURNING match_id
       `, [
         matchId,
-        playerId,
-        playerNames[playerId] ?? null,
-        ranks[playerId] ?? 'recruit',
-        JSON.stringify(resources[playerId] ?? {}),
-        Number(stats.resourcesGainedTotal ?? 0),
-        Number(stats.resourcesLostTotal ?? 0),
-        Number(stats.lyapsPlayedOnOthers ?? 0),
-        Number(stats.scandalsPlayedOnOthers ?? 0),
-        Number(stats.turnsTaken ?? 0),
+        winnerPlayerId,
+        winnerPlayerName,
+        gameover.endReason ? String(gameover.endReason) : null,
+        state.G?.gameMode ?? 'standard',
+        playerCount,
+        botCount,
+        botDifficulty,
+        turnsCompleted,
       ]);
-    }
+      if (!inserted.rowCount) return;
+      for (const playerId of Object.keys(ranks)) {
+        const stats = playerStats[playerId] ?? {};
+        await client.query(`
+          INSERT INTO persisted_match_participants (
+            match_id,
+            player_id,
+            player_name,
+            final_rank_id,
+            final_resources,
+            resources_gained_total,
+            resources_lost_total,
+            lyaps_played_on_others,
+            scandals_played_on_others,
+            turns_taken
+          )
+          VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10)
+          ON CONFLICT (match_id, player_id) DO UPDATE SET
+            player_name = EXCLUDED.player_name,
+            final_rank_id = EXCLUDED.final_rank_id,
+            final_resources = EXCLUDED.final_resources,
+            resources_gained_total = EXCLUDED.resources_gained_total,
+            resources_lost_total = EXCLUDED.resources_lost_total,
+            lyaps_played_on_others = EXCLUDED.lyaps_played_on_others,
+            scandals_played_on_others = EXCLUDED.scandals_played_on_others,
+            turns_taken = EXCLUDED.turns_taken
+        `, [
+          matchId,
+          playerId,
+          playerNames[playerId] ?? null,
+          ranks[playerId] ?? 'recruit',
+          JSON.stringify(resources[playerId] ?? {}),
+          Number(stats.resourcesGainedTotal ?? 0),
+          Number(stats.resourcesLostTotal ?? 0),
+          Number(stats.lyapsPlayedOnOthers ?? 0),
+          Number(stats.scandalsPlayedOnOthers ?? 0),
+          Number(stats.turnsTaken ?? 0),
+        ]);
+      }
+    });
     return true;
   };
 

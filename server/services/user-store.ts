@@ -33,6 +33,21 @@ export type UserStore = ReturnType<typeof createUserStore>;
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
 
 export const createUserStore = (pool: Pool) => {
+  const withTransaction = async <T>(run: (client: Pool) => Promise<T>): Promise<T> => {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await run(client as unknown as Pool);
+      await client.query('COMMIT');
+      return result;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  };
+
   const ensureSchema = async () => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS app_users (
@@ -261,16 +276,19 @@ export const createUserStore = (pool: Pool) => {
       throw new Error('Username or email already exists.');
     }
     const { salt, hash } = await hashPassword(args.password);
-    const created = await pool.query<{ id: string }>(`
-      INSERT INTO app_users (username, email, role, password_hash, password_salt)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id
-    `, [username, email, role, hash, salt]);
-    const userId = created.rows[0]?.id;
-    await pool.query(`
-      INSERT INTO user_profiles (user_id, display_name, preferred_lang)
-      VALUES ($1, $2, $3)
-    `, [userId, displayName, preferredLang]);
+    const userId = await withTransaction(async (client) => {
+      const created = await client.query<{ id: string }>(`
+        INSERT INTO app_users (username, email, role, password_hash, password_salt)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id
+      `, [username, email, role, hash, salt]);
+      const createdUserId = created.rows[0]?.id;
+      await client.query(`
+        INSERT INTO user_profiles (user_id, display_name, preferred_lang)
+        VALUES ($1, $2, $3)
+      `, [createdUserId, displayName, preferredLang]);
+      return createdUserId;
+    });
     const user = await getUserById(userId);
     if (!user) throw new Error('Failed to create user.');
     return user;
@@ -350,33 +368,35 @@ export const createUserStore = (pool: Pool) => {
     if (duplicate.rowCount) {
       throw new Error('Email already exists.');
     }
-    await pool.query(`
-      UPDATE app_users
-      SET email = $2,
-          updated_at = now()
-      WHERE id = $1
-    `, [args.userId, normalizedEmail]);
-    await pool.query(`
-      UPDATE user_profiles
-      SET display_name = $2,
-        bio = $3,
-        avatar_url = $4,
-          preferred_lang = $5,
-          profile_public = $6,
-          show_stats_public = $7,
-          show_recent_matches_public = $8,
-          updated_at = now()
-      WHERE user_id = $1
-    `, [
-      args.userId,
-      args.displayName.trim(),
-      args.bio.trim(),
-      args.avatarUrl?.trim() || null,
-      args.preferredLang === 'en' ? 'en' : 'uk',
-      args.profilePublic !== false,
-      args.showStatsPublic !== false,
-      args.showRecentMatchesPublic === true,
-    ]);
+    await withTransaction(async (client) => {
+      await client.query(`
+        UPDATE app_users
+        SET email = $2,
+            updated_at = now()
+        WHERE id = $1
+      `, [args.userId, normalizedEmail]);
+      await client.query(`
+        UPDATE user_profiles
+        SET display_name = $2,
+          bio = $3,
+          avatar_url = $4,
+            preferred_lang = $5,
+            profile_public = $6,
+            show_stats_public = $7,
+            show_recent_matches_public = $8,
+            updated_at = now()
+        WHERE user_id = $1
+      `, [
+        args.userId,
+        args.displayName.trim(),
+        args.bio.trim(),
+        args.avatarUrl?.trim() || null,
+        args.preferredLang === 'en' ? 'en' : 'uk',
+        args.profilePublic !== false,
+        args.showStatsPublic !== false,
+        args.showRecentMatchesPublic === true,
+      ]);
+    });
     return getUserById(args.userId);
   };
 
@@ -457,30 +477,25 @@ export const createUserStore = (pool: Pool) => {
     const row = result.rows[0];
     if (!row) throw new Error('Reset token is invalid or expired.');
     const { salt, hash } = await hashPassword(args.nextPassword);
-    await pool.query('BEGIN');
-    try {
-      await pool.query(`
+    await withTransaction(async (client) => {
+      await client.query(`
         UPDATE app_users
         SET password_hash = $2,
             password_salt = $3,
             updated_at = now()
         WHERE id = $1
       `, [row.user_id, hash, salt]);
-      await pool.query(`
+      await client.query(`
         UPDATE user_password_reset_tokens
         SET consumed_at = now()
         WHERE id = $1
       `, [row.id]);
-      await pool.query('DELETE FROM user_sessions WHERE user_id = $1', [row.user_id]);
-      await pool.query('COMMIT');
-    } catch (error) {
-      await pool.query('ROLLBACK');
-      throw error;
-    }
+      await client.query('DELETE FROM user_sessions WHERE user_id = $1', [row.user_id]);
+    });
     return getUserById(row.user_id);
   };
 
-  const matchStore = createUserMatchStore({ pool });
+  const matchStore = createUserMatchStore({ pool, withTransaction });
   const {
     linkUserToMatch,
     listUserMatchLinks,
@@ -507,8 +522,8 @@ export const createUserStore = (pool: Pool) => {
 
   const adminStore = createUserAdminStore({
     pool,
+    withTransaction,
     getUserWithStatusById,
-    deleteAllSessionsForUser,
     listUserSessions,
     listUserMatchLinks,
     getUserStatsSummary,
@@ -530,6 +545,7 @@ export const createUserStore = (pool: Pool) => {
 
   return {
     ensureSchema,
+    withTransaction,
     createUser,
     authenticateUser,
     createSession,

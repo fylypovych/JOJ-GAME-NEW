@@ -9,11 +9,17 @@ export class BodyTooLargeError extends Error {
 }
 
 export const getClientIp = (ctx: any): string => {
+  const trustProxy = /^(1|true|yes)$/i.test((process.env.TRUST_PROXY ?? '').trim());
   const forwarded = ctx?.request?.headers?.['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.trim()) {
+  if (trustProxy && typeof forwarded === 'string' && forwarded.trim()) {
     return forwarded.split(',')[0]?.trim() || 'unknown';
   }
-  return String(ctx?.ip ?? ctx?.request?.ip ?? 'unknown');
+  return String(
+    ctx?.ip
+      ?? ctx?.request?.ip
+      ?? ctx?.req?.socket?.remoteAddress
+      ?? 'unknown',
+  );
 };
 
 export const getAdminTokenFromRequest = (ctx: any): string => {
@@ -33,7 +39,11 @@ export const getCookieValue = (ctx: any, name: string): string => {
     .map((row: string) => row.trim())
     .find((row: string) => row.startsWith(`${name}=`));
   if (!match) return '';
-  return decodeURIComponent(match.slice(name.length + 1));
+  try {
+    return decodeURIComponent(match.slice(name.length + 1));
+  } catch {
+    return '';
+  }
 };
 
 export const setCookieHeader = (
@@ -170,7 +180,7 @@ export const readJsonBody = async (ctx: any, maxBytes: number): Promise<Record<s
     const parsed = JSON.parse(raw);
     return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
   } catch {
-    return {};
+    throw new Error('Invalid JSON');
   }
 };
 
