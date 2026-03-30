@@ -479,8 +479,8 @@ export const AdminPage = ({
           onUploadBugReportImage={async (file) => {
             if (!file) return;
             const optimized = await optimizeBlobForUpload(file, file.name, {
-              maxWidth: 640,
-              maxHeight: 640,
+              maxWidth: 100,
+              maxHeight: 100,
               quality: 0.92,
             });
             if (!optimized) {

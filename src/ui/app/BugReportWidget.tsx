@@ -58,7 +58,7 @@ export const BugReportWidget = ({
         const imagePath = payload.ok && typeof payload.imagePath === 'string' ? payload.imagePath.trim() : '';
         setCustomImageSrc(
           imagePath
-            ? `${serverUrl}/api/bug-reports/ui-image?v=${encodeURIComponent(imagePath)}`
+            ? `${serverUrl}/api/bug-reports/ui-image?path=${encodeURIComponent(imagePath)}&v=${encodeURIComponent(imagePath)}`
             : '',
         );
       })

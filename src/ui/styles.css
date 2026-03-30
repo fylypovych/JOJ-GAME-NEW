@@ -250,7 +250,8 @@ button:disabled {
 
 .bug-report-fab-custom-image {
   display: block;
-  width: min(164px, 34vw);
+  width: 100px;
+  max-width: min(100px, 34vw);
   height: auto;
   filter: drop-shadow(0 16px 22px rgba(31, 22, 10, 0.22));
 }
@@ -401,7 +402,8 @@ button:disabled {
   }
 
   .bug-report-fab-custom-image {
-    width: min(128px, 38vw);
+    width: 100px;
+    max-width: min(100px, 38vw);
   }
 
   .app-footer {

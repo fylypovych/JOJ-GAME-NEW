@@ -103,8 +103,9 @@ export const registerBugReportRoutes = (args: {
   });
 
   router.get('/api/bug-reports/ui-image', async (ctx: RouteCtx) => {
-    const config = await readBugReportUiConfig();
-    const imagePath = config.imagePath;
+    const requestedImagePath = typeof ctx?.query?.path === 'string' ? ctx.query.path.trim() : '';
+    const config = requestedImagePath ? null : await readBugReportUiConfig();
+    const imagePath = requestedImagePath || config?.imagePath || '';
     if (!imagePath.startsWith('/cards/')) {
       ctx.status = 404;
       ctx.body = { ok: false, error: 'Bug report image is not configured.' };

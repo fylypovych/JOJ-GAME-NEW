@@ -130,7 +130,7 @@ export const AdminSettingsTab = ({
       <p>
         <img
           className="admin-bug-report-icon-preview"
-          src={`${serverUrl}/api/bug-reports/ui-image?v=${encodeURIComponent(bugReportImagePath)}`}
+          src={`${serverUrl}/api/bug-reports/ui-image?path=${encodeURIComponent(bugReportImagePath)}&v=${encodeURIComponent(bugReportImagePath)}`}
           alt={t.bugReportImageAlt}
         />
       </p>
