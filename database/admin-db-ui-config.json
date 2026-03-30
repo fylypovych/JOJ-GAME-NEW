@@ -6,7 +6,7 @@
     "database": "joj_game",
     "user": "joj_user",
     "password": "",
-    "sslMode": "disable"
+    "sslMode": "require"
   },
-  "updatedAt": 1774468225719
+  "updatedAt": 1774882268553
 }
