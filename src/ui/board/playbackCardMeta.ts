@@ -54,6 +54,37 @@ export const resolvePlaybackCardMeta = (args: {
       imageSrc: args.cardImageById[matchedId],
     };
   }
+  if (matchedId) {
+    return {
+      title,
+      imageSrc: `/cards/${matchedId}.png`,
+    };
+  }
+
+  for (const [cardId, localizedTitle] of Object.entries(cardTitlesUk)) {
+    if (localizedTitle?.trim().toLowerCase() === normalizedTitle) {
+      return {
+        title,
+        imageSrc: args.cardImageById[cardId] || `/cards/${cardId}.png`,
+      };
+    }
+  }
+  for (const [cardId, localizedTitle] of Object.entries(cardTitlesEnById)) {
+    if (localizedTitle?.trim().toLowerCase() === normalizedTitle) {
+      return {
+        title,
+        imageSrc: args.cardImageById[cardId] || `/cards/${cardId}.png`,
+      };
+    }
+  }
+  for (const [cardId, localizedTitle] of Object.entries(defaultCardTitlesEnById)) {
+    if (localizedTitle?.trim().toLowerCase() === normalizedTitle) {
+      return {
+        title,
+        imageSrc: args.cardImageById[cardId] || `/cards/${cardId}.png`,
+      };
+    }
+  }
 
   if (args.lastDiscard && (
     args.lastDiscard.title.trim().toLowerCase() === normalizedTitle

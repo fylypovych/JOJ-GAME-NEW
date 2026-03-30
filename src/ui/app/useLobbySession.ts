@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createBotPlayerName, getBotSeatIds } from '../../game/bot-engine/config';
-import { clampBotCountToAllowed } from '../../game/lobbyConfig';
+import { clampBotCountToAllowed, clampRoomCapacityToAllowed } from '../../game/lobbyConfig';
 import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { LobbyMatch, Session } from './model';
 
@@ -16,6 +16,7 @@ export const useLobbySession = (args: {
   gameName: string;
   playerName: string;
   roomCapacity: number;
+  allowedRoomCapacities: number[];
   gameMode: GameMode;
   selectedOptionalModuleIds: string[];
   fallbackPlayerName?: string;
@@ -40,6 +41,7 @@ export const useLobbySession = (args: {
     gameName,
     playerName,
     roomCapacity,
+    allowedRoomCapacities,
     gameMode,
     selectedOptionalModuleIds,
     fallbackPlayerName,
@@ -85,8 +87,9 @@ export const useLobbySession = (args: {
     }
   };
 
+  const effectiveRoomCapacity = clampRoomCapacityToAllowed(roomCapacity, allowedRoomCapacities);
   const requestedBotCount = createWithBots
-    ? clampBotCountToAllowed(botCount, allowedBotCounts, roomCapacity)
+    ? clampBotCountToAllowed(botCount, allowedBotCounts, effectiveRoomCapacity)
     : 0;
   const botSetup = requestedBotCount > 0
     ? {
@@ -118,7 +121,7 @@ export const useLobbySession = (args: {
     try {
       const nextSession: Session = createOwnedSession
         ? await createOwnedSession({
-          numPlayers: Math.max(2, Math.min(6, roomCapacity)),
+          numPlayers: Math.max(2, Math.min(6, effectiveRoomCapacity)),
           setupData: {
             gameMode,
             gameSetup: { optionalMainDeckModuleIds: selectedOptionalModuleIds },
@@ -128,7 +131,7 @@ export const useLobbySession = (args: {
         })
         : await (async () => {
           const result = await lobbyClient.createMatch(gameName, {
-            numPlayers: Math.max(2, Math.min(6, roomCapacity)),
+            numPlayers: Math.max(2, Math.min(6, effectiveRoomCapacity)),
             setupData: {
               gameMode,
               gameSetup: { optionalMainDeckModuleIds: selectedOptionalModuleIds },
@@ -139,7 +142,7 @@ export const useLobbySession = (args: {
             playerID: '0',
             playerName: name,
           });
-          await autoJoinBots(result.matchID, Math.max(2, Math.min(6, roomCapacity)));
+          await autoJoinBots(result.matchID, Math.max(2, Math.min(6, effectiveRoomCapacity)));
           return {
             matchID: result.matchID,
             playerID: joined.playerID,

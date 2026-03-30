@@ -7,7 +7,7 @@ import { buildNextRankHint, getNextRankSeatMeta } from './board/rankHints';
 import { BoardV2HandSection, BoardV2NoticeStack, BoardV2PlayerOverview, BoardV2SelectionPanel, BoardV2SidePanel } from './board/v2Sections';
 import { BoardV2EndVoteModal, BoardV2GameoverModal, BoardV2Header, BoardV2StandingsSummary } from './board/v2ShellSections';
 import { useBoardV2DerivedState } from './board/useBoardV2DerivedState';
-import { useBotPlaybackQueue } from './board/useBotPlaybackQueue';
+import { useBotPlaybackQueue, type BotPlaybackSpeedLevel } from './board/useBotPlaybackQueue';
 import { resolvePlaybackCardMeta } from './board/playbackCardMeta';
 import { usePendingSelection } from './board/usePendingSelection';
 import { useBoardV2StageState } from './board/useBoardV2StageState';
@@ -19,8 +19,16 @@ const RESOURCE_ORDER: ResourceKey[] = ['time', 'reputation', 'discipline', 'docu
 
 type HandFilter = 'all' | 'playable' | CardDefinition['category'];
 type HandSort = 'default' | 'playable' | 'category' | 'title';
-type BotPlaybackSpeed = 'fast' | 'normal' | 'slow';
-
+const botSpeedHint = (lang: 'uk' | 'en', speed: BotPlaybackSpeedLevel) => {
+  if (lang === 'uk') {
+    if (speed <= 1) return '1 = показ кожного ходу, до 60 секунд';
+    if (speed >= 5) return '5 = карти ботів видно, затримка до 10 секунд';
+    return `${speed} = прискорений показ ходів ботів`;
+  }
+  if (speed <= 1) return '1 = show every move, up to 60 seconds';
+  if (speed >= 5) return '5 = bot cards stay visible, up to 10 seconds delay';
+  return `${speed} = faster bot playback`;
+};
 const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
   stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
 
@@ -351,18 +359,18 @@ export const BoardV2 = ({
             <button type="button" onClick={() => setBotAutoplayEnabled((prev) => !prev)}>
               {botAutoplayEnabled ? v2.botAutoplayPause : v2.botAutoplayResume}
             </button>
-            <div className="game-ui-v2-side-tab-row is-inline">
+            <div className="game-ui-v2-bot-speed-slider">
               <span className="game-ui-v2-bot-speed-label">{v2.botSpeedLabel}</span>
-              {(['fast', 'normal', 'slow'] as BotPlaybackSpeed[]).map((speed) => (
-                <button
-                  key={`bot-speed-${speed}`}
-                  type="button"
-                  className={botPlaybackSpeed === speed ? 'is-active' : ''}
-                  onClick={() => setBotPlaybackSpeed(speed)}
-                >
-                  {speed === 'fast' ? v2.botSpeedFast : speed === 'normal' ? v2.botSpeedNormal : v2.botSpeedSlow}
-                </button>
-              ))}
+              <input
+                type="range"
+                min="1"
+                max="5"
+                step="1"
+                value={botPlaybackSpeed}
+                onChange={(e) => setBotPlaybackSpeed(Number(e.target.value) as BotPlaybackSpeedLevel)}
+              />
+              <strong>{botPlaybackSpeed}</strong>
+              <small>{botSpeedHint(lang, botPlaybackSpeed)}</small>
             </div>
           </div>
         </section>

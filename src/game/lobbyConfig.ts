@@ -1,15 +1,31 @@
 export const LOBBY_BOT_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const;
+export const LOBBY_ROOM_CAPACITY_OPTIONS = [2, 3, 4, 5, 6] as const;
 
 export type LobbyBotCountOption = typeof LOBBY_BOT_COUNT_OPTIONS[number];
+export type LobbyRoomCapacityOption = typeof LOBBY_ROOM_CAPACITY_OPTIONS[number];
 
 export type LobbyGameUiConfig = {
+  allowedRoomCapacities: LobbyRoomCapacityOption[];
+  defaultRoomCapacity: LobbyRoomCapacityOption;
   allowedBotCounts: LobbyBotCountOption[];
   defaultBotCount: LobbyBotCountOption;
 };
 
 export const DEFAULT_LOBBY_GAME_UI_CONFIG: LobbyGameUiConfig = {
+  allowedRoomCapacities: [...LOBBY_ROOM_CAPACITY_OPTIONS],
+  defaultRoomCapacity: 4,
   allowedBotCounts: [...LOBBY_BOT_COUNT_OPTIONS],
   defaultBotCount: 3,
+};
+
+const normalizeAllowedRoomCapacities = (value: unknown): LobbyRoomCapacityOption[] => {
+  const source = Array.isArray(value) ? value : [];
+  const allowed = new Set<LobbyRoomCapacityOption>(LOBBY_ROOM_CAPACITY_OPTIONS);
+  const normalized = source
+    .map((item) => Number(item))
+    .filter((item): item is LobbyRoomCapacityOption => Number.isInteger(item) && allowed.has(item as LobbyRoomCapacityOption));
+  const unique = Array.from(new Set(normalized)).sort((a, b) => a - b) as LobbyRoomCapacityOption[];
+  return unique.length > 0 ? unique : [...DEFAULT_LOBBY_GAME_UI_CONFIG.allowedRoomCapacities];
 };
 
 const normalizeAllowedBotCounts = (value: unknown): LobbyBotCountOption[] => {
@@ -24,15 +40,32 @@ const normalizeAllowedBotCounts = (value: unknown): LobbyBotCountOption[] => {
 
 export const normalizeLobbyGameUiConfig = (value: unknown): LobbyGameUiConfig => {
   const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  const allowedRoomCapacities = normalizeAllowedRoomCapacities(raw.allowedRoomCapacities);
+  const requestedDefaultRoomCapacity = Number(raw.defaultRoomCapacity);
+  const defaultRoomCapacity = allowedRoomCapacities.includes(requestedDefaultRoomCapacity as LobbyRoomCapacityOption)
+    ? requestedDefaultRoomCapacity as LobbyRoomCapacityOption
+    : allowedRoomCapacities[0];
   const allowedBotCounts = normalizeAllowedBotCounts(raw.allowedBotCounts);
   const requestedDefault = Number(raw.defaultBotCount);
   const defaultBotCount = allowedBotCounts.includes(requestedDefault as LobbyBotCountOption)
     ? requestedDefault as LobbyBotCountOption
     : allowedBotCounts[0];
   return {
+    allowedRoomCapacities,
+    defaultRoomCapacity,
     allowedBotCounts,
     defaultBotCount,
   };
+};
+
+export const clampRoomCapacityToAllowed = (
+  requestedRoomCapacity: number,
+  allowedRoomCapacities: readonly number[],
+): LobbyRoomCapacityOption => {
+  const available = normalizeAllowedRoomCapacities(allowedRoomCapacities);
+  const normalizedRequested = Math.max(2, Math.floor(requestedRoomCapacity || available[0]));
+  if (available.includes(normalizedRequested as LobbyRoomCapacityOption)) return normalizedRequested as LobbyRoomCapacityOption;
+  return ([...available].reverse().find((count) => count <= normalizedRequested) ?? available[0]) as LobbyRoomCapacityOption;
 };
 
 export const getAvailableBotCounts = (

@@ -1,7 +1,7 @@
 import { Readable, Writable } from 'node:stream';
 import { readJsonBodySafe } from '../request-utils';
 import { createBotPlayerName, getBotSeatIds, normalizeBotSetup } from '../../src/game/bot-engine/config';
-import { clampBotCountToAllowed } from '../../src/game/lobbyConfig';
+import { clampBotCountToAllowed, clampRoomCapacityToAllowed } from '../../src/game/lobbyConfig';
 import type { LogLine, RouteCtx, RouterLike } from './types';
 import type { UserStore } from '../services/user-store';
 import { requireUserAuth, requireUserCsrf } from '../services/user-auth';
@@ -247,9 +247,10 @@ export const registerUserLobbyRoutes = (args: {
     try {
       const lobbyApi = lobbyApiFactory(ctx);
       const gameUiConfig = await loadLobbyGameUiConfig(gameUiConfigPath);
-      const requestedBotSetup = normalizeBotSetup((setupData as { bots?: unknown } | null | undefined)?.bots, numPlayers);
+      const effectiveNumPlayers = clampRoomCapacityToAllowed(numPlayers, gameUiConfig.allowedRoomCapacities);
+      const requestedBotSetup = normalizeBotSetup((setupData as { bots?: unknown } | null | undefined)?.bots, effectiveNumPlayers);
       const clampedBotCount = requestedBotSetup
-        ? clampBotCountToAllowed(requestedBotSetup.count, gameUiConfig.allowedBotCounts, numPlayers)
+        ? clampBotCountToAllowed(requestedBotSetup.count, gameUiConfig.allowedBotCounts, effectiveNumPlayers)
         : 0;
       const botSetup = requestedBotSetup && clampedBotCount > 0
         ? { ...requestedBotSetup, count: clampedBotCount }
@@ -262,14 +263,14 @@ export const registerUserLobbyRoutes = (args: {
           }
           : { bots: botSetup }
       );
-      const created = await lobbyApi.createMatch(gameName, { numPlayers, setupData: normalizedSetupData });
+      const created = await lobbyApi.createMatch(gameName, { numPlayers: effectiveNumPlayers, setupData: normalizedSetupData });
       const matchID = String(created.matchID ?? '');
       if (!matchID) throw new Error('Match ID missing after creation.');
       const joined = await lobbyApi.joinMatch(gameName, matchID, { playerID: '0', playerName });
       const playerID = String(joined.playerID ?? '0');
       const credentials = String(joined.playerCredentials ?? '');
       if (botSetup) {
-        for (const [index, botPlayerID] of getBotSeatIds(numPlayers, botSetup.count).entries()) {
+        for (const [index, botPlayerID] of getBotSeatIds(effectiveNumPlayers, botSetup.count).entries()) {
           await lobbyApi.joinMatch(gameName, matchID, {
             playerID: botPlayerID,
             playerName: createBotPlayerName({ difficulty: botSetup.difficulty, profile: botSetup.profile, seatIndex: index + 1 }),

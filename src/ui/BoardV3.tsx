@@ -7,7 +7,7 @@ import { buildNextRankHint, getNextRankSeatMeta } from './board/rankHints';
 import { BoardV3HandSection, BoardV3NoticeStack, BoardV3PlayerOverview, BoardV3SelectionPanel, BoardV3SidePanel } from './board/v3Sections';
 import { BoardV3EndVoteModal, BoardV3GameoverModal, BoardV3Header, BoardV3StandingsSummary } from './board/v3ShellSections';
 import { useBoardV2DerivedState } from './board/useBoardV2DerivedState';
-import { useBotPlaybackQueue } from './board/useBotPlaybackQueue';
+import { useBotPlaybackQueue, type BotPlaybackSpeedLevel } from './board/useBotPlaybackQueue';
 import { resolvePlaybackCardMeta } from './board/playbackCardMeta';
 import { usePendingSelection } from './board/usePendingSelection';
 import { useBoardV2StageState } from './board/useBoardV2StageState';
@@ -19,8 +19,16 @@ const RESOURCE_ORDER: ResourceKey[] = ['time', 'reputation', 'discipline', 'docu
 
 type HandFilter = 'all' | 'playable' | CardDefinition['category'];
 type HandSort = 'default' | 'playable' | 'category' | 'title';
-type BotPlaybackSpeed = 'fast' | 'normal' | 'slow';
-
+const botSpeedHint = (lang: 'uk' | 'en', speed: BotPlaybackSpeedLevel) => {
+  if (lang === 'uk') {
+    if (speed <= 1) return '1 = показ кожного ходу, до 60 секунд';
+    if (speed >= 5) return '5 = карти ботів видно, затримка до 10 секунд';
+    return `${speed} = прискорений показ ходів ботів`;
+  }
+  if (speed <= 1) return '1 = show every move, up to 60 seconds';
+  if (speed >= 5) return '5 = bot cards stay visible, up to 10 seconds delay';
+  return `${speed} = faster bot playback`;
+};
 const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
   stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
 
@@ -331,8 +339,8 @@ export const BoardV3 = ({
     lastDiscard,
     lastDiscardImage,
   });
-  const displayedDiscardTitle = lastDiscardTitle;
-  const displayedDiscardImage = lastDiscardImage;
+  const displayedDiscardTitle = botPlaybackCardTitle || playbackCardMeta.title || lastDiscardTitle;
+  const displayedDiscardImage = (botPlaybackCardTitle || playbackCardMeta.title) ? playbackCardMeta.imageSrc : lastDiscardImage;
   const focusPrimaryLabel = lastDiscardTitle || activeArenaPlayerName;
   const focusSecondaryLabel = activeArenaRankName || rankName;
   const focusSupportingText = currentStageFocus;
@@ -431,18 +439,18 @@ export const BoardV3 = ({
               <button type="button" onClick={() => setBotAutoplayEnabled((prev) => !prev)}>
                 {botAutoplayEnabled ? v2.botAutoplayPause : v2.botAutoplayResume}
               </button>
-              <div className="game-ui-v3-tab-row game-ui-v3-tab-row-inline">
+              <div className="game-ui-v3-bot-speed-slider">
                 <span className="game-ui-v3-bot-speed-label">{v2.botSpeedLabel}</span>
-                {(['fast', 'normal', 'slow'] as BotPlaybackSpeed[]).map((speed) => (
-                  <button
-                    key={`bot-speed-${speed}`}
-                    type="button"
-                    className={botPlaybackSpeed === speed ? 'is-active' : ''}
-                    onClick={() => setBotPlaybackSpeed(speed)}
-                  >
-                    {speed === 'fast' ? v2.botSpeedFast : speed === 'normal' ? v2.botSpeedNormal : v2.botSpeedSlow}
-                  </button>
-                ))}
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  step="1"
+                  value={botPlaybackSpeed}
+                  onChange={(e) => setBotPlaybackSpeed(Number(e.target.value) as BotPlaybackSpeedLevel)}
+                />
+                <strong>{botPlaybackSpeed}</strong>
+                <small>{botSpeedHint(lang, botPlaybackSpeed)}</small>
               </div>
             </div>
           </>

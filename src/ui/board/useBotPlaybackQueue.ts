@@ -21,12 +21,14 @@ type QueuedSnapshot = Snapshot & {
   eventCardTitle: string;
 };
 
-type BotPlaybackSpeed = 'fast' | 'normal' | 'slow';
+export type BotPlaybackSpeedLevel = 1 | 2 | 3 | 4 | 5;
 
-const BOT_DELAY_BY_SPEED: Record<BotPlaybackSpeed, number> = {
-  fast: 250,
-  normal: 850,
-  slow: 1600,
+const BOT_DELAY_BY_SPEED_LEVEL: Record<BotPlaybackSpeedLevel, number> = {
+  1: 60_000,
+  2: 45_000,
+  3: 30_000,
+  4: 20_000,
+  5: 10_000,
 };
 
 export const clonePlaybackSnapshot = (snapshot: Snapshot): Snapshot => {
@@ -140,7 +142,7 @@ export const useBotPlaybackQueue = (args: {
   playerID?: string | null;
 }) => {
   const { incomingG, incomingCtx, playerID } = args;
-  const [botPlaybackSpeed, setBotPlaybackSpeed] = useState<BotPlaybackSpeed>('normal');
+  const [botPlaybackSpeed, setBotPlaybackSpeed] = useState<BotPlaybackSpeedLevel>(5);
   const [botAutoplayEnabled, setBotAutoplayEnabled] = useState(true);
   const [botThinkingPlayerName, setBotThinkingPlayerName] = useState('');
   const [botPlaybackEventText, setBotPlaybackEventText] = useState('');
@@ -161,7 +163,7 @@ export const useBotPlaybackQueue = (args: {
   const lastSeenChatIdRef = useRef((incomingG?.chat ?? []).slice(-1)[0]?.id ?? '');
   const delayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const botAutoplayEnabledRef = useRef(true);
-  const botDelayMsRef = useRef(BOT_DELAY_BY_SPEED.normal);
+  const botDelayMsRef = useRef(BOT_DELAY_BY_SPEED_LEVEL[5]);
 
   useEffect(() => () => {
     if (delayTimerRef.current) clearTimeout(delayTimerRef.current);
@@ -172,7 +174,7 @@ export const useBotPlaybackQueue = (args: {
   }, [botAutoplayEnabled]);
 
   useEffect(() => {
-    botDelayMsRef.current = BOT_DELAY_BY_SPEED[botPlaybackSpeed];
+    botDelayMsRef.current = BOT_DELAY_BY_SPEED_LEVEL[botPlaybackSpeed];
   }, [botPlaybackSpeed]);
 
   const processSnapshotQueue = useCallback(() => {

@@ -302,6 +302,10 @@ export const AdminPage = ({
     saveBugReportUiConfig,
   } = useBugReportUiConfig({ lang, serverUrl, adminJsonFetch });
   const {
+    allowedRoomCapacities,
+    setAllowedRoomCapacities,
+    defaultRoomCapacity,
+    setDefaultRoomCapacity,
     allowedBotCounts,
     setAllowedBotCounts,
     defaultBotCount,
@@ -501,9 +505,28 @@ export const AdminPage = ({
           bugReportUiConfigLoading={bugReportUiConfigLoading}
           bugReportUiConfigError={bugReportUiConfigError}
           bugReportUiConfigStatus={bugReportUiConfigStatus}
+          allowedRoomCapacities={allowedRoomCapacities}
+          onToggleAllowedRoomCapacity={(capacity) => {
+            const next = normalizeLobbyGameUiConfig({
+              allowedRoomCapacities: allowedRoomCapacities.includes(capacity)
+                ? allowedRoomCapacities.filter((item) => item !== capacity)
+                : [...allowedRoomCapacities, capacity],
+              defaultRoomCapacity,
+              allowedBotCounts,
+              defaultBotCount,
+            });
+            setAllowedRoomCapacities(next.allowedRoomCapacities);
+            setDefaultRoomCapacity(next.defaultRoomCapacity);
+            setAllowedBotCounts(next.allowedBotCounts);
+            setDefaultBotCount(next.defaultBotCount);
+          }}
+          defaultRoomCapacity={defaultRoomCapacity}
+          onDefaultRoomCapacityChange={setDefaultRoomCapacity}
           allowedBotCounts={allowedBotCounts}
           onToggleAllowedBotCount={(count) => {
             const next = normalizeLobbyGameUiConfig({
+              allowedRoomCapacities,
+              defaultRoomCapacity,
               allowedBotCounts: allowedBotCounts.includes(count)
                 ? allowedBotCounts.filter((item) => item !== count)
                 : [...allowedBotCounts, count],

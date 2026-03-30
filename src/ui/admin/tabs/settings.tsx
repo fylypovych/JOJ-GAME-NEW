@@ -1,5 +1,10 @@
 import { text } from '../../i18n';
-import { LOBBY_BOT_COUNT_OPTIONS, type LobbyBotCountOption } from '../../../game/lobbyConfig';
+import {
+  LOBBY_BOT_COUNT_OPTIONS,
+  LOBBY_ROOM_CAPACITY_OPTIONS,
+  type LobbyBotCountOption,
+  type LobbyRoomCapacityOption,
+} from '../../../game/lobbyConfig';
 
 type T = ReturnType<typeof text>;
 
@@ -26,6 +31,10 @@ export const AdminSettingsTab = ({
   bugReportUiConfigLoading,
   bugReportUiConfigError,
   bugReportUiConfigStatus,
+  allowedRoomCapacities,
+  onToggleAllowedRoomCapacity,
+  defaultRoomCapacity,
+  onDefaultRoomCapacityChange,
   allowedBotCounts,
   onToggleAllowedBotCount,
   defaultBotCount,
@@ -57,6 +66,10 @@ export const AdminSettingsTab = ({
   bugReportUiConfigLoading: boolean;
   bugReportUiConfigError: string;
   bugReportUiConfigStatus: string;
+  allowedRoomCapacities: LobbyRoomCapacityOption[];
+  onToggleAllowedRoomCapacity: (capacity: LobbyRoomCapacityOption) => void;
+  defaultRoomCapacity: LobbyRoomCapacityOption;
+  onDefaultRoomCapacityChange: (capacity: LobbyRoomCapacityOption) => void;
   allowedBotCounts: LobbyBotCountOption[];
   onToggleAllowedBotCount: (count: LobbyBotCountOption) => void;
   defaultBotCount: LobbyBotCountOption;
@@ -109,6 +122,33 @@ export const AdminSettingsTab = ({
     {bugReportUiConfigError ? <p className="admin-error">{bugReportUiConfigError}</p> : null}
     <h4>{t.botSettingsTitle}</h4>
     <p>{t.botSettingsHint}</p>
+    <p>{t.botSettingsRoomCapacitiesLabel}:</p>
+    <p className="admin-controls">
+      {LOBBY_ROOM_CAPACITY_OPTIONS.map((capacity) => (
+        <label key={`room-capacity-setting-${capacity}`}>
+          <input
+            type="checkbox"
+            checked={allowedRoomCapacities.includes(capacity)}
+            onChange={() => onToggleAllowedRoomCapacity(capacity)}
+          />
+          {capacity}
+        </label>
+      ))}
+    </p>
+    <p>{t.botSettingsDefaultRoomCapacityLabel}:</p>
+    <p className="admin-controls">
+      {allowedRoomCapacities.map((capacity) => (
+        <button
+          key={`room-capacity-default-${capacity}`}
+          type="button"
+          aria-pressed={defaultRoomCapacity === capacity}
+          onClick={() => onDefaultRoomCapacityChange(capacity)}
+          disabled={gameUiConfigLoading}
+        >
+          {defaultRoomCapacity === capacity ? '✓ ' : ''}{capacity}
+        </button>
+      ))}
+    </p>
     <p>{t.botSettingsAllowedLabel}:</p>
     <p className="admin-controls">
       {LOBBY_BOT_COUNT_OPTIONS.map((count) => (

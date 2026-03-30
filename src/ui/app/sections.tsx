@@ -179,6 +179,7 @@ type LobbySectionProps = {
   setPlayerName: (value: string) => void;
   roomCapacity: number;
   setRoomCapacity: (value: number) => void;
+  allowedRoomCapacities: number[];
   gameMode: GameMode;
   setGameMode: (value: GameMode) => void;
   createWithBots: boolean;
@@ -211,6 +212,7 @@ export const LobbySection = ({
   setPlayerName,
   roomCapacity,
   setRoomCapacity,
+  allowedRoomCapacities,
   gameMode,
   setGameMode,
   createWithBots,
@@ -410,7 +412,7 @@ export const LobbySection = ({
         )}
         <p>{t.roomCapacity}:</p>
         <p className="admin-controls">
-          {[2, 3, 4, 5, 6].map((size) => (
+          {allowedRoomCapacities.map((size) => (
             <button key={`room-cap-${size}`} type="button" aria-pressed={roomCapacity === size} onClick={() => setRoomCapacity(size)}>
               {roomCapacity === size ? '✓ ' : ''}{size}
             </button>

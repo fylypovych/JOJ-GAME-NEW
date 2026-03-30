@@ -4,6 +4,7 @@ import {
   DEFAULT_LOBBY_GAME_UI_CONFIG,
   normalizeLobbyGameUiConfig,
   type LobbyBotCountOption,
+  type LobbyRoomCapacityOption,
 } from '../../game/lobbyConfig';
 
 type AdminJsonFetch = (url: string, init?: RequestInit) => Promise<Response>;
@@ -21,6 +22,8 @@ export const useGameUiConfig = (args: {
 }) => {
   const { lang, serverUrl, adminJsonFetch } = args;
   const errors = createErrors(lang);
+  const [allowedRoomCapacities, setAllowedRoomCapacities] = useState<LobbyRoomCapacityOption[]>(DEFAULT_LOBBY_GAME_UI_CONFIG.allowedRoomCapacities);
+  const [defaultRoomCapacity, setDefaultRoomCapacity] = useState<LobbyRoomCapacityOption>(DEFAULT_LOBBY_GAME_UI_CONFIG.defaultRoomCapacity);
   const [allowedBotCounts, setAllowedBotCounts] = useState<LobbyBotCountOption[]>(DEFAULT_LOBBY_GAME_UI_CONFIG.allowedBotCounts);
   const [defaultBotCount, setDefaultBotCount] = useState<LobbyBotCountOption>(DEFAULT_LOBBY_GAME_UI_CONFIG.defaultBotCount);
   const [gameUiConfigLoading, setGameUiConfigLoading] = useState(false);
@@ -29,6 +32,8 @@ export const useGameUiConfig = (args: {
 
   const applyConfig = (value: unknown) => {
     const normalized = normalizeLobbyGameUiConfig(value);
+    setAllowedRoomCapacities(normalized.allowedRoomCapacities);
+    setDefaultRoomCapacity(normalized.defaultRoomCapacity);
     setAllowedBotCounts(normalized.allowedBotCounts);
     setDefaultBotCount(normalized.defaultBotCount);
     return normalized;
@@ -58,6 +63,8 @@ export const useGameUiConfig = (args: {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          allowedRoomCapacities,
+          defaultRoomCapacity,
           allowedBotCounts,
           defaultBotCount,
         }),
@@ -74,6 +81,10 @@ export const useGameUiConfig = (args: {
   };
 
   return {
+    allowedRoomCapacities,
+    setAllowedRoomCapacities,
+    defaultRoomCapacity,
+    setDefaultRoomCapacity,
     allowedBotCounts,
     setAllowedBotCounts,
     defaultBotCount,

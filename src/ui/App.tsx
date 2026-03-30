@@ -28,6 +28,7 @@ import { formatModuleDisplayName } from './moduleDisplay';
 import {
   DEFAULT_LOBBY_GAME_UI_CONFIG,
   clampBotCountToAllowed,
+  clampRoomCapacityToAllowed,
   getAvailableBotCounts,
   normalizeLobbyGameUiConfig,
 } from '../game/lobbyConfig';
@@ -262,6 +263,7 @@ export const App = () => {
     playerName,
     fallbackPlayerName: user?.displayName?.trim() || user?.username?.trim() || '',
     roomCapacity,
+    allowedRoomCapacities: lobbyGameUiConfig.allowedRoomCapacities,
     gameMode,
     selectedOptionalModuleIds,
     createWithBots,
@@ -337,6 +339,11 @@ export const App = () => {
     };
   }, []);
   useEffect(() => {
+    const nextRoomCapacity = clampRoomCapacityToAllowed(roomCapacity, lobbyGameUiConfig.allowedRoomCapacities);
+    if (roomCapacity !== nextRoomCapacity) {
+      setRoomCapacity(nextRoomCapacity);
+      return;
+    }
     const availableBotCounts = getAvailableBotCounts(lobbyGameUiConfig.allowedBotCounts, roomCapacity);
     if (createWithBots && availableBotCounts.length === 0) {
       setCreateWithBots(false);
@@ -545,6 +552,7 @@ export const App = () => {
           setPlayerName={setPlayerName}
           roomCapacity={roomCapacity}
           setRoomCapacity={setRoomCapacity}
+          allowedRoomCapacities={lobbyGameUiConfig.allowedRoomCapacities}
           gameMode={gameMode}
           setGameMode={setGameMode}
           createWithBots={createWithBots}
