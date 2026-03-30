@@ -22,6 +22,7 @@ export const passwordResetHealthPath = path.resolve(appRootDir, 'database', 'pas
 export const bugReportsPath = path.resolve(appRootDir, 'database', 'bug-reports.json');
 export const bugReportImagesDir = path.resolve(appRootDir, 'database', 'bug-report-images');
 export const bugReportUiConfigPath = path.resolve(appRootDir, 'database', 'bug-report-ui-config.json');
+export const gameUiConfigPath = path.resolve(appRootDir, 'database', 'game-ui-config.json');
 
 export const JSON_BODY_LIMIT = 2 * 1024 * 1024;
 export const LARGE_JSON_BODY_LIMIT = 8 * 1024 * 1024;

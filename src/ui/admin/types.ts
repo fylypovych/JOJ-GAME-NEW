@@ -177,7 +177,7 @@ export type AdminPageProps = {
 
 export type ImportCategoryMode = CardCategory | 'AS_IS';
 export type CategoryFilter = CardCategory | 'ALL' | 'CORE';
-export type AdminTab = 'matches' | 'deck' | 'import' | 'state' | 'ranks' | 'database' | 'analytics' | 'settings' | 'simulation' | 'users' | 'awards' | 'bugReports';
+export type AdminTab = 'matches' | 'deck' | 'import' | 'state' | 'ranks' | 'database' | 'analytics' | 'github' | 'settings' | 'simulation' | 'users' | 'awards' | 'bugReports';
 
 export type CropDraft = {
   filename: string;

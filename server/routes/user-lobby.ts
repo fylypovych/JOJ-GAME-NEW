@@ -1,9 +1,11 @@
 import { Readable, Writable } from 'node:stream';
 import { readJsonBodySafe } from '../request-utils';
 import { createBotPlayerName, getBotSeatIds, normalizeBotSetup } from '../../src/game/bot-engine/config';
+import { clampBotCountToAllowed } from '../../src/game/lobbyConfig';
 import type { LogLine, RouteCtx, RouterLike } from './types';
 import type { UserStore } from '../services/user-store';
 import { requireUserAuth, requireUserCsrf } from '../services/user-auth';
+import { loadLobbyGameUiConfig } from '../services/game-ui-config';
 
 type MatchDbStateLike = {
   G?: {
@@ -217,9 +219,10 @@ export const registerUserLobbyRoutes = (args: {
   userStore: UserStore | null;
   logLine: LogLine;
   jsonBodyLimit: number;
+  gameUiConfigPath: string;
   lobbyApiFactory?: (ctx: RouteCtx) => InternalLobbyApi;
 }) => {
-  const { router, userStore, logLine, jsonBodyLimit, lobbyApiFactory = createInternalLobbyApi } = args;
+  const { router, userStore, logLine, jsonBodyLimit, gameUiConfigPath, lobbyApiFactory = createInternalLobbyApi } = args;
 
   router.post('/api/user-lobby/create-and-join', async (ctx: RouteCtx) => {
     if (!userStore) {
@@ -243,8 +246,23 @@ export const registerUserLobbyRoutes = (args: {
     }
     try {
       const lobbyApi = lobbyApiFactory(ctx);
-      const botSetup = normalizeBotSetup((setupData as { bots?: unknown } | null | undefined)?.bots, numPlayers);
-      const created = await lobbyApi.createMatch(gameName, { numPlayers, setupData });
+      const gameUiConfig = await loadLobbyGameUiConfig(gameUiConfigPath);
+      const requestedBotSetup = normalizeBotSetup((setupData as { bots?: unknown } | null | undefined)?.bots, numPlayers);
+      const clampedBotCount = requestedBotSetup
+        ? clampBotCountToAllowed(requestedBotSetup.count, gameUiConfig.allowedBotCounts, numPlayers)
+        : 0;
+      const botSetup = requestedBotSetup && clampedBotCount > 0
+        ? { ...requestedBotSetup, count: clampedBotCount }
+        : null;
+      const normalizedSetupData = (
+        setupData && typeof setupData === 'object'
+          ? {
+            ...(setupData as Record<string, unknown>),
+            bots: botSetup,
+          }
+          : { bots: botSetup }
+      );
+      const created = await lobbyApi.createMatch(gameName, { numPlayers, setupData: normalizedSetupData });
       const matchID = String(created.matchID ?? '');
       if (!matchID) throw new Error('Match ID missing after creation.');
       const joined = await lobbyApi.joinMatch(gameName, matchID, { playerID: '0', playerName });

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getBotSeatIds } from '../../game/bot-engine/config';
+import { clampBotCountToAllowed, getAvailableBotCounts } from '../../game/lobbyConfig';
 import { normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition } from '../../game/types';
 import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
@@ -184,6 +185,7 @@ type LobbySectionProps = {
   setCreateWithBots: (value: boolean) => void;
   botCount: number;
   setBotCount: (value: number) => void;
+  allowedBotCounts: number[];
   botDifficulty: BotDifficulty;
   setBotDifficulty: (value: BotDifficulty) => void;
   botProfile: BotProfile;
@@ -215,6 +217,7 @@ export const LobbySection = ({
   setCreateWithBots,
   botCount,
   setBotCount,
+  allowedBotCounts,
   botDifficulty,
   setBotDifficulty,
   botProfile,
@@ -236,6 +239,13 @@ export const LobbySection = ({
     () => new Map(optionalModules.map((module) => [module.id, module.name])),
     [optionalModules],
   );
+  const availableBotCounts = useMemo(
+    () => getAvailableBotCounts(allowedBotCounts, roomCapacity),
+    [allowedBotCounts, roomCapacity],
+  );
+  const effectiveBotCount = createWithBots
+    ? clampBotCountToAllowed(botCount, allowedBotCounts, roomCapacity)
+    : 0;
   const toggleModule = (id: string, alwaysOn: boolean) => {
     if (alwaysOn) return;
     if (selectedOptionalModuleIds.includes(id)) {
@@ -440,7 +450,12 @@ export const LobbySection = ({
           <button type="button" aria-pressed={!createWithBots} onClick={() => setCreateWithBots(false)}>
             {!createWithBots ? '✓ ' : ''}{t.roomBotsOff}
           </button>
-          <button type="button" aria-pressed={createWithBots} onClick={() => setCreateWithBots(true)}>
+          <button
+            type="button"
+            aria-pressed={createWithBots}
+            onClick={() => setCreateWithBots(true)}
+            disabled={availableBotCounts.length === 0}
+          >
             {createWithBots ? '✓ ' : ''}{t.roomBotsFill}
           </button>
         </p>
@@ -448,14 +463,14 @@ export const LobbySection = ({
           <>
             <p>{t.roomBotCountLabel}:</p>
             <p className="admin-controls">
-              {Array.from({ length: Math.max(0, roomCapacity - 1) }, (_, index) => index + 1).map((count) => (
+              {availableBotCounts.map((count) => (
                 <button
                   key={`bot-count-${count}`}
                   type="button"
-                  aria-pressed={botCount === count}
+                  aria-pressed={effectiveBotCount === count}
                   onClick={() => setBotCount(count)}
                 >
-                  {botCount === count ? '✓ ' : ''}{count}
+                  {effectiveBotCount === count ? '✓ ' : ''}{count}
                 </button>
               ))}
             </p>
@@ -505,7 +520,7 @@ export const LobbySection = ({
           <ul>
             <li>{t.gameModeLabel}: {formatGameModeLabel(t, gameMode)}</li>
             <li>{t.roomCapacity}: {roomCapacity}</li>
-            <li>{t.roomBotsLabel}: {createWithBots ? `${botCount} · ${formatBotDifficultyLabel(t, botDifficulty)}` : t.roomBotsOff}</li>
+            <li>{t.roomBotsLabel}: {createWithBots ? `${effectiveBotCount} · ${formatBotDifficultyLabel(t, botDifficulty)}` : t.roomBotsOff}</li>
             <li>{t.roomModulesLabel}: {formatModuleList(selectedOptionalModuleIds, moduleNameById)}</li>
             <li>{t.roomDurationLabel}: {estimateRoomDurationLabel(t, roomCapacity, gameMode)}</li>
           </ul>

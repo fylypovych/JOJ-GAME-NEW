@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { DeckTarget } from '../game/jojGame';
 import { SHARED_TEMPLATE_SCHEMA_KIND, SHARED_TEMPLATE_SCHEMA_VERSION, serializeSharedRanksDocument } from '../game/sharedConfigSchema';
+import { normalizeLobbyGameUiConfig } from '../game/lobbyConfig';
 import { rankLabel } from './i18n';
 import { text } from './i18n';
 import { formatModuleDisplayName } from './moduleDisplay';
@@ -17,6 +18,7 @@ import { useAdminAwards } from './admin/useAdminAwards';
 import { useAdminAnalytics } from './admin/useAdminAnalytics';
 import { useAdminBugReports } from './admin/useAdminBugReports';
 import { useBugReportUiConfig } from './admin/useBugReportUiConfig';
+import { useGameUiConfig } from './admin/useGameUiConfig';
 import {
   categories,
   rankResourceKeys,
@@ -38,6 +40,7 @@ import {
   AdminStateTab,
   AdminTabButtons,
   AdminAnalyticsTab,
+  AdminGithubTab,
   AdminAwardsTab,
   AdminBugReportsTab,
   AdminUsersTab,
@@ -298,6 +301,17 @@ export const AdminPage = ({
     loadBugReportUiConfig,
     saveBugReportUiConfig,
   } = useBugReportUiConfig({ lang, serverUrl, adminJsonFetch });
+  const {
+    allowedBotCounts,
+    setAllowedBotCounts,
+    defaultBotCount,
+    setDefaultBotCount,
+    gameUiConfigLoading,
+    gameUiConfigError,
+    gameUiConfigStatus,
+    loadGameUiConfig,
+    saveGameUiConfig,
+  } = useGameUiConfig({ lang, serverUrl, adminJsonFetch });
 
   const {
     gitStatus,
@@ -417,6 +431,10 @@ export const AdminPage = ({
   useEffect(() => {
     if (activeTab !== 'settings') return;
     void loadBugReportUiConfig();
+    void loadGameUiConfig();
+  }, [activeTab]);
+  useEffect(() => {
+    if (activeTab !== 'github') return;
     void loadGitAuthStatus({ preserveMessages: true });
   }, [activeTab]);
   useEffect(() => {
@@ -453,31 +471,6 @@ export const AdminPage = ({
           onSaveServerUrl={onSaveServerUrl}
           onResetServerUrl={onResetServerUrl}
           serverUrl={serverUrl}
-          checkGitUpdates={checkGitUpdates}
-          applyGitUpdate={applyGitUpdate}
-          applyGitDeploy={applyGitDeploy}
-          gitAuthStatus={gitAuthStatus}
-          gitAuthStatusLoading={gitAuthStatusLoading}
-          gitAuthSaving={gitAuthSaving}
-          gitAuthUsernameDraft={gitAuthUsernameDraft}
-          setGitAuthUsernameDraft={setGitAuthUsernameDraft}
-          gitAuthTokenDraft={gitAuthTokenDraft}
-          setGitAuthTokenDraft={setGitAuthTokenDraft}
-          gitIgnoreLocalChanges={gitIgnoreLocalChanges}
-          setGitIgnoreLocalChanges={setGitIgnoreLocalChanges}
-          gitCommitMessageDraft={gitCommitMessageDraft}
-          setGitCommitMessageDraft={setGitCommitMessageDraft}
-          loadGitAuthStatus={loadGitAuthStatus}
-          saveGitAuthConfig={saveGitAuthConfig}
-          clearGitAuthConfig={clearGitAuthConfig}
-          gitStatus={gitStatus}
-          gitStatusLoading={gitStatusLoading}
-          gitUpdateRunning={gitUpdateRunning}
-          gitDeployRunning={gitDeployRunning}
-          gitPublishRunning={gitPublishRunning}
-          publishGitChanges={publishGitChanges}
-          gitActionMessage={gitActionMessage}
-          gitActionLog={gitActionLog}
           onResetAll={onResetAll}
           regenerateAllTemplateImages={regenerateAllTemplateImages}
           imageRegenRunning={regenRunning}
@@ -508,6 +501,53 @@ export const AdminPage = ({
           bugReportUiConfigLoading={bugReportUiConfigLoading}
           bugReportUiConfigError={bugReportUiConfigError}
           bugReportUiConfigStatus={bugReportUiConfigStatus}
+          allowedBotCounts={allowedBotCounts}
+          onToggleAllowedBotCount={(count) => {
+            const next = normalizeLobbyGameUiConfig({
+              allowedBotCounts: allowedBotCounts.includes(count)
+                ? allowedBotCounts.filter((item) => item !== count)
+                : [...allowedBotCounts, count],
+              defaultBotCount,
+            });
+            setAllowedBotCounts(next.allowedBotCounts);
+            setDefaultBotCount(next.defaultBotCount);
+          }}
+          defaultBotCount={defaultBotCount}
+          onDefaultBotCountChange={setDefaultBotCount}
+          onSaveGameUiConfig={() => { void saveGameUiConfig(); }}
+          gameUiConfigLoading={gameUiConfigLoading}
+          gameUiConfigError={gameUiConfigError}
+          gameUiConfigStatus={gameUiConfigStatus}
+        />
+      ) : null}
+      {activeTab === 'github' ? (
+        <AdminGithubTab
+          t={t}
+          gitAuthStatus={gitAuthStatus}
+          gitAuthStatusLoading={gitAuthStatusLoading}
+          gitAuthSaving={gitAuthSaving}
+          gitAuthUsernameDraft={gitAuthUsernameDraft}
+          setGitAuthUsernameDraft={setGitAuthUsernameDraft}
+          gitAuthTokenDraft={gitAuthTokenDraft}
+          setGitAuthTokenDraft={setGitAuthTokenDraft}
+          gitIgnoreLocalChanges={gitIgnoreLocalChanges}
+          setGitIgnoreLocalChanges={setGitIgnoreLocalChanges}
+          gitCommitMessageDraft={gitCommitMessageDraft}
+          setGitCommitMessageDraft={setGitCommitMessageDraft}
+          loadGitAuthStatus={loadGitAuthStatus}
+          saveGitAuthConfig={saveGitAuthConfig}
+          clearGitAuthConfig={clearGitAuthConfig}
+          checkGitUpdates={checkGitUpdates}
+          applyGitUpdate={applyGitUpdate}
+          applyGitDeploy={applyGitDeploy}
+          gitStatus={gitStatus}
+          gitStatusLoading={gitStatusLoading}
+          gitUpdateRunning={gitUpdateRunning}
+          gitDeployRunning={gitDeployRunning}
+          gitPublishRunning={gitPublishRunning}
+          publishGitChanges={publishGitChanges}
+          gitActionMessage={gitActionMessage}
+          gitActionLog={gitActionLog}
         />
       ) : null}
       {activeTab === 'analytics' ? (

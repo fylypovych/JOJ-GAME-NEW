@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from './types';
 import { requireAdminMutationAuth } from '../admin-auth';
 import { registerAdminDbToolRoutes } from '../services/admin-db-tools';
+import { loadLobbyGameUiConfig, saveLobbyGameUiConfig } from '../services/game-ui-config';
 import {
   getPasswordResetDeliveryHealth,
   getPublicPasswordResetDeliveryHealth,
@@ -66,6 +67,7 @@ type AdminRoutesDeps = {
   devRestartTouchPath: string;
   dbSchemaPath: string;
   adminDbUiConfigPath: string;
+  gameUiConfigPath: string;
   importJsonConfigToDb: (draft?: {
     host: string;
     port: string;
@@ -98,6 +100,7 @@ export const registerAdminRoutes = ({
   devRestartTouchPath,
   dbSchemaPath,
   adminDbUiConfigPath,
+  gameUiConfigPath,
   importJsonConfigToDb,
   userStore,
   getPasswordResetDeliveryHealth: getPasswordResetDeliveryHealthFn = getPasswordResetDeliveryHealth,
@@ -129,6 +132,12 @@ export const registerAdminRoutes = ({
     };
   });
 
+  router.get('/api/game/ui-config', async (ctx: RouteCtx) => {
+    if (!(await enforceRateLimit(ctx, 'public-game-ui-config-get', 60, 60_000))) return;
+    const config = await loadLobbyGameUiConfig(gameUiConfigPath);
+    ctx.body = { ok: true, ...config };
+  });
+
   router.get('/api/admin/health/password-reset', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/health/password-reset'))) return;
     ctx.body = {
@@ -140,6 +149,27 @@ export const registerAdminRoutes = ({
   router.get('/api/admin/verify', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/verify'))) return;
     ctx.body = { ok: true, adminAuthEnabled: Boolean(userStore) };
+  });
+
+  router.get('/api/admin/game/ui-config', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/game/ui-config'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-game-ui-config-get', 30, 60_000))) return;
+    const config = await loadLobbyGameUiConfig(gameUiConfigPath);
+    ctx.body = { ok: true, ...config };
+  });
+
+  router.post('/api/admin/game/ui-config', async (ctx: RouteCtx) => {
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/game/ui-config'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-game-ui-config-post', 20, 60_000))) return;
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/game/ui-config', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    try {
+      const config = await saveLobbyGameUiConfig(gameUiConfigPath, body);
+      ctx.body = { ok: true, ...config, message: 'Game UI config saved' };
+    } catch (error) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: String(error instanceof Error ? error.message : error) };
+    }
   });
 
   router.get('/api/admin/analytics', async (ctx: RouteCtx) => {

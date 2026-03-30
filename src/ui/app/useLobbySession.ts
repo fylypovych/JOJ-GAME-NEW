@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createBotPlayerName, getBotSeatIds } from '../../game/bot-engine/config';
+import { clampBotCountToAllowed } from '../../game/lobbyConfig';
 import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { LobbyMatch, Session } from './model';
 
@@ -20,6 +21,7 @@ export const useLobbySession = (args: {
   fallbackPlayerName?: string;
   createWithBots: boolean;
   botCount: number;
+  allowedBotCounts: number[];
   botDifficulty: BotDifficulty;
   botProfile: BotProfile;
   sessionStorageKey: string;
@@ -43,6 +45,7 @@ export const useLobbySession = (args: {
     fallbackPlayerName,
     createWithBots,
     botCount,
+    allowedBotCounts,
     botDifficulty,
     botProfile,
     sessionStorageKey,
@@ -82,9 +85,12 @@ export const useLobbySession = (args: {
     }
   };
 
-  const botSetup = createWithBots
+  const requestedBotCount = createWithBots
+    ? clampBotCountToAllowed(botCount, allowedBotCounts, roomCapacity)
+    : 0;
+  const botSetup = requestedBotCount > 0
     ? {
-      count: Math.max(0, Math.min(roomCapacity - 1, Math.floor(botCount || 0))),
+      count: requestedBotCount,
       difficulty: botDifficulty,
       profile: botProfile,
     }

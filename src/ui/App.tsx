@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { LobbyClient } from 'boardgame.io/client';
 import type { CardDefinition, RankDefinition } from '../game/types';
 import {
@@ -25,6 +25,12 @@ import {
 import { useDbAdminTools } from './admin/useDbAdminTools';
 import { text } from './i18n';
 import { formatModuleDisplayName } from './moduleDisplay';
+import {
+  DEFAULT_LOBBY_GAME_UI_CONFIG,
+  clampBotCountToAllowed,
+  getAvailableBotCounts,
+  normalizeLobbyGameUiConfig,
+} from '../game/lobbyConfig';
 import { SERVER_URL } from './app/clientConfig';
 import {
   ADMIN_TOKEN_STORAGE_KEY,
@@ -128,6 +134,7 @@ export const App = () => {
     setServerUrlDraft,
   } = useAppShellState(SERVER_URL);
   const t = text(lang);
+  const [lobbyGameUiConfig, setLobbyGameUiConfig] = useState(DEFAULT_LOBBY_GAME_UI_CONFIG);
   const {
     user,
     stats: userStats,
@@ -259,6 +266,7 @@ export const App = () => {
     selectedOptionalModuleIds,
     createWithBots,
     botCount,
+    allowedBotCounts: lobbyGameUiConfig.allowedBotCounts,
     botDifficulty,
     botProfile,
     sessionStorageKey: SESSION_STORAGE_KEY,
@@ -312,6 +320,46 @@ export const App = () => {
       return merged.filter((id) => allowed.has(id));
     });
   }, [optionalLobbyModules]);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch(`${SERVER_URL}/api/game/ui-config`, { credentials: 'include' });
+        const payload = await response.json() as { ok?: boolean };
+        if (!response.ok || payload.ok !== true) return;
+        if (!cancelled) setLobbyGameUiConfig(normalizeLobbyGameUiConfig(payload));
+      } catch {
+        // keep defaults when public config is unavailable
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  useEffect(() => {
+    const availableBotCounts = getAvailableBotCounts(lobbyGameUiConfig.allowedBotCounts, roomCapacity);
+    if (createWithBots && availableBotCounts.length === 0) {
+      setCreateWithBots(false);
+      return;
+    }
+    const nextBotCount = clampBotCountToAllowed(
+      botCount || lobbyGameUiConfig.defaultBotCount,
+      lobbyGameUiConfig.allowedBotCounts,
+      roomCapacity,
+    );
+    if (createWithBots && nextBotCount > 0 && botCount !== nextBotCount) {
+      setBotCount(nextBotCount);
+      return;
+    }
+    if (!createWithBots && availableBotCounts.length > 0 && botCount !== lobbyGameUiConfig.defaultBotCount) {
+      const fallbackBotCount = clampBotCountToAllowed(
+        lobbyGameUiConfig.defaultBotCount,
+        lobbyGameUiConfig.allowedBotCounts,
+        roomCapacity,
+      );
+      if (fallbackBotCount > 0 && botCount !== fallbackBotCount) setBotCount(fallbackBotCount);
+    }
+  }, [lobbyGameUiConfig, roomCapacity, createWithBots, botCount]);
   const galleryCards = useMemo(() => (
     [...cardCatalog]
       .filter((card) => galleryCategoryFilter === 'ALL' || card.category === galleryCategoryFilter)
@@ -503,6 +551,7 @@ export const App = () => {
           setCreateWithBots={setCreateWithBots}
           botCount={botCount}
           setBotCount={setBotCount}
+          allowedBotCounts={lobbyGameUiConfig.allowedBotCounts}
           botDifficulty={botDifficulty}
           setBotDifficulty={setBotDifficulty}
           botProfile={botProfile}

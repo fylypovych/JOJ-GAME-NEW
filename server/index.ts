@@ -33,6 +33,7 @@ import {
   dbMigrationsDir,
   dbSchemaPath,
   devRestartTouchPath,
+  gameUiConfigPath,
   hasPsqlCli,
   IMAGE_UPLOAD_BODY_LIMIT,
   isAdminAuthEnabled,
@@ -267,6 +268,7 @@ void (async () => {
       userStore,
       logLine,
       jsonBodyLimit: JSON_BODY_LIMIT,
+      gameUiConfigPath,
     });
     registerAdminRoutes({
       router,
@@ -286,6 +288,7 @@ void (async () => {
       devRestartTouchPath,
       dbSchemaPath,
       adminDbUiConfigPath,
+      gameUiConfigPath,
       importJsonConfigToDb: syncCurrentJsonToPostgres,
       userStore,
       deliverPasswordResetFn: deliverPasswordReset,
