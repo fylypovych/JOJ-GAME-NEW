@@ -32,6 +32,13 @@ export const AdminSettingsTab = ({
   adminAnalyticsLoading,
   adminAnalyticsError,
   onRefreshAdminAnalytics,
+  bugReportImagePath,
+  onBugReportImagePathChange,
+  onSaveBugReportImagePath,
+  onUploadBugReportImage,
+  bugReportUiConfigLoading,
+  bugReportUiConfigError,
+  bugReportUiConfigStatus,
 }: {
   t: T;
   lang: 'uk' | 'en';
@@ -61,6 +68,13 @@ export const AdminSettingsTab = ({
   adminAnalyticsLoading: boolean;
   adminAnalyticsError: string;
   onRefreshAdminAnalytics: () => Promise<void> | void;
+  bugReportImagePath: string;
+  onBugReportImagePathChange: (value: string) => void;
+  onSaveBugReportImagePath: () => Promise<void> | void;
+  onUploadBugReportImage: (file: File | null) => Promise<void> | void;
+  bugReportUiConfigLoading: boolean;
+  bugReportUiConfigError: string;
+  bugReportUiConfigStatus: string;
 }) => (
   <>
     <h3>{t.settingsTitle}</h3>
@@ -77,6 +91,28 @@ export const AdminSettingsTab = ({
     </p>
     <p>{t.currentServerUrl}: <code>{serverUrl}</code></p>
     <p>{t.serverUrlReloadHint}</p>
+    <h4>{t.bugReportIconSettingsTitle}</h4>
+    <p>{t.bugReportIconSettingsHint}</p>
+    <p className="admin-controls">
+      <label>
+        {t.bugReportIconPathLabel}
+        <input value={bugReportImagePath} onChange={(e) => onBugReportImagePathChange(e.target.value)} placeholder="/cards/bug-report-icon.webp" />
+      </label>
+      <button type="button" onClick={() => void onSaveBugReportImagePath()} disabled={bugReportUiConfigLoading}>
+        {t.saveServerUrl}
+      </button>
+      <label>
+        {t.bugReportIconUploadLabel}
+        <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => void onUploadBugReportImage(e.target.files?.[0] ?? null)} />
+      </label>
+    </p>
+    {bugReportImagePath ? (
+      <p>
+        <img className="admin-bug-report-icon-preview" src={bugReportImagePath} alt={t.bugReportImageAlt} />
+      </p>
+    ) : null}
+    {bugReportUiConfigStatus ? <p className="admin-success">{bugReportUiConfigStatus}</p> : null}
+    {bugReportUiConfigError ? <p className="admin-error">{bugReportUiConfigError}</p> : null}
     <h4>{t.githubUpdatesTitle}</h4>
     <p className="admin-controls">
       <button type="button" onClick={() => void checkGitUpdates()} disabled={gitStatusLoading || gitUpdateRunning || gitDeployRunning}>

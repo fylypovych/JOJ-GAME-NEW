@@ -14,6 +14,8 @@ import { useAdminSimulation } from './admin/useAdminSimulation';
 import { useAdminTemplateManager } from './admin/useAdminTemplateManager';
 import { useAdminAwards } from './admin/useAdminAwards';
 import { useAdminAnalytics } from './admin/useAdminAnalytics';
+import { useAdminBugReports } from './admin/useAdminBugReports';
+import { useBugReportUiConfig } from './admin/useBugReportUiConfig';
 import {
   categories,
   rankResourceKeys,
@@ -35,6 +37,7 @@ import {
   AdminStateTab,
   AdminTabButtons,
   AdminAwardsTab,
+  AdminBugReportsTab,
   AdminUsersTab,
 } from './admin/tabs';
 
@@ -270,6 +273,26 @@ export const AdminPage = ({
     adminAnalyticsError,
     refreshAdminAnalytics,
   } = useAdminAnalytics({ lang, serverUrl, adminJsonFetch });
+  const {
+    bugReports,
+    bugReportsLoading,
+    bugReportsError,
+    selectedBugReportId,
+    selectedBugReport,
+    bugReportImageUrl,
+    loadBugReports,
+    loadBugReportDetail,
+    setBugReportStatus,
+  } = useAdminBugReports({ lang, serverUrl, adminJsonFetch });
+  const {
+    bugReportImagePath,
+    setBugReportImagePath,
+    bugReportUiConfigLoading,
+    bugReportUiConfigError,
+    bugReportUiConfigStatus,
+    loadBugReportUiConfig,
+    saveBugReportUiConfig,
+  } = useBugReportUiConfig({ lang, serverUrl, adminJsonFetch });
 
   const {
     gitStatus,
@@ -370,8 +393,16 @@ export const AdminPage = ({
     if (activeTab !== 'settings' || adminAnalytics || adminAnalyticsLoading) return;
     void refreshAdminAnalytics();
   }, [activeTab, adminAnalytics, adminAnalyticsLoading, refreshAdminAnalytics]);
+  useEffect(() => {
+    if (activeTab !== 'settings') return;
+    void loadBugReportUiConfig();
+  }, [activeTab]);
+  useEffect(() => {
+    if (activeTab !== 'bugReports' || bugReportsLoading) return;
+    void loadBugReports();
+  }, [activeTab]);
   return (
-    <section className={`board admin-panel${uiVariant === 'v2' ? ' board-v2-panel' : ''}`}>
+    <section className={`board admin-panel${uiVariant === 'v2' ? ' board-v2-panel' : ' board-v3-panel'}`}>
       <h2>{t.adminTitle}</h2>
       <AdminTabButtons t={t} activeTab={activeTab} setActiveTab={setActiveTab} />
       <hr />
@@ -421,6 +452,28 @@ export const AdminPage = ({
           adminAnalyticsLoading={adminAnalyticsLoading}
           adminAnalyticsError={adminAnalyticsError}
           onRefreshAdminAnalytics={refreshAdminAnalytics}
+          bugReportImagePath={bugReportImagePath}
+          onBugReportImagePathChange={setBugReportImagePath}
+          onSaveBugReportImagePath={() => saveBugReportUiConfig(bugReportImagePath)}
+          onUploadBugReportImage={async (file) => {
+            if (!file) return;
+            const optimized = await optimizeBlobForUpload(file, file.name, {
+              maxWidth: 640,
+              maxHeight: 640,
+              quality: 0.92,
+            });
+            if (!optimized) {
+              setAdminActionError(t.uploadFailedGeneric);
+              return;
+            }
+            const uploaded = await uploadDataUrl(`bug-report-icon-${Date.now()}`, optimized.dataUrl);
+            if (!uploaded) return;
+            setBugReportImagePath(uploaded);
+            await saveBugReportUiConfig(uploaded);
+          }}
+          bugReportUiConfigLoading={bugReportUiConfigLoading}
+          bugReportUiConfigError={bugReportUiConfigError}
+          bugReportUiConfigStatus={bugReportUiConfigStatus}
         />
       ) : null}
       {activeTab === 'database' ? (
@@ -496,6 +549,20 @@ export const AdminPage = ({
           onCreateNew={() => selectAdminAward('')}
           onSave={() => { void saveAdminAward(); }}
           onDelete={() => { void deleteAdminAward(); }}
+        />
+      ) : null}
+      {activeTab === 'bugReports' ? (
+        <AdminBugReportsTab
+          t={t}
+          reports={bugReports}
+          loading={bugReportsLoading}
+          error={bugReportsError}
+          selectedReportId={selectedBugReportId}
+          selectedReport={selectedBugReport}
+          screenshotUrl={bugReportImageUrl}
+          onSelectReport={(id) => { void loadBugReportDetail(id); }}
+          onMarkClosed={() => { void setBugReportStatus('closed'); }}
+          onMarkResolved={() => { void setBugReportStatus('resolved'); }}
         />
       ) : null}
 

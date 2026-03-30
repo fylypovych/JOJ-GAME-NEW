@@ -10,3 +10,5 @@ pnpm-debug.log*
 /logs
 /database/matches/*
 !/database/matches/.gitkeep
+/database/bug-reports.json
+/database/bug-report-images/

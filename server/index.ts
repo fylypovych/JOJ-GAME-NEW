@@ -6,9 +6,11 @@ import { autoStashRuntimeNoise, createCommandRunners, getGitUpdateStatus } from 
 import { createRateLimiter, createRequireAdminAuth, readJsonBodySafe } from './request-utils';
 import { registerAdminRoutes } from './routes/admin';
 import { registerAuthRoutes } from './routes/auth';
+import { registerBugReportRoutes } from './routes/bug-reports';
 import { registerSharedRoutes } from './routes/shared';
 import { registerUploadRoutes } from './routes/uploads';
 import { registerUserLobbyRoutes } from './routes/user-lobby';
+import { createBugReportStore } from './services/bug-report-store';
 import { createUserStore } from './services/user-store';
 import { createSharedConfigStore } from './storage/shared-config';
 import { getAdminRuntimePolicy } from './runtime-policy';
@@ -17,6 +19,9 @@ import {
   adminToken,
   allowInMemoryUserStore,
   allowedFrontendOrigins,
+  bugReportImagesDir,
+  bugReportUiConfigPath,
+  bugReportsPath,
   databaseUrl,
   dbMigrationsDir,
   dbSchemaPath,
@@ -65,6 +70,10 @@ const rateLimitState = new Map<string, { count: number; resetAt: number }>();
 
 const logLine = createFileLogger(logsPath);
 const adminRuntimePolicy = getAdminRuntimePolicy(process.env);
+const bugReportStore = createBugReportStore({
+  storePath: bugReportsPath,
+  imagesDir: bugReportImagesDir,
+});
 
 if (adminRuntimePolicy.startupError) {
   throw new Error(adminRuntimePolicy.startupError);
@@ -271,6 +280,18 @@ void (async () => {
       importJsonConfigToDb: syncCurrentJsonToPostgres,
       userStore,
       deliverPasswordResetFn: deliverPasswordReset,
+    });
+    registerBugReportRoutes({
+      router,
+      requireAdminAuth,
+      enforceRateLimit,
+      readJsonBodySafe,
+      logLine,
+      JSON_BODY_LIMIT,
+      IMAGE_UPLOAD_BODY_LIMIT,
+      bugReportStore,
+      bugReportUiConfigPath,
+      userStore,
     });
     registerSharedRoutes({
       router,

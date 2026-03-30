@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { cardNeedsResourceSelection, cardNeedsTargetSelection, getCardPlayBehavior } from '../../game/cardRules';
 import type { CardDefinition, JojGameState, ResourceKey } from '../../game/types';
-import { buildReplacementSlots, getRequiredReplacementSelectionCount, isReplacementPrefixValid } from './replacement';
+import {
+  buildReplacementSlots,
+  getRequiredReplacementSelectionCount,
+  isReplacementPrefixValid,
+  planReplacementSelection,
+} from './replacement';
 import type { JojMoveApi } from './types';
 import type { Language } from '../i18n';
 
@@ -124,6 +129,7 @@ export const usePendingSelection = ({
   const [selectedResource, setSelectedResource] = useState<ResourceKey | null>(null);
   const [replacementSelectionsByTarget, setReplacementSelectionsByTarget] = useState<Record<string, ResourceKey[]>>({});
   const [activeReplacementTargetId, setActiveReplacementTargetId] = useState<string | null>(null);
+  const botPlayerIds = useMemo(() => new Set(Object.keys(G?.botPlayers ?? {})), [G?.botPlayers]);
 
   const clearPendingSelection = () => resetSelectionState(
     setPendingSelection,
@@ -215,13 +221,18 @@ export const usePendingSelection = ({
     id,
   ]);
 
+  const manualReplacementTargetIds = useMemo(
+    () => replacementTargetIds.filter((playerId) => !botPlayerIds.has(playerId)),
+    [replacementTargetIds, botPlayerIds],
+  );
+
   const replacementActiveTargetId = (pendingSelection?.type === 'hand-lyap' || pendingSelection?.type === 'draw-lyap')
     ? ((pendingSelection?.type === 'draw-lyap'
-      ? (replacementTargetIds.includes(id) ? id : null)
-      : (selectedTargetId && replacementTargetIds.includes(selectedTargetId) ? selectedTargetId : null)))
-    : (activeReplacementTargetId && replacementTargetIds.includes(activeReplacementTargetId)
+      ? (manualReplacementTargetIds.includes(id) ? id : null)
+      : (selectedTargetId && manualReplacementTargetIds.includes(selectedTargetId) ? selectedTargetId : null)))
+    : (activeReplacementTargetId && manualReplacementTargetIds.includes(activeReplacementTargetId)
       ? activeReplacementTargetId
-      : (replacementTargetIds[0] ?? null));
+      : (manualReplacementTargetIds[0] ?? null));
   const replacementActiveTargetResources = replacementActiveTargetId ? (G?.resources?.[replacementActiveTargetId] ?? null) : null;
   const replacementActiveSlots = (replacementActiveTargetResources && currentPendingCard)
     ? (getRequiredReplacementSelectionCount(replacementActiveTargetResources, currentPendingCard.effects) > 0
@@ -278,13 +289,15 @@ export const usePendingSelection = ({
         const targetResources = G?.resources?.[pid];
         if (!targetResources) continue;
         const required = getRequiredReplacementSelectionCount(targetResources, selectedCard.effects);
-        const selected = replacementSelectionsByTarget[pid] ?? [];
+        const selected = botPlayerIds.has(pid)
+          ? (planReplacementSelection(targetResources, selectedCard.effects) ?? [])
+          : (replacementSelectionsByTarget[pid] ?? []);
         if (selected.length !== required) {
-          setActiveReplacementTargetId(pid);
+          if (!botPlayerIds.has(pid)) setActiveReplacementTargetId(pid);
           return postNotice('error', v2.replacementIncomplete);
         }
         if (!isReplacementPrefixValid(targetResources, selectedCard.effects, selected)) {
-          setActiveReplacementTargetId(pid);
+          if (!botPlayerIds.has(pid)) setActiveReplacementTargetId(pid);
           return postNotice('error', v2.replacementInvalid);
         }
         replacementByTarget[pid] = selected;
@@ -313,13 +326,15 @@ export const usePendingSelection = ({
         const targetResources = G?.resources?.[pid];
         if (!targetResources) continue;
         const required = getRequiredReplacementSelectionCount(targetResources, pendingCard.effects);
-        const selected = replacementSelectionsByTarget[pid] ?? [];
+        const selected = botPlayerIds.has(pid)
+          ? (planReplacementSelection(targetResources, pendingCard.effects) ?? [])
+          : (replacementSelectionsByTarget[pid] ?? []);
         if (selected.length !== required) {
-          setActiveReplacementTargetId(pid);
+          if (!botPlayerIds.has(pid)) setActiveReplacementTargetId(pid);
           return postNotice('error', v2.replacementIncomplete);
         }
         if (!isReplacementPrefixValid(targetResources, pendingCard.effects, selected)) {
-          setActiveReplacementTargetId(pid);
+          if (!botPlayerIds.has(pid)) setActiveReplacementTargetId(pid);
           return postNotice('error', v2.replacementInvalid);
         }
         replacementByTarget[pid] = selected;
@@ -339,14 +354,14 @@ export const usePendingSelection = ({
 
   useEffect(() => {
     if (pendingSelection?.type !== 'hand-scandal') return;
-    if (replacementTargetIds.length === 0) {
+    if (manualReplacementTargetIds.length === 0) {
       setActiveReplacementTargetId(null);
       return;
     }
-    if (!activeReplacementTargetId || !replacementTargetIds.includes(activeReplacementTargetId)) {
-      setActiveReplacementTargetId(replacementTargetIds[0]);
+    if (!activeReplacementTargetId || !manualReplacementTargetIds.includes(activeReplacementTargetId)) {
+      setActiveReplacementTargetId(manualReplacementTargetIds[0]);
     }
-  }, [pendingSelection, replacementTargetIds, activeReplacementTargetId]);
+  }, [pendingSelection, manualReplacementTargetIds, activeReplacementTargetId]);
 
   useEffect(() => {
     if (pendingSelection?.type !== 'hand-lyap' || !selectedTargetId || !currentPendingCard) return;
@@ -354,8 +369,13 @@ export const usePendingSelection = ({
     if (shielded) return;
     const targetResources = G?.resources?.[selectedTargetId];
     if (!targetResources) return;
-    if (getRequiredReplacementSelectionCount(targetResources, currentPendingCard.effects) > 0) return;
-    moves.playCard(pendingSelection.cardId, [], selectedTargetId);
+    const required = getRequiredReplacementSelectionCount(targetResources, currentPendingCard.effects);
+    if (required > 0 && !botPlayerIds.has(selectedTargetId)) return;
+    const autoReplacement = required > 0
+      ? (planReplacementSelection(targetResources, currentPendingCard.effects) ?? [])
+      : [];
+    if (autoReplacement.length !== required) return;
+    moves.playCard(pendingSelection.cardId, autoReplacement, selectedTargetId);
     clearPendingSelection();
   }, [
     pendingSelection,
@@ -365,6 +385,7 @@ export const usePendingSelection = ({
     G?.resources,
     ctx?.turn,
     moves,
+    botPlayerIds,
   ]);
 
   return {
@@ -379,7 +400,7 @@ export const usePendingSelection = ({
     activeReplacementTargetId,
     setActiveReplacementTargetId,
     currentPendingCard,
-    replacementTargetIds,
+    replacementTargetIds: manualReplacementTargetIds,
     replacementActiveTargetId,
     replacementActiveTargetResources,
     replacementActiveSlots,
@@ -392,7 +413,7 @@ export const usePendingSelection = ({
     undoReplacementResource,
     activeSelectionNeedsTarget: pendingSelection?.type === 'hand-lyap' || pendingSelection?.type === 'legendary-drone',
     activeSelectionNeedsResource: pendingSelection?.type === 'legendary-water',
-    activeSelectionNeedsReplacement: replacementTargetIds.length > 0,
+    activeSelectionNeedsReplacement: manualReplacementTargetIds.length > 0,
     pickTargetNotice: (targetId: string) => postNotice('info', `${v2.pickTarget}: ${playerLabelById(targetId)}`),
   };
 };

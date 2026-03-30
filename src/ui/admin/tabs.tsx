@@ -6,3 +6,4 @@ export { AdminDeckTab } from './tabs/deck';
 export { AdminRanksTab } from './tabs/ranks';
 export { AdminUsersTab } from './tabs/users';
 export { AdminAwardsTab } from './tabs/awards';
+export { AdminBugReportsTab } from './tabs/bug-reports';

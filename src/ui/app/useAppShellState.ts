@@ -27,13 +27,13 @@ export const useAppShellState = (serverUrl: string) => {
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
   const [profileScreen, setProfileScreen] = useState<'login' | 'register' | 'reset'>('login');
   const [authErrorModal, setAuthErrorModal] = useState('');
-  const [gameUiVariant, setGameUiVariant] = useState<'v1' | 'v2' | 'v3'>(() => {
+  const [gameUiVariant, setGameUiVariant] = useState<'v2' | 'v3'>(() => {
     const raw = window.localStorage.getItem(GAME_UI_VARIANT_STORAGE_KEY);
-    return raw === 'v2' || raw === 'v3' ? raw : 'v1';
+    return raw === 'v2' ? 'v2' : 'v3';
   });
-  const [adminUiVariant, setAdminUiVariant] = useState<'v1' | 'v2'>(() => {
+  const [adminUiVariant, setAdminUiVariant] = useState<'v2' | 'v3'>(() => {
     const raw = window.localStorage.getItem(ADMIN_UI_VARIANT_STORAGE_KEY);
-    return raw === 'v2' ? 'v2' : 'v1';
+    return raw === 'v2' ? 'v2' : 'v3';
   });
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
   const [deletingAdminMatch, setDeletingAdminMatch] = useState(false);

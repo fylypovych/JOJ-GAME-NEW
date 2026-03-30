@@ -21,6 +21,7 @@ export const AdminTabButtons = ({
     <button type="button" onClick={() => setActiveTab('database')} disabled={activeTab === 'database'}>{t.tabDatabase}</button>
     <button type="button" onClick={() => setActiveTab('users')} disabled={activeTab === 'users'}>{t.tabUsers}</button>
     <button type="button" onClick={() => setActiveTab('awards')} disabled={activeTab === 'awards'}>{t.tabAwards}</button>
+    <button type="button" onClick={() => setActiveTab('bugReports')} disabled={activeTab === 'bugReports'}>{t.tabBugReports}</button>
     <button type="button" onClick={() => setActiveTab('settings')} disabled={activeTab === 'settings'}>{t.tabSettings}</button>
     <button type="button" onClick={() => setActiveTab('simulation')} disabled={activeTab === 'simulation'}>{t.tabSimulation}</button>
   </p>

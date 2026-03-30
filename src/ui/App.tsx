@@ -53,6 +53,7 @@ import {
 } from './app/sections';
 import { useAdminAuth } from './app/useAdminAuth';
 import { useAdminSnapshot } from './app/useAdminSnapshot';
+import { BugReportWidget } from './app/BugReportWidget';
 import { useAppShellState } from './app/useAppShellState';
 import { useLobbySession } from './app/useLobbySession';
 import { useSharedConfigSync } from './app/useSharedConfigSync';
@@ -60,7 +61,6 @@ import { useUserAccount } from './app/useUserAccount';
 
 const lobbyClient = new LobbyClient({ server: SERVER_URL });
 const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
-const NetworkClientV1 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV1 })));
 const NetworkClientV2 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV2 })));
 const NetworkClientV3 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV3 })));
 
@@ -411,10 +411,9 @@ export const App = () => {
   }, [adminStorageMode]);
 
   const shellUiVariant = isAdminRoute ? adminUiVariant : gameUiVariant;
-  const isEnhancedUi = shellUiVariant !== 'v1';
 
   return (
-    <main className={`app${isEnhancedUi ? ` app-${shellUiVariant}` : ''}`}>
+    <main className={`app app-${shellUiVariant}`} data-bug-report-capture-root="true">
       <h1>{isAdminRoute ? t.adminTitle : t.gameTitle}</h1>
       {!isAdminRoute ? (
         <section className={`app-top-toolbar${shellUiVariant === 'v2' ? ' app-top-toolbar-v2' : ''}${shellUiVariant === 'v3' ? ' app-top-toolbar-v3' : ''}`}>
@@ -432,9 +431,6 @@ export const App = () => {
               </button>
               {' | '}
               {t.gameUiLabel}:{' '}
-              <button type="button" onClick={() => setGameUiVariant('v1')} disabled={gameUiVariant === 'v1'}>
-                {t.gameUiV1}
-              </button>{' '}
               <button type="button" onClick={() => setGameUiVariant('v2')} disabled={gameUiVariant === 'v2'}>
                 {t.gameUiV2}
               </button>{' '}
@@ -457,11 +453,11 @@ export const App = () => {
           </button>
           {' | '}
           {t.gameUiLabel}:{' '}
-          <button type="button" onClick={() => setAdminUiVariant('v1')} disabled={adminUiVariant === 'v1'}>
-            {t.gameUiV1}
-          </button>{' '}
           <button type="button" onClick={() => setAdminUiVariant('v2')} disabled={adminUiVariant === 'v2'}>
             {t.gameUiV2}
+          </button>{' '}
+          <button type="button" onClick={() => setAdminUiVariant('v3')} disabled={adminUiVariant === 'v3'}>
+            {t.gameUiV3}
           </button>
         </p>
       )}
@@ -524,7 +520,7 @@ export const App = () => {
         />
       ) : null}
 
-      {!isAdminRoute && activeUserTab === 'games' && session && gameUiVariant === 'v1' ? (
+      {!isAdminRoute && activeUserTab === 'games' && session ? (
         <ActiveSessionSection
           t={t}
           session={session}
@@ -541,6 +537,7 @@ export const App = () => {
             botDifficulty,
             selectedOptionalModuleIds,
           }}
+          optionalModules={optionalLobbyModules}
           applyCurrentRoomToDraft={() => {
             const currentMatch = matches.find((match) => match.matchID === session.matchID);
             if (!currentMatch) return;
@@ -565,7 +562,7 @@ export const App = () => {
             {gameUiVariant === 'v3' ? <NetworkClientV3
               key={`${session.matchID}:${session.playerID ?? 'spectator'}:v3`}
               matchID={session.matchID}
-              playerID={session.playerID}
+              playerID={session.spectator ? (null as never) : session.playerID}
               credentials={session.credentials}
               lang={lang}
               playerName={session.spectator ? t.spectatorJoinedLabel : playerName}
@@ -577,7 +574,7 @@ export const App = () => {
             /> : gameUiVariant === 'v2' ? <NetworkClientV2
               key={`${session.matchID}:${session.playerID ?? 'spectator'}:v2`}
               matchID={session.matchID}
-              playerID={session.playerID}
+              playerID={session.spectator ? (null as never) : session.playerID}
               credentials={session.credentials}
               lang={lang}
               playerName={session.spectator ? t.spectatorJoinedLabel : playerName}
@@ -586,16 +583,18 @@ export const App = () => {
               cardImageById={cardImageById}
               roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
               onLeaveRoom={() => { void leaveRoom(); }}
-            /> : <NetworkClientV1
-              key={`${session.matchID}:${session.playerID ?? 'spectator'}`}
+            /> : <NetworkClientV3
+              key={`${session.matchID}:${session.playerID ?? 'spectator'}:v3-fallback`}
               matchID={session.matchID}
-              playerID={session.playerID}
+              playerID={session.spectator ? (null as never) : session.playerID}
               credentials={session.credentials}
               lang={lang}
               playerName={session.spectator ? t.spectatorJoinedLabel : playerName}
               knownPlayerNames={roomPlayerNames}
               sharedRanks={sharedRanks}
               cardImageById={cardImageById}
+              roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
+              onLeaveRoom={() => { void leaveRoom(); }}
             />}
           </Suspense>
         ) : null}
@@ -975,6 +974,19 @@ export const App = () => {
           }}
         />
       ) : null}
+      {!isAdminRoute ? (
+        <BugReportWidget
+          lang={lang}
+          serverUrl={SERVER_URL}
+          session={session}
+          user={user}
+          playerName={playerName}
+          gameUiVariant={gameUiVariant}
+        />
+      ) : null}
+      <footer className="app-footer">
+        &copy; ALL RIGHTS RESERVED BY "SOHODNY LLC, 13319 Demetrias Way, Germantown, Maryland 20874, zhurnal.zhurnaliv@gmail.com"
+      </footer>
     </main>
   );
 };

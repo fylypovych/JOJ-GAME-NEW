@@ -94,7 +94,7 @@ export type AdminAnalyticsSummary = {
 };
 
 export type AdminPageProps = {
-  uiVariant: 'v1' | 'v2';
+  uiVariant: 'v2' | 'v3';
   lang: Language;
   adminToken: string;
   serverUrl: string;
@@ -168,7 +168,7 @@ export type AdminPageProps = {
 
 export type ImportCategoryMode = CardCategory | 'AS_IS';
 export type CategoryFilter = CardCategory | 'ALL' | 'CORE';
-export type AdminTab = 'matches' | 'deck' | 'import' | 'state' | 'ranks' | 'database' | 'settings' | 'simulation' | 'users' | 'awards';
+export type AdminTab = 'matches' | 'deck' | 'import' | 'state' | 'ranks' | 'database' | 'settings' | 'simulation' | 'users' | 'awards' | 'bugReports';
 
 export type CropDraft = {
   filename: string;

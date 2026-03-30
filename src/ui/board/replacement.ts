@@ -67,6 +67,35 @@ export const hasFeasibleReplacementPlan = (
   return true;
 };
 
+export const planReplacementSelection = (
+  resources: Record<ResourceKey, number>,
+  effects: CardDefinition['effects'],
+): ResourceKey[] | null => {
+  const tmp = { ...resources };
+  const plan: ResourceKey[] = [];
+  for (const effect of effects ?? []) {
+    if (effect.resource === 'rank' || effect.value >= 0) continue;
+    const need = Math.abs(effect.value);
+    const have = Math.max(0, tmp[effect.resource] ?? 0);
+    const direct = Math.min(have, need);
+    tmp[effect.resource] = have - direct;
+    let missing = need - direct;
+    while (missing > 0) {
+      for (let i = 0; i < 2; i += 1) {
+        const candidates = Object.keys(tmp)
+          .filter((key): key is ResourceKey => key !== effect.resource && (tmp[key as ResourceKey] ?? 0) > 0)
+          .sort((a, b) => (tmp[b] ?? 0) - (tmp[a] ?? 0));
+        const pick = candidates[0];
+        if (!pick) return null;
+        tmp[pick] -= 1;
+        plan.push(pick);
+      }
+      missing -= 1;
+    }
+  }
+  return plan;
+};
+
 export const getRequiredReplacementSelectionCount = (
   resources: Record<ResourceKey, number>,
   effects: CardDefinition['effects'],

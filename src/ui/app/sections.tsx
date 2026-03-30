@@ -30,6 +30,24 @@ const estimateRoomDurationLabel = (t: T, players: number, gameMode: GameMode) =>
   return t.roomDurationMedium;
 };
 
+const formatModuleName = (
+  moduleId: string,
+  moduleNameById: Map<string, string>,
+) => {
+  const known = moduleNameById.get(moduleId);
+  if (known) return known;
+  const normalized = moduleId
+    .replace(/[_-]+/g, ' ')
+    .trim();
+  if (!normalized) return moduleId;
+  return normalized.replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const formatModuleList = (
+  moduleIds: string[],
+  moduleNameById: Map<string, string>,
+) => moduleIds.length ? moduleIds.map((id) => formatModuleName(id, moduleNameById)).join(', ') : '-';
+
 const buildRoomShareLink = (matchID: string) => {
   const url = new URL(window.location.href);
   url.searchParams.set('room', matchID);
@@ -213,6 +231,10 @@ export const LobbySection = ({
   uiVariant = 'v1',
 }: LobbySectionProps) => {
   const [roomFilter, setRoomFilter] = useState<'all' | 'open' | 'free' | 'no_bots' | 'standard' | 'standard_plus'>('all');
+  const moduleNameById = useMemo(
+    () => new Map(optionalModules.map((module) => [module.id, module.name])),
+    [optionalModules],
+  );
   const toggleModule = (id: string, alwaysOn: boolean) => {
     if (alwaysOn) return;
     if (selectedOptionalModuleIds.includes(id)) {
@@ -314,7 +336,7 @@ export const LobbySection = ({
                 <span>{t.gameModeLabel}</span><strong>{formatGameModeLabel(t, gameModeValue)}</strong>
                 <span>{t.roomBotsLabel}</span><strong>{botCountValue > 0 ? `${botCountValue} · ${formatBotDifficultyLabel(t, botSetup?.difficulty ?? null)}` : t.roomBotsOff}</strong>
                 <span>{t.legendaryModeLabel}</span><strong>{legendMode === 'merged' ? t.legendaryModeMerged : t.legendaryModeSeparate}</strong>
-                <span>{t.roomModulesLabel}</span><strong>{optionalModules.length ? optionalModules.join(', ') : '-'}</strong>
+                <span>{t.roomModulesLabel}</span><strong>{formatModuleList(optionalModules, moduleNameById)}</strong>
                 <span>{t.roomSummarySeat}</span><strong>{freePlayer ? `#${freePlayer.id}` : '-'}</strong>
               </div>
               <div className="lobby-room-seat-list">
@@ -483,7 +505,7 @@ export const LobbySection = ({
             <li>{t.gameModeLabel}: {formatGameModeLabel(t, gameMode)}</li>
             <li>{t.roomCapacity}: {roomCapacity}</li>
             <li>{t.roomBotsLabel}: {createWithBots ? `${botCount} · ${formatBotDifficultyLabel(t, botDifficulty)}` : t.roomBotsOff}</li>
-            <li>{t.roomModulesLabel}: {selectedOptionalModuleIds.length ? selectedOptionalModuleIds.join(', ') : '-'}</li>
+            <li>{t.roomModulesLabel}: {formatModuleList(selectedOptionalModuleIds, moduleNameById)}</li>
             <li>{t.roomDurationLabel}: {estimateRoomDurationLabel(t, roomCapacity, gameMode)}</li>
           </ul>
           <p className="game-ui-v2-subtle">{t.roomDraftHint}</p>
@@ -511,6 +533,7 @@ type ActiveSessionSectionProps = {
     botDifficulty: BotDifficulty;
     selectedOptionalModuleIds: string[];
   };
+  optionalModules: Array<{ id: string; name: string; alwaysOn: boolean }>;
   applyCurrentRoomToDraft: () => void;
   leaveRoom: () => void;
   refreshMatches: () => void;
@@ -527,6 +550,7 @@ export const ActiveSessionSection = ({
   activeMatch = null,
   roomPlayerNames,
   roomDraft,
+  optionalModules,
   applyCurrentRoomToDraft,
   leaveRoom,
   refreshMatches,
@@ -535,6 +559,10 @@ export const ActiveSessionSection = ({
 }: ActiveSessionSectionProps) => {
   const [activityItems, setActivityItems] = useState<string[]>([]);
   const previousActiveMatchRef = useRef<LobbyMatch | null>(null);
+  const moduleNameById = useMemo(
+    () => new Map(optionalModules.map((module) => [module.id, module.name])),
+    [optionalModules],
+  );
 
   useEffect(() => {
     setActivityItems([]);
@@ -561,10 +589,12 @@ export const ActiveSessionSection = ({
       if (previousMode !== nextMode) nextEvents.push(`${t.roomActivityModeChanged}: ${formatGameModeLabel(t, nextMode)}`);
       const prevModules = (previous.setupData?.gameSetup?.optionalMainDeckModuleIds ?? []).join(', ');
       const nextModules = (activeMatch.setupData?.gameSetup?.optionalMainDeckModuleIds ?? []).join(', ');
-      if (prevModules !== nextModules) nextEvents.push(`${t.roomActivityModulesChanged}: ${nextModules || '-'}`);
+      if (prevModules !== nextModules) {
+        nextEvents.push(`${t.roomActivityModulesChanged}: ${formatModuleList(activeMatch.setupData?.gameSetup?.optionalMainDeckModuleIds ?? [], moduleNameById)}`);
+      }
       return nextEvents.length ? [...nextEvents.reverse(), ...prev].slice(0, 6) : prev;
     });
-  }, [activeMatch, t]);
+  }, [activeMatch, t, moduleNameById]);
 
   const shareLink = buildRoomShareLink(session.matchID);
   const activeGameMode = activeMatch?.setupData?.gameMode ?? 'standard';
@@ -607,7 +637,7 @@ export const ActiveSessionSection = ({
               <li>{t.roomCapacity}: {activeMatch.players.length}</li>
               <li>{t.roomBotsLabel}: {botsCount || t.roomBotsOff}</li>
               <li>{t.legendaryModeLabel}: {(activeMatch.setupData?.gameSetup?.legendaryDeckMode ?? 'separate') === 'merged' ? t.legendaryModeMerged : t.legendaryModeSeparate}</li>
-              <li>{t.roomModulesLabel}: {(activeMatch.setupData?.gameSetup?.optionalMainDeckModuleIds ?? []).join(', ') || '-'}</li>
+              <li>{t.roomModulesLabel}: {formatModuleList(activeMatch.setupData?.gameSetup?.optionalMainDeckModuleIds ?? [], moduleNameById)}</li>
               <li>{t.roomDurationLabel}: {estimateRoomDurationLabel(t, activeMatch.players.length, activeGameMode)}</li>
               <li>{canStart ? t.roomReadyToStart : t.roomBlockedNeedPlayersCount.replace('{count}', String(missingSeats))}</li>
             </ul>
@@ -641,7 +671,7 @@ export const ActiveSessionSection = ({
               <li>{t.gameModeLabel}: {formatGameModeLabel(t, activeGameMode)}</li>
               <li>{t.roomCapacity}: {activeMatch.players.length}</li>
               <li>{t.roomBotsLabel}: {botsCount || t.roomBotsOff}</li>
-              <li>{t.roomModulesLabel}: {activeModules.join(', ') || '-'}</li>
+              <li>{t.roomModulesLabel}: {formatModuleList(activeModules, moduleNameById)}</li>
             </ul>
           </div>
           <div className="lobby-room-create-summary">
@@ -650,7 +680,7 @@ export const ActiveSessionSection = ({
               <li>{t.gameModeLabel}: {formatGameModeLabel(t, roomDraft.gameMode)}</li>
               <li>{t.roomCapacity}: {roomDraft.roomCapacity}</li>
               <li>{t.roomBotsLabel}: {roomDraft.createWithBots ? `${roomDraft.botCount} · ${formatBotDifficultyLabel(t, roomDraft.botDifficulty)}` : t.roomBotsOff}</li>
-              <li>{t.roomModulesLabel}: {roomDraft.selectedOptionalModuleIds.join(', ') || '-'}</li>
+              <li>{t.roomModulesLabel}: {formatModuleList(roomDraft.selectedOptionalModuleIds, moduleNameById)}</li>
             </ul>
             <p className="game-ui-v2-subtle">
               {draftDiffersFromRoom ? t.roomDraftDiffersHint : t.roomDraftMatchesHint}
