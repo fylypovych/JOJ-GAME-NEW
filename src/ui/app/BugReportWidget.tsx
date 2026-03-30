@@ -87,7 +87,7 @@ export const BugReportWidget = ({
         useCORS: true,
         backgroundColor: '#f5f1e8',
         scale: Math.min(2, Math.max(1, window.devicePixelRatio || 1)),
-        ignoreElements: (element) => element instanceof HTMLElement && element.dataset.bugReportIgnore === 'true',
+        ignoreElements: (element: Element) => element instanceof HTMLElement && element.dataset.bugReportIgnore === 'true',
       });
       setScreenshotDataUrl(canvas.toDataURL('image/png', 0.92));
       setMessage(t.bugReportScreenshotAttached);
