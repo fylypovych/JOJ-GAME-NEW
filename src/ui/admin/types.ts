@@ -31,6 +31,15 @@ export type GitUpdateStatus = {
   note?: string;
 };
 
+export type GitAuthStatus = {
+  helper: string;
+  helperConfigured: boolean;
+  hasGithubCredentials: boolean;
+  savedUsername: string;
+  credentialsPath: string;
+  remoteAuthMode: 'https' | 'ssh' | 'other';
+};
+
 export type AdminDbActionResult = {
   ok: boolean;
   message?: string;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Language } from '../i18n';
-import type { GitUpdateStatus } from './types';
+import type { GitAuthStatus, GitUpdateStatus } from './types';
 
 type UseAdminGitActionsParams = {
   lang: Language;
@@ -13,6 +13,18 @@ const createGitActionErrors = (lang: Language) => ({
   checkUpdates: lang === 'uk' ? 'Не вдалося перевірити оновлення' : 'Failed to check updates',
   updateFiles: lang === 'uk' ? 'Не вдалося оновити файли' : 'Failed to update files',
   deployProject: lang === 'uk' ? 'Не вдалося оновити або зібрати проєкт' : 'Failed to update/build project',
+  authStatus: lang === 'uk' ? 'Не вдалося перевірити GitHub credentials' : 'Failed to check GitHub credentials',
+  authSave: lang === 'uk' ? 'Не вдалося зберегти GitHub credentials' : 'Failed to save GitHub credentials',
+  authClear: lang === 'uk' ? 'Не вдалося очистити GitHub credentials' : 'Failed to clear GitHub credentials',
+});
+
+const normalizeGitAuthStatus = (payload: Partial<GitAuthStatus>): GitAuthStatus => ({
+  helper: payload.helper ?? '',
+  helperConfigured: Boolean(payload.helperConfigured),
+  hasGithubCredentials: Boolean(payload.hasGithubCredentials),
+  savedUsername: payload.savedUsername ?? '',
+  credentialsPath: payload.credentialsPath ?? '',
+  remoteAuthMode: payload.remoteAuthMode === 'ssh' || payload.remoteAuthMode === 'other' ? payload.remoteAuthMode : 'https',
 });
 
 export const useAdminGitActions = ({
@@ -26,6 +38,11 @@ export const useAdminGitActions = ({
   const [gitStatusLoading, setGitStatusLoading] = useState<boolean>(false);
   const [gitUpdateRunning, setGitUpdateRunning] = useState<boolean>(false);
   const [gitDeployRunning, setGitDeployRunning] = useState<boolean>(false);
+  const [gitAuthStatus, setGitAuthStatus] = useState<GitAuthStatus | null>(null);
+  const [gitAuthStatusLoading, setGitAuthStatusLoading] = useState<boolean>(false);
+  const [gitAuthSaving, setGitAuthSaving] = useState<boolean>(false);
+  const [gitAuthUsernameDraft, setGitAuthUsernameDraft] = useState<string>('');
+  const [gitAuthTokenDraft, setGitAuthTokenDraft] = useState<string>('');
   const [gitActionMessage, setGitActionMessage] = useState<string>('');
   const [gitActionLog, setGitActionLog] = useState<string>('');
   const deployRecoveryTimersRef = useRef<number[]>([]);
@@ -84,6 +101,114 @@ export const useAdminGitActions = ({
       }
     } finally {
       setGitStatusLoading(false);
+    }
+  };
+
+  const loadGitAuthStatus = async (opts?: { preserveMessages?: boolean }) => {
+    const preserveMessages = Boolean(opts?.preserveMessages);
+    setGitAuthStatusLoading(true);
+    setAdminActionError('');
+    if (!preserveMessages) {
+      setGitActionMessage('');
+      setGitActionLog('');
+    }
+    try {
+      const response = await fetch(`${serverUrl}/api/admin/git/auth-status`, { headers: adminHeaders(), credentials: 'include' });
+      const payload = (await response.json()) as ({ ok?: boolean; error?: string; details?: string } & Partial<GitAuthStatus>);
+      if (!response.ok || !payload.ok) {
+        setAdminActionError(payload.error ?? gitActionErrors.authStatus);
+        setGitActionLog(payload.details ?? payload.error ?? '');
+        return;
+      }
+      const nextStatus = normalizeGitAuthStatus(payload);
+      setGitAuthStatus(nextStatus);
+      setGitAuthUsernameDraft((prev) => prev.trim() ? prev : nextStatus.savedUsername);
+      if (!preserveMessages) setGitActionMessage(lang === 'uk' ? 'Стан GitHub credentials оновлено' : 'GitHub credentials status updated');
+    } catch {
+      setAdminActionError(gitActionErrors.authStatus);
+      setGitActionLog('');
+    } finally {
+      setGitAuthStatusLoading(false);
+    }
+  };
+
+  const saveGitAuthConfig = async () => {
+    setGitAuthSaving(true);
+    setAdminActionError('');
+    setGitActionMessage('');
+    setGitActionLog('');
+    try {
+      const response = await fetch(`${serverUrl}/api/admin/git/auth-configure`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...adminHeaders(),
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          action: 'save',
+          username: gitAuthUsernameDraft,
+          token: gitAuthTokenDraft,
+        }),
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        error?: string;
+        details?: string;
+        message?: string;
+        status?: GitAuthStatus;
+      };
+      if (!response.ok || !payload.ok) {
+        setAdminActionError(payload.error ?? gitActionErrors.authSave);
+        setGitActionLog(payload.details ?? payload.error ?? '');
+        return;
+      }
+      if (payload.status) setGitAuthStatus(normalizeGitAuthStatus(payload.status));
+      setGitAuthTokenDraft('');
+      setGitActionMessage(payload.message ?? (lang === 'uk' ? 'GitHub credentials збережено' : 'GitHub credentials saved'));
+    } catch {
+      setAdminActionError(gitActionErrors.authSave);
+      setGitActionLog('');
+    } finally {
+      setGitAuthSaving(false);
+    }
+  };
+
+  const clearGitAuthConfig = async () => {
+    setGitAuthSaving(true);
+    setAdminActionError('');
+    setGitActionMessage('');
+    setGitActionLog('');
+    try {
+      const response = await fetch(`${serverUrl}/api/admin/git/auth-configure`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...adminHeaders(),
+        },
+        credentials: 'include',
+        body: JSON.stringify({ action: 'clear' }),
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        error?: string;
+        details?: string;
+        message?: string;
+        status?: GitAuthStatus;
+      };
+      if (!response.ok || !payload.ok) {
+        setAdminActionError(payload.error ?? gitActionErrors.authClear);
+        setGitActionLog(payload.details ?? payload.error ?? '');
+        return;
+      }
+      if (payload.status) setGitAuthStatus(normalizeGitAuthStatus(payload.status));
+      setGitAuthTokenDraft('');
+      setGitActionMessage(payload.message ?? (lang === 'uk' ? 'GitHub credentials очищено' : 'GitHub credentials cleared'));
+    } catch {
+      setAdminActionError(gitActionErrors.authClear);
+      setGitActionLog('');
+    } finally {
+      setGitAuthSaving(false);
     }
   };
 
@@ -161,17 +286,12 @@ export const useAdminGitActions = ({
             .trim(),
         );
       }
+      deployRecoveryActiveRef.current = true;
       setGitActionMessage(
         payload.message ??
           (lang === 'uk'
-            ? 'Оновлення, збірка і рестарт запущені'
-            : 'Update, build and restart started'),
-      );
-      deployRecoveryActiveRef.current = true;
-      setGitActionMessage(
-        lang === 'uk'
-          ? 'Оновлення, збірка і рестарт запущені. Сервер перезапускається, оновіть сторінку через 5-10 секунд.'
-          : 'Update, build and restart started. Server is restarting; refresh the page in 5-10 seconds.',
+            ? 'Оновлення, збірка і рестарт запущені. Сервер перезапускається, оновіть сторінку через 5-10 секунд.'
+            : 'Update, build and restart started. Server is restarting; refresh the page in 5-10 seconds.'),
       );
       clearDeployRecoveryTimers();
       [5000, 10000, 20000].forEach((delayMs) => {
@@ -193,10 +313,20 @@ export const useAdminGitActions = ({
     gitStatusLoading,
     gitUpdateRunning,
     gitDeployRunning,
+    gitAuthStatus,
+    gitAuthStatusLoading,
+    gitAuthSaving,
+    gitAuthUsernameDraft,
+    setGitAuthUsernameDraft,
+    gitAuthTokenDraft,
+    setGitAuthTokenDraft,
     gitActionMessage,
     gitActionLog,
     setGitActionMessage,
     setGitActionLog,
+    loadGitAuthStatus,
+    saveGitAuthConfig,
+    clearGitAuthConfig,
     checkGitUpdates,
     applyGitUpdate,
     applyGitDeploy,

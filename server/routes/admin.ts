@@ -16,6 +16,14 @@ type CmdResult = { ok: true; stdout: string; stderr: string } | { ok: false; err
 type RunGit = (args: string[]) => Promise<CmdResult>;
 type RunShellCommand = (command: string, timeoutMs?: number) => Promise<CmdResult>;
 type SpawnDetachedShell = (command: string) => void;
+type GitAuthStatus = {
+  helper: string;
+  helperConfigured: boolean;
+  hasGithubCredentials: boolean;
+  savedUsername: string;
+  credentialsPath: string;
+  remoteAuthMode: 'https' | 'ssh' | 'other';
+};
 type GitUpdateStatusOk = {
   ok: true;
   branch: string;
@@ -48,6 +56,9 @@ type AdminRoutesDeps = {
   logLine: LogLine;
   JSON_BODY_LIMIT: number;
   getGitUpdateStatus: (runGit: RunGit) => Promise<GitUpdateStatusResult>;
+  getGitAuthStatus: (runGit: RunGit) => Promise<GitAuthStatus>;
+  saveGithubHttpsCredentials: (args: { runGit: RunGit; username: string; token: string }) => Promise<{ ok: boolean; error?: string }>;
+  clearGithubHttpsCredentials: () => Promise<{ ok: boolean; error?: string }>;
   autoStashRuntimeNoise: (args: { status: { ignoredRuntimeDirtyFiles?: string[] }; runGit: RunGit; logLine: LogLine }) => Promise<{ ok: boolean; error?: string }>;
   runGit: RunGit;
   runShellCommand: RunShellCommand;
@@ -78,6 +89,9 @@ export const registerAdminRoutes = ({
   logLine,
   JSON_BODY_LIMIT,
   getGitUpdateStatus,
+  getGitAuthStatus,
+  saveGithubHttpsCredentials,
+  clearGithubHttpsCredentials,
   autoStashRuntimeNoise,
   runGit,
   runShellCommand,
@@ -617,6 +631,50 @@ export const registerAdminRoutes = ({
       return;
     }
     ctx.body = result;
+  });
+
+  router.get('/api/admin/git/auth-status', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/git/auth-status'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-git-auth-status', 20, 60_000))) return;
+    try {
+      ctx.body = { ok: true, ...(await getGitAuthStatus(runGit)) };
+    } catch (error) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: 'Failed to read GitHub auth status', details: String(error instanceof Error ? error.message : error) };
+      await logLine('ERROR', `git auth status failed: ${String(error instanceof Error ? error.message : error)}`);
+    }
+  });
+
+  router.post('/api/admin/git/auth-configure', async (ctx: RouteCtx) => {
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/git/auth-configure'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-git-auth-configure', 10, 60_000))) return;
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/git/auth-configure', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const action = String(body.action ?? 'save').trim().toLowerCase();
+    if (action === 'clear') {
+      const clearRes = await clearGithubHttpsCredentials();
+      if (!clearRes.ok) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: 'Failed to clear GitHub credentials', details: clearRes.error };
+        await logLine('ERROR', `git auth clear failed: ${clearRes.error}`);
+        return;
+      }
+      await logLine('WARN', 'admin cleared stored GitHub HTTPS credentials');
+      ctx.body = { ok: true, message: 'GitHub credentials cleared', status: await getGitAuthStatus(runGit) };
+      return;
+    }
+
+    const username = String(body.username ?? '').trim();
+    const token = String(body.token ?? '').trim();
+    const saveRes = await saveGithubHttpsCredentials({ runGit, username, token });
+    if (!saveRes.ok) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Failed to save GitHub credentials', details: saveRes.error };
+      await logLine('ERROR', `git auth save failed: ${saveRes.error}`);
+      return;
+    }
+    await logLine('WARN', `admin saved GitHub HTTPS credentials for username=${username}`);
+    ctx.body = { ok: true, message: 'GitHub credentials saved', status: await getGitAuthStatus(runGit) };
   });
 
   router.post('/api/admin/restart', async (ctx: RouteCtx) => {

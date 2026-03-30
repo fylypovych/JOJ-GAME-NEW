@@ -1,5 +1,5 @@
 import { text } from '../../i18n';
-import type { AdminAnalyticsSummary, GitUpdateStatus } from '../types';
+import type { AdminAnalyticsSummary, GitAuthStatus, GitUpdateStatus } from '../types';
 
 type T = ReturnType<typeof text>;
 
@@ -14,6 +14,16 @@ export const AdminSettingsTab = ({
   checkGitUpdates,
   applyGitUpdate,
   applyGitDeploy,
+  gitAuthStatus,
+  gitAuthStatusLoading,
+  gitAuthSaving,
+  gitAuthUsernameDraft,
+  setGitAuthUsernameDraft,
+  gitAuthTokenDraft,
+  setGitAuthTokenDraft,
+  loadGitAuthStatus,
+  saveGitAuthConfig,
+  clearGitAuthConfig,
   gitStatus,
   gitStatusLoading,
   gitUpdateRunning,
@@ -50,6 +60,16 @@ export const AdminSettingsTab = ({
   checkGitUpdates: () => Promise<void> | void;
   applyGitUpdate: () => Promise<void> | void;
   applyGitDeploy: () => Promise<void> | void;
+  gitAuthStatus: GitAuthStatus | null;
+  gitAuthStatusLoading: boolean;
+  gitAuthSaving: boolean;
+  gitAuthUsernameDraft: string;
+  setGitAuthUsernameDraft: (value: string) => void;
+  gitAuthTokenDraft: string;
+  setGitAuthTokenDraft: (value: string) => void;
+  loadGitAuthStatus: () => Promise<void> | void;
+  saveGitAuthConfig: () => Promise<void> | void;
+  clearGitAuthConfig: () => Promise<void> | void;
   gitStatus: GitUpdateStatus | null;
   gitStatusLoading: boolean;
   gitUpdateRunning: boolean;
@@ -117,6 +137,37 @@ export const AdminSettingsTab = ({
     ) : null}
     {bugReportUiConfigStatus ? <p className="admin-success">{bugReportUiConfigStatus}</p> : null}
     {bugReportUiConfigError ? <p className="admin-error">{bugReportUiConfigError}</p> : null}
+    <h4>{t.githubAuthTitle}</h4>
+    <p>{t.githubAuthHint}</p>
+    <p className="admin-controls">
+      <label>
+        {t.githubAuthUsernameLabel}
+        <input value={gitAuthUsernameDraft} onChange={(e) => setGitAuthUsernameDraft(e.target.value)} placeholder="redukr" autoComplete="username" />
+      </label>
+      <label>
+        {t.githubAuthTokenLabel}
+        <input value={gitAuthTokenDraft} onChange={(e) => setGitAuthTokenDraft(e.target.value)} type="password" placeholder="ghp_xxx" autoComplete="new-password" />
+      </label>
+      <button type="button" onClick={() => void saveGitAuthConfig()} disabled={gitAuthSaving}>
+        {gitAuthSaving ? t.githubAuthSaving : t.githubAuthSave}
+      </button>
+      <button type="button" onClick={() => void clearGitAuthConfig()} disabled={gitAuthSaving || !(gitAuthStatus?.hasGithubCredentials)}>
+        {t.githubAuthClear}
+      </button>
+      <button type="button" onClick={() => void loadGitAuthStatus()} disabled={gitAuthStatusLoading || gitAuthSaving}>
+        {gitAuthStatusLoading ? t.githubCheckUpdatesLoading : t.githubAuthRefresh}
+      </button>
+    </p>
+    {gitAuthStatus ? (
+      <div className="admin-inline-editor">
+        <p>{t.githubAuthRemoteMode}: <code>{gitAuthStatus.remoteAuthMode}</code></p>
+        <p>{t.githubAuthHelper}: <code>{gitAuthStatus.helper || '-'}</code></p>
+        <p>{t.githubAuthHelperConfigured}: {gitAuthStatus.helperConfigured ? t.yes : t.no}</p>
+        <p>{t.githubAuthStored}: {gitAuthStatus.hasGithubCredentials ? t.yes : t.no}</p>
+        <p>{t.githubAuthStoredUser}: <code>{gitAuthStatus.savedUsername || '-'}</code></p>
+        <p>{t.githubAuthCredentialsPath}: <code>{gitAuthStatus.credentialsPath || '-'}</code></p>
+      </div>
+    ) : null}
     <h4>{t.githubUpdatesTitle}</h4>
     <p className="admin-controls">
       <button type="button" onClick={() => void checkGitUpdates()} disabled={gitStatusLoading || gitUpdateRunning || gitDeployRunning}>

@@ -299,10 +299,20 @@ export const AdminPage = ({
     gitStatusLoading,
     gitUpdateRunning,
     gitDeployRunning,
+    gitAuthStatus,
+    gitAuthStatusLoading,
+    gitAuthSaving,
+    gitAuthUsernameDraft,
+    setGitAuthUsernameDraft,
+    gitAuthTokenDraft,
+    setGitAuthTokenDraft,
     gitActionMessage,
     gitActionLog,
     setGitActionMessage,
     setGitActionLog,
+    loadGitAuthStatus,
+    saveGitAuthConfig,
+    clearGitAuthConfig,
     checkGitUpdates,
     applyGitUpdate,
     applyGitDeploy,
@@ -396,6 +406,7 @@ export const AdminPage = ({
   useEffect(() => {
     if (activeTab !== 'settings') return;
     void loadBugReportUiConfig();
+    void loadGitAuthStatus({ preserveMessages: true });
   }, [activeTab]);
   useEffect(() => {
     if (activeTab !== 'bugReports' || bugReportsLoading) return;
@@ -434,6 +445,16 @@ export const AdminPage = ({
           checkGitUpdates={checkGitUpdates}
           applyGitUpdate={applyGitUpdate}
           applyGitDeploy={applyGitDeploy}
+          gitAuthStatus={gitAuthStatus}
+          gitAuthStatusLoading={gitAuthStatusLoading}
+          gitAuthSaving={gitAuthSaving}
+          gitAuthUsernameDraft={gitAuthUsernameDraft}
+          setGitAuthUsernameDraft={setGitAuthUsernameDraft}
+          gitAuthTokenDraft={gitAuthTokenDraft}
+          setGitAuthTokenDraft={setGitAuthTokenDraft}
+          loadGitAuthStatus={loadGitAuthStatus}
+          saveGitAuthConfig={saveGitAuthConfig}
+          clearGitAuthConfig={clearGitAuthConfig}
           gitStatus={gitStatus}
           gitStatusLoading={gitStatusLoading}
           gitUpdateRunning={gitUpdateRunning}

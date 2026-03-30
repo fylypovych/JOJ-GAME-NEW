@@ -2,7 +2,14 @@ import { createRequire } from 'node:module';
 import { createMemoryPostgresPool, createPostgresPool } from './db/postgres';
 import { runSqlMigrations } from './db/migrations';
 import { createFileLogger } from './file-logger';
-import { autoStashRuntimeNoise, createCommandRunners, getGitUpdateStatus } from './git-utils';
+import {
+  autoStashRuntimeNoise,
+  clearGithubHttpsCredentials,
+  createCommandRunners,
+  getGitAuthStatus,
+  getGitUpdateStatus,
+  saveGithubHttpsCredentials,
+} from './git-utils';
 import { createRateLimiter, createRequireAdminAuth, readJsonBodySafe } from './request-utils';
 import { registerAdminRoutes } from './routes/admin';
 import { registerAuthRoutes } from './routes/auth';
@@ -269,6 +276,9 @@ void (async () => {
       logLine,
       JSON_BODY_LIMIT,
       getGitUpdateStatus,
+      getGitAuthStatus,
+      saveGithubHttpsCredentials,
+      clearGithubHttpsCredentials,
       autoStashRuntimeNoise,
       runGit,
       runShellCommand,
