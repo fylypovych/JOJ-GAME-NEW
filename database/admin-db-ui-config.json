@@ -1,5 +1,5 @@
 {
-  "storageMode": "file",
+  "storageMode": "db",
   "dbConfig": {
     "host": "127.0.0.1",
     "port": "5432",
@@ -8,5 +8,5 @@
     "password": "",
     "sslMode": "require"
   },
-  "updatedAt": 1774882268553
+  "updatedAt": 1774889949797
 }
