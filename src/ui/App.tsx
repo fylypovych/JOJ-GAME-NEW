@@ -24,6 +24,7 @@ import {
 } from '../game/jojGame';
 import { useDbAdminTools } from './admin/useDbAdminTools';
 import { text } from './i18n';
+import { formatModuleDisplayName } from './moduleDisplay';
 import { SERVER_URL } from './app/clientConfig';
 import {
   ADMIN_TOKEN_STORAGE_KEY,
@@ -298,7 +299,7 @@ export const App = () => {
       .filter((module) => module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
       .map((module) => ({
         id: module.id,
-        name: module.name,
+        name: formatModuleDisplayName(module.name, module.id),
         alwaysOn: module.category === 'VVNZ',
       })),
     [sharedDeckTemplate.modules],

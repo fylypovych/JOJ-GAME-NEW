@@ -1,4 +1,5 @@
 export { AdminTabButtons, AdminMatchesTab } from './tabs/common';
+export { AdminAnalyticsTab } from './tabs/analytics';
 export { AdminSettingsTab } from './tabs/settings';
 export { AdminDatabaseTab } from './tabs/database';
 export { AdminImportTab, AdminStateTab, AdminSimulationTab } from './tabs/import-state-sim';

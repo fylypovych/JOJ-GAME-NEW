@@ -3,6 +3,7 @@ import type { DeckTarget } from '../game/jojGame';
 import { SHARED_TEMPLATE_SCHEMA_KIND, SHARED_TEMPLATE_SCHEMA_VERSION, serializeSharedRanksDocument } from '../game/sharedConfigSchema';
 import { rankLabel } from './i18n';
 import { text } from './i18n';
+import { formatModuleDisplayName } from './moduleDisplay';
 import { optimizeBlobForUpload } from './admin/imageUpload';
 import { useAdminCardEditor } from './admin/useAdminCardEditor';
 import { useAdminGitActions } from './admin/useAdminGitActions';
@@ -36,6 +37,7 @@ import {
   AdminSimulationTab,
   AdminStateTab,
   AdminTabButtons,
+  AdminAnalyticsTab,
   AdminAwardsTab,
   AdminBugReportsTab,
   AdminUsersTab,
@@ -122,7 +124,7 @@ export const AdminPage = ({
       .filter((module) => module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
       .map((module) => ({
         id: module.id,
-        name: module.name,
+        name: formatModuleDisplayName(module.name, module.id),
         alwaysOn: module.category === 'VVNZ',
       })),
     [sharedDeckTemplate.modules],
@@ -283,6 +285,7 @@ export const AdminPage = ({
     loadBugReports,
     loadBugReportDetail,
     setBugReportStatus,
+    closeBugReportDetail,
   } = useAdminBugReports({ lang, serverUrl, adminJsonFetch });
   const {
     bugReportImagePath,
@@ -299,6 +302,7 @@ export const AdminPage = ({
     gitStatusLoading,
     gitUpdateRunning,
     gitDeployRunning,
+    gitPublishRunning,
     gitAuthStatus,
     gitAuthStatusLoading,
     gitAuthSaving,
@@ -306,6 +310,10 @@ export const AdminPage = ({
     setGitAuthUsernameDraft,
     gitAuthTokenDraft,
     setGitAuthTokenDraft,
+    gitIgnoreLocalChanges,
+    setGitIgnoreLocalChanges,
+    gitCommitMessageDraft,
+    setGitCommitMessageDraft,
     gitActionMessage,
     gitActionLog,
     setGitActionMessage,
@@ -316,6 +324,7 @@ export const AdminPage = ({
     checkGitUpdates,
     applyGitUpdate,
     applyGitDeploy,
+    publishGitChanges,
   } = useAdminGitActions({
     lang,
     serverUrl,
@@ -400,7 +409,7 @@ export const AdminPage = ({
     void loadAdminAwards();
   }, [activeTab]);
   useEffect(() => {
-    if (activeTab !== 'settings' || adminAnalytics || adminAnalyticsLoading) return;
+    if (activeTab !== 'analytics' || adminAnalytics || adminAnalyticsLoading) return;
     void refreshAdminAnalytics();
   }, [activeTab, adminAnalytics, adminAnalyticsLoading, refreshAdminAnalytics]);
   useEffect(() => {
@@ -452,6 +461,10 @@ export const AdminPage = ({
           setGitAuthUsernameDraft={setGitAuthUsernameDraft}
           gitAuthTokenDraft={gitAuthTokenDraft}
           setGitAuthTokenDraft={setGitAuthTokenDraft}
+          gitIgnoreLocalChanges={gitIgnoreLocalChanges}
+          setGitIgnoreLocalChanges={setGitIgnoreLocalChanges}
+          gitCommitMessageDraft={gitCommitMessageDraft}
+          setGitCommitMessageDraft={setGitCommitMessageDraft}
           loadGitAuthStatus={loadGitAuthStatus}
           saveGitAuthConfig={saveGitAuthConfig}
           clearGitAuthConfig={clearGitAuthConfig}
@@ -459,6 +472,8 @@ export const AdminPage = ({
           gitStatusLoading={gitStatusLoading}
           gitUpdateRunning={gitUpdateRunning}
           gitDeployRunning={gitDeployRunning}
+          gitPublishRunning={gitPublishRunning}
+          publishGitChanges={publishGitChanges}
           gitActionMessage={gitActionMessage}
           gitActionLog={gitActionLog}
           onResetAll={onResetAll}
@@ -469,10 +484,6 @@ export const AdminPage = ({
           setRestartingServer={setRestartingServer}
           onRestartServer={onRestartServer}
           adminActionError={adminActionError}
-          adminAnalytics={adminAnalytics}
-          adminAnalyticsLoading={adminAnalyticsLoading}
-          adminAnalyticsError={adminAnalyticsError}
-          onRefreshAdminAnalytics={refreshAdminAnalytics}
           bugReportImagePath={bugReportImagePath}
           onBugReportImagePathChange={setBugReportImagePath}
           onSaveBugReportImagePath={() => saveBugReportUiConfig(bugReportImagePath)}
@@ -495,6 +506,15 @@ export const AdminPage = ({
           bugReportUiConfigLoading={bugReportUiConfigLoading}
           bugReportUiConfigError={bugReportUiConfigError}
           bugReportUiConfigStatus={bugReportUiConfigStatus}
+        />
+      ) : null}
+      {activeTab === 'analytics' ? (
+        <AdminAnalyticsTab
+          t={t}
+          adminAnalytics={adminAnalytics}
+          adminAnalyticsLoading={adminAnalyticsLoading}
+          adminAnalyticsError={adminAnalyticsError}
+          onRefreshAdminAnalytics={refreshAdminAnalytics}
         />
       ) : null}
       {activeTab === 'database' ? (
@@ -582,7 +602,7 @@ export const AdminPage = ({
           selectedReport={selectedBugReport}
           screenshotUrl={bugReportImageUrl}
           onSelectReport={(id) => { void loadBugReportDetail(id); }}
-          onMarkClosed={() => { void setBugReportStatus('closed'); }}
+          onCloseDetails={closeBugReportDetail}
           onMarkResolved={() => { void setBugReportStatus('resolved'); }}
         />
       ) : null}

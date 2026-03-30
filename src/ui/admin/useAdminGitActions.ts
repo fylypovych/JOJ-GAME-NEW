@@ -38,11 +38,14 @@ export const useAdminGitActions = ({
   const [gitStatusLoading, setGitStatusLoading] = useState<boolean>(false);
   const [gitUpdateRunning, setGitUpdateRunning] = useState<boolean>(false);
   const [gitDeployRunning, setGitDeployRunning] = useState<boolean>(false);
+  const [gitPublishRunning, setGitPublishRunning] = useState<boolean>(false);
   const [gitAuthStatus, setGitAuthStatus] = useState<GitAuthStatus | null>(null);
   const [gitAuthStatusLoading, setGitAuthStatusLoading] = useState<boolean>(false);
   const [gitAuthSaving, setGitAuthSaving] = useState<boolean>(false);
   const [gitAuthUsernameDraft, setGitAuthUsernameDraft] = useState<string>('');
   const [gitAuthTokenDraft, setGitAuthTokenDraft] = useState<string>('');
+  const [gitIgnoreLocalChanges, setGitIgnoreLocalChanges] = useState<boolean>(false);
+  const [gitCommitMessageDraft, setGitCommitMessageDraft] = useState<string>('');
   const [gitActionMessage, setGitActionMessage] = useState<string>('');
   const [gitActionLog, setGitActionLog] = useState<string>('');
   const deployRecoveryTimersRef = useRef<number[]>([]);
@@ -220,8 +223,12 @@ export const useAdminGitActions = ({
     try {
       const response = await fetch(`${serverUrl}/api/admin/git/update`, {
         method: 'POST',
-        headers: adminHeaders(),
+        headers: {
+          'content-type': 'application/json',
+          ...adminHeaders(),
+        },
         credentials: 'include',
+        body: JSON.stringify({ ignoreLocalChanges: gitIgnoreLocalChanges }),
       });
       const payload = (await response.json()) as {
         ok?: boolean;
@@ -261,8 +268,12 @@ export const useAdminGitActions = ({
     try {
       const response = await fetch(`${serverUrl}/api/admin/git/deploy`, {
         method: 'POST',
-        headers: adminHeaders(),
+        headers: {
+          'content-type': 'application/json',
+          ...adminHeaders(),
+        },
         credentials: 'include',
+        body: JSON.stringify({ ignoreLocalChanges: gitIgnoreLocalChanges }),
       });
       const payload = (await response.json()) as {
         ok?: boolean;
@@ -308,11 +319,59 @@ export const useAdminGitActions = ({
     }
   };
 
+  const publishGitChanges = async () => {
+    setGitPublishRunning(true);
+    setAdminActionError('');
+    setGitActionMessage('');
+    setGitActionLog('');
+    try {
+      const response = await fetch(`${serverUrl}/api/admin/git/publish`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...adminHeaders(),
+        },
+        credentials: 'include',
+        body: JSON.stringify({ commitMessage: gitCommitMessageDraft }),
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+        details?: string;
+        status?: GitUpdateStatus;
+        steps?: Array<{ step?: string; output?: string }>;
+      };
+      if (!response.ok || !payload.ok) {
+        setAdminActionError(payload.error ?? (lang === 'uk' ? 'Не вдалося виконати commit/push' : 'Failed to commit/push'));
+        setGitActionLog(payload.details ?? payload.error ?? '');
+        return;
+      }
+      if (payload.status) setGitStatus(payload.status);
+      if (Array.isArray(payload.steps)) {
+        setGitActionLog(
+          payload.steps
+            .map((step) => `$ ${step.step ?? ''}\n${(step.output ?? '').trim()}`.trim())
+            .join('\n\n')
+            .trim(),
+        );
+      }
+      setGitActionMessage(payload.message ?? (lang === 'uk' ? 'Commit і push виконано' : 'Commit and push completed'));
+      setGitCommitMessageDraft('');
+    } catch {
+      setAdminActionError(lang === 'uk' ? 'Не вдалося виконати commit/push' : 'Failed to commit/push');
+      setGitActionLog('');
+    } finally {
+      setGitPublishRunning(false);
+    }
+  };
+
   return {
     gitStatus,
     gitStatusLoading,
     gitUpdateRunning,
     gitDeployRunning,
+    gitPublishRunning,
     gitAuthStatus,
     gitAuthStatusLoading,
     gitAuthSaving,
@@ -320,6 +379,10 @@ export const useAdminGitActions = ({
     setGitAuthUsernameDraft,
     gitAuthTokenDraft,
     setGitAuthTokenDraft,
+    gitIgnoreLocalChanges,
+    setGitIgnoreLocalChanges,
+    gitCommitMessageDraft,
+    setGitCommitMessageDraft,
     gitActionMessage,
     gitActionLog,
     setGitActionMessage,
@@ -330,5 +393,6 @@ export const useAdminGitActions = ({
     checkGitUpdates,
     applyGitUpdate,
     applyGitDeploy,
+    publishGitChanges,
   };
 };

@@ -136,6 +136,14 @@ export const useAdminBugReports = (args: {
     }
   };
 
+  const closeBugReportDetail = () => {
+    setSelectedBugReportId('');
+    setSelectedBugReport(null);
+    if (bugReportImageUrl) URL.revokeObjectURL(bugReportImageUrl);
+    setBugReportImageUrl('');
+    setBugReportsError('');
+  };
+
   return {
     bugReports,
     bugReportsLoading,
@@ -146,5 +154,6 @@ export const useAdminBugReports = (args: {
     loadBugReports,
     loadBugReportDetail,
     setBugReportStatus,
+    closeBugReportDetail,
   };
 };

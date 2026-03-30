@@ -19,7 +19,7 @@ export const AdminBugReportsTab = ({
   screenshotUrl,
   onSelectReport,
   onMarkResolved,
-  onMarkClosed,
+  onCloseDetails,
 }: {
   t: T;
   reports: AdminBugReportListItem[];
@@ -30,7 +30,7 @@ export const AdminBugReportsTab = ({
   screenshotUrl: string;
   onSelectReport: (id: string) => void;
   onMarkResolved: () => void;
-  onMarkClosed: () => void;
+  onCloseDetails: () => void;
 }) => (
   <>
     <h3>{t.adminBugReportsTitle}</h3>
@@ -89,7 +89,7 @@ export const AdminBugReportsTab = ({
               </p>
             ) : null}
             <p className="admin-controls">
-              <button type="button" onClick={onMarkClosed} disabled={loading || selectedReport.status === 'closed'}>
+              <button type="button" onClick={onCloseDetails} disabled={loading}>
                 {t.bugReportClose}
               </button>
               <button type="button" onClick={onMarkResolved} disabled={loading || selectedReport.status === 'resolved'}>

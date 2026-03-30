@@ -5,6 +5,7 @@ import type { CardDefinition } from '../../game/types';
 import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { Language } from '../i18n';
 import { cardFlavor, cardTitleWithOverride, categoryLabel, text } from '../i18n';
+import { formatModuleDisplayName } from '../moduleDisplay';
 import type { GalleryCategoryFilter, LobbyMatch, UserTab } from './model';
 import type { AuthUser, UserAward, UserStats } from './useUserAccount';
 import type { UserMatchHistoryItem, UserSession } from './useUserAccount';
@@ -35,7 +36,7 @@ const formatModuleName = (
   moduleNameById: Map<string, string>,
 ) => {
   const known = moduleNameById.get(moduleId);
-  if (known) return known;
+  if (known) return formatModuleDisplayName(known, moduleId);
   const normalized = moduleId
     .replace(/[_-]+/g, ' ')
     .trim();

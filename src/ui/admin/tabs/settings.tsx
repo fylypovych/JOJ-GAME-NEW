@@ -1,5 +1,5 @@
 import { text } from '../../i18n';
-import type { AdminAnalyticsSummary, GitAuthStatus, GitUpdateStatus } from '../types';
+import type { GitAuthStatus, GitUpdateStatus } from '../types';
 
 type T = ReturnType<typeof text>;
 
@@ -21,6 +21,10 @@ export const AdminSettingsTab = ({
   setGitAuthUsernameDraft,
   gitAuthTokenDraft,
   setGitAuthTokenDraft,
+  gitIgnoreLocalChanges,
+  setGitIgnoreLocalChanges,
+  gitCommitMessageDraft,
+  setGitCommitMessageDraft,
   loadGitAuthStatus,
   saveGitAuthConfig,
   clearGitAuthConfig,
@@ -28,6 +32,8 @@ export const AdminSettingsTab = ({
   gitStatusLoading,
   gitUpdateRunning,
   gitDeployRunning,
+  gitPublishRunning,
+  publishGitChanges,
   gitActionMessage,
   gitActionLog,
   onResetAll,
@@ -38,10 +44,6 @@ export const AdminSettingsTab = ({
   setRestartingServer,
   onRestartServer,
   adminActionError,
-  adminAnalytics,
-  adminAnalyticsLoading,
-  adminAnalyticsError,
-  onRefreshAdminAnalytics,
   bugReportImagePath,
   onBugReportImagePathChange,
   onSaveBugReportImagePath,
@@ -67,6 +69,10 @@ export const AdminSettingsTab = ({
   setGitAuthUsernameDraft: (value: string) => void;
   gitAuthTokenDraft: string;
   setGitAuthTokenDraft: (value: string) => void;
+  gitIgnoreLocalChanges: boolean;
+  setGitIgnoreLocalChanges: (value: boolean) => void;
+  gitCommitMessageDraft: string;
+  setGitCommitMessageDraft: (value: string) => void;
   loadGitAuthStatus: () => Promise<void> | void;
   saveGitAuthConfig: () => Promise<void> | void;
   clearGitAuthConfig: () => Promise<void> | void;
@@ -74,6 +80,8 @@ export const AdminSettingsTab = ({
   gitStatusLoading: boolean;
   gitUpdateRunning: boolean;
   gitDeployRunning: boolean;
+  gitPublishRunning: boolean;
+  publishGitChanges: () => Promise<void> | void;
   gitActionMessage: string;
   gitActionLog: string;
   onResetAll: () => void;
@@ -84,10 +92,6 @@ export const AdminSettingsTab = ({
   setRestartingServer: (value: boolean) => void;
   onRestartServer: () => Promise<boolean>;
   adminActionError: string;
-  adminAnalytics: AdminAnalyticsSummary | null;
-  adminAnalyticsLoading: boolean;
-  adminAnalyticsError: string;
-  onRefreshAdminAnalytics: () => Promise<void> | void;
   bugReportImagePath: string;
   onBugReportImagePathChange: (value: string) => void;
   onSaveBugReportImagePath: () => Promise<void> | void;
@@ -170,16 +174,45 @@ export const AdminSettingsTab = ({
     ) : null}
     <h4>{t.githubUpdatesTitle}</h4>
     <p className="admin-controls">
+      <label>
+        <input
+          type="checkbox"
+          checked={gitIgnoreLocalChanges}
+          onChange={(e) => setGitIgnoreLocalChanges(e.target.checked)}
+        />
+        {' '}
+        {t.githubIgnoreLocalChanges}
+      </label>
+    </p>
+    {gitIgnoreLocalChanges ? <p className="admin-error">{t.githubIgnoreLocalChangesHint}</p> : null}
+    <p className="admin-controls">
+      <label>
+        {t.githubCommitMessageLabel}
+        <input
+          value={gitCommitMessageDraft}
+          onChange={(e) => setGitCommitMessageDraft(e.target.value)}
+          placeholder={t.githubCommitMessagePlaceholder}
+        />
+      </label>
+      <button
+        type="button"
+        onClick={() => void publishGitChanges()}
+        disabled={gitPublishRunning || gitUpdateRunning || gitDeployRunning || gitStatusLoading || (gitStatus ? (!gitStatus.dirty && gitStatus.ahead <= 0) : false)}
+      >
+        {gitPublishRunning ? t.githubPublishLoading : t.githubPublish}
+      </button>
+    </p>
+    <p className="admin-controls">
       <button type="button" onClick={() => void checkGitUpdates()} disabled={gitStatusLoading || gitUpdateRunning || gitDeployRunning}>
         {gitStatusLoading ? t.githubCheckUpdatesLoading : t.githubCheckUpdates}
       </button>
-      <button type="button" onClick={() => void applyGitUpdate()} disabled={gitUpdateRunning || gitDeployRunning || gitStatusLoading || (gitStatus ? !gitStatus.canUpdate : false)}>
+      <button type="button" onClick={() => void applyGitUpdate()} disabled={gitUpdateRunning || gitDeployRunning || gitStatusLoading || (gitStatus ? (!gitStatus.canUpdate && !gitIgnoreLocalChanges) : false)}>
         {gitUpdateRunning ? t.githubApplyUpdateLoading : t.githubApplyUpdate}
       </button>
       <button
         type="button"
         onClick={() => void applyGitDeploy()}
-        disabled={gitDeployRunning || gitUpdateRunning || gitStatusLoading || (gitStatus ? gitStatus.dirty : false)}
+        disabled={gitDeployRunning || gitUpdateRunning || gitStatusLoading || (gitStatus ? (gitStatus.dirty && !gitIgnoreLocalChanges) : false)}
         title={t.githubDeployTooltip}
       >
         {gitDeployRunning ? t.githubDeployLoading : t.githubDeploy}
@@ -199,79 +232,6 @@ export const AdminSettingsTab = ({
     ) : null}
     {gitActionMessage ? <p className="admin-success">{gitActionMessage}</p> : null}
     {gitActionLog ? <pre className="admin-textarea">{gitActionLog}</pre> : null}
-    <h4>{t.adminAnalyticsTitle}</h4>
-    <p className="admin-controls">
-      <button type="button" onClick={() => void onRefreshAdminAnalytics()} disabled={adminAnalyticsLoading}>
-        {adminAnalyticsLoading ? t.loading : t.refreshRooms}
-      </button>
-    </p>
-    {adminAnalyticsError ? <p className="admin-error">{adminAnalyticsError}</p> : null}
-    {adminAnalytics ? (
-      <>
-        <div className="admin-inline-editor">
-          <p>{t.adminAnalyticsMatchesFinished}: <strong>{adminAnalytics.matchesFinished}</strong></p>
-          <p>{t.adminAnalyticsRankWins}: <strong>{adminAnalytics.rankWins}</strong></p>
-          <p>{t.adminAnalyticsScoreWins}: <strong>{adminAnalytics.scoreWins}</strong></p>
-          <p>{t.adminAnalyticsStalledMatches}: <strong>{adminAnalytics.stalledMatches}</strong></p>
-          <p>{t.adminAnalyticsAvgTurns}: <strong>{adminAnalytics.avgTurns}</strong></p>
-          <p>{t.adminAnalyticsAvgPlayers}: <strong>{adminAnalytics.avgPlayerCount}</strong></p>
-          <p>{t.adminAnalyticsAvgBots}: <strong>{adminAnalytics.avgBotCount}</strong></p>
-          <p>{t.adminAnalyticsAvgWinnerRank}: <strong>{adminAnalytics.avgWinnerRankOrder}</strong></p>
-        </div>
-        <h5>{t.adminAnalyticsByMode}</h5>
-        {adminAnalytics.byMode.length === 0 ? <p>{t.simulationNoData}</p> : (
-          <ul>
-            {adminAnalytics.byMode.map((row) => (
-              <li key={`analytics-mode-${row.mode}`}>
-                {row.mode}: {row.matchesFinished}
-                {' | '}{t.adminAnalyticsAvgTurns}: {row.avgTurns}
-                {' | '}{t.adminAnalyticsStalledMatches}: {row.stalledMatches}
-                {' | '}{t.adminAnalyticsRankWinRate}: {row.rankWinRatePct}%
-                {' | '}{t.adminAnalyticsScoreWinRate}: {row.scoreWinRatePct}%
-                {' | '}{t.adminAnalyticsStalledRate}: {row.stalledRatePct}%
-                {' | '}{t.adminAnalyticsAvgWinnerRank}: {row.avgWinnerRankOrder}
-              </li>
-            ))}
-          </ul>
-        )}
-        <h5>{t.adminAnalyticsByPlayerCount}</h5>
-        {adminAnalytics.byPlayerCount.length === 0 ? <p>{t.simulationNoData}</p> : (
-          <ul>
-            {adminAnalytics.byPlayerCount.map((row) => (
-              <li key={`analytics-players-${row.playerCount}`}>
-                {row.playerCount}: {row.matchesFinished}
-                {' | '}{t.adminAnalyticsAvgTurns}: {row.avgTurns}
-                {' | '}{t.adminAnalyticsStalledMatches}: {row.stalledMatches}
-                {' | '}{t.adminAnalyticsRankWinRate}: {row.rankWinRatePct}%
-                {' | '}{t.adminAnalyticsScoreWinRate}: {row.scoreWinRatePct}%
-                {' | '}{t.adminAnalyticsStalledRate}: {row.stalledRatePct}%
-                {' | '}{t.adminAnalyticsAvgWinnerRank}: {row.avgWinnerRankOrder}
-              </li>
-            ))}
-          </ul>
-        )}
-        <h5>{t.adminAnalyticsTopRanks}</h5>
-        {adminAnalytics.topRanks.length === 0 ? <p>{t.simulationNoData}</p> : (
-          <ul>
-            {adminAnalytics.topRanks.map((row) => (
-              <li key={`analytics-rank-${row.rankId}`}>
-                {row.rankId}: {row.count}
-              </li>
-            ))}
-          </ul>
-        )}
-        <h5>{t.adminAnalyticsTopWinningRanks}</h5>
-        {adminAnalytics.topWinningRanks.length === 0 ? <p>{t.simulationNoData}</p> : (
-          <ul>
-            {adminAnalytics.topWinningRanks.map((row) => (
-              <li key={`analytics-winning-rank-${row.rankId}`}>
-                {row.rankId}: {row.count}
-              </li>
-            ))}
-          </ul>
-        )}
-      </>
-    ) : null}
     <h4>{t.systemActions}</h4>
     <p className="admin-controls">
       <button type="button" onClick={onResetAll}>{t.resetAll}</button>

@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { text } from '../../i18n';
+import { formatModuleDisplayName } from '../../moduleDisplay';
 import type { DeckTarget, LegendaryDeckMode } from '../../../game/jojGame';
 import { normalizeImagePath } from '../../../game/imagePaths';
 import type { CardCategory, CardDefinition } from '../../../game/types';
@@ -72,6 +73,7 @@ export const AdminDeckTab = ({
   sharedRanks: Array<{ id: string; name: string; image?: string; imageVariants?: string[] }>;
   onSetLegendaryDeckMode: (mode: LegendaryDeckMode) => void;
 }) => {
+  const displayModuleName = (module: Pick<ModuleDef, 'id' | 'name'>) => formatModuleDisplayName(module.name, module.id);
   const [innerTab, setInnerTab] = useState<DeckInnerTab>('manager');
   const [cardEditorModuleId, setCardEditorModuleId] = useState<string>('');
   const [editingModuleId, setEditingModuleId] = useState<string>('');
@@ -223,7 +225,7 @@ export const AdminDeckTab = ({
                     aria-pressed={selectedId === module.id}
                     onClick={() => onModuleAction(module.id, 'replace')}
                   >
-                    {selectedId === module.id ? '✓ ' : ''}{module.name}
+                    {selectedId === module.id ? '✓ ' : ''}{displayModuleName(module)}
                   </button>
                 ))}
                 {selectedId ? <span>{t.deckManagerActiveModule}: <code>{selectedId}</code></span> : null}
@@ -242,7 +244,7 @@ export const AdminDeckTab = ({
                   aria-pressed={enabled}
                   onClick={() => onModuleAction(module.id, enabled ? 'remove' : 'add')}
                 >
-                  {enabled ? '✓ ' : ''}{module.name}
+                  {enabled ? '✓ ' : ''}{displayModuleName(module)}
                 </button>
               );
             })}
@@ -257,7 +259,7 @@ export const AdminDeckTab = ({
                 aria-pressed={selectedLegendaryModuleId === module.id}
                 onClick={() => onModuleAction(module.id, 'replace')}
               >
-                {selectedLegendaryModuleId === module.id ? '✓ ' : ''}{module.name}
+                {selectedLegendaryModuleId === module.id ? '✓ ' : ''}{displayModuleName(module)}
               </button>
             ))}
             {selectedLegendaryModuleId ? <span>{t.deckManagerActiveModule}: <code>{selectedLegendaryModuleId}</code></span> : null}
@@ -286,7 +288,7 @@ export const AdminDeckTab = ({
             <ul>
               {modules.map((module) => (
                 <li key={`module-row-${module.id}`}>
-                  <span>{module.name} ({module.id}) | {module.moduleType} | {module.category} | target: {module.target} | cards: {module.cardIds.length}</span>
+                  <span>{displayModuleName(module)} ({module.id}) | {module.moduleType} | {module.category} | target: {module.target} | cards: {module.cardIds.length}</span>
                   <span className="admin-controls">
                     <button type="button" onClick={() => editModule(module)}>{t.editCard}</button>
                     <button type="button" onClick={() => onDeleteModule(module.id)}>{t.removeCard}</button>
@@ -368,7 +370,7 @@ export const AdminDeckTab = ({
           <p className="admin-controls">
             <label>{t.moduleLabel}
               <select value={selectedCardModule?.id ?? ''} onChange={(e) => setCardEditorModuleId(e.target.value)}>
-                {modules.map((module) => <option key={`module-option-${module.id}`} value={module.id}>{module.name}</option>)}
+                {modules.map((module) => <option key={`module-option-${module.id}`} value={module.id}>{displayModuleName(module)}</option>)}
               </select>
             </label>
             <button type="button" disabled={!canCreateCardInModule} onClick={() => selectedCardModule && onStartCreateCardForModule(selectedCardModule.id)}>

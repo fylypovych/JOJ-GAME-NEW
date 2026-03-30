@@ -108,6 +108,16 @@ export const registerAdminRoutes = ({
 }: AdminRoutesDeps) => {
   const requireAdminWriteAccess = (ctx: RouteCtx, routeLabel: string) =>
     requireAdminMutationAuth(ctx, routeLabel, requireAdminAuth);
+  const discardLocalGitChanges = async () => {
+    const resetRes = await runGit(['reset', '--hard', 'HEAD']);
+    if (!resetRes.ok) return { ok: false as const, error: resetRes.error };
+    const cleanRes = await runGit(['clean', '-fd']);
+    if (!cleanRes.ok) return { ok: false as const, error: cleanRes.error };
+    return {
+      ok: true as const,
+      output: [resetRes.stdout.trim(), cleanRes.stdout.trim()].filter(Boolean).join('\n').trim(),
+    };
+  };
 
   router.get('/api/health', (ctx: RouteCtx) => {
     ctx.body = {
@@ -706,7 +716,10 @@ export const registerAdminRoutes = ({
   router.post('/api/admin/git/update', async (ctx: RouteCtx) => {
     if (!(await requireAdminWriteAccess(ctx, '/api/admin/git/update'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-git-update', 5, 60_000))) return;
-    const status = await getGitUpdateStatus(runGit);
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/git/update', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const ignoreLocalChanges = body.ignoreLocalChanges === true;
+    let status = await getGitUpdateStatus(runGit);
     if (!status.ok) {
       ctx.status = 500;
       ctx.body = { ok: false, error: 'Failed to read Git status before update', details: status.error };
@@ -714,9 +727,26 @@ export const registerAdminRoutes = ({
       return;
     }
     if (status.dirty) {
-      ctx.status = 409;
-      ctx.body = { ok: false, error: 'Working tree has local changes. Commit or stash before update.', status };
-      return;
+      if (!ignoreLocalChanges) {
+        ctx.status = 409;
+        ctx.body = { ok: false, error: 'Working tree has local changes. Commit or stash before update.', status };
+        return;
+      }
+      const discardRes = await discardLocalGitChanges();
+      if (!discardRes.ok) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: 'Failed to discard local changes before update', details: discardRes.error, status };
+        await logLine('ERROR', `git discard local changes failed before update: ${discardRes.error}`);
+        return;
+      }
+      await logLine('WARN', 'admin update discarded local git changes before pull');
+      status = await getGitUpdateStatus(runGit);
+      if (!status.ok) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: 'Failed to read Git status after discarding local changes', details: status.error };
+        await logLine('ERROR', `git status after discard failed before update: ${status.error}`);
+        return;
+      }
     }
     const stashRuntime = await autoStashRuntimeNoise({ status, runGit, logLine });
     if (!stashRuntime.ok) {
@@ -759,8 +789,11 @@ export const registerAdminRoutes = ({
   router.post('/api/admin/git/deploy', async (ctx: RouteCtx) => {
     if (!(await requireAdminWriteAccess(ctx, '/api/admin/git/deploy'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-git-deploy', 3, 60_000))) return;
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/git/deploy', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const ignoreLocalChanges = body.ignoreLocalChanges === true;
 
-    const status = await getGitUpdateStatus(runGit);
+    let status = await getGitUpdateStatus(runGit);
     if (!status.ok) {
       ctx.status = 500;
       ctx.body = { ok: false, error: 'Failed to read Git status before deploy', details: status.error };
@@ -768,9 +801,26 @@ export const registerAdminRoutes = ({
       return;
     }
     if (status.dirty) {
-      ctx.status = 409;
-      ctx.body = { ok: false, error: 'Working tree has local changes. Commit or stash before deploy.', status };
-      return;
+      if (!ignoreLocalChanges) {
+        ctx.status = 409;
+        ctx.body = { ok: false, error: 'Working tree has local changes. Commit or stash before deploy.', status };
+        return;
+      }
+      const discardRes = await discardLocalGitChanges();
+      if (!discardRes.ok) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: 'Failed to discard local changes before deploy', details: discardRes.error, status };
+        await logLine('ERROR', `git discard local changes failed before deploy: ${discardRes.error}`);
+        return;
+      }
+      await logLine('WARN', 'admin deploy discarded local git changes before pull/build');
+      status = await getGitUpdateStatus(runGit);
+      if (!status.ok) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: 'Failed to read Git status after discarding local changes', details: status.error };
+        await logLine('ERROR', `git status after discard failed before deploy: ${status.error}`);
+        return;
+      }
     }
 
     const stashRuntime = await autoStashRuntimeNoise({ status, runGit, logLine });
@@ -854,5 +904,87 @@ export const registerAdminRoutes = ({
         process.exit(0);
       }
     }, 300);
+  });
+
+  router.post('/api/admin/git/publish', async (ctx: RouteCtx) => {
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/git/publish'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-git-publish', 5, 60_000))) return;
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/git/publish', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const commitMessage = String(body.commitMessage ?? '').trim();
+    let status = await getGitUpdateStatus(runGit);
+    if (!status.ok) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: 'Failed to read Git status before publish', details: status.error };
+      await logLine('ERROR', `git pre-publish status failed: ${status.error}`);
+      return;
+    }
+
+    const steps: Array<{ step: string; output?: string }> = [];
+
+    if (status.dirty) {
+      if (!commitMessage) {
+        ctx.status = 400;
+        ctx.body = { ok: false, error: 'Commit message is required when there are local changes.', status };
+        return;
+      }
+      const addRes = await runGit(['add', '-A']);
+      if (!addRes.ok) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: 'Git add failed', details: addRes.error, status };
+        await logLine('ERROR', `git publish add failed: ${addRes.error}`);
+        return;
+      }
+      steps.push({ step: 'git add -A', output: addRes.stdout.trim() || '(ok)' });
+
+      const commitRes = await runGit(['commit', '-m', commitMessage]);
+      if (!commitRes.ok) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: 'Git commit failed', details: commitRes.error, status, steps };
+        await logLine('ERROR', `git publish commit failed: ${commitRes.error}`);
+        return;
+      }
+      steps.push({ step: `git commit -m "${commitMessage}"`, output: commitRes.stdout.trim() || '(ok)' });
+
+      status = await getGitUpdateStatus(runGit);
+      if (!status.ok) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: 'Failed to read Git status after commit', details: status.error, steps };
+        await logLine('ERROR', `git post-commit status failed: ${status.error}`);
+        return;
+      }
+    }
+
+    if (status.ahead <= 0) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'There are no local commits to push.', status, steps };
+      return;
+    }
+
+    const branch = status.branch || 'main';
+    const pushRes = await runGit(['push', 'origin', branch]);
+    if (!pushRes.ok) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: 'Git push failed', details: pushRes.error, status, steps };
+      await logLine('ERROR', `git publish push failed: ${pushRes.error}`);
+      return;
+    }
+    steps.push({ step: `git push origin ${branch}`, output: pushRes.stdout.trim() || pushRes.stderr.trim() || '(ok)' });
+
+    const nextStatus = await getGitUpdateStatus(runGit);
+    if (!nextStatus.ok) {
+      ctx.status = 500;
+      ctx.body = { ok: false, error: 'Failed to read Git status after push', details: nextStatus.error, steps };
+      await logLine('ERROR', `git post-push status failed: ${nextStatus.error}`);
+      return;
+    }
+
+    await logLine('WARN', `git publish completed on branch=${branch}; push output=${pushRes.stdout.trim() || '(no output)'}`);
+    ctx.body = {
+      ok: true,
+      message: 'Commit and push completed',
+      steps,
+      status: nextStatus,
+    };
   });
 };
