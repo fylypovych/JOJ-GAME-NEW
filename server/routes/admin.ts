@@ -4,6 +4,7 @@ import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, Rou
 import { requireAdminMutationAuth } from '../admin-auth';
 import { registerAdminDbToolRoutes } from '../services/admin-db-tools';
 import { loadLobbyGameUiConfig, saveLobbyGameUiConfig } from '../services/game-ui-config';
+import { getCookieValue } from '../request-utils';
 import {
   getPasswordResetDeliveryHealth,
   getPublicPasswordResetDeliveryHealth,
@@ -341,6 +342,22 @@ export const registerAdminRoutes = ({
       ctx.status = 400;
       ctx.body = { ok: false, error: 'Missing userId' };
       return;
+    }
+    const sessionToken = getCookieValue(ctx, 'joj_user_session');
+    const actingUser = sessionToken ? await userStore.getUserBySessionToken(sessionToken) : null;
+    if (actingUser?.id === userId && actingUser.role === 'administrator' && role !== 'administrator') {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'You cannot remove the administrator role from your own account.' };
+      return;
+    }
+    if (role !== 'administrator') {
+      const users = await userStore.listUsersAdmin('', 500);
+      const activeAdmins = users.filter((user) => user.role === 'administrator' && user.status === 'active');
+      if (activeAdmins.length <= 1 && activeAdmins.some((user) => user.id === userId)) {
+        ctx.status = 400;
+        ctx.body = { ok: false, error: 'Cannot remove the last active administrator.' };
+        return;
+      }
     }
     const updated = await userStore.updateUserRole(userId, role);
     if (!updated) {
