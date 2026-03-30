@@ -12,3 +12,5 @@ pnpm-debug.log*
 !/database/matches/.gitkeep
 /database/bug-reports.json
 /database/bug-report-images/
+.env.save
+/database/admin-db-ui-config.json
