@@ -1,0 +1,9 @@
+{
+  "allowedBotCounts": [
+    1,
+    2,
+    3
+  ],
+  "defaultBotCount": 3,
+  "updatedAt": 1774899677025
+}
