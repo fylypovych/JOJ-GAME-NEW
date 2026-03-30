@@ -283,7 +283,6 @@ void (async () => {
       runGit,
       runShellCommand,
       spawnDetachedShell,
-      isAdminAuthEnabled,
       devRestartTouchPath,
       dbSchemaPath,
       adminDbUiConfigPath,
@@ -336,8 +335,10 @@ void (async () => {
   await loadTemplate();
   await loadRanks();
   await logLine(
-    isAdminAuthEnabled ? 'INFO' : 'WARN',
-    isAdminAuthEnabled ? 'admin auth enabled (ADMIN_TOKEN set)' : 'admin auth disabled (ADMIN_TOKEN is empty)',
+    userStore ? 'INFO' : 'WARN',
+    userStore
+      ? 'admin auth enabled (administrator session + personal admin token)'
+      : 'admin auth disabled (user module unavailable)',
   );
   await logLine('INFO', `shared config storage mode=${sharedConfigStorageMode}`);
   const portFree = await isPortAvailable(port);

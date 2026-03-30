@@ -63,7 +63,6 @@ type AdminRoutesDeps = {
   runGit: RunGit;
   runShellCommand: RunShellCommand;
   spawnDetachedShell: SpawnDetachedShell;
-  isAdminAuthEnabled: boolean;
   devRestartTouchPath: string;
   dbSchemaPath: string;
   adminDbUiConfigPath: string;
@@ -96,7 +95,6 @@ export const registerAdminRoutes = ({
   runGit,
   runShellCommand,
   spawnDetachedShell,
-  isAdminAuthEnabled,
   devRestartTouchPath,
   dbSchemaPath,
   adminDbUiConfigPath,
@@ -126,7 +124,7 @@ export const registerAdminRoutes = ({
       now: new Date().toISOString(),
       uptimeSec: Math.round(process.uptime()),
       port: Number(process.env.PORT ?? 8000),
-      adminAuthEnabled: isAdminAuthEnabled,
+      adminAuthEnabled: Boolean(userStore),
       passwordResetDelivery: getPublicPasswordResetDeliveryHealthFn(),
     };
   });
@@ -141,7 +139,7 @@ export const registerAdminRoutes = ({
 
   router.get('/api/admin/verify', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/verify'))) return;
-    ctx.body = { ok: true, adminAuthEnabled: isAdminAuthEnabled };
+    ctx.body = { ok: true, adminAuthEnabled: Boolean(userStore) };
   });
 
   router.get('/api/admin/analytics', async (ctx: RouteCtx) => {
@@ -321,6 +319,30 @@ export const registerAdminRoutes = ({
       return;
     }
     ctx.body = { ok: true, user: updated };
+  });
+
+  router.post('/api/admin/users/admin-token', async (ctx: RouteCtx) => {
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/users/admin-token'))) return;
+    if (!userStore || typeof userStore.rotateAdminAccessToken !== 'function') {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/users/admin-token', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const userId = String(body.userId ?? '').trim();
+    if (!userId) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Missing userId' };
+      return;
+    }
+    const rotated = await userStore.rotateAdminAccessToken(userId);
+    if (!rotated) {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Admin token can only be issued to an active administrator.' };
+      return;
+    }
+    ctx.body = { ok: true, token: rotated.token, rotatedAt: rotated.rotatedAt };
   });
 
   router.post('/api/admin/users/update', async (ctx: RouteCtx) => {

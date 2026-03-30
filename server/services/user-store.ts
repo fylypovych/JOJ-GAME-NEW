@@ -55,6 +55,8 @@ export const createUserStore = (pool: Pool) => {
         username text NOT NULL UNIQUE,
         email text UNIQUE,
         role text NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'administrator')),
+        admin_access_token_hash text,
+        admin_access_token_rotated_at timestamptz,
         password_hash text NOT NULL,
         password_salt text NOT NULL,
         status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'disabled')),
@@ -170,6 +172,8 @@ export const createUserStore = (pool: Pool) => {
     `);
     await pool.query(`
       ALTER TABLE app_users ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'user';
+      ALTER TABLE app_users ADD COLUMN IF NOT EXISTS admin_access_token_hash text;
+      ALTER TABLE app_users ADD COLUMN IF NOT EXISTS admin_access_token_rotated_at timestamptz;
       UPDATE app_users
       SET role = 'user'
       WHERE role IS NULL OR role NOT IN ('user', 'administrator')
@@ -323,6 +327,35 @@ export const createUserStore = (pool: Pool) => {
     if (!userId) return null;
     await pool.query('UPDATE user_sessions SET last_seen_at = now() WHERE token_hash = $1', [tokenHash]);
     return getUserById(userId);
+  };
+
+  const verifyAdminAccessToken = async (userId: string, token: string): Promise<boolean> => {
+    const trimmed = token.trim();
+    if (!userId || !trimmed) return false;
+    const result = await pool.query<{ admin_access_token_hash: string | null; role: 'user' | 'administrator'; status: 'active' | 'disabled' }>(`
+      SELECT admin_access_token_hash, role, status
+      FROM app_users
+      WHERE id = $1
+      LIMIT 1
+    `, [userId]);
+    const row = result.rows[0];
+    if (!row || row.role !== 'administrator' || row.status !== 'active' || !row.admin_access_token_hash) return false;
+    return constantTimeEquals(hashToken(trimmed), row.admin_access_token_hash);
+  };
+
+  const rotateAdminAccessToken = async (userId: string): Promise<{ token: string; rotatedAt: string } | null> => {
+    const user = await getUserWithStatusById(userId);
+    if (!user || user.role !== 'administrator') return null;
+    const token = randomBytes(24).toString('hex');
+    const rotatedAt = new Date().toISOString();
+    await pool.query(`
+      UPDATE app_users
+      SET admin_access_token_hash = $2,
+          admin_access_token_rotated_at = $3,
+          updated_at = now()
+      WHERE id = $1
+    `, [userId, hashToken(token), rotatedAt]);
+    return { token, rotatedAt };
   };
 
   const deleteSession = async (token: string) => {
@@ -551,6 +584,8 @@ export const createUserStore = (pool: Pool) => {
     createSession,
     getUserById,
     getUserBySessionToken,
+    verifyAdminAccessToken,
+    rotateAdminAccessToken,
     deleteSession,
     deleteAllSessionsForUser,
     deleteExpiredSessions,

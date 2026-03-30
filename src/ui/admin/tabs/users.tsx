@@ -28,6 +28,8 @@ type AdminUserDetail = {
     lastLoginAt: string | null;
     role: 'user' | 'administrator';
     status: 'active' | 'disabled';
+    hasAdminAccessToken: boolean;
+    adminAccessTokenRotatedAt: string | null;
   };
   stats: {
     matchesLinked: number;
@@ -89,6 +91,8 @@ export const AdminUsersTab = ({
   setCreateDraft,
   onCreateUser,
   onRequestPasswordReset,
+  onRotateAdminToken,
+  issuedAdminToken,
   onLogoutAllSessions,
   onLogoutUserSession,
 }: {
@@ -137,6 +141,8 @@ export const AdminUsersTab = ({
   }) => void;
   onCreateUser: () => void;
   onRequestPasswordReset: () => void;
+  onRotateAdminToken: () => void;
+  issuedAdminToken: string;
   onLogoutAllSessions: () => void;
   onLogoutUserSession: (sessionId: string) => void;
 }) => (
@@ -219,6 +225,10 @@ export const AdminUsersTab = ({
             <p>{t.userLastLoginAt}: {selectedUserDetail.user.lastLoginAt ? new Date(selectedUserDetail.user.lastLoginAt).toLocaleString() : t.simulationNoData}</p>
             <p>{t.adminUsersStatusLabel}: <strong>{selectedUserDetail.user.status}</strong></p>
             <p>{t.userRoleLabel}: <strong>{selectedUserDetail.user.role}</strong></p>
+            <p>{t.adminUsersAdminTokenStatus}: <strong>{selectedUserDetail.user.hasAdminAccessToken ? t.yes : t.no}</strong></p>
+            {selectedUserDetail.user.adminAccessTokenRotatedAt ? (
+              <p>{t.adminUsersAdminTokenRotatedAt}: <strong>{new Date(selectedUserDetail.user.adminAccessTokenRotatedAt).toLocaleString()}</strong></p>
+            ) : null}
             <h5>{t.userProfileTitle}</h5>
             <p><input value={editDraft.username} onChange={(e) => setEditDraft({ ...editDraft, username: e.target.value })} placeholder={t.userUsernameLabel} /></p>
             <p><input value={editDraft.displayName} onChange={(e) => setEditDraft({ ...editDraft, displayName: e.target.value })} placeholder={t.userDisplayNameLabel} /></p>
@@ -237,9 +247,16 @@ export const AdminUsersTab = ({
               <button type="button" onClick={() => onSetStatus('disabled')} disabled={loading || selectedUserDetail.user.status === 'disabled'}>{t.adminUsersDisable}</button>
               <button type="button" onClick={() => onSetRole('user')} disabled={loading || selectedUserDetail.user.role === 'user'}>{t.userRoleUser}</button>
               <button type="button" onClick={() => onSetRole('administrator')} disabled={loading || selectedUserDetail.user.role === 'administrator'}>{t.userRoleAdministrator}</button>
+              <button type="button" onClick={onRotateAdminToken} disabled={loading || selectedUserDetail.user.role !== 'administrator'}>{t.adminUsersRotateAdminToken}</button>
               <button type="button" onClick={onRequestPasswordReset} disabled={loading}>{t.adminUsersIssueResetToken}</button>
               <button type="button" onClick={onLogoutAllSessions} disabled={loading}>{t.adminUsersLogoutAllSessions}</button>
             </p>
+            {issuedAdminToken ? (
+              <div className="admin-inline-editor">
+                <p><strong>{t.adminUsersIssuedAdminToken}</strong></p>
+                <p><code>{issuedAdminToken}</code></p>
+              </div>
+            ) : null}
             <h5>{t.userStatsTitle}</h5>
             <ul>
               <li>{t.userStatMatchesLinked}: {selectedUserDetail.stats.matchesLinked}</li>

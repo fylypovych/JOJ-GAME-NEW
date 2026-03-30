@@ -94,6 +94,8 @@ export const createUserAdminStore = (args: {
     await pool.query(`
       UPDATE app_users
       SET role = $2,
+          admin_access_token_hash = CASE WHEN $2 = 'administrator' THEN admin_access_token_hash ELSE NULL END,
+          admin_access_token_rotated_at = CASE WHEN $2 = 'administrator' THEN admin_access_token_rotated_at ELSE NULL END,
           updated_at = now()
       WHERE id = $1
     `, [userId, nextRole]);
@@ -154,6 +156,18 @@ export const createUserAdminStore = (args: {
   const getAdminUserDetail = async (userId: string): Promise<AdminUserDetail | null> => {
     const user = await getUserWithStatusById(userId);
     if (!user) return null;
+    const adminAuthResult = await pool.query<{
+      hasAdminAccessToken: boolean;
+      adminAccessTokenRotatedAt: string | null;
+    }>(`
+      SELECT
+        (admin_access_token_hash IS NOT NULL) AS "hasAdminAccessToken",
+        admin_access_token_rotated_at AS "adminAccessTokenRotatedAt"
+      FROM app_users
+      WHERE id = $1
+      LIMIT 1
+    `, [userId]);
+    const adminAuth = adminAuthResult.rows[0] ?? { hasAdminAccessToken: false, adminAccessTokenRotatedAt: null };
     const [stats, sessions, linkedMatches, persistedMatches] = await Promise.all([
       getUserStatsSummary(userId),
       listUserSessions(userId),
@@ -167,7 +181,11 @@ export const createUserAdminStore = (args: {
     ]);
     const awards = await evaluateUserAwards(userId, stats);
     return {
-      user,
+      user: {
+        ...user,
+        hasAdminAccessToken: adminAuth.hasAdminAccessToken,
+        adminAccessTokenRotatedAt: adminAuth.adminAccessTokenRotatedAt,
+      },
       stats,
       awards,
       sessions,

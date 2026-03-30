@@ -137,7 +137,11 @@ export type AdminUserSummary = {
 };
 
 export type AdminUserDetail = {
-  user: UserRecord & { status: 'active' | 'disabled' };
+  user: UserRecord & {
+    status: 'active' | 'disabled';
+    hasAdminAccessToken: boolean;
+    adminAccessTokenRotatedAt: string | null;
+  };
   stats: UserStatsSummary;
   awards: UserAwardRecord[];
   sessions: UserSessionRecord[];

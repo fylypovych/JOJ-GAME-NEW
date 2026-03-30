@@ -87,23 +87,28 @@ export const setCookieHeader = (
 
 export const createRequireAdminAuth = ({
   isAdminAuthEnabled: _isAdminAuthEnabled,
-  adminToken,
+  adminToken: _adminToken,
   logLine,
   getUserStore,
 }: {
   isAdminAuthEnabled: boolean;
   adminToken: string;
   logLine: LogLine;
-  getUserStore?: () => { getUserBySessionToken: (token: string) => Promise<{ role?: string } | null> } | null;
+  getUserStore?: () => {
+    getUserBySessionToken: (token: string) => Promise<{ id?: string; role?: string } | null>;
+    verifyAdminAccessToken?: (userId: string, token: string) => Promise<boolean>;
+  } | null;
 }) => async (ctx: any, routeLabel: string): Promise<boolean> => {
   const token = getAdminTokenFromRequest(ctx);
-  if (adminToken && token === adminToken) return true;
   const userStore = getUserStore?.() ?? null;
   if (userStore) {
     const sessionToken = getCookieValue(ctx, 'joj_user_session');
-    if (sessionToken) {
+    if (sessionToken && token) {
       const user = await userStore.getUserBySessionToken(sessionToken);
-      if (user?.role === 'administrator') return true;
+      if (user?.role === 'administrator' && user.id && typeof userStore.verifyAdminAccessToken === 'function') {
+        const ok = await userStore.verifyAdminAccessToken(user.id, token);
+        if (ok) return true;
+      }
     }
   }
   ctx.status = 401;

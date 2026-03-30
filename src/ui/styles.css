@@ -583,6 +583,16 @@ button:disabled {
   margin-top: 12px;
 }
 
+.lobby-active-room-title {
+  margin-bottom: 6px;
+}
+
+.lobby-active-room-meta {
+  margin: 0 0 10px;
+  color: #4f6387;
+  font-size: 14px;
+}
+
 .lobby-empty-state,
 .lobby-room-activity,
 .lobby-room-blockers {
@@ -608,10 +618,49 @@ button:disabled {
   padding-left: 18px;
 }
 
+.lobby-room-create-summary-compact {
+  border: 1px solid #d4deef;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  padding: 12px;
+}
+
+.lobby-room-create-summary-compact h3 {
+  margin: 0 0 10px;
+}
+
+.lobby-room-kv-grid {
+  display: grid;
+  grid-template-columns: minmax(120px, auto) minmax(0, 1fr);
+  gap: 6px 10px;
+  align-items: start;
+}
+
+.lobby-room-kv-grid span {
+  font-size: 13px;
+  color: #5f7090;
+}
+
+.lobby-room-kv-grid strong {
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.lobby-room-kv-grid li {
+  display: none;
+}
+
+.lobby-room-status-line {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid #e1e9f5;
+  font-size: 14px;
+}
+
 .lobby-active-room-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 12px;
 }
 
 .gallery-grid {
@@ -1968,6 +2017,13 @@ button:disabled {
 .game-ui-v3-help-list {
   display: grid;
   gap: 8px;
+}
+
+.game-ui-v3-events-list {
+  max-height: min(62vh, 980px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
 }
 
 .game-ui-v3-event-head {
@@ -3473,8 +3529,9 @@ button:disabled {
 .game-ui-v2-events-list {
   display: grid;
   gap: 8px;
-  max-height: 260px;
+  max-height: min(62vh, 980px);
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding-right: 4px;
 }
 

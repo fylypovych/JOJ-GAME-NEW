@@ -8,28 +8,13 @@ export const getDeprecatedAdminAuthEnvNames = (env: NodeJS.ProcessEnv) => {
 };
 
 export const getAdminRuntimePolicy = (env: NodeJS.ProcessEnv) => {
-  const adminToken = (env.ADMIN_TOKEN ?? '').trim();
   const nodeEnv = (env.NODE_ENV ?? '').trim().toLowerCase();
   const deprecatedEnvNames = getDeprecatedAdminAuthEnvNames(env);
   const warnings = deprecatedEnvNames.length > 0
     ? [`Deprecated admin auth env vars are ignored: ${deprecatedEnvNames.join(', ')}.`]
     : [];
 
-  if (!adminToken && nodeEnv === 'production') {
-    const deprecatedDetail = deprecatedEnvNames.length > 0
-      ? ` Deprecated env vars cannot bypass this requirement: ${deprecatedEnvNames.join(', ')}.`
-      : '';
-    return {
-      adminToken,
-      nodeEnv,
-      deprecatedEnvNames,
-      warnings,
-      startupError: `Refusing to start in production without ADMIN_TOKEN.${deprecatedDetail}`,
-    };
-  }
-
   return {
-    adminToken,
     nodeEnv,
     deprecatedEnvNames,
     warnings,

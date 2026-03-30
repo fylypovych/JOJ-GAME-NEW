@@ -128,7 +128,7 @@ export const AdminAuthCard = ({
             type="password"
             value={adminTokenDraft}
             onChange={(e) => setAdminTokenDraft(e.target.value)}
-            placeholder="ADMIN_TOKEN"
+            placeholder={t.adminTokenLabel}
           />
         </label>{' '}
         <button type="button" onClick={onSignIn} disabled={adminAuthChecking}>
@@ -603,6 +603,7 @@ export const ActiveSessionSection = ({
   const botsCount = Math.max(0, Math.min(Math.max(0, activePlayerCount - 1), Math.floor(activeMatch?.setupData?.bots?.count ?? 0)));
   const botSeatSet = new Set(getBotSeatIds(activeMatch?.players.length ?? 0, botsCount));
   const activeModules = activeMatch?.setupData?.gameSetup?.optionalMainDeckModuleIds ?? [];
+  const activeModulesLabel = formatModuleList(activeModules, moduleNameById);
   const draftDiffersFromRoom = Boolean(activeMatch) && (
     roomDraft.roomCapacity !== activePlayerCount
     || roomDraft.gameMode !== activeGameMode
@@ -617,33 +618,37 @@ export const ActiveSessionSection = ({
       : []),
     ...(!sessionBroken && session.spectator && activeMatch ? [t.roomSpectatorHint] : []),
   ];
+  const activeReadyLabel = canStart ? t.roomReadyToStart : t.roomBlockedNeedPlayersCount.replace('{count}', String(missingSeats));
+  const activeLegendaryModeLabel = (activeMatch?.setupData?.gameSetup?.legendaryDeckMode ?? 'separate') === 'merged'
+    ? t.legendaryModeMerged
+    : t.legendaryModeSeparate;
   const inviteText = `${t.activeRoom}: ${session.matchID}\n${t.gameModeLabel}: ${formatGameModeLabel(t, activeGameMode)}\n${t.roomSummaryPlayers}: ${activeMatch ? `${activeMatch.players.filter((player) => Boolean(player.name?.trim())).length}/${activeMatch.players.length}` : '-'}\n${shareLink}`;
 
   return (
     <section className={`board${uiVariant === 'v2' ? ' board-v2-panel' : ''}${uiVariant === 'v3' ? ' board-v3-panel lobby-v3-panel' : ''}`}>
-      <h2>
+      <h2 className="lobby-active-room-title">
         {t.activeRoom}: {session.matchID}
       </h2>
-      <p>
+      <p className="lobby-active-room-meta">
         {session.spectator
           ? `${t.spectatorMode}: ${t.spectatorJoinedLabel}`
           : `${t.joinedAs}: ${playerName || '-'} (#${session.playerID})`}
       </p>
       {activeMatch ? (
         <div className="lobby-active-room-grid">
-          <div>
+          <div className="lobby-room-create-summary lobby-room-create-summary-compact">
             <h3>{t.roomSummaryReady}</h3>
-            <ul>
-              <li>{t.gameModeLabel}: {formatGameModeLabel(t, activeGameMode)}</li>
-              <li>{t.roomCapacity}: {activeMatch.players.length}</li>
-              <li>{t.roomBotsLabel}: {botsCount || t.roomBotsOff}</li>
-              <li>{t.legendaryModeLabel}: {(activeMatch.setupData?.gameSetup?.legendaryDeckMode ?? 'separate') === 'merged' ? t.legendaryModeMerged : t.legendaryModeSeparate}</li>
-              <li>{t.roomModulesLabel}: {formatModuleList(activeMatch.setupData?.gameSetup?.optionalMainDeckModuleIds ?? [], moduleNameById)}</li>
-              <li>{t.roomDurationLabel}: {estimateRoomDurationLabel(t, activeMatch.players.length, activeGameMode)}</li>
-              <li>{canStart ? t.roomReadyToStart : t.roomBlockedNeedPlayersCount.replace('{count}', String(missingSeats))}</li>
-            </ul>
+            <div className="lobby-room-kv-grid">
+              <span>{t.gameModeLabel}</span><strong>{formatGameModeLabel(t, activeGameMode)}</strong>
+              <span>{t.roomCapacity}</span><strong>{activeMatch.players.length}</strong>
+              <span>{t.roomBotsLabel}</span><strong>{botsCount || t.roomBotsOff}</strong>
+              <span>{t.legendaryModeLabel}</span><strong>{activeLegendaryModeLabel}</strong>
+              <span>{t.roomModulesLabel}</span><strong>{activeModulesLabel}</strong>
+              <span>{t.roomDurationLabel}</span><strong>{estimateRoomDurationLabel(t, activeMatch.players.length, activeGameMode)}</strong>
+            </div>
+            <p className="lobby-room-status-line"><strong>{activeReadyLabel}</strong></p>
           </div>
-          <div>
+          <div className="lobby-room-create-summary lobby-room-create-summary-compact">
             <h3>{t.roomSummaryRoster}</h3>
             <div className="lobby-room-seat-list">
               {activeMatch.players.map((player) => {
@@ -666,23 +671,24 @@ export const ActiveSessionSection = ({
       ) : null}
       {activeMatch ? (
         <div className="lobby-active-room-grid">
-          <div className="lobby-room-create-summary">
+          <div className="lobby-room-create-summary lobby-room-create-summary-compact">
             <h3>{t.roomAppliedConfigTitle}</h3>
-            <ul>
-              <li>{t.gameModeLabel}: {formatGameModeLabel(t, activeGameMode)}</li>
-              <li>{t.roomCapacity}: {activeMatch.players.length}</li>
-              <li>{t.roomBotsLabel}: {botsCount || t.roomBotsOff}</li>
-              <li>{t.roomModulesLabel}: {formatModuleList(activeModules, moduleNameById)}</li>
-            </ul>
+            <div className="lobby-room-kv-grid">
+              <span>{t.gameModeLabel}</span><strong>{formatGameModeLabel(t, activeGameMode)}</strong>
+              <span>{t.roomCapacity}</span><strong>{activeMatch.players.length}</strong>
+              <span>{t.roomBotsLabel}</span><strong>{botsCount || t.roomBotsOff}</strong>
+              <span>{t.roomModulesLabel}</span><strong>{activeModulesLabel}</strong>
+            </div>
           </div>
-          <div className="lobby-room-create-summary">
+          <div className="lobby-room-create-summary lobby-room-create-summary-compact">
             <h3>{t.roomDraftConfigTitle}</h3>
-            <ul>
-              <li>{t.gameModeLabel}: {formatGameModeLabel(t, roomDraft.gameMode)}</li>
-              <li>{t.roomCapacity}: {roomDraft.roomCapacity}</li>
+            <div className="lobby-room-kv-grid">
+              <span>{t.gameModeLabel}</span><strong>{formatGameModeLabel(t, roomDraft.gameMode)}</strong>
+              <span>{t.roomCapacity}</span><strong>{roomDraft.roomCapacity}</strong>
+              <span>{t.roomBotsLabel}</span><strong>{roomDraft.createWithBots ? `${roomDraft.botCount} · ${formatBotDifficultyLabel(t, roomDraft.botDifficulty)}` : t.roomBotsOff}</strong>
               <li>{t.roomBotsLabel}: {roomDraft.createWithBots ? `${roomDraft.botCount} · ${formatBotDifficultyLabel(t, roomDraft.botDifficulty)}` : t.roomBotsOff}</li>
-              <li>{t.roomModulesLabel}: {formatModuleList(roomDraft.selectedOptionalModuleIds, moduleNameById)}</li>
-            </ul>
+              <span>{t.roomModulesLabel}</span><strong>{formatModuleList(roomDraft.selectedOptionalModuleIds, moduleNameById)}</strong>
+            </div>
             <p className="game-ui-v2-subtle">
               {draftDiffersFromRoom ? t.roomDraftDiffersHint : t.roomDraftMatchesHint}
             </p>

@@ -29,6 +29,8 @@ type AdminUserDetail = {
     lastLoginAt: string | null;
     role: 'user' | 'administrator';
     status: 'active' | 'disabled';
+    hasAdminAccessToken: boolean;
+    adminAccessTokenRotatedAt: string | null;
   };
   stats: {
     matchesLinked: number;
@@ -106,6 +108,7 @@ export const useAdminUsers = (args: {
     avatarUrl: '',
     preferredLang: 'uk' as 'uk' | 'en',
   });
+  const [adminIssuedToken, setAdminIssuedToken] = useState('');
 
   const loadAdminUsers = async () => {
     setAdminUsersLoading(true);
@@ -126,6 +129,7 @@ export const useAdminUsers = (args: {
   const loadAdminUserDetail = async (userId: string) => {
     setSelectedAdminUserId(userId);
     setSelectedAdminUserDetail(null);
+    setAdminIssuedToken('');
     if (!userId) return;
     setAdminUsersLoading(true);
     setAdminUsersError('');
@@ -211,6 +215,28 @@ export const useAdminUsers = (args: {
     }
   };
 
+  const rotateAdminUserToken = async () => {
+    if (!selectedAdminUserId) return;
+    setAdminUsersLoading(true);
+    setAdminUsersError('');
+    try {
+      const response = await adminJsonFetch(`${serverUrl}/api/admin/users/admin-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedAdminUserId }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string; token?: string };
+      if (!response.ok || !payload.ok || !payload.token) throw new Error(payload.error || errors.mutate);
+      setAdminIssuedToken(payload.token);
+      await loadAdminUsers();
+      await loadAdminUserDetail(selectedAdminUserId);
+    } catch (error) {
+      setAdminUsersError(String(error instanceof Error ? error.message : error));
+    } finally {
+      setAdminUsersLoading(false);
+    }
+  };
+
   return {
     adminUsers,
     adminUsersLoading,
@@ -223,6 +249,7 @@ export const useAdminUsers = (args: {
     setAdminCreateUserDraft,
     adminEditUserDraft,
     setAdminEditUserDraft,
+    adminIssuedToken,
     loadAdminUsers,
     loadAdminUserDetail,
     updateAdminUserStatus: (status: 'active' | 'disabled') =>
@@ -237,5 +264,6 @@ export const useAdminUsers = (args: {
       mutateSelectedUser(`${serverUrl}/api/admin/users/logout-all`, { userId: selectedAdminUserId }, false),
     createAdminUser,
     requestAdminPasswordReset,
+    rotateAdminUserToken,
   };
 };
