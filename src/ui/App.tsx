@@ -985,7 +985,7 @@ export const App = () => {
         />
       ) : null}
       <footer className="app-footer">
-        &copy; ALL RIGHTS RESERVED BY "SOHODNY LLC, 13319 Demetrias Way, Germantown, Maryland 20874, zhurnal.zhurnaliv@gmail.com"
+        &copy; ALL RIGHTS RESERVED BY "SOHODNY LLC, <a href="mailto:zhurnal.zhurnaliv@gmail.com">zhurnal.zhurnaliv@gmail.com</a>"
       </footer>
     </main>
   );

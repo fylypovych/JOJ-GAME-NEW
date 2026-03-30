@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { getClientIp } from '../request-utils';
 import { getCurrentUserFromRequest } from '../services/user-auth';
 import type { UserStore } from '../services/user-store';
@@ -67,6 +68,7 @@ export const registerBugReportRoutes = (args: {
   IMAGE_UPLOAD_BODY_LIMIT: number;
   bugReportStore: BugReportStoreLike;
   bugReportUiConfigPath: string;
+  uploadsDir: string;
   userStore?: UserStore | null;
 }) => {
   const {
@@ -79,20 +81,65 @@ export const registerBugReportRoutes = (args: {
     IMAGE_UPLOAD_BODY_LIMIT,
     bugReportStore,
     bugReportUiConfigPath,
+    uploadsDir,
     userStore,
   } = args;
 
-  router.get('/api/bug-reports/ui-config', async (ctx: RouteCtx) => {
+  const readBugReportUiConfig = async () => {
     try {
       const raw = await readFile(bugReportUiConfigPath, 'utf8');
       const parsed = JSON.parse(raw) as { imagePath?: string };
-      ctx.body = {
-        ok: true,
-        imagePath: typeof parsed.imagePath === 'string' ? parsed.imagePath : '',
+      return {
+        imagePath: typeof parsed.imagePath === 'string' ? parsed.imagePath.trim() : '',
       };
     } catch {
-      ctx.body = { ok: true, imagePath: '' };
+      return { imagePath: '' };
     }
+  };
+
+  router.get('/api/bug-reports/ui-config', async (ctx: RouteCtx) => {
+    const config = await readBugReportUiConfig();
+    ctx.body = { ok: true, imagePath: config.imagePath };
+  });
+
+  router.get('/api/bug-reports/ui-image', async (ctx: RouteCtx) => {
+    const config = await readBugReportUiConfig();
+    const imagePath = config.imagePath;
+    if (!imagePath.startsWith('/cards/')) {
+      ctx.status = 404;
+      ctx.body = { ok: false, error: 'Bug report image is not configured.' };
+      return;
+    }
+    const fileName = path.basename(imagePath);
+    if (!fileName || fileName === '.' || fileName === '..') {
+      ctx.status = 400;
+      ctx.body = { ok: false, error: 'Invalid bug report image path.' };
+      return;
+    }
+    const absPath = path.join(uploadsDir, fileName);
+    let fileBuffer: Buffer;
+    try {
+      fileBuffer = await readFile(absPath);
+    } catch {
+      ctx.status = 404;
+      ctx.body = { ok: false, error: 'Bug report image file not found.' };
+      return;
+    }
+    const ext = path.extname(fileName).toLowerCase();
+    const mime =
+      ext === '.png'
+        ? 'image/png'
+        : ext === '.jpg' || ext === '.jpeg'
+          ? 'image/jpeg'
+          : ext === '.gif'
+            ? 'image/gif'
+            : 'image/webp';
+    ctx.status = 200;
+    if (typeof (ctx as { set?: (name: string, value: string) => void }).set === 'function') {
+      (ctx as { set: (name: string, value: string) => void }).set('Content-Type', mime);
+      (ctx as { set: (name: string, value: string) => void }).set('Cache-Control', 'public, max-age=300');
+    }
+    ctx.body = fileBuffer;
   });
 
   router.post('/api/bug-reports', async (ctx: RouteCtx) => {
@@ -147,16 +194,8 @@ export const registerBugReportRoutes = (args: {
   router.get('/api/admin/bug-reports/ui-config', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/bug-reports/ui-config'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-bug-report-ui-config-get', 30, 60_000))) return;
-    try {
-      const raw = await readFile(bugReportUiConfigPath, 'utf8');
-      const parsed = JSON.parse(raw) as { imagePath?: string };
-      ctx.body = {
-        ok: true,
-        imagePath: typeof parsed.imagePath === 'string' ? parsed.imagePath : '',
-      };
-    } catch {
-      ctx.body = { ok: true, imagePath: '' };
-    }
+    const config = await readBugReportUiConfig();
+    ctx.body = { ok: true, imagePath: config.imagePath };
   });
 
   router.get('/api/admin/bug-reports/detail', async (ctx: RouteCtx) => {

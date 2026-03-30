@@ -291,6 +291,7 @@ void (async () => {
       IMAGE_UPLOAD_BODY_LIMIT,
       bugReportStore,
       bugReportUiConfigPath,
+      uploadsDir,
       userStore,
     });
     registerSharedRoutes({

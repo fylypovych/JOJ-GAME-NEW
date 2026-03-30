@@ -108,7 +108,11 @@ export const AdminSettingsTab = ({
     </p>
     {bugReportImagePath ? (
       <p>
-        <img className="admin-bug-report-icon-preview" src={bugReportImagePath} alt={t.bugReportImageAlt} />
+        <img
+          className="admin-bug-report-icon-preview"
+          src={`${serverUrl}/api/bug-reports/ui-image?v=${encodeURIComponent(bugReportImagePath)}`}
+          alt={t.bugReportImageAlt}
+        />
       </p>
     ) : null}
     {bugReportUiConfigStatus ? <p className="admin-success">{bugReportUiConfigStatus}</p> : null}

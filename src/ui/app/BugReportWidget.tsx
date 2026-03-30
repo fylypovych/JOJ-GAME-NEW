@@ -47,7 +47,7 @@ export const BugReportWidget = ({
   const [capturing, setCapturing] = useState(false);
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState('');
-  const [customImagePath, setCustomImagePath] = useState('');
+  const [customImageSrc, setCustomImageSrc] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -55,11 +55,16 @@ export const BugReportWidget = ({
       .then((response) => response.json().catch(() => ({})))
       .then((payload: { ok?: boolean; imagePath?: string }) => {
         if (cancelled) return;
-        setCustomImagePath(payload.ok && typeof payload.imagePath === 'string' ? payload.imagePath : '');
+        const imagePath = payload.ok && typeof payload.imagePath === 'string' ? payload.imagePath.trim() : '';
+        setCustomImageSrc(
+          imagePath
+            ? `${serverUrl}/api/bug-reports/ui-image?v=${encodeURIComponent(imagePath)}`
+            : '',
+        );
       })
       .catch(() => {
         if (cancelled) return;
-        setCustomImagePath('');
+        setCustomImageSrc('');
       });
     return () => {
       cancelled = true;
@@ -142,13 +147,13 @@ export const BugReportWidget = ({
     <div className="bug-report-widget" data-bug-report-ignore="true">
       <button
         type="button"
-        className={`bug-report-fab${customImagePath ? ' has-custom-image' : ''}`}
+        className={`bug-report-fab${customImageSrc ? ' has-custom-image' : ''}`}
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-label={t.bugReportFab}
       >
-        {customImagePath ? (
-          <img className="bug-report-fab-custom-image" src={customImagePath} alt={t.bugReportFab} />
+        {customImageSrc ? (
+          <img className="bug-report-fab-custom-image" src={customImageSrc} alt={t.bugReportFab} />
         ) : (
           <>
             <span className="bug-report-fab-icon" aria-hidden="true">⚠</span>
