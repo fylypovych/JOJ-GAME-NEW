@@ -126,10 +126,10 @@ export const useAdminUsers = (args: {
     }
   };
 
-  const loadAdminUserDetail = async (userId: string) => {
+  const loadAdminUserDetail = async (userId: string, options?: { preserveIssuedToken?: boolean }) => {
     setSelectedAdminUserId(userId);
     setSelectedAdminUserDetail(null);
-    setAdminIssuedToken('');
+    if (!options?.preserveIssuedToken) setAdminIssuedToken('');
     if (!userId) return;
     setAdminUsersLoading(true);
     setAdminUsersError('');
@@ -229,7 +229,7 @@ export const useAdminUsers = (args: {
       if (!response.ok || !payload.ok || !payload.token) throw new Error(payload.error || errors.mutate);
       setAdminIssuedToken(payload.token);
       await loadAdminUsers();
-      await loadAdminUserDetail(selectedAdminUserId);
+      await loadAdminUserDetail(selectedAdminUserId, { preserveIssuedToken: true });
     } catch (error) {
       setAdminUsersError(String(error instanceof Error ? error.message : error));
     } finally {
