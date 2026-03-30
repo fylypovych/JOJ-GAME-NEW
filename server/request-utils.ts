@@ -87,7 +87,7 @@ export const setCookieHeader = (
 
 export const createRequireAdminAuth = ({
   isAdminAuthEnabled: _isAdminAuthEnabled,
-  adminToken: _adminToken,
+  adminToken,
   logLine,
   getUserStore,
 }: {
@@ -105,9 +105,13 @@ export const createRequireAdminAuth = ({
     const sessionToken = getCookieValue(ctx, 'joj_user_session');
     if (sessionToken && token) {
       const user = await userStore.getUserBySessionToken(sessionToken);
-      if (user?.role === 'administrator' && user.id && typeof userStore.verifyAdminAccessToken === 'function') {
-        const ok = await userStore.verifyAdminAccessToken(user.id, token);
-        if (ok) return true;
+      if (user?.role === 'administrator' && user.id) {
+        if (typeof userStore.verifyAdminAccessToken === 'function') {
+          const ok = await userStore.verifyAdminAccessToken(user.id, token);
+          if (ok) return true;
+        }
+        const bootstrapToken = adminToken.trim();
+        if (bootstrapToken && token === bootstrapToken) return true;
       }
     }
   }
