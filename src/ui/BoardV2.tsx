@@ -467,7 +467,7 @@ export const BoardV2 = ({
                 <p className="game-ui-v2-subtle">
                   {blockPlayerTurnControls ? v2.recentEvents : `${t.turnStage}: ${stageLabel(stage, t)} В· ${t.yourRank}: ${rankName}`}
                 </p>
-                {rankImage ? <p><img src={rankImage} alt={rankName} style={{ maxHeight: 84, borderRadius: 6 }} /></p> : null}
+                {rankImage ? <p><img src={rankImage} alt={rankName} style={{ maxHeight: 60, borderRadius: 6 }} /></p> : null}
               </div>
               <div className="game-ui-v2-command-buttons">
                 <button type="button" onClick={() => {
@@ -485,53 +485,55 @@ export const BoardV2 = ({
                 </button>
               </div>
             </div>
-            <div className="game-ui-v2-resources-grid">
-              {RESOURCE_ORDER.map((key) => (
-                <div
-                  key={key}
-                  className={`game-ui-v2-resource-card${highlightedResources.has(key) ? ' is-highlighted' : ''}${deficitByResource[key] ? ' is-deficit' : ''}`}
-                >
-                  <span className="game-ui-v2-resource-name">{resourceLabels[key]}</span>
-                  <strong>{resources[key] ?? 0}</strong>
-                  {deficitByResource[key] ? <small>{v2.deficit}: {deficitByResource[key]}</small> : null}
-                </div>
-              ))}
-            </div>
-            <div className="game-ui-v2-command-rank-progress">
-              <h4>{v2.nextRankProgress}</h4>
-              {nextRankMeta?.nextRank ? (
-                <>
-                  <div className="game-ui-v2-rank-head">
-                    <strong>{nextRankMeta.nextRank.name}</strong>
-                    <span className={`game-ui-v2-chip${nextRankMeta.seatBlocked ? ' is-warn' : ' is-active'}`}>
-                      {v2.occupiedSeats}: {nextRankMeta.occupied}/{nextRankMeta.seatLimit}
-                    </span>
+            <div className="game-ui-v2-command-body">
+              <div className="game-ui-v2-resources-grid">
+                {RESOURCE_ORDER.map((key) => (
+                  <div
+                    key={key}
+                    className={`game-ui-v2-resource-card${highlightedResources.has(key) ? ' is-highlighted' : ''}${deficitByResource[key] ? ' is-deficit' : ''}`}
+                  >
+                    <span className="game-ui-v2-resource-name">{resourceLabels[key]}</span>
+                    <strong>{resources[key] ?? 0}</strong>
+                    {deficitByResource[key] ? <small>{v2.deficit}: {deficitByResource[key]}</small> : null}
                   </div>
-                  <div className="game-ui-v2-progress-list">
-                    {RESOURCE_ORDER.map((key) => {
-                      const need = nextRankMeta.nextRank?.requirement?.[key] ?? 0;
-                      if (!need) return null;
-                      const have = resources[key] ?? 0;
-                      const pct = Math.max(0, Math.min(100, Math.round((have / need) * 100)));
-                      return (
-                        <div key={`req-inline-${key}`} className="game-ui-v2-progress-row">
-                          <div className="game-ui-v2-progress-label"><span>{resourceLabels[key]}</span><span>{have}/{need}</span></div>
-                          <div className="game-ui-v2-progress-bar"><i style={{ width: `${pct}%` }} /></div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {promoteReason ? (
-                    <p className="game-ui-v2-subtle"><strong>{v2.blockedReason}:</strong> {promoteReason}</p>
-                  ) : (
-                    <p className="game-ui-v2-subtle">
-                      {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className="game-ui-v2-subtle">{v2.noNextRank}</p>
-              )}
+                ))}
+              </div>
+              <div className="game-ui-v2-command-rank-progress">
+                <h4>{v2.nextRankProgress}</h4>
+                {nextRankMeta?.nextRank ? (
+                  <>
+                    <div className="game-ui-v2-rank-head">
+                      <strong>{nextRankMeta.nextRank.name}</strong>
+                      <span className={`game-ui-v2-chip${nextRankMeta.seatBlocked ? ' is-warn' : ' is-active'}`}>
+                        {v2.occupiedSeats}: {nextRankMeta.occupied}/{nextRankMeta.seatLimit}
+                      </span>
+                    </div>
+                    <div className="game-ui-v2-progress-list">
+                      {RESOURCE_ORDER.map((key) => {
+                        const need = nextRankMeta.nextRank?.requirement?.[key] ?? 0;
+                        if (!need) return null;
+                        const have = resources[key] ?? 0;
+                        const pct = Math.max(0, Math.min(100, Math.round((have / need) * 100)));
+                        return (
+                          <div key={`req-inline-${key}`} className="game-ui-v2-progress-row">
+                            <div className="game-ui-v2-progress-label"><span>{resourceLabels[key]}</span><span>{have}/{need}</span></div>
+                            <div className="game-ui-v2-progress-bar"><i style={{ width: `${pct}%` }} /></div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {promoteReason ? (
+                      <p className="game-ui-v2-subtle"><strong>{v2.blockedReason}:</strong> {promoteReason}</p>
+                    ) : (
+                      <p className="game-ui-v2-subtle">
+                        {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="game-ui-v2-subtle">{v2.noNextRank}</p>
+                )}
+              </div>
             </div>
             <BoardV2NoticeStack notices={notices} dismissNotice={dismissNotice} />
             <BoardV2SelectionPanel

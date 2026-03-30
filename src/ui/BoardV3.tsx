@@ -549,7 +549,7 @@ export const BoardV3 = ({
                 <div className="game-ui-v3-command-hero">
                   {rankImage ? (
                     <div className="game-ui-v3-command-rank-art">
-                      <img src={rankImage} alt={rankName} style={{ maxHeight: 84, borderRadius: 10 }} />
+                      <img src={rankImage} alt={rankName} style={{ maxHeight: 60, borderRadius: 10 }} />
                     </div>
                   ) : null}
                   <div className="game-ui-v3-command-hero-meta">
@@ -574,53 +574,55 @@ export const BoardV3 = ({
                 </button>
               </div>
             </div>
-            <div className="game-ui-v3-resources-grid">
-              {RESOURCE_ORDER.map((key) => (
-                <div
-                  key={key}
-                  className={`game-ui-v3-resource-card${highlightedResources.has(key) ? ' is-highlighted' : ''}${deficitByResource[key] ? ' is-deficit' : ''}`}
-                >
-                  <span className="game-ui-v3-resource-name">{resourceLabels[key]}</span>
-                  <strong>{resources[key] ?? 0}</strong>
-                  {deficitByResource[key] ? <small>{v2.deficit}: {deficitByResource[key]}</small> : null}
-                </div>
-              ))}
-            </div>
-            <div className="game-ui-v3-command-rank-progress">
-              <h4>{v2.nextRankProgress}</h4>
-              {nextRankMeta?.nextRank ? (
-                <>
-                  <div className="game-ui-v3-rank-head">
-                    <strong>{nextRankMeta.nextRank.name}</strong>
-                    <span className={`game-ui-v3-chip${nextRankMeta.seatBlocked ? ' is-warn' : ' is-active'}`}>
-                      {v2.occupiedSeats}: {nextRankMeta.occupied}/{nextRankMeta.seatLimit}
-                    </span>
+            <div className="game-ui-v3-command-body">
+              <div className="game-ui-v3-resources-grid">
+                {RESOURCE_ORDER.map((key) => (
+                  <div
+                    key={key}
+                    className={`game-ui-v3-resource-card${highlightedResources.has(key) ? ' is-highlighted' : ''}${deficitByResource[key] ? ' is-deficit' : ''}`}
+                  >
+                    <span className="game-ui-v3-resource-name">{resourceLabels[key]}</span>
+                    <strong>{resources[key] ?? 0}</strong>
+                    {deficitByResource[key] ? <small>{v2.deficit}: {deficitByResource[key]}</small> : null}
                   </div>
-                  <div className="game-ui-v3-progress-list">
-                    {RESOURCE_ORDER.map((key) => {
-                      const need = nextRankMeta.nextRank?.requirement?.[key] ?? 0;
-                      if (!need) return null;
-                      const have = resources[key] ?? 0;
-                      const pct = Math.max(0, Math.min(100, Math.round((have / need) * 100)));
-                      return (
-                        <div key={`req-inline-${key}`} className="game-ui-v3-progress-row">
-                          <div className="game-ui-v3-progress-label"><span>{resourceLabels[key]}</span><span>{have}/{need}</span></div>
-                          <div className="game-ui-v3-progress-bar"><i style={{ width: `${pct}%` }} /></div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {promoteReason ? (
-                    <p className="game-ui-v3-subtle"><strong>{v2.blockedReason}:</strong> {promoteReason}</p>
-                  ) : (
-                    <p className="game-ui-v3-subtle">
-                      {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className="game-ui-v3-subtle">{v2.noNextRank}</p>
-              )}
+                ))}
+              </div>
+              <div className="game-ui-v3-command-rank-progress">
+                <h4>{v2.nextRankProgress}</h4>
+                {nextRankMeta?.nextRank ? (
+                  <>
+                    <div className="game-ui-v3-rank-head">
+                      <strong>{nextRankMeta.nextRank.name}</strong>
+                      <span className={`game-ui-v3-chip${nextRankMeta.seatBlocked ? ' is-warn' : ' is-active'}`}>
+                        {v2.occupiedSeats}: {nextRankMeta.occupied}/{nextRankMeta.seatLimit}
+                      </span>
+                    </div>
+                    <div className="game-ui-v3-progress-list">
+                      {RESOURCE_ORDER.map((key) => {
+                        const need = nextRankMeta.nextRank?.requirement?.[key] ?? 0;
+                        if (!need) return null;
+                        const have = resources[key] ?? 0;
+                        const pct = Math.max(0, Math.min(100, Math.round((have / need) * 100)));
+                        return (
+                          <div key={`req-inline-${key}`} className="game-ui-v3-progress-row">
+                            <div className="game-ui-v3-progress-label"><span>{resourceLabels[key]}</span><span>{have}/{need}</span></div>
+                            <div className="game-ui-v3-progress-bar"><i style={{ width: `${pct}%` }} /></div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {promoteReason ? (
+                      <p className="game-ui-v3-subtle"><strong>{v2.blockedReason}:</strong> {promoteReason}</p>
+                    ) : (
+                      <p className="game-ui-v3-subtle">
+                        {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="game-ui-v3-subtle">{v2.noNextRank}</p>
+                )}
+              </div>
             </div>
             <BoardV3NoticeStack notices={notices} dismissNotice={dismissNotice} />
             <BoardV3SelectionPanel

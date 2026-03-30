@@ -10,18 +10,19 @@ export const useBoardV2StageState = (args: {
   cardImageById: Record<string, string>;
 }) => {
   const { G, ctx, playerID, sharedRanks, cardImageById } = args;
+  const viewPlayerID = playerID || ctx?.currentPlayer || Object.keys(G?.players ?? {})[0] || '';
   const isSimplifiedMode = G?.gameMode === 'simplified';
-  const hand = G?.hands?.[playerID] ?? [];
-  const legendaryHand = isSimplifiedMode ? [] : (G?.legendaryHands?.[playerID] ?? []);
+  const hand = G?.hands?.[viewPlayerID] ?? [];
+  const legendaryHand = isSimplifiedMode ? [] : (G?.legendaryHands?.[viewPlayerID] ?? []);
   const legendaryDraftPool = G?.legendaryDeck ?? [];
   const draftPending = G?.gameMode === 'standard_plus'
     && Object.keys(G?.players ?? {}).some((pid) => G?.legendaryDraftCompleted?.[pid] !== true);
-  const myDraftDone = G?.legendaryDraftCompleted?.[playerID] === true;
-  const resources = G?.resources?.[playerID];
-  const rankId = G?.ranks?.[playerID];
+  const myDraftDone = G?.legendaryDraftCompleted?.[viewPlayerID] === true;
+  const resources = G?.resources?.[viewPlayerID];
+  const rankId = G?.ranks?.[viewPlayerID];
   const currentRank = sharedRanks.find((row) => row.id === (rankId ?? ''));
   const rankName = currentRank?.name ?? rankId ?? '';
-  const rankImage = normalizeImagePath(G?.rankImageByPlayer?.[playerID])
+  const rankImage = normalizeImagePath(G?.rankImageByPlayer?.[viewPlayerID])
     ?? normalizeImagePath(currentRank?.imageVariants?.[0])
     ?? normalizeImagePath(currentRank?.image);
   const isCurrentPlayer = ctx?.currentPlayer === playerID;
