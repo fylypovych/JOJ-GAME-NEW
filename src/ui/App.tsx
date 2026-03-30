@@ -466,7 +466,7 @@ export const App = () => {
         {isAdminRoute ? <a href="/">{t.openGame}</a> : null}
       </p>
 
-      {isAdminRoute ? (
+      {isAdminRoute && (!adminAuthorized || adminAuthChecking) ? (
         <AdminAuthCard
           t={t}
           serverUrl={SERVER_URL}
