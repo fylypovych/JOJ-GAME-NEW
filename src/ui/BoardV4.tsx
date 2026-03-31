@@ -16,6 +16,13 @@ import { useBoardV2UiController } from './board/useBoardV2UiController';
 import type { LocalizedBoardProps } from './board/types';
 
 const RESOURCE_ORDER: ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
+const RESOURCE_ICONS: Record<ResourceKey, string> = {
+  time: '◔',
+  reputation: '★',
+  discipline: '⚖',
+  documents: '▣',
+  tech: '⌘',
+};
 
 type HandFilter = 'all' | 'playable' | CardDefinition['category'];
 type HandSort = 'default' | 'playable' | 'category' | 'title';
@@ -113,7 +120,6 @@ export const BoardV4 = ({
     resources,
     rankId,
     rankName: rawRankName,
-    rankImage,
     isCurrentPlayer,
     stage,
     canDraw,
@@ -345,8 +351,14 @@ export const BoardV4 = ({
   const focusSecondaryLabel = activeArenaRankName || rankName;
   const focusSupportingText = currentStageFocus;
   const opponentLayout = buildV3OpponentLayout(opponentIds);
-  const hasLeftFlank = opponentLayout.leftIds.length > 0;
-  const hasRightFlank = opponentLayout.rightIds.length > 0;
+  const showcaseOpponentIds = [
+    ...opponentLayout.topIds,
+    ...opponentLayout.leftIds,
+    ...opponentLayout.rightIds,
+  ];
+  const hasLeftFlank = false;
+  const hasRightFlank = false;
+  const footerActionLabel = blockPlayerTurnControls ? botPlaybackControlLabel : passButtonLabel;
 
   useEffect(() => {
     if (!latestArenaRow?.id) return;
@@ -548,91 +560,58 @@ export const BoardV4 = ({
             </section>
           ) : null}
           {!isSpectator ? (
-          <section className="game-ui-v3-panel game-ui-v3-command">
-            <div className="game-ui-v3-command-top">
-              <div className="game-ui-v3-command-lead">
-                <p className="game-ui-v3-kicker">{v2.commandCenter}</p>
-                <h3>{blockPlayerTurnControls ? botPlaybackControlLabel : playerLabelById(ctx.currentPlayer)}</h3>
-                <p className="game-ui-v3-subtle">{t.turnStage}: {stageLabel(stage, t)} В· {t.yourRank}: {rankName}</p>
-                <div className="game-ui-v3-command-hero">
-                  {rankImage ? (
-                    <div className="game-ui-v3-command-rank-art">
-                      <img src={rankImage} alt={rankName} style={{ maxHeight: 60, borderRadius: 10 }} />
-                    </div>
-                  ) : null}
-                  <div className="game-ui-v3-command-hero-meta">
-                    <strong>{rankName}</strong>
-                    <span>{blockPlayerTurnControls ? v2.botControlsTitle : effectiveIsCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="game-ui-v3-command-buttons">
-                <button type="button" onClick={() => {
-                  handleDraw();
-                }} disabled={!canDraw || blockPlayerTurnControls}>{t.draw}</button>
-                <button type="button" onClick={() => {
-                  handlePromote(promoteReason);
-                }} disabled={!canPlay || blockPlayerTurnControls}>{t.promote}</button>
-                <button
-                  type="button"
-                  onClick={() => { handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn); }}
-                  disabled={!canEndTurn || blockPlayerTurnControls}
-                >
-                  {blockPlayerTurnControls ? botPlaybackControlLabel : passButtonLabel}
-                </button>
-              </div>
-            </div>
-            <div className="game-ui-v3-command-body">
-              <div className="game-ui-v3-resources-grid">
+          <section className="game-ui-v3-panel game-ui-v3-command game-ui-v4-command-panel">
+            <div className="game-ui-v4-footer-bar">
+              <div className="game-ui-v4-footer-resources">
                 {RESOURCE_ORDER.map((key) => (
                   <div
-                    key={key}
-                    className={`game-ui-v3-resource-card${highlightedResources.has(key) ? ' is-highlighted' : ''}${deficitByResource[key] ? ' is-deficit' : ''}`}
+                    key={`footer-${key}`}
+                    className={`game-ui-v4-footer-resource${highlightedResources.has(key) ? ' is-highlighted' : ''}${deficitByResource[key] ? ' is-deficit' : ''}`}
                   >
-                    <span className="game-ui-v3-resource-name">{resourceLabels[key]}</span>
+                    <span className="game-ui-v4-footer-resource-icon" aria-hidden="true">{RESOURCE_ICONS[key]}</span>
+                    <span className="game-ui-v4-footer-resource-label">{resourceLabels[key]}</span>
                     <strong>{resources[key] ?? 0}</strong>
-                    {deficitByResource[key] ? <small>{v2.deficit}: {deficitByResource[key]}</small> : null}
                   </div>
                 ))}
               </div>
-              <div className="game-ui-v3-command-rank-progress">
-                <h4>{v2.nextRankProgress}</h4>
+              <div className="game-ui-v4-footer-rank">
+                <span className="game-ui-v3-stage-label">{t.yourRank}</span>
+                <strong>{rankName}</strong>
                 {nextRankMeta?.nextRank ? (
-                  <>
-                    <div className="game-ui-v3-rank-head">
-                      <strong>{nextRankMeta.nextRank.name}</strong>
-                      <span className={`game-ui-v3-chip${nextRankMeta.seatBlocked ? ' is-warn' : ' is-active'}`}>
-                        {v2.occupiedSeats}: {nextRankMeta.occupied}/{nextRankMeta.seatLimit}
-                      </span>
-                    </div>
-                    <div className="game-ui-v3-progress-list">
-                      {RESOURCE_ORDER.map((key) => {
-                        const need = nextRankMeta.nextRank?.requirement?.[key] ?? 0;
-                        if (!need) return null;
-                        const have = resources[key] ?? 0;
-                        const pct = Math.max(0, Math.min(100, Math.round((have / need) * 100)));
-                        return (
-                          <div key={`req-inline-${key}`} className="game-ui-v3-progress-row">
-                            <div className="game-ui-v3-progress-label"><span>{resourceLabels[key]}</span><span>{have}/{need}</span></div>
-                            <div className="game-ui-v3-progress-bar"><i style={{ width: `${pct}%` }} /></div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {promoteReason ? (
-                      <p className="game-ui-v3-subtle"><strong>{v2.blockedReason}:</strong> {promoteReason}</p>
-                    ) : (
-                      <p className="game-ui-v3-subtle">
-                        {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
-                      </p>
-                    )}
-                  </>
+                  <small>
+                    {nextRankMeta.nextRank.name} · {nextRankMeta.occupied}/{nextRankMeta.seatLimit}
+                  </small>
                 ) : (
-                  <p className="game-ui-v3-subtle">{v2.noNextRank}</p>
+                  <small>{v2.noNextRank}</small>
                 )}
               </div>
+              <div className="game-ui-v4-footer-actions">
+                <button type="button" onClick={handleDraw} disabled={!canDraw || blockPlayerTurnControls}>{t.draw}</button>
+                <button type="button" onClick={() => handlePromote(promoteReason)} disabled={!canPlay || Boolean(promoteReason) || blockPlayerTurnControls}>{t.promote}</button>
+                <button
+                  type="button"
+                  onClick={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)}
+                  disabled={!canEndTurn || blockPlayerTurnControls}
+                >
+                  {footerActionLabel}
+                </button>
+              </div>
             </div>
-            <BoardV3NoticeStack notices={notices} dismissNotice={dismissNotice} />
+            <div className="game-ui-v4-command-support">
+              <div className="game-ui-v4-command-summary">
+                <p className="game-ui-v3-kicker">{v2.commandCenter}</p>
+                <h3>{blockPlayerTurnControls ? botPlaybackControlLabel : playerLabelById(ctx.currentPlayer)}</h3>
+                <p className="game-ui-v3-subtle">{t.turnStage}: {stageLabel(stage, t)} · {t.yourRank}: {rankName}</p>
+                {promoteReason ? (
+                  <p className="game-ui-v3-subtle"><strong>{v2.blockedReason}:</strong> {promoteReason}</p>
+                ) : (
+                  <p className="game-ui-v3-subtle">
+                    {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
+                  </p>
+                )}
+              </div>
+              <BoardV3NoticeStack notices={notices} dismissNotice={dismissNotice} />
+            </div>
             <BoardV3SelectionPanel
               pendingSelection={pendingSelection}
               activeSelectionNeedsTarget={activeSelectionNeedsTarget}
@@ -684,7 +663,7 @@ export const BoardV4 = ({
                 </div>
                 <div className="game-ui-v3-opponent-top">
                   <BoardV3PlayerOverview
-                    opponentIds={opponentLayout.topIds}
+                    opponentIds={showcaseOpponentIds}
                     G={G}
                     sharedRanks={sharedRanks}
                     ctxCurrentPlayer={ctx.currentPlayer}
