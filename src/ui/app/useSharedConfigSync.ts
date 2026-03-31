@@ -76,7 +76,7 @@ export const useSharedConfigSync = (args: {
 
   const loadTemplateFromServer = async (): Promise<boolean> => {
     try {
-      const response = await fetch(templateApi);
+      const response = await adminFetch(templateApi);
       if (!response.ok) return false;
       const payload = (await response.json()) as { json?: string };
       if (typeof payload.json !== 'string') return false;
@@ -94,7 +94,7 @@ export const useSharedConfigSync = (args: {
 
   const loadRanksFromServer = async (): Promise<boolean> => {
     try {
-      const response = await fetch(ranksApi);
+      const response = await adminFetch(ranksApi);
       if (!response.ok) return false;
       const payload = (await response.json()) as { ranks?: RankDefinition[] };
       if (!Array.isArray(payload.ranks)) return false;

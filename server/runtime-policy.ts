@@ -13,11 +13,20 @@ export const getAdminRuntimePolicy = (env: NodeJS.ProcessEnv) => {
   const warnings = deprecatedEnvNames.length > 0
     ? [`Deprecated admin auth env vars are ignored: ${deprecatedEnvNames.join(', ')}.`]
     : [];
+  const adminToken = (env.ADMIN_TOKEN ?? '').trim();
+  const missingAdminTokenInProduction = nodeEnv === 'production' && !adminToken;
+  const startupError = missingAdminTokenInProduction
+    ? (
+      deprecatedEnvNames.length > 0
+        ? 'Server cannot start in production without ADMIN_TOKEN; deprecated admin override flags cannot bypass this requirement.'
+        : 'Server cannot start in production without ADMIN_TOKEN.'
+    )
+    : '';
 
   return {
     nodeEnv,
     deprecatedEnvNames,
     warnings,
-    startupError: '',
+    startupError,
   };
 };

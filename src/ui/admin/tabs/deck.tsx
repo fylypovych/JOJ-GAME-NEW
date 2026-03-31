@@ -90,6 +90,7 @@ export const AdminDeckTab = ({
     deckBackImage: '',
   });
   const [moduleCardIdsText, setModuleCardIdsText] = useState<string>('');
+  const [moduleValidationError, setModuleValidationError] = useState<string>('');
   const cardEditorAnchorRef = useRef<HTMLDivElement | null>(null);
 
   const baseModules = useMemo(
@@ -166,6 +167,7 @@ export const AdminDeckTab = ({
 
   const startNewModule = () => {
     setEditingModuleId('');
+    setModuleValidationError('');
     setModuleDraft({
       id: '',
       name: '',
@@ -183,14 +185,25 @@ export const AdminDeckTab = ({
 
   const editModule = (module: ModuleDef) => {
     setEditingModuleId(module.id);
+    setModuleValidationError('');
     setModuleDraft({ ...module });
     setModuleCardIdsText(module.cardIds.join('\n'));
   };
 
   const saveModule = () => {
+    const parsedCardIds = parseIds(moduleCardIdsText);
+    if (moduleDraft.category !== 'RANK' && moduleDraft.target !== 'rankTrack') {
+      const knownCardIds = new Set(cardCatalog.map((card) => card.id));
+      const missingCardIds = parsedCardIds.filter((id) => !knownCardIds.has(id));
+      if (missingCardIds.length > 0) {
+        setModuleValidationError(`${t.moduleInvalidCardIdsPrefix}: ${missingCardIds.join(', ')}`);
+        return;
+      }
+    }
+    setModuleValidationError('');
     const next: ModuleDef = {
       ...moduleDraft,
-      cardIds: parseIds(moduleCardIdsText),
+      cardIds: parsedCardIds,
     };
     onSaveModule(next);
     if (!editingModuleId) startNewModule();
@@ -355,8 +368,12 @@ export const AdminDeckTab = ({
             </label>
           </div>
           <label>{t.moduleCardIdsLabel}
-            <textarea className="admin-textarea" value={moduleCardIdsText} onChange={(e) => setModuleCardIdsText(e.target.value)} />
+            <textarea className="admin-textarea" value={moduleCardIdsText} onChange={(e) => {
+              setModuleCardIdsText(e.target.value);
+              if (moduleValidationError) setModuleValidationError('');
+            }} />
           </label>
+          {moduleValidationError ? <p className="admin-info">{moduleValidationError}</p> : null}
           <p className="admin-controls">
             <button type="button" onClick={saveModule}>{t.saveModule}</button>
           </p>

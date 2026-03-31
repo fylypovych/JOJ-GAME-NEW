@@ -1,29 +1,23 @@
 import { useEffect, useState } from 'react';
-import { normalizeImagePath } from '../game/imagePaths';
 import type { CardDefinition, ResourceKey } from '../game/types';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
-import { buildGameoverPlayerSummaries, buildResourceHighlightMeta, buildTurnHelpItems, getBoardPromoteReason } from './board/boardViewHelpers';
+import { buildTurnHelpItems, getBoardPromoteReason } from './board/boardViewHelpers';
+import { buildBoardV4ActionState } from './board/boardV4ActionState';
 import { GameCardTile, PilePreview } from './board/components';
 import { buildNextRankHint } from './board/rankHints';
-import { BoardV3HandSection, BoardV3NoticeStack, BoardV3SelectionPanel, BoardV3SidePanel } from './board/v3Sections';
-import { BoardV3EndVoteModal, BoardV3GameoverModal, BoardV3Header, BoardV3StandingsSummary } from './board/v3ShellSections';
+import { BOARD_RESOURCE_ICONS, BOARD_RESOURCE_ORDER } from './board/resourceConstants';
+import { V4HandSection, V4Header, V4NoticeStack, V4SelectionPanel, V4SidePanel } from './board/v4Panels';
+import { V4EndVoteModal, V4GameoverModal, V4StandingsSummary } from './board/v4ShellSections';
+import { V4BattlefieldSection, V4BottomBar, V4OpponentsArea, V4PlayerDockSection } from './board/v4Sections';
 import { useBoardV2DerivedState } from './board/useBoardV2DerivedState';
 import { useBotPlaybackQueue, type BotPlaybackSpeedLevel } from './board/useBotPlaybackQueue';
-import { resolvePlaybackCardMeta } from './board/playbackCardMeta';
 import { usePendingSelection } from './board/usePendingSelection';
 import { useBoardV2StageState } from './board/useBoardV2StageState';
+import { useBoardV4Interactions } from './board/useBoardV4Interactions';
+import { buildBoardV4ViewModel, toInitials } from './board/useBoardV4ViewModel';
 import { useBoardV2Sync } from './board/useBoardV2Sync';
 import { useBoardV2UiController } from './board/useBoardV2UiController';
 import type { LocalizedBoardProps } from './board/types';
-
-const RESOURCE_ORDER: ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
-const RESOURCE_ICONS: Record<ResourceKey, string> = {
-  time: '◔',
-  reputation: '★',
-  discipline: '⚖',
-  documents: '▣',
-  tech: '⌘',
-};
 
 type HandFilter = 'all' | 'playable' | CardDefinition['category'];
 type HandSort = 'default' | 'playable' | 'category' | 'title';
@@ -39,39 +33,6 @@ const botSpeedHint = (lang: 'uk' | 'en', speed: BotPlaybackSpeedLevel) => {
 };
 const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
   stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
-
-const buildV3OpponentLayout = (opponentIds: string[]) => {
-  if (opponentIds.length <= 3) {
-    return {
-      topIds: opponentIds,
-      leftIds: [] as string[],
-      rightIds: [] as string[],
-    };
-  }
-
-  if (opponentIds.length === 4) {
-    return {
-      topIds: opponentIds.slice(0, 2),
-      leftIds: opponentIds.slice(2, 3),
-      rightIds: opponentIds.slice(3, 4),
-    };
-  }
-
-  const remaining = opponentIds.slice(3);
-  const leftCount = Math.ceil(remaining.length / 2);
-  return {
-    topIds: opponentIds.slice(0, 3),
-    leftIds: remaining.slice(0, leftCount),
-    rightIds: remaining.slice(leftCount),
-  };
-};
-
-const toInitials = (value: string) => value
-  .split(/\s+/)
-  .filter(Boolean)
-  .slice(0, 2)
-  .map((chunk) => chunk[0]?.toUpperCase() ?? '')
-  .join('') || '??';
 
 export const BoardV4 = ({
   G: incomingG,
@@ -318,124 +279,101 @@ export const BoardV4 = ({
   }
 
   const promoteReason = getBoardPromoteReason({ G, playerID: id, sharedRanks, resourceLabels, lang });
-  const gameoverPlayerSummaries = buildGameoverPlayerSummaries({
-    G,
-    winnerPlayerID,
-    playerLabelById,
-    resourceLabels,
-    sharedRanks,
-    lang,
+  const {
+    botPlaybackControlLabel,
+    blockPlayerTurnControls,
+    effectiveIsCurrentPlayer,
+    currentStageFocus,
+    footerActionLabel,
+    selectedPendingCardId,
+    visibleHandSelectedId,
+    selectedPlayableHandCard,
+    primaryActionLabel,
+    primaryActionDisabled,
+  } = buildBoardV4ActionState({
+    isSpectator,
+    isBotPlaybackActive,
+    botThinkingPlayerName,
+    botPlaybackEventText,
+    isCurrentPlayer,
+    stage,
+    v2,
+    passButtonLabel,
+    pendingSelection,
+    activeSelectionNeedsTarget,
+    activeSelectionNeedsResource,
+    selectedTargetId,
+    selectedResource,
+    canDraw,
+    canPlay,
+    promoteReason,
+    hand,
+    handCardsView,
+    selectedHandCardId,
+    t,
   });
-  const { highlightedResources, deficitByResource } = buildResourceHighlightMeta({
+  const {
+    gameoverPlayerSummaries,
+    activeArenaPlayerName,
+    activeArenaResources,
+    activeArenaRankName,
+    latestArenaRow,
+    displayedDiscardTitle,
+    displayedDiscardImage,
+    focusPrimaryLabel,
+    focusSecondaryLabel,
+    focusSupportingText,
+    currentTurnPlayerLabel,
+    currentTurnPortraitImage,
+    leftOpponentItems,
+    rightOpponentItems,
+    footerResourceItems,
+  } = buildBoardV4ViewModel({
+    G,
+    ctx,
+    id,
+    lang,
+    sharedRanks,
+    resourceLabels,
     resources,
     selectedResource,
-  });
-
-  const botPlaybackControlLabel = botThinkingPlayerName
-    ? `${v2.botThinkingPrefix}: ${botThinkingPlayerName}`
-    : botPlaybackEventText || v2.waitingAction;
-  const blockPlayerTurnControls = !isSpectator && isBotPlaybackActive;
-  const effectiveIsCurrentPlayer = isCurrentPlayer && !blockPlayerTurnControls;
-  const currentStageFocus = blockPlayerTurnControls
-    ? botPlaybackControlLabel
-    : stage === 'draw' ? v2.stageFocusDraw : stage === 'play' ? v2.stageFocusPlay : stage === 'end' ? v2.stageFocusEnd : '';
-  const activeArenaPlayerId = selectedTargetId ?? ctx.currentPlayer ?? null;
-  const activeArenaPlayerName = playerLabelById(activeArenaPlayerId);
-  const activeArenaResources = activeArenaPlayerId ? G.resources?.[activeArenaPlayerId] ?? null : null;
-  const activeArenaRankId = activeArenaPlayerId ? G.ranks?.[activeArenaPlayerId] ?? '' : '';
-  const activeArenaRankName = activeArenaRankId
-    ? sharedRanks.find((rank) => rank.id === activeArenaRankId)?.name ?? rankLabel(activeArenaRankId, lang)
-    : '';
-  const latestArenaRow = latestEvents[0] ?? null;
-  const lastDiscardTitle = lastDiscard ? cardTitle(lastDiscard.id, lastDiscard.title, lang) : '';
-  const playbackCardMeta = resolvePlaybackCardMeta({
-    eventText: botPlaybackEventText,
-    G,
-    cardImageById,
+    playerLabelById,
+    winnerPlayerID,
+    opponentIds,
+    selectedTargetId,
+    activeSelectionNeedsTarget,
     lastDiscard,
     lastDiscardImage,
+    botPlaybackCardTitle,
+    botPlaybackEventText,
+    cardImageById,
+    rankName,
+    rankImage,
+    currentStageFocus,
+    latestEvents,
+    sharedResourceOrder: BOARD_RESOURCE_ORDER,
+    sharedResourceIcons: BOARD_RESOURCE_ICONS,
   });
-  const displayedDiscardTitle = botPlaybackCardTitle || playbackCardMeta.title || lastDiscardTitle;
-  const displayedDiscardImage = (botPlaybackCardTitle || playbackCardMeta.title) ? playbackCardMeta.imageSrc : lastDiscardImage;
-  const focusPrimaryLabel = lastDiscardTitle || activeArenaPlayerName;
-  const focusSecondaryLabel = activeArenaRankName || rankName;
-  const focusSupportingText = currentStageFocus;
-  const opponentLayout = buildV3OpponentLayout(opponentIds);
-  const showcaseOpponentIds = [
-    ...opponentLayout.topIds,
-    ...opponentLayout.leftIds,
-    ...opponentLayout.rightIds,
-  ];
-  const opponentSplitIndex = Math.ceil(showcaseOpponentIds.length / 2);
-  const topLeftOpponentIds = showcaseOpponentIds.slice(0, opponentSplitIndex);
-  const topRightOpponentIds = showcaseOpponentIds.slice(opponentSplitIndex);
-  const footerActionLabel = blockPlayerTurnControls ? botPlaybackControlLabel : passButtonLabel;
-  const selectedPendingCardId = pendingSelection?.cardId ?? null;
-  const visibleHandSelectedId = selectedPendingCardId && hand.some((card) => card.id === selectedPendingCardId)
-    ? selectedPendingCardId
-    : selectedHandCardId;
-  const currentTurnPlayerLabel = playerLabelById(ctx.currentPlayer);
-  const resolvePlayerRankImage = (pid: string) => {
-    const rankIdForPlayer = G.ranks?.[pid] ?? '';
-    const rankMeta = sharedRanks.find((rank) => rank.id === rankIdForPlayer);
-    return normalizeImagePath(G.rankImageByPlayer?.[pid])
-      ?? normalizeImagePath(rankMeta?.imageVariants?.[0])
-      ?? normalizeImagePath(rankMeta?.image);
-  };
-  const currentTurnPortraitImage = (ctx.currentPlayer && resolvePlayerRankImage(ctx.currentPlayer)) || rankImage;
-  const selectedPlayableHandCard = visibleHandSelectedId
-    ? handCardsView.find((row) => row.card.id === visibleHandSelectedId)?.card ?? null
-    : null;
-  const handleV4HandCardClick = (card: CardDefinition) => {
-    const allowed = handCardsView.find((row) => row.card.id === card.id)?.actionState.allowed ?? false;
-    if (!allowed) return;
-    if (visibleHandSelectedId === card.id) {
-      handleHandCardAction(card, requestPlayHandCard);
-      return;
-    }
-    setSelectedHandCardId(card.id);
-  };
-  const handlePrimaryV4Action = () => {
-    if (blockPlayerTurnControls) return;
-    if (pendingSelection) {
-      confirmPendingSelection();
-      return;
-    }
-    if (stage === 'draw' && canDraw) {
-      handleDraw();
-      return;
-    }
-    if (selectedPlayableHandCard) {
-      handleHandCardAction(selectedPlayableHandCard, requestPlayHandCard);
-      return;
-    }
-    if (!promoteReason && canPlay) {
-      handlePromote(promoteReason);
-    }
-  };
-  const primaryActionLabel = (() => {
-    if (blockPlayerTurnControls) return v2.waitingAction;
-    if (pendingSelection) return v2.confirm;
-    if (stage === 'draw') return t.draw;
-    if (selectedPlayableHandCard) return v2.play;
-    if (!promoteReason && canPlay) return t.promote;
-    return v2.play;
-  })();
-  const pendingSelectionReady = pendingSelection
-    ? (activeSelectionNeedsTarget ? Boolean(selectedTargetId) : activeSelectionNeedsResource ? Boolean(selectedResource) : true)
-    : false;
-  const primaryActionDisabled = blockPlayerTurnControls
-    || (pendingSelection ? !pendingSelectionReady : stage === 'draw' ? !canDraw : selectedPlayableHandCard ? false : !(!promoteReason && canPlay));
-
-  useEffect(() => {
-    if (selectedPendingCardId) {
-      setSelectedHandCardId(selectedPendingCardId);
-      return;
-    }
-    if (selectedHandCardId && !hand.some((card) => card.id === selectedHandCardId)) {
-      setSelectedHandCardId(null);
-    }
-  }, [selectedPendingCardId, selectedHandCardId, hand]);
+  const { handleV4HandCardClick, handlePrimaryV4Action } = useBoardV4Interactions({
+    hand,
+    handCardsView,
+    selectedHandCardId,
+    setSelectedHandCardId,
+    selectedPendingCardId,
+    visibleHandSelectedId,
+    selectedPlayableHandCard,
+    blockPlayerTurnControls,
+    pendingSelection,
+    confirmPendingSelection,
+    stage,
+    canDraw,
+    handleDraw,
+    handleHandCardAction,
+    requestPlayHandCard,
+    canPlay,
+    promoteReason,
+    handlePromote,
+  });
 
   useEffect(() => {
     if (!latestArenaRow?.id) return;
@@ -463,13 +401,13 @@ export const BoardV4 = ({
       label: v2.recentEvents,
       text: botPlaybackEventText,
       tone: 'warn',
-      imageSrc: playbackCardMeta.imageSrc ?? lastDiscardImage,
+      imageSrc: displayedDiscardImage ?? lastDiscardImage,
     });
     const timeoutId = window.setTimeout(() => {
       setImpactPulse((current) => (current?.id === syntheticId ? null : current));
     }, 1800);
     return () => window.clearTimeout(timeoutId);
-  }, [botPlaybackEventText, playbackCardMeta.imageSrc, lastDiscardImage, v2.recentEvents]);
+  }, [botPlaybackEventText, displayedDiscardImage, lastDiscardImage, v2.recentEvents]);
 
   const turnHelpItems = buildTurnHelpItems({
     stage,
@@ -495,9 +433,8 @@ export const BoardV4 = ({
   const stageClass = stage ? `is-stage-${stage}` : 'is-stage-waiting';
   return (
     <section className={`game-ui-v4-shell ${stageClass}${compactMode ? ' is-compact' : ''}${isSpectator ? ' is-spectator' : ''}`}>
-      <BoardV3Header
+      <V4Header
         title={blockPlayerTurnControls ? botPlaybackControlLabel : effectiveIsCurrentPlayer ? v2.yourTurnTitle : v2.gameTableTitle}
-        uiVariant="v4"
         roomMeta={roomMeta}
         playerName={playerName}
         spectatorLabel={t.spectatorJoinedLabel}
@@ -546,7 +483,7 @@ export const BoardV4 = ({
         ) : undefined}
       />
 
-      <BoardV3EndVoteModal
+      <V4EndVoteModal
         open={endGameVoteActive}
         title={v2.endVoteTitle}
         prompt={`${requestedByLabel} ${v2.endVotePromptSuffix}`}
@@ -575,9 +512,69 @@ export const BoardV4 = ({
 
       <div className="game-ui-v3-grid">
         <div className="game-ui-v3-main">
+          {!isSpectator ? (
+          <section className="game-ui-v3-panel game-ui-v3-command game-ui-v4-command-panel">
+            <V4BottomBar
+              resources={footerResourceItems}
+              rankName={rankName}
+              rankHint={nextRankMeta?.nextRank ? `${nextRankMeta.occupied}/${nextRankMeta.seatLimit} ★` : v2.noNextRank}
+              primaryActionLabel={primaryActionLabel}
+              primaryActionDisabled={primaryActionDisabled}
+              secondaryActionLabel={footerActionLabel}
+              secondaryActionDisabled={!canEndTurn || blockPlayerTurnControls}
+              onPrimaryAction={handlePrimaryV4Action}
+              onSecondaryAction={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)}
+            />
+            <div className="game-ui-v4-command-support">
+              <div className="game-ui-v4-command-summary">
+                <p className="game-ui-v3-kicker">{v2.commandCenter}</p>
+                <h3>{blockPlayerTurnControls ? botPlaybackControlLabel : playerLabelById(ctx.currentPlayer)}</h3>
+                <p className="game-ui-v3-subtle">{t.turnStage}: {stageLabel(stage, t)} · {t.yourRank}: {rankName}</p>
+                {promoteReason ? (
+                  <p className="game-ui-v3-subtle"><strong>{v2.blockedReason}:</strong> {promoteReason}</p>
+                ) : (
+                  <p className="game-ui-v3-subtle">
+                    {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
+                  </p>
+                )}
+              </div>
+              <V4NoticeStack notices={notices} dismissNotice={dismissNotice} />
+            </div>
+            <V4SelectionPanel
+              pendingSelection={pendingSelection}
+              activeSelectionNeedsTarget={activeSelectionNeedsTarget}
+              activeSelectionNeedsReplacement={activeSelectionNeedsReplacement}
+              activeSelectionNeedsResource={activeSelectionNeedsResource}
+              currentPendingCard={currentPendingCard}
+              selectedTargetId={selectedTargetId}
+              setSelectedTargetId={setSelectedTargetId}
+              opponentIds={opponentIds}
+              playerLabelById={playerLabelById}
+              v2={v2}
+              lang={lang}
+              replacementTargetIds={replacementTargetIds}
+              G={G}
+              replacementSelectionsByTarget={replacementSelectionsByTarget}
+              replacementActiveTargetId={replacementActiveTargetId}
+              setActiveReplacementTargetId={setActiveReplacementTargetId}
+              replacementActiveSelected={replacementActiveSelected}
+              replacementActiveSlots={replacementActiveSlots}
+              replacementActiveTargetResources={replacementActiveTargetResources}
+              resourceLabels={resourceLabels}
+              appendReplacementResource={appendReplacementResource}
+              undoReplacementResource={undoReplacementResource}
+              selectedResource={selectedResource}
+              setSelectedResource={setSelectedResource}
+              resources={resources}
+              confirmPendingSelection={confirmPendingSelection}
+              clearPendingSelection={clearPendingSelection}
+              pickTargetNotice={pickTargetNotice}
+            />
+          </section>
+          ) : null}
           {isSpectator && spectatorView === 'summary' ? (
             <section className="game-ui-v3-panel game-ui-v3-command">
-              <BoardV3StandingsSummary
+              <V4StandingsSummary
                 title={v2.finalStandingsTitle}
                 summaryLabels={{
                   player: v2.finalStandingsPlayer,
@@ -636,191 +633,30 @@ export const BoardV4 = ({
               </div>
             </section>
           ) : null}
-          {!isSpectator ? (
-          <section className="game-ui-v3-panel game-ui-v3-command game-ui-v4-command-panel">
-            <div className="game-ui-v4-footer-bar">
-              <div className="game-ui-v4-footer-resources">
-                {RESOURCE_ORDER.map((key) => (
-                  <span
-                    key={`footer-${key}`}
-                    className={`game-ui-v4-footer-resource${highlightedResources.has(key) ? ' is-highlighted' : ''}${deficitByResource[key] ? ' is-deficit' : ''}`}
-                  >
-                    <span className="game-ui-v4-footer-resource-icon" aria-hidden="true">{RESOURCE_ICONS[key]}</span>
-                    <strong>{resources[key] ?? 0}</strong>
-                    <span className="game-ui-v4-footer-resource-label">{resourceLabels[key]}</span>
-                  </span>
-                ))}
-              </div>
-              <div className="game-ui-v4-footer-rank">
-                <strong>{rankName}</strong>
-                <small>
-                  {nextRankMeta?.nextRank
-                    ? `${nextRankMeta.occupied}/${nextRankMeta.seatLimit} ★`
-                    : v2.noNextRank}
-                </small>
-              </div>
-              <div className="game-ui-v4-footer-actions">
-                <button type="button" className="is-primary" onClick={handlePrimaryV4Action} disabled={primaryActionDisabled}>{primaryActionLabel}</button>
-                <button
-                  type="button"
-                  className="is-secondary"
-                  onClick={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)}
-                  disabled={!canEndTurn || blockPlayerTurnControls}
-                >
-                  {footerActionLabel}
-                </button>
-              </div>
-            </div>
-            <div className="game-ui-v4-command-support">
-              <div className="game-ui-v4-command-summary">
-                <p className="game-ui-v3-kicker">{v2.commandCenter}</p>
-                <h3>{blockPlayerTurnControls ? botPlaybackControlLabel : playerLabelById(ctx.currentPlayer)}</h3>
-                <p className="game-ui-v3-subtle">{t.turnStage}: {stageLabel(stage, t)} · {t.yourRank}: {rankName}</p>
-                {promoteReason ? (
-                  <p className="game-ui-v3-subtle"><strong>{v2.blockedReason}:</strong> {promoteReason}</p>
-                ) : (
-                  <p className="game-ui-v3-subtle">
-                    {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
-                  </p>
-                )}
-              </div>
-              <BoardV3NoticeStack notices={notices} dismissNotice={dismissNotice} />
-            </div>
-            <BoardV3SelectionPanel
-              pendingSelection={pendingSelection}
-              activeSelectionNeedsTarget={activeSelectionNeedsTarget}
-              activeSelectionNeedsReplacement={activeSelectionNeedsReplacement}
-              activeSelectionNeedsResource={activeSelectionNeedsResource}
-              currentPendingCard={currentPendingCard}
-              selectedTargetId={selectedTargetId}
-              setSelectedTargetId={setSelectedTargetId}
-              opponentIds={opponentIds}
-              playerLabelById={playerLabelById}
-              v2={v2}
-              lang={lang}
-              replacementTargetIds={replacementTargetIds}
-              G={G}
-              replacementSelectionsByTarget={replacementSelectionsByTarget}
-              replacementActiveTargetId={replacementActiveTargetId}
-              setActiveReplacementTargetId={setActiveReplacementTargetId}
-              replacementActiveSelected={replacementActiveSelected}
-              replacementActiveSlots={replacementActiveSlots}
-              replacementActiveTargetResources={replacementActiveTargetResources}
-              resourceLabels={resourceLabels}
-              appendReplacementResource={appendReplacementResource}
-              undoReplacementResource={undoReplacementResource}
-              selectedResource={selectedResource}
-              setSelectedResource={setSelectedResource}
-              resources={resources}
-              confirmPendingSelection={confirmPendingSelection}
-              clearPendingSelection={clearPendingSelection}
-              pickTargetNotice={pickTargetNotice}
-            />
-          </section>
-          ) : null}
-
           {(!isSpectator || spectatorView === 'live') ? (
-          <section className="game-ui-v3-panel game-ui-v3-battlefield game-ui-v4-battlefield-panel">
-            <h3>{v2.tableState}</h3>
-            <div className="game-ui-v3-board-surface" aria-hidden="true">
-              <span className="game-ui-v3-board-ring game-ui-v3-board-ring-pressure" />
-              <span className="game-ui-v3-board-ring game-ui-v3-board-ring-altar" />
-              <span className="game-ui-v3-board-ring game-ui-v3-board-ring-tactical" />
-              <span className="game-ui-v3-board-glow game-ui-v3-board-glow-left" />
-              <span className="game-ui-v3-board-glow game-ui-v3-board-glow-right" />
-            </div>
-            <div className={`game-ui-v3-battlefield-shell game-ui-v4-battlefield-shell is-opponents-${opponentIds.length}`}>
-              <div className="game-ui-v4-opponents-area">
-                <div className="game-ui-v4-opponents-side is-left">
-                  {topLeftOpponentIds.map((pid) => {
-                    const rankIdForPlayer = G.ranks?.[pid] ?? '';
-                    const opponentRankName = sharedRanks.find((rank) => rank.id === rankIdForPlayer)?.name ?? rankLabel(rankIdForPlayer, lang);
-                    const opponentCardsCount = G.hands?.[pid]?.length ?? 0;
-                    const isActiveOpponent = ctx.currentPlayer === pid;
-                    const isSelectedOpponent = selectedTargetId === pid;
-                    const opponentImage = resolvePlayerRankImage(pid);
-                    return (
-                      <button
-                        key={`v4-opp-left-${pid}`}
-                        type="button"
-                        className={`game-ui-v4-opponent-card${isActiveOpponent ? ' is-active' : ''}${isSelectedOpponent ? ' is-selected' : ''}${activeSelectionNeedsTarget ? ' is-targetable' : ''}`}
-                        onClick={() => {
-                          if (!activeSelectionNeedsTarget) return;
-                          setSelectedTargetId(pid);
-                          postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`);
-                        }}
-                        disabled={!activeSelectionNeedsTarget}
-                      >
-                        <div className="game-ui-v4-opponent-avatar">
-                          {opponentImage ? (
-                            <img src={opponentImage} alt={opponentRankName} />
-                          ) : (
-                            <span>{toInitials(playerLabelById(pid))}</span>
-                          )}
-                        </div>
-                        <div className="game-ui-v4-opponent-copy">
-                          <strong>{playerLabelById(pid)}</strong>
-                          <span>{opponentRankName}</span>
-                          <small>{t.yourHand}: {opponentCardsCount}</small>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="game-ui-v4-center-badge">
-                  <div className="game-ui-v4-center-badge-portrait">
-                    {currentTurnPortraitImage ? (
-                      <img src={currentTurnPortraitImage} alt={activeArenaRankName || rankName} />
-                    ) : (
-                      <span>{toInitials(currentTurnPlayerLabel)}</span>
-                    )}
-                  </div>
-                  <div className="game-ui-v4-center-badge-copy">
-                    <span>{currentStageFocus || v2.commandCenter}</span>
-                    <strong>{currentTurnPlayerLabel}</strong>
-                    <small>{activeArenaRankName || rankName}</small>
-                  </div>
-                </div>
-                <div className="game-ui-v4-opponents-side is-right">
-                  {topRightOpponentIds.map((pid) => {
-                    const rankIdForPlayer = G.ranks?.[pid] ?? '';
-                    const opponentRankName = sharedRanks.find((rank) => rank.id === rankIdForPlayer)?.name ?? rankLabel(rankIdForPlayer, lang);
-                    const opponentCardsCount = G.hands?.[pid]?.length ?? 0;
-                    const isActiveOpponent = ctx.currentPlayer === pid;
-                    const isSelectedOpponent = selectedTargetId === pid;
-                    const opponentImage = resolvePlayerRankImage(pid);
-                    return (
-                      <button
-                        key={`v4-opp-right-${pid}`}
-                        type="button"
-                        className={`game-ui-v4-opponent-card${isActiveOpponent ? ' is-active' : ''}${isSelectedOpponent ? ' is-selected' : ''}${activeSelectionNeedsTarget ? ' is-targetable' : ''}`}
-                        onClick={() => {
-                          if (!activeSelectionNeedsTarget) return;
-                          setSelectedTargetId(pid);
-                          postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`);
-                        }}
-                        disabled={!activeSelectionNeedsTarget}
-                      >
-                        <div className="game-ui-v4-opponent-avatar">
-                          {opponentImage ? (
-                            <img src={opponentImage} alt={opponentRankName} />
-                          ) : (
-                            <span>{toInitials(playerLabelById(pid))}</span>
-                          )}
-                        </div>
-                        <div className="game-ui-v4-opponent-copy">
-                          <strong>{playerLabelById(pid)}</strong>
-                          <span>{opponentRankName}</span>
-                          <small>{t.yourHand}: {opponentCardsCount}</small>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="game-ui-v4-board-area">
-                <div className="game-ui-v3-altar-lane game-ui-v4-board-center">
-                  {impactPulse ? (
+          <V4BattlefieldSection
+            title={v2.tableState}
+            opponentCount={opponentIds.length}
+            opponents={(
+              <V4OpponentsArea
+                leftItems={leftOpponentItems}
+                rightItems={rightOpponentItems}
+                handLabel={t.yourHand}
+                centerPortraitImage={currentTurnPortraitImage}
+                centerInitials={toInitials(currentTurnPlayerLabel)}
+                centerKicker={currentStageFocus || v2.commandCenter}
+                centerTitle={currentTurnPlayerLabel}
+                centerSubtitle={activeArenaRankName || rankName}
+                onOpponentClick={(pid) => {
+                  if (!activeSelectionNeedsTarget) return;
+                  setSelectedTargetId(pid);
+                  postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`);
+                }}
+              />
+            )}
+            boardContent={(
+              <>
+                {impactPulse ? (
                     <div className={`game-ui-v3-impact-pulse is-${impactPulse.tone}`} aria-live="polite">
                       <div className="game-ui-v3-impact-beam" aria-hidden="true" />
                       {impactPulse.imageSrc ? (
@@ -834,104 +670,100 @@ export const BoardV4 = ({
                         <p>{impactPulse.text}</p>
                       </div>
                     </div>
-                  ) : null}
-                  <div className="game-ui-v3-altar-focus-shell">
-                    <div className="game-ui-v3-table">
-                      <article className="game-ui-v3-zone game-ui-v3-zone-deck">
-                        <div className="game-ui-v3-zone-head">
-                          <span className="game-ui-v3-stage-label">{t.drawPile}</span>
-                          <strong>{G.deck?.length ?? 0}</strong>
-                        </div>
-                        <div className="game-ui-v3-zone-card">
-                          <PilePreview
-                            imageSrc={deckBackImage}
-                            alt={t.drawPile}
-                            previewKey="v3-pile-deck"
-                            openPreviewKey={openPreviewKey}
-                            onTogglePreview={togglePreview}
-                            onClosePreview={() => setOpenPreviewKey(null)}
-                            variant="v3"
-                            fallback={<div className="pile-back-fallback">JOJ</div>}
-                          />
-                        </div>
-                        <p className="game-ui-v3-zone-meta">{v2.stageFocusDraw}</p>
-                      </article>
-                      <article className="game-ui-v3-zone game-ui-v3-zone-focus">
-                        <div className="game-ui-v3-zone-head">
-                          <span className="game-ui-v3-stage-label">{selectedTargetId ? v2.pickTarget : v2.tableState}</span>
-                          <strong>{activeArenaPlayerName}</strong>
-                        </div>
-                        <div className="game-ui-v3-focus-body">
-                          <div className="game-ui-v3-focus-card">
-                            {displayedDiscardTitle ? (
-                              <PilePreview
-                                imageSrc={displayedDiscardImage}
-                                alt={displayedDiscardTitle}
-                                previewKey={`v3-focus-${botPlaybackCardTitle || lastDiscard?.id || displayedDiscardTitle}`}
-                                openPreviewKey={openPreviewKey}
-                                onTogglePreview={togglePreview}
-                                onClosePreview={() => setOpenPreviewKey(null)}
-                                variant="v3"
-                              />
-                            ) : (
-                              <div className="game-ui-v3-focus-empty">{v2.waitingAction}</div>
-                            )}
-                          </div>
-                          <div className="game-ui-v3-focus-meta">
-                            <strong>{displayedDiscardTitle || focusPrimaryLabel}</strong>
-                            <span>{focusSecondaryLabel}</span>
-                            <div className={`game-ui-v3-focus-tone${latestArenaRow ? ` is-${latestArenaRow.tone}` : ''}`}>
-                              {latestArenaRow?.label ?? v2.waitingAction}
-                            </div>
-                            <p className="game-ui-v3-zone-meta">
-                              {focusSupportingText}
-                            </p>
-                            <div className="game-ui-v3-focus-resources">
-                              {RESOURCE_ORDER.map((key) => (
-                                <span key={`focus-resource-${key}`}>
-                                  {RESOURCE_ICONS[key]} {activeArenaResources?.[key] ?? 0}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </article>
-                      <article className="game-ui-v3-zone game-ui-v3-zone-discard">
-                        <div className="game-ui-v3-zone-head">
-                          <span className="game-ui-v3-stage-label">{t.discardPile}</span>
-                          <strong>{G.discard?.length ?? 0}</strong>
-                        </div>
-                        <div className="game-ui-v3-zone-card">
+                ) : null}
+                <div className="game-ui-v3-altar-focus-shell">
+                  <div className="game-ui-v3-table">
+                    <article className="game-ui-v3-zone game-ui-v3-zone-deck">
+                      <div className="game-ui-v3-zone-head">
+                        <span className="game-ui-v3-stage-label">{t.drawPile}</span>
+                        <strong>{G.deck?.length ?? 0}</strong>
+                      </div>
+                      <div className="game-ui-v3-zone-card">
+                        <PilePreview
+                          imageSrc={deckBackImage}
+                          alt={t.drawPile}
+                          previewKey="v3-pile-deck"
+                          openPreviewKey={openPreviewKey}
+                          onTogglePreview={togglePreview}
+                          onClosePreview={() => setOpenPreviewKey(null)}
+                          variant="v3"
+                          fallback={<div className="pile-back-fallback">JOJ</div>}
+                        />
+                      </div>
+                      <p className="game-ui-v3-zone-meta">{v2.stageFocusDraw}</p>
+                    </article>
+                    <article className="game-ui-v3-zone game-ui-v3-zone-focus">
+                      <div className="game-ui-v3-zone-head">
+                        <span className="game-ui-v3-stage-label">{selectedTargetId ? v2.pickTarget : v2.tableState}</span>
+                        <strong>{activeArenaPlayerName}</strong>
+                      </div>
+                      <div className="game-ui-v3-focus-body">
+                        <div className="game-ui-v3-focus-card">
                           {displayedDiscardTitle ? (
                             <PilePreview
                               imageSrc={displayedDiscardImage}
                               alt={displayedDiscardTitle}
-                              previewKey={`v3-discard-${botPlaybackCardTitle || lastDiscard?.id || displayedDiscardTitle}`}
+                              previewKey={`v3-focus-${botPlaybackCardTitle || lastDiscard?.id || displayedDiscardTitle}`}
                               openPreviewKey={openPreviewKey}
                               onTogglePreview={togglePreview}
                               onClosePreview={() => setOpenPreviewKey(null)}
                               variant="v3"
                             />
-                          ) : <div className="pile-empty">{t.noCardsInDiscard}</div>}
+                          ) : (
+                            <div className="game-ui-v3-focus-empty">{v2.waitingAction}</div>
+                          )}
                         </div>
-                        <p className="game-ui-v3-zone-meta">{displayedDiscardTitle || t.noCardsInDiscard}</p>
-                      </article>
-                    </div>
+                        <div className="game-ui-v3-focus-meta">
+                          <strong>{displayedDiscardTitle || focusPrimaryLabel}</strong>
+                          <span>{focusSecondaryLabel}</span>
+                          <div className={`game-ui-v3-focus-tone${latestArenaRow ? ` is-${latestArenaRow.tone}` : ''}`}>
+                            {latestArenaRow?.label ?? v2.waitingAction}
+                          </div>
+                          <p className="game-ui-v3-zone-meta">
+                            {focusSupportingText}
+                          </p>
+                          <div className="game-ui-v3-focus-resources">
+                            {BOARD_RESOURCE_ORDER.map((key) => (
+                              <span key={`focus-resource-${key}`}>
+                                {BOARD_RESOURCE_ICONS[key]} {activeArenaResources?.[key] ?? 0}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                    <article className="game-ui-v3-zone game-ui-v3-zone-discard">
+                      <div className="game-ui-v3-zone-head">
+                        <span className="game-ui-v3-stage-label">{t.discardPile}</span>
+                        <strong>{G.discard?.length ?? 0}</strong>
+                      </div>
+                      <div className="game-ui-v3-zone-card">
+                        {displayedDiscardTitle ? (
+                          <PilePreview
+                            imageSrc={displayedDiscardImage}
+                            alt={displayedDiscardTitle}
+                            previewKey={`v3-discard-${botPlaybackCardTitle || lastDiscard?.id || displayedDiscardTitle}`}
+                            openPreviewKey={openPreviewKey}
+                            onTogglePreview={togglePreview}
+                            onClosePreview={() => setOpenPreviewKey(null)}
+                            variant="v3"
+                          />
+                        ) : <div className="pile-empty">{t.noCardsInDiscard}</div>}
+                      </div>
+                      <p className="game-ui-v3-zone-meta">{displayedDiscardTitle || t.noCardsInDiscard}</p>
+                    </article>
                   </div>
                 </div>
-            </div>
-            </div>
-          </section>
+              </>
+            )}
+          />
           ) : null}
 
           {!isSpectator ? (
-          <section className="game-ui-v3-panel game-ui-v3-player-dock">
-            <div className="game-ui-v3-player-dock-main game-ui-v3-hand-frame">
-              <div className="game-ui-v3-player-station" aria-hidden="true">
-                <span className="game-ui-v3-player-station-edge" />
-                <span className="game-ui-v3-player-station-glow" />
-              </div>
-              <div className="game-ui-v3-hand-rail">
+          <V4PlayerDockSection
+            mainContent={(
+              <>
+                <div className="game-ui-v3-hand-rail">
                 <div className="game-ui-v3-hand-rail-chip">
                   <span className="game-ui-v3-stage-label">{t.turnStage}</span>
                   <strong>{stageLabel(stage, t)}</strong>
@@ -945,7 +777,7 @@ export const BoardV4 = ({
                   <strong>{canPlayHandCard ? v2.canPlayNow : v2.actionUnavailable}</strong>
                 </div>
               </div>
-              <BoardV3HandSection
+              <V4HandSection
                 title={`${t.yourHand} (${hand.length}/8)`}
                 subtitle={mustDiscardOverflow ? v2.handOverflowWarning.replace('{count}', String(handOverflow)) : undefined}
                 headRight={(
@@ -998,11 +830,11 @@ export const BoardV4 = ({
                   } : undefined;
                 }}
               />
-            </div>
-            <aside className="game-ui-v3-player-dock-side">
-              {!isSimplifiedMode ? (
+              </>
+            )}
+            sideContent={!isSimplifiedMode ? (
                 <section className="game-ui-v3-panel game-ui-v3-legendary-frame">
-                  <BoardV3HandSection
+                  <V4HandSection
                     title={`${t.legendaryHand} (${legendaryHand.length})`}
                     subtitle={t.legendaryHandHint}
                     cards={legendaryHand}
@@ -1023,15 +855,14 @@ export const BoardV4 = ({
                     previewText={(card) => handCardsView.find((row) => row.card.id === card.id)?.previewText}
                   />
                 </section>
-              ) : null}
-            </aside>
-          </section>
+              ) : undefined}
+          />
           ) : null}
 
           {ctx.gameover ? (
             <>
               <p className="gameover">{t.winner}: {playerLabelById(String((ctx.gameover as { winner?: string }).winner ?? ''))}</p>
-              <BoardV3GameoverModal
+              <V4GameoverModal
                 open={!gameoverModalClosed}
                 ariaLabel={v2.gameStatsAria}
                 title={v2.gameStatsTitle}
@@ -1073,7 +904,7 @@ export const BoardV4 = ({
           ) : null}
         </div>
 
-          <BoardV3SidePanel
+          <V4SidePanel
           sidePanelTab={sidePanelTab}
           setSidePanelTab={setSidePanelTab}
           v2={v2}

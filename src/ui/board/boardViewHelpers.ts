@@ -3,8 +3,7 @@ import type { JojGameState, RankDefinition, ResourceKey } from '../../game/types
 import type { Language } from '../i18n';
 import { rankLabel, text } from '../i18n';
 import { buildNextRankHint } from './rankHints';
-
-const RESOURCE_ORDER: ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
+import { BOARD_RESOURCE_ORDER } from './resourceConstants';
 
 export const getBoardPromoteReason = (args: {
   G: Pick<JojGameState, 'players' | 'ranks' | 'resources' | 'promotedThisTurn'>;
@@ -34,7 +33,7 @@ export const buildGameoverPlayerSummaries = (args: {
     .map((pid) => {
       const playerResources = G.resources?.[pid] ?? {};
       const statRow = G.playerGameStats?.[pid];
-      const resourcesText = RESOURCE_ORDER.map((key) => `${resourceLabels[key]} ${playerResources[key] ?? 0}`).join(', ');
+      const resourcesText = BOARD_RESOURCE_ORDER.map((key) => `${resourceLabels[key]} ${playerResources[key] ?? 0}`).join(', ');
       const rankId = G.ranks?.[pid] ?? '';
       return {
         playerID: pid,
@@ -64,7 +63,7 @@ export const buildResourceHighlightMeta = (args: {
 }) => {
   const highlightedResources = new Set<ResourceKey>();
   const deficitByResource: Partial<Record<ResourceKey, number>> = {};
-  for (const key of RESOURCE_ORDER) {
+  for (const key of BOARD_RESOURCE_ORDER) {
     if (args.selectedResource === key) highlightedResources.add(key);
     if ((deficitByResource[key] ?? 0) > 0) highlightedResources.add(key);
   }

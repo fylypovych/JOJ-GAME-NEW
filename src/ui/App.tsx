@@ -575,26 +575,7 @@ export const App = () => {
           sessionBroken={sessionBroken}
           canStart={canStart}
           activeMatch={matches.find((match) => match.matchID === session.matchID) ?? null}
-          roomDraft={{
-            roomCapacity,
-            gameMode,
-            createWithBots,
-            botCount,
-            botDifficulty,
-            selectedOptionalModuleIds,
-          }}
           optionalModules={optionalLobbyModules}
-          applyCurrentRoomToDraft={() => {
-            const currentMatch = matches.find((match) => match.matchID === session.matchID);
-            if (!currentMatch) return;
-            const currentBots = Math.max(0, Math.floor(currentMatch.setupData?.bots?.count ?? 0));
-            setRoomCapacity(currentMatch.players.length);
-            setGameMode(currentMatch.setupData?.gameMode ?? 'standard');
-            setCreateWithBots(currentBots > 0);
-            setBotCount(currentBots);
-            setBotDifficulty(currentMatch.setupData?.bots?.difficulty ?? 'normal');
-            setSelectedOptionalModuleIds(currentMatch.setupData?.gameSetup?.optionalMainDeckModuleIds ?? []);
-          }}
           leaveRoom={() => { void leaveRoom(); }}
           refreshMatches={() => { void refreshMatches(); }}
           loading={loading}

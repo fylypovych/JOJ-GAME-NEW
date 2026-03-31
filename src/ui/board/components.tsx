@@ -27,7 +27,7 @@ export const PilePreview = ({
 }: PilePreviewProps) => {
   if (!imageSrc) return <>{fallback ?? null}</>;
   return (
-    <div className={`pile-preview${variant === 'v3' ? ' is-v3' : ''}`}>
+    <div className={`pile-preview${variant === 'v3' ? ' is-v3' : ''}${openPreviewKey === previewKey ? ' has-open-preview' : ''}`}>
       <img src={imageSrc} alt={alt} onClick={(e) => { e.stopPropagation(); onTogglePreview(previewKey); }} />
       <div
         className={`game-card-popover${variant === 'v3' ? ' is-v3' : ''}${openPreviewKey === previewKey ? ' is-open' : ''}`}
@@ -113,7 +113,7 @@ export const GameCardTile = ({
   const effectEntries = card.effects ?? [];
   return (
     <div
-      className={`game-card ${categoryClass}${variant === 'v3' ? ' is-v3' : ''}${selected ? ' is-selected' : ''}${actionDisabled ? ' is-disabled' : ''}${onCardClick ? ' is-clickable' : ''}`.trim()}
+      className={`game-card ${categoryClass}${variant === 'v3' ? ' is-v3' : ''}${selected ? ' is-selected' : ''}${actionDisabled ? ' is-disabled' : ''}${onCardClick ? ' is-clickable' : ''}${openPreviewKey === previewKey ? ' has-open-preview' : ''}`.trim()}
       onClick={onCardClick}
     >
       <button

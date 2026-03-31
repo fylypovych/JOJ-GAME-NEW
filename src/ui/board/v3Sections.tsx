@@ -3,9 +3,8 @@ import type { CardDefinition, JojGameState, ResourceKey, RankDefinition } from '
 import { buildReplacementSlots } from './replacement';
 import { BoardChatPanel, GameCardTile } from './components';
 import { cardTitle, localizeSystemMessageText, rankLabel } from '../i18n';
+import { BOARD_RESOURCE_ORDER } from './resourceConstants';
 import type { BoardNotice } from './useBoardV2UiController';
-
-const RESOURCE_ORDER: ResourceKey[] = ['time', 'reputation', 'discipline', 'documents', 'tech'];
 
 export const BoardV3SelectionPanel = (props: {
   pendingSelection: { type: string; cardId: string } | null;
@@ -135,7 +134,7 @@ export const BoardV3SelectionPanel = (props: {
                     {v2.replacementProgress}: {replacementActiveSelected.length}/{replacementActiveSlots.length}
                   </p>
                   <div className="game-ui-v3-chip-row">
-                    {RESOURCE_ORDER.map((key) => (
+                    {BOARD_RESOURCE_ORDER.map((key) => (
                       <button
                         key={`replacement-resource-${key}`}
                         type="button"
@@ -159,7 +158,7 @@ export const BoardV3SelectionPanel = (props: {
       ) : null}
       {activeSelectionNeedsResource ? (
         <div className="game-ui-v3-chip-row">
-          {RESOURCE_ORDER.map((key) => (
+          {BOARD_RESOURCE_ORDER.map((key) => (
             <button
               key={`pick-resource-${key}`}
               type="button"
@@ -408,7 +407,7 @@ export const BoardV3PlayerOverview = (props: {
               {(G.lyapScandalShieldUntilTurn?.[pid] ?? 0) > 0 ? <span className="pill pill-badge">{v2.shieldUntil}: {G.lyapScandalShieldUntilTurn?.[pid] ?? 0}</span> : null}
             </div>
             <div className="game-ui-v3-player-resources">
-              {RESOURCE_ORDER.map((key) => (
+              {BOARD_RESOURCE_ORDER.map((key) => (
                 <span key={`${pid}-${key}`}>{resourceLabels[key]}: {pResources?.[key] ?? 0}</span>
               ))}
             </div>
