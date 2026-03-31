@@ -34,7 +34,6 @@ import {
 } from '../game/lobbyConfig';
 import { SERVER_URL } from './app/clientConfig';
 import {
-  ADMIN_TOKEN_STORAGE_KEY,
   DEFAULT_SERVER_URL,
   GAME_NAME,
   PLAYER_NAME_STORAGE_KEY,
@@ -48,7 +47,6 @@ import {
 } from './app/model';
 import {
   ActiveSessionSection,
-  AdminAuthCard,
   AuthErrorModal,
   GallerySection,
   LobbySection,
@@ -160,16 +158,10 @@ export const App = () => {
     bindMatchSession,
   } = useUserAccount({ serverUrl: SERVER_URL, lang });
   const {
-    adminToken,
-    setAdminToken,
-    adminTokenDraft,
-    setAdminTokenDraft,
     adminAuthChecking,
     adminAuthorized,
-    setAdminAuthorized,
     adminAuthEnabled,
     adminAuthError,
-    setAdminAuthError,
     adminFetch,
     verifyAdminToken,
   } = useAdminAuth({
@@ -177,8 +169,6 @@ export const App = () => {
     serverUrl: SERVER_URL,
     defaultServerUrl: DEFAULT_SERVER_URL,
     serverUrlStorageKey: SERVER_URL_STORAGE_KEY,
-    adminTokenStorageKey: ADMIN_TOKEN_STORAGE_KEY,
-    initialToken: window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? '',
     unauthorizedText: t.adminUnauthorized,
     serverUnavailableText: t.serverUnavailable,
   });
@@ -531,25 +521,15 @@ export const App = () => {
       </p>
 
       {isAdminRoute && (!adminAuthorized || adminAuthChecking) ? (
-        <AdminAuthCard
-          t={t}
-          serverUrl={SERVER_URL}
-          adminAuthEnabled={adminAuthEnabled}
-          adminTokenDraft={adminTokenDraft}
-          setAdminTokenDraft={setAdminTokenDraft}
-          adminAuthChecking={adminAuthChecking}
-          onSignIn={() => {
-            void verifyAdminToken(adminTokenDraft);
-          }}
-          onSignOut={() => {
-            setAdminToken('');
-            setAdminTokenDraft('');
-            setAdminAuthorized(false);
-            setAdminAuthError('');
-            window.localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
-          }}
-          adminAuthError={adminAuthError}
-        />
+        <section className={`board${adminUiVariant === 'v2' ? ' board-v2-panel' : ''}${adminUiVariant === 'v3' ? ' board-v3-panel' : ''}${adminUiVariant === 'v4' ? ' admin-panel-v4' : ''}`}>
+          <h2>{t.adminTitle}</h2>
+          <p>{adminAuthChecking ? t.loading : (adminAuthError || (adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminUnauthorized))}</p>
+          {!adminAuthChecking ? (
+            <p className="admin-controls">
+              <button type="button" onClick={() => { void verifyAdminToken(); }}>{t.refreshRooms}</button>
+            </p>
+          ) : null}
+        </section>
       ) : null}
 
       {!isAdminRoute && activeUserTab === 'games' && !session ? (
@@ -819,7 +799,6 @@ export const App = () => {
           <AdminPage
           uiVariant={adminUiVariant}
           lang={lang}
-          adminToken={adminToken}
           serverUrl={SERVER_URL}
           serverUrlDraft={serverUrlDraft}
           onServerUrlDraftChange={setServerUrlDraft}

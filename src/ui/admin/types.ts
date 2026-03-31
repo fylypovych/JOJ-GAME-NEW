@@ -105,7 +105,6 @@ export type AdminAnalyticsSummary = {
 export type AdminPageProps = {
   uiVariant: 'v2' | 'v3' | 'v4';
   lang: Language;
-  adminToken: string;
   serverUrl: string;
   serverUrlDraft: string;
   onServerUrlDraftChange: (value: string) => void;

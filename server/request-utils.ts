@@ -22,15 +22,6 @@ export const getClientIp = (ctx: any): string => {
   );
 };
 
-export const getAdminTokenFromRequest = (ctx: any): string => {
-  const authHeader = ctx?.request?.headers?.authorization;
-  if (typeof authHeader === 'string' && authHeader.toLowerCase().startsWith('bearer ')) {
-    return authHeader.slice(7).trim();
-  }
-  const xToken = ctx?.request?.headers?.['x-admin-token'];
-  return typeof xToken === 'string' ? xToken.trim() : '';
-};
-
 export const getCookieValue = (ctx: any, name: string): string => {
   const raw = ctx?.request?.headers?.cookie;
   if (typeof raw !== 'string' || !raw.trim()) return '';
@@ -87,32 +78,21 @@ export const setCookieHeader = (
 
 export const createRequireAdminAuth = ({
   isAdminAuthEnabled: _isAdminAuthEnabled,
-  adminToken,
   logLine,
   getUserStore,
 }: {
   isAdminAuthEnabled: boolean;
-  adminToken: string;
   logLine: LogLine;
   getUserStore?: () => {
     getUserBySessionToken: (token: string) => Promise<{ id?: string; role?: string } | null>;
-    verifyAdminAccessToken?: (userId: string, token: string) => Promise<boolean>;
   } | null;
 }) => async (ctx: any, routeLabel: string): Promise<boolean> => {
-  const token = getAdminTokenFromRequest(ctx);
   const userStore = getUserStore?.() ?? null;
   if (userStore) {
     const sessionToken = getCookieValue(ctx, 'joj_user_session');
-    if (sessionToken && token) {
+    if (sessionToken) {
       const user = await userStore.getUserBySessionToken(sessionToken);
-      if (user?.role === 'administrator' && user.id) {
-        if (typeof userStore.verifyAdminAccessToken === 'function') {
-          const ok = await userStore.verifyAdminAccessToken(user.id, token);
-          if (ok) return true;
-        }
-        const bootstrapToken = adminToken.trim();
-        if (bootstrapToken && token === bootstrapToken) return true;
-      }
+      if (user?.role === 'administrator' && user.id) return true;
     }
   }
   ctx.status = 401;

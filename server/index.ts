@@ -26,7 +26,6 @@ import { createSharedConfigStore } from './storage/shared-config';
 import { getAdminRuntimePolicy } from './runtime-policy';
 import {
   adminDbUiConfigPath,
-  adminToken,
   allowInMemoryUserStore,
   allowedFrontendOrigins,
   bugReportImagesDir,
@@ -234,7 +233,6 @@ void (async () => {
   let postgresAvailableForApp = false;
   const requireAdminAuth = createRequireAdminAuth({
     isAdminAuthEnabled,
-    adminToken,
     logLine,
     getUserStore: () => userStore,
   });
@@ -487,7 +485,7 @@ void (async () => {
   await logLine(
     userStore ? 'INFO' : 'WARN',
     userStore
-      ? 'admin auth enabled (administrator session + personal admin token)'
+      ? 'admin auth enabled (administrator session required)'
       : 'admin auth disabled (user module unavailable)',
   );
   await logLine('INFO', `shared config storage mode=${sharedConfigStorageMode}`);

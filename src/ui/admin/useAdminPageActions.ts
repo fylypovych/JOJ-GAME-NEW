@@ -3,7 +3,6 @@ import { buildAdminHeaders } from './authHeaders';
 import { uploadAdminImageDataUrl } from './imageUpload';
 
 export const useAdminPageActions = (args: {
-  adminToken: string;
   serverUrl: string;
   activeMatchId: string;
   onStopGame: (matchID: string) => Promise<{ ok: boolean; error?: string }>;
@@ -15,7 +14,6 @@ export const useAdminPageActions = (args: {
   stateStopGameSuccess: string;
 }) => {
   const {
-    adminToken,
     serverUrl,
     activeMatchId,
     onStopGame,
@@ -30,7 +28,7 @@ export const useAdminPageActions = (args: {
   const [stopGameError, setStopGameError] = useState('');
   const [stopGameStatus, setStopGameStatus] = useState('');
 
-  const adminHeaders = () => buildAdminHeaders(adminToken);
+  const adminHeaders = () => buildAdminHeaders();
 
   useEffect(() => {
     setStopGameError('');

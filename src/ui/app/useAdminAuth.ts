@@ -6,8 +6,6 @@ type Params = {
   serverUrl: string;
   defaultServerUrl: string;
   serverUrlStorageKey: string;
-  adminTokenStorageKey: string;
-  initialToken: string;
   unauthorizedText: string;
   serverUnavailableText: string;
 };
@@ -17,29 +15,21 @@ export const useAdminAuth = ({
   serverUrl,
   defaultServerUrl,
   serverUrlStorageKey,
-  adminTokenStorageKey,
-  initialToken,
   unauthorizedText,
   serverUnavailableText,
 }: Params) => {
-  const [adminToken, setAdminToken] = useState<string>(initialToken);
-  const [adminTokenDraft, setAdminTokenDraft] = useState<string>(initialToken);
   const [adminAuthChecking, setAdminAuthChecking] = useState<boolean>(false);
   const [adminAuthorized, setAdminAuthorized] = useState<boolean>(!isAdminRoute);
   const [adminAuthEnabled, setAdminAuthEnabled] = useState<boolean | null>(null);
   const [adminAuthError, setAdminAuthError] = useState<string>('');
 
-  const tryVerify = async (targetServerUrl: string, candidateToken: string) => {
-    const headers = new Headers();
-    if (candidateToken.trim()) headers.set('x-admin-token', candidateToken.trim());
-    const response = await fetch(`${targetServerUrl}/api/admin/verify`, { headers, credentials: 'include' });
+  const tryVerify = async (targetServerUrl: string) => {
+    const response = await fetch(`${targetServerUrl}/api/admin/verify`, { credentials: 'include' });
     return response;
   };
 
   const adminFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const headers = new Headers(init?.headers ?? undefined);
-    const token = adminToken.trim();
-    if (token) headers.set('x-admin-token', token);
     const csrfToken = getAdminCsrfToken();
     if (csrfToken && !headers.has('x-csrf-token')) headers.set('x-csrf-token', csrfToken);
     const response = await fetch(input, { ...init, headers, credentials: 'include' });
@@ -50,15 +40,15 @@ export const useAdminAuth = ({
     return response;
   };
 
-  const verifyAdminToken = async (candidateToken: string): Promise<boolean> => {
+  const verifyAdminToken = async (): Promise<boolean> => {
     setAdminAuthChecking(true);
     setAdminAuthError('');
     try {
-      let response = await tryVerify(serverUrl, candidateToken);
+      let response = await tryVerify(serverUrl);
       let resolvedServerUrl = serverUrl;
       if (!response.ok && response.status >= 500 && defaultServerUrl && defaultServerUrl !== serverUrl) {
         try {
-          const fallbackResponse = await tryVerify(defaultServerUrl, candidateToken);
+          const fallbackResponse = await tryVerify(defaultServerUrl);
           if (fallbackResponse.ok || fallbackResponse.status === 401) {
             response = fallbackResponse;
             resolvedServerUrl = defaultServerUrl;
@@ -73,9 +63,6 @@ export const useAdminAuth = ({
         setAdminAuthError(response.status === 401 ? unauthorizedText : serverUnavailableText);
         return false;
       }
-      const trimmed = candidateToken.trim();
-      setAdminToken(trimmed);
-      window.localStorage.setItem(adminTokenStorageKey, trimmed);
       setAdminAuthorized(true);
       if (resolvedServerUrl !== serverUrl) {
         window.location.reload();
@@ -84,16 +71,13 @@ export const useAdminAuth = ({
     } catch {
       if (defaultServerUrl && defaultServerUrl !== serverUrl) {
         try {
-          const fallbackResponse = await tryVerify(defaultServerUrl, candidateToken);
+          const fallbackResponse = await tryVerify(defaultServerUrl);
           if (!fallbackResponse.ok) {
             setAdminAuthorized(false);
             setAdminAuthError(fallbackResponse.status === 401 ? unauthorizedText : serverUnavailableText);
             return false;
           }
-          const trimmed = candidateToken.trim();
           window.localStorage.setItem(serverUrlStorageKey, defaultServerUrl);
-          setAdminToken(trimmed);
-          window.localStorage.setItem(adminTokenStorageKey, trimmed);
           setAdminAuthorized(true);
           window.location.reload();
           return true;
@@ -129,7 +113,7 @@ export const useAdminAuth = ({
         if (!cancelled) setAdminAuthEnabled(null);
       }
       if (!cancelled) {
-        void verifyAdminToken(adminToken);
+        void verifyAdminToken();
       }
     })();
     return () => {
@@ -138,10 +122,6 @@ export const useAdminAuth = ({
   }, [isAdminRoute]);
 
   return {
-    adminToken,
-    setAdminToken,
-    adminTokenDraft,
-    setAdminTokenDraft,
     adminAuthChecking,
     adminAuthorized,
     setAdminAuthorized,

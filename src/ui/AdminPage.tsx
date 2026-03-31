@@ -50,7 +50,6 @@ import {
 export const AdminPage = ({
   uiVariant,
   lang,
-  adminToken,
   serverUrl,
   serverUrlDraft,
   onServerUrlDraftChange,
@@ -221,7 +220,6 @@ export const AdminPage = ({
     exportTemplateToFile,
     importTemplateFromFile,
   } = useAdminPageActions({
-    adminToken,
     serverUrl,
     activeMatchId,
     onStopGame,
@@ -252,7 +250,6 @@ export const AdminPage = ({
     setAdminCreateUserDraft,
     adminEditUserDraft,
     setAdminEditUserDraft,
-    adminIssuedToken,
     loadAdminUsers,
     loadAdminUserDetail,
     updateAdminUserStatus,
@@ -262,7 +259,6 @@ export const AdminPage = ({
     logoutAllAdminUserSessions,
     createAdminUser,
     requestAdminPasswordReset,
-    rotateAdminUserToken,
   } = useAdminUsers({ lang, serverUrl, adminJsonFetch });
   const {
     adminAwards,
@@ -891,8 +887,6 @@ export const AdminPage = ({
           setCreateDraft={setAdminCreateUserDraft}
           onCreateUser={() => { void createAdminUser(); }}
           onRequestPasswordReset={() => { void requestAdminPasswordReset(); }}
-          onRotateAdminToken={() => { void rotateAdminUserToken(); }}
-          issuedAdminToken={adminIssuedToken}
           onLogoutAllSessions={() => { void logoutAllAdminUserSessions(); }}
           onLogoutUserSession={(sessionId) => { void logoutAdminUserSession(sessionId); }}
         />

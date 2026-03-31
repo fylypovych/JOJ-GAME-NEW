@@ -5,7 +5,6 @@ export const SERVER_URL_STORAGE_KEY = 'joj-server-url-v1';
 export const SHARED_TEMPLATE_STORAGE_KEY = 'joj-shared-deck-template-v1';
 export const PLAYER_NAME_STORAGE_KEY = 'joj-player-name-v1';
 export const SESSION_STORAGE_KEY = 'joj-network-session-v1';
-export const ADMIN_TOKEN_STORAGE_KEY = 'joj-admin-token-v1';
 export const RANKS_STORAGE_KEY = 'joj-shared-ranks-v1';
 
 const isLocalHostName = (hostname: string) => ['localhost', '127.0.0.1', '::1'].includes(hostname);

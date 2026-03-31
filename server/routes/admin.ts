@@ -386,30 +386,6 @@ export const registerAdminRoutes = ({
     ctx.body = { ok: true, user: updated };
   });
 
-  router.post('/api/admin/users/admin-token', async (ctx: RouteCtx) => {
-    if (!(await requireAdminWriteAccess(ctx, '/api/admin/users/admin-token'))) return;
-    if (!userStore || typeof userStore.rotateAdminAccessToken !== 'function') {
-      ctx.status = 503;
-      ctx.body = { ok: false, error: 'User module is unavailable.' };
-      return;
-    }
-    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/users/admin-token', maxBytes: JSON_BODY_LIMIT, logLine });
-    if (!body) return;
-    const userId = String(body.userId ?? '').trim();
-    if (!userId) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: 'Missing userId' };
-      return;
-    }
-    const rotated = await userStore.rotateAdminAccessToken(userId);
-    if (!rotated) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: 'Admin token can only be issued to an active administrator.' };
-      return;
-    }
-    ctx.body = { ok: true, token: rotated.token, rotatedAt: rotated.rotatedAt };
-  });
-
   router.post('/api/admin/users/update', async (ctx: RouteCtx) => {
     if (!(await requireAdminWriteAccess(ctx, '/api/admin/users/update'))) return;
     if (!userStore) {

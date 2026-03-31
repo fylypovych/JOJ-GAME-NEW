@@ -28,8 +28,6 @@ type AdminUserDetail = {
     lastLoginAt: string | null;
     role: 'user' | 'administrator';
     status: 'active' | 'disabled';
-    hasAdminAccessToken: boolean;
-    adminAccessTokenRotatedAt: string | null;
   };
   stats: {
     matchesLinked: number;
@@ -91,8 +89,6 @@ export const AdminUsersTab = ({
   setCreateDraft,
   onCreateUser,
   onRequestPasswordReset,
-  onRotateAdminToken,
-  issuedAdminToken,
   onLogoutAllSessions,
   onLogoutUserSession,
 }: {
@@ -141,8 +137,6 @@ export const AdminUsersTab = ({
   }) => void;
   onCreateUser: () => void;
   onRequestPasswordReset: () => void;
-  onRotateAdminToken: () => void;
-  issuedAdminToken: string;
   onLogoutAllSessions: () => void;
   onLogoutUserSession: (sessionId: string) => void;
 }) => (
@@ -246,24 +240,6 @@ export const AdminUsersTab = ({
               <button type="button" onClick={onRequestPasswordReset} disabled={loading}>{t.adminUsersIssueResetToken}</button>
               <button type="button" onClick={onLogoutAllSessions} disabled={loading}>{t.adminUsersLogoutAllSessions}</button>
             </p>
-            <h5>{t.adminUsersAdminAccessTitle}</h5>
-            <p>{t.adminUsersAdminTokenStatus}: <strong>{selectedUserDetail.user.hasAdminAccessToken ? t.yes : t.no}</strong></p>
-            {selectedUserDetail.user.adminAccessTokenRotatedAt ? (
-              <p>{t.adminUsersAdminTokenRotatedAt}: <strong>{new Date(selectedUserDetail.user.adminAccessTokenRotatedAt).toLocaleString()}</strong></p>
-            ) : null}
-            {selectedUserDetail.user.role === 'administrator' ? (
-              <p className="admin-controls">
-                <button type="button" onClick={onRotateAdminToken} disabled={loading}>{t.adminUsersRotateAdminToken}</button>
-              </p>
-            ) : (
-              <p>{t.adminUsersAdminTokenRequiresRole}</p>
-            )}
-            {issuedAdminToken ? (
-              <div className="admin-inline-editor">
-                <p><strong>{t.adminUsersIssuedAdminToken}</strong></p>
-                <p><code>{issuedAdminToken}</code></p>
-              </div>
-            ) : null}
             <h5>{t.userStatsTitle}</h5>
             <ul>
               <li>{t.userStatMatchesLinked}: {selectedUserDetail.stats.matchesLinked}</li>
