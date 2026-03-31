@@ -31,6 +31,7 @@ import type {
   ImportCategoryMode,
 } from './admin/types';
 import {
+  AdminCategoryButtons,
   AdminImportTab,
   AdminDeckTab,
   AdminDatabaseTab,
@@ -46,6 +47,7 @@ import {
   AdminBugReportsTab,
   AdminUsersTab,
 } from './admin/tabs';
+import type { AdminNavCategory, AdminNavTab } from './admin/tabs';
 
 export const AdminPage = ({
   uiVariant,
@@ -557,6 +559,21 @@ export const AdminPage = ({
     awards: t.tabAwards,
     bugReports: t.tabBugReports,
   };
+  const adminTabMeta: Record<AdminTab, AdminNavTab> = {
+    matches: { id: 'matches', label: activeTabLabelMap.matches, short: 'M' },
+    deck: { id: 'deck', label: activeTabLabelMap.deck, short: 'D' },
+    import: { id: 'import', label: activeTabLabelMap.import, short: 'I' },
+    state: { id: 'state', label: activeTabLabelMap.state, short: 'S' },
+    ranks: { id: 'ranks', label: activeTabLabelMap.ranks, short: 'R' },
+    database: { id: 'database', label: activeTabLabelMap.database, short: 'DB' },
+    analytics: { id: 'analytics', label: activeTabLabelMap.analytics, short: 'A' },
+    github: { id: 'github', label: activeTabLabelMap.github, short: 'GH' },
+    settings: { id: 'settings', label: activeTabLabelMap.settings, short: 'ST' },
+    simulation: { id: 'simulation', label: activeTabLabelMap.simulation, short: 'SM' },
+    users: { id: 'users', label: activeTabLabelMap.users, short: 'U' },
+    awards: { id: 'awards', label: activeTabLabelMap.awards, short: 'AW' },
+    bugReports: { id: 'bugReports', label: activeTabLabelMap.bugReports, short: 'BR' },
+  };
   const activeTabLabel = activeTabLabelMap[activeTab];
   const showV4Overview = isV4 && activeTab === 'matches';
   const v4StatCards = [
@@ -605,6 +622,108 @@ export const AdminPage = ({
       settings: 'Server settings, UI config and asset maintenance.',
       simulation: 'Balance simulations, run progress and result summaries.',
     };
+  const adminCategories: AdminNavCategory[] = lang === 'uk'
+    ? [
+      {
+        id: 'operations',
+        label: 'Операції',
+        short: 'OPS',
+        artLabel: 'Command Deck',
+        description: 'Матчі, стан і симуляції',
+        tabs: [adminTabMeta.matches, adminTabMeta.state, adminTabMeta.simulation],
+      },
+      {
+        id: 'content',
+        label: 'Контент',
+        short: 'CNT',
+        artLabel: 'Archive Bay',
+        description: 'Колоди, імпорт, ранги, нагороди',
+        tabs: [adminTabMeta.deck, adminTabMeta.import, adminTabMeta.ranks, adminTabMeta.awards],
+      },
+      {
+        id: 'data',
+        label: 'Дані',
+        short: 'DATA',
+        artLabel: 'Registry Grid',
+        description: 'База, користувачі, репорти',
+        tabs: [adminTabMeta.database, adminTabMeta.users, adminTabMeta.bugReports],
+      },
+      {
+        id: 'integrations',
+        label: 'Інтеграції',
+        short: 'INT',
+        artLabel: 'Link Node',
+        description: 'GitHub і зовнішні канали',
+        tabs: [adminTabMeta.github],
+      },
+      {
+        id: 'system',
+        label: 'Система',
+        short: 'SYS',
+        artLabel: 'Control Room',
+        description: 'Аналітика й налаштування',
+        tabs: [adminTabMeta.analytics, adminTabMeta.settings],
+      },
+    ]
+    : [
+      {
+        id: 'operations',
+        label: 'Operations',
+        short: 'OPS',
+        artLabel: 'Command Deck',
+        description: 'Matches, state and simulations',
+        tabs: [adminTabMeta.matches, adminTabMeta.state, adminTabMeta.simulation],
+      },
+      {
+        id: 'content',
+        label: 'Content',
+        short: 'CNT',
+        artLabel: 'Archive Bay',
+        description: 'Decks, import, ranks and awards',
+        tabs: [adminTabMeta.deck, adminTabMeta.import, adminTabMeta.ranks, adminTabMeta.awards],
+      },
+      {
+        id: 'data',
+        label: 'Data',
+        short: 'DATA',
+        artLabel: 'Registry Grid',
+        description: 'Database, users and reports',
+        tabs: [adminTabMeta.database, adminTabMeta.users, adminTabMeta.bugReports],
+      },
+      {
+        id: 'integrations',
+        label: 'Integrations',
+        short: 'INT',
+        artLabel: 'Link Node',
+        description: 'GitHub and external channels',
+        tabs: [adminTabMeta.github],
+      },
+      {
+        id: 'system',
+        label: 'System',
+        short: 'SYS',
+        artLabel: 'Control Room',
+        description: 'Analytics and settings',
+        tabs: [adminTabMeta.analytics, adminTabMeta.settings],
+      },
+    ];
+  const activeCategory = adminCategories.find((category) => category.tabs.some((tab) => tab.id === activeTab)) ?? adminCategories[0];
+  const activeCategoryId = activeCategory.id;
+  const allAdminTabs: AdminNavTab[] = [
+    adminTabMeta.matches,
+    adminTabMeta.deck,
+    adminTabMeta.import,
+    adminTabMeta.ranks,
+    adminTabMeta.state,
+    adminTabMeta.database,
+    adminTabMeta.analytics,
+    adminTabMeta.github,
+    adminTabMeta.users,
+    adminTabMeta.awards,
+    adminTabMeta.bugReports,
+    adminTabMeta.settings,
+    adminTabMeta.simulation,
+  ];
   const activeTabPanel = (
     <>
       {activeTab === 'matches' ? (
@@ -1067,16 +1186,36 @@ export const AdminPage = ({
       {isV4 ? (
         <>
           <section className="admin-v4-tab-nav">
-            <AdminTabButtons t={t} activeTab={activeTab} setActiveTab={setActiveTab} />
+            <AdminCategoryButtons
+              categories={adminCategories}
+              activeCategoryId={activeCategoryId}
+              onSelectCategory={(categoryId) => {
+                const category = adminCategories.find((item) => item.id === categoryId);
+                if (category?.tabs[0]) {
+                  setActiveTab(category.tabs[0].id);
+                }
+              }}
+            />
           </section>
           <section className="admin-v4-workspace">
-            <header className="admin-v4-workspace-head">
-              <div>
-                <p className="admin-v4-kicker">{v4Text.runtimeMeta}</p>
+            <header className={`admin-v4-workspace-head is-${activeCategory.id}`}>
+              <div className="admin-v4-workspace-copy">
+                <p className="admin-v4-kicker">{activeCategory.label}</p>
                 <h3>{activeTabLabel}</h3>
                 <p className="admin-v4-subtitle">{activeTabDescriptionMap[activeTab]}</p>
+                <AdminTabButtons
+                  tabs={activeCategory.tabs}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  className="admin-v4-tab-strip"
+                />
               </div>
-              <span className="admin-v4-badge is-muted">{matches.length} / {activeMatchId || t.notSelected}</span>
+              <aside className={`admin-v4-category-banner is-${activeCategory.id}`}>
+                <span className="admin-v4-category-art-label">{activeCategory.artLabel}</span>
+                <strong>{activeCategory.label}</strong>
+                <small>{activeCategory.description}</small>
+                <span className="admin-v4-badge is-muted">{matches.length} / {activeMatchId || t.notSelected}</span>
+              </aside>
             </header>
             <div className="admin-v4-workspace-body">
               {activeTabPanel}
@@ -1085,14 +1224,11 @@ export const AdminPage = ({
         </>
       ) : (
         <>
-          <AdminTabButtons t={t} activeTab={activeTab} setActiveTab={setActiveTab} />
+          <AdminTabButtons tabs={allAdminTabs} activeTab={activeTab} setActiveTab={setActiveTab} />
           <hr />
           {activeTabPanel}
         </>
       )}
-      <p>
-        <a href="/">{t.openGame}</a>
-      </p>
     </section>
   );
 };

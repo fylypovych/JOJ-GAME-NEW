@@ -2,33 +2,34 @@ import { text } from '../../i18n';
 import type { AdminTab } from '../types';
 
 type T = ReturnType<typeof text>;
+export type AdminNavTab = {
+  id: AdminTab;
+  label: string;
+  short: string;
+};
+
+export type AdminNavCategory = {
+  id: 'operations' | 'content' | 'data' | 'integrations' | 'system';
+  label: string;
+  short: string;
+  artLabel: string;
+  description: string;
+  tabs: AdminNavTab[];
+};
 
 export const AdminTabButtons = ({
-  t,
+  tabs,
   activeTab,
   setActiveTab,
+  className = '',
 }: {
-  t: T;
+  tabs: AdminNavTab[];
   activeTab: AdminTab;
   setActiveTab: (tab: AdminTab) => void;
+  className?: string;
 }) => {
-  const tabs: Array<{ id: AdminTab; label: string; short: string }> = [
-    { id: 'matches', label: t.tabMatches, short: 'M' },
-    { id: 'deck', label: t.tabDeck, short: 'D' },
-    { id: 'import', label: t.tabImportExport, short: 'I' },
-    { id: 'ranks', label: t.tabRanks, short: 'R' },
-    { id: 'state', label: t.tabState, short: 'S' },
-    { id: 'database', label: t.tabDatabase, short: 'DB' },
-    { id: 'analytics', label: t.tabAnalytics, short: 'A' },
-    { id: 'github', label: t.tabGithub, short: 'GH' },
-    { id: 'users', label: t.tabUsers, short: 'U' },
-    { id: 'awards', label: t.tabAwards, short: 'AW' },
-    { id: 'bugReports', label: t.tabBugReports, short: 'BR' },
-    { id: 'settings', label: t.tabSettings, short: 'ST' },
-    { id: 'simulation', label: t.tabSimulation, short: 'SM' },
-  ];
   return (
-    <p className="admin-controls">
+    <p className={`admin-controls${className ? ` ${className}` : ''}`}>
       {tabs.map((tab) => (
         <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} disabled={activeTab === tab.id}>
           <span className="admin-tab-icon" aria-hidden="true">{tab.short}</span>
@@ -38,6 +39,35 @@ export const AdminTabButtons = ({
     </p>
   );
 };
+
+export const AdminCategoryButtons = ({
+  categories,
+  activeCategoryId,
+  onSelectCategory,
+}: {
+  categories: AdminNavCategory[];
+  activeCategoryId: AdminNavCategory['id'];
+  onSelectCategory: (categoryId: AdminNavCategory['id']) => void;
+}) => (
+  <nav className="admin-v4-category-list" aria-label="Admin categories">
+    {categories.map((category) => (
+      <button
+        key={category.id}
+        type="button"
+        className={`admin-v4-category-button${category.id === activeCategoryId ? ' is-active' : ''}`}
+        onClick={() => onSelectCategory(category.id)}
+      >
+        <span className={`admin-v4-category-thumb is-${category.id}`} aria-hidden="true">
+          <span>{category.short}</span>
+        </span>
+        <span className="admin-v4-category-copy">
+          <strong>{category.label}</strong>
+          <small>{category.description}</small>
+        </span>
+      </button>
+    ))}
+  </nav>
+);
 
 export const AdminMatchesTab = ({
   t,

@@ -1,4 +1,5 @@
-export { AdminTabButtons, AdminMatchesTab } from './tabs/common';
+export { AdminCategoryButtons, AdminTabButtons, AdminMatchesTab } from './tabs/common';
+export type { AdminNavCategory, AdminNavTab } from './tabs/common';
 export { AdminAnalyticsTab } from './tabs/analytics';
 export { AdminGithubTab } from './tabs/github';
 export { AdminSettingsTab } from './tabs/settings';

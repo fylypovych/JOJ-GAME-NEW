@@ -381,7 +381,7 @@ button:disabled {
     position: static;
   }
 
-  .admin-v4-tab-nav .admin-controls {
+  .admin-v4-category-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -468,11 +468,20 @@ button:disabled {
 }
 
 @media (max-width: 640px) {
-  .admin-v4-tab-nav .admin-controls,
+  .admin-v4-category-list,
   .admin-v4-stats,
   .admin-v4-overview-grid,
   .admin-v4-metric-row {
     grid-template-columns: 1fr;
+  }
+
+  .admin-v4-category-button {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .admin-v4-tab-strip button {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .admin-panel-v4 > h2 {
@@ -1361,7 +1370,7 @@ button:disabled {
   top: 20px;
 }
 
-.admin-v4-tab-nav .admin-controls {
+.admin-v4-category-list {
   display: grid;
   gap: 10px;
   margin: 0;
@@ -1375,35 +1384,118 @@ button:disabled {
     0 12px 24px rgba(17, 21, 28, 0.24);
 }
 
-.admin-v4-tab-nav .admin-controls button {
-  justify-content: center;
+.admin-v4-category-button {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
   width: 100%;
-  min-height: 46px;
-  padding: 8px 6px;
-  border-radius: 12px;
-  border-color: rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.02);
+  min-height: 58px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
   color: #cfd6e4;
   font-weight: 600;
   box-shadow: none;
-  text-align: center;
-  flex-direction: column;
-  gap: 5px;
+  text-align: left;
 }
 
-.admin-v4-tab-nav .admin-controls button:hover:not(:disabled) {
+.admin-v4-category-button:hover:not(:disabled) {
   border-color: rgba(121, 172, 247, 0.22);
   background: rgba(255, 255, 255, 0.05);
 }
 
-.admin-v4-tab-nav .admin-controls button:disabled {
-  opacity: 1;
+.admin-v4-category-button.is-active {
   border-color: rgba(111, 170, 255, 0.28);
   background: linear-gradient(180deg, #69aef7, #4f8fdc);
   color: #ffffff;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 8px 16px rgba(35, 77, 140, 0.24);
+}
+
+.admin-v4-category-thumb {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  border-radius: 12px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), transparent 40%),
+    linear-gradient(135deg, #7ca8e0, #38537f);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.admin-v4-category-thumb span {
+  position: relative;
+  z-index: 1;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #f7fbff;
+}
+
+.admin-v4-category-thumb::after {
+  content: '';
+  position: absolute;
+  inset: auto -8px -10px 12px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  transform: rotate(-18deg);
+}
+
+.admin-v4-category-thumb.is-operations {
+  background:
+    linear-gradient(145deg, rgba(120, 151, 208, 0.95), rgba(54, 72, 105, 0.96)),
+    linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, 0.08) 24%, rgba(255, 255, 255, 0.08) 26%, transparent 26%);
+}
+
+.admin-v4-category-thumb.is-content {
+  background:
+    linear-gradient(145deg, rgba(141, 179, 137, 0.96), rgba(54, 92, 62, 0.96)),
+    radial-gradient(circle at 24% 24%, rgba(255, 255, 255, 0.2), transparent 30%);
+}
+
+.admin-v4-category-thumb.is-data {
+  background:
+    linear-gradient(145deg, rgba(126, 160, 182, 0.96), rgba(52, 72, 87, 0.96)),
+    linear-gradient(0deg, transparent 30%, rgba(255, 255, 255, 0.08) 30%, rgba(255, 255, 255, 0.08) 33%, transparent 33%);
+}
+
+.admin-v4-category-thumb.is-integrations {
+  background:
+    linear-gradient(145deg, rgba(132, 145, 214, 0.96), rgba(58, 62, 114, 0.96)),
+    radial-gradient(circle at 70% 28%, rgba(255, 255, 255, 0.22), transparent 34%);
+}
+
+.admin-v4-category-thumb.is-system {
+  background:
+    linear-gradient(145deg, rgba(192, 159, 114, 0.96), rgba(105, 77, 45, 0.96)),
+    radial-gradient(circle at 28% 26%, rgba(255, 255, 255, 0.22), transparent 36%);
+}
+
+.admin-v4-category-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.admin-v4-category-copy strong {
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.admin-v4-category-copy small {
+  font-size: 10px;
+  line-height: 1.2;
+  color: rgba(224, 231, 244, 0.74);
+}
+
+.admin-v4-category-button.is-active .admin-v4-category-copy small {
+  color: rgba(247, 252, 255, 0.82);
 }
 
 .admin-v4-hero {
@@ -1659,8 +1751,126 @@ button:disabled {
   justify-content: space-between;
   gap: 18px;
   align-items: flex-start;
-  padding: 2px 2px 14px;
+  padding: 2px 2px 18px;
   border-bottom: 1px solid rgba(210, 216, 228, 0.9);
+}
+
+.admin-v4-workspace-copy {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.admin-v4-tab-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.admin-v4-tab-strip button {
+  min-height: 42px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border-color: rgba(176, 186, 203, 0.58);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(239, 243, 248, 0.98));
+  color: #4c586c;
+  gap: 8px;
+}
+
+.admin-v4-tab-strip button:hover:not(:disabled) {
+  border-color: rgba(118, 161, 222, 0.54);
+  background: linear-gradient(180deg, rgba(250, 252, 255, 0.98), rgba(231, 240, 251, 0.98));
+}
+
+.admin-v4-tab-strip button:disabled {
+  opacity: 1;
+  border-color: rgba(96, 143, 221, 0.45);
+  background: linear-gradient(180deg, rgba(113, 167, 244, 0.96), rgba(80, 127, 207, 0.96));
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.admin-v4-category-banner {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  min-width: 248px;
+  max-width: 296px;
+  padding: 18px;
+  border: 1px solid rgba(190, 202, 220, 0.8);
+  border-radius: 18px;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(245, 248, 253, 0.98), rgba(227, 233, 242, 0.96));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
+}
+
+.admin-v4-category-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 22% 24%, rgba(255, 255, 255, 0.52), transparent 32%),
+    linear-gradient(125deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.admin-v4-category-banner strong,
+.admin-v4-category-banner small,
+.admin-v4-category-art-label,
+.admin-v4-category-banner .admin-v4-badge {
+  position: relative;
+  z-index: 1;
+}
+
+.admin-v4-category-art-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #7d8aa1;
+}
+
+.admin-v4-category-banner strong {
+  font-size: 18px;
+  color: #2f3948;
+}
+
+.admin-v4-category-banner small {
+  max-width: 220px;
+  color: #667489;
+  line-height: 1.4;
+}
+
+.admin-v4-category-banner.is-operations {
+  background:
+    linear-gradient(135deg, rgba(245, 248, 254, 0.98), rgba(222, 231, 246, 0.96)),
+    linear-gradient(90deg, rgba(120, 154, 210, 0.15), transparent 60%);
+}
+
+.admin-v4-category-banner.is-content {
+  background:
+    linear-gradient(135deg, rgba(244, 249, 244, 0.98), rgba(224, 238, 225, 0.96)),
+    linear-gradient(90deg, rgba(123, 165, 124, 0.16), transparent 60%);
+}
+
+.admin-v4-category-banner.is-data {
+  background:
+    linear-gradient(135deg, rgba(242, 247, 250, 0.98), rgba(221, 231, 236, 0.96)),
+    linear-gradient(90deg, rgba(112, 149, 171, 0.16), transparent 60%);
+}
+
+.admin-v4-category-banner.is-integrations {
+  background:
+    linear-gradient(135deg, rgba(243, 244, 253, 0.98), rgba(224, 228, 246, 0.96)),
+    linear-gradient(90deg, rgba(116, 129, 205, 0.16), transparent 60%);
+}
+
+.admin-v4-category-banner.is-system {
+  background:
+    linear-gradient(135deg, rgba(251, 247, 239, 0.98), rgba(241, 229, 212, 0.96)),
+    linear-gradient(90deg, rgba(172, 132, 74, 0.18), transparent 60%);
 }
 
 .admin-v4-workspace-body {
@@ -1756,8 +1966,13 @@ button:disabled {
     position: static;
   }
 
-  .admin-v4-tab-nav .admin-controls {
+  .admin-v4-category-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-v4-category-banner {
+    width: 100%;
+    max-width: none;
   }
 
   .admin-v4-workspace-head {
