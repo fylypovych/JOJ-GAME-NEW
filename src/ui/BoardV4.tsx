@@ -3,8 +3,8 @@ import type { CardDefinition, ResourceKey } from '../game/types';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 import { buildGameoverPlayerSummaries, buildResourceHighlightMeta, buildTurnHelpItems, getBoardPromoteReason } from './board/boardViewHelpers';
 import { GameCardTile, PilePreview } from './board/components';
-import { buildNextRankHint, getNextRankSeatMeta } from './board/rankHints';
-import { BoardV3HandSection, BoardV3NoticeStack, BoardV3PlayerOverview, BoardV3SelectionPanel, BoardV3SidePanel } from './board/v3Sections';
+import { buildNextRankHint } from './board/rankHints';
+import { BoardV3HandSection, BoardV3NoticeStack, BoardV3SelectionPanel, BoardV3SidePanel } from './board/v3Sections';
 import { BoardV3EndVoteModal, BoardV3GameoverModal, BoardV3Header, BoardV3StandingsSummary } from './board/v3ShellSections';
 import { useBoardV2DerivedState } from './board/useBoardV2DerivedState';
 import { useBotPlaybackQueue, type BotPlaybackSpeedLevel } from './board/useBotPlaybackQueue';
@@ -65,6 +65,13 @@ const buildV3OpponentLayout = (opponentIds: string[]) => {
   };
 };
 
+const toInitials = (value: string) => value
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((chunk) => chunk[0]?.toUpperCase() ?? '')
+  .join('') || '??';
+
 export const BoardV4 = ({
   G: incomingG,
   ctx: incomingCtx,
@@ -83,6 +90,7 @@ export const BoardV4 = ({
   const v2 = t.v2;
   const isSpectator = !playerID;
   const [spectatorView, setSpectatorView] = useState<'live' | 'summary'>('live');
+  const [selectedHandCardId, setSelectedHandCardId] = useState<string | null>(null);
   const [impactPulse, setImpactPulse] = useState<{
     id: string;
     label: string;
@@ -356,9 +364,68 @@ export const BoardV4 = ({
     ...opponentLayout.leftIds,
     ...opponentLayout.rightIds,
   ];
-  const hasLeftFlank = false;
-  const hasRightFlank = false;
+  const opponentSplitIndex = Math.ceil(showcaseOpponentIds.length / 2);
+  const topLeftOpponentIds = showcaseOpponentIds.slice(0, opponentSplitIndex);
+  const topRightOpponentIds = showcaseOpponentIds.slice(opponentSplitIndex);
   const footerActionLabel = blockPlayerTurnControls ? botPlaybackControlLabel : passButtonLabel;
+  const selectedPendingCardId = pendingSelection?.cardId ?? null;
+  const visibleHandSelectedId = selectedPendingCardId && hand.some((card) => card.id === selectedPendingCardId)
+    ? selectedPendingCardId
+    : selectedHandCardId;
+  const currentTurnPlayerLabel = playerLabelById(ctx.currentPlayer);
+  const selectedPlayableHandCard = visibleHandSelectedId
+    ? handCardsView.find((row) => row.card.id === visibleHandSelectedId)?.card ?? null
+    : null;
+  const handleV4HandCardClick = (card: CardDefinition) => {
+    const allowed = handCardsView.find((row) => row.card.id === card.id)?.actionState.allowed ?? false;
+    if (!allowed) return;
+    if (visibleHandSelectedId === card.id) {
+      handleHandCardAction(card, requestPlayHandCard);
+      return;
+    }
+    setSelectedHandCardId(card.id);
+  };
+  const handlePrimaryV4Action = () => {
+    if (blockPlayerTurnControls) return;
+    if (pendingSelection) {
+      confirmPendingSelection();
+      return;
+    }
+    if (stage === 'draw' && canDraw) {
+      handleDraw();
+      return;
+    }
+    if (selectedPlayableHandCard) {
+      handleHandCardAction(selectedPlayableHandCard, requestPlayHandCard);
+      return;
+    }
+    if (!promoteReason && canPlay) {
+      handlePromote(promoteReason);
+    }
+  };
+  const primaryActionLabel = (() => {
+    if (blockPlayerTurnControls) return v2.waitingAction;
+    if (pendingSelection) return v2.confirm;
+    if (stage === 'draw') return t.draw;
+    if (selectedPlayableHandCard) return v2.play;
+    if (!promoteReason && canPlay) return t.promote;
+    return v2.play;
+  })();
+  const pendingSelectionReady = pendingSelection
+    ? (activeSelectionNeedsTarget ? Boolean(selectedTargetId) : activeSelectionNeedsResource ? Boolean(selectedResource) : true)
+    : false;
+  const primaryActionDisabled = blockPlayerTurnControls
+    || (pendingSelection ? !pendingSelectionReady : stage === 'draw' ? !canDraw : selectedPlayableHandCard ? false : !(!promoteReason && canPlay));
+
+  useEffect(() => {
+    if (selectedPendingCardId) {
+      setSelectedHandCardId(selectedPendingCardId);
+      return;
+    }
+    if (selectedHandCardId && !hand.some((card) => card.id === selectedHandCardId)) {
+      setSelectedHandCardId(null);
+    }
+  }, [selectedPendingCardId, selectedHandCardId, hand]);
 
   useEffect(() => {
     if (!latestArenaRow?.id) return;
@@ -564,32 +631,29 @@ export const BoardV4 = ({
             <div className="game-ui-v4-footer-bar">
               <div className="game-ui-v4-footer-resources">
                 {RESOURCE_ORDER.map((key) => (
-                  <div
+                  <span
                     key={`footer-${key}`}
                     className={`game-ui-v4-footer-resource${highlightedResources.has(key) ? ' is-highlighted' : ''}${deficitByResource[key] ? ' is-deficit' : ''}`}
                   >
                     <span className="game-ui-v4-footer-resource-icon" aria-hidden="true">{RESOURCE_ICONS[key]}</span>
-                    <span className="game-ui-v4-footer-resource-label">{resourceLabels[key]}</span>
                     <strong>{resources[key] ?? 0}</strong>
-                  </div>
+                    <span className="game-ui-v4-footer-resource-label">{resourceLabels[key]}</span>
+                  </span>
                 ))}
               </div>
               <div className="game-ui-v4-footer-rank">
-                <span className="game-ui-v3-stage-label">{t.yourRank}</span>
                 <strong>{rankName}</strong>
-                {nextRankMeta?.nextRank ? (
-                  <small>
-                    {nextRankMeta.nextRank.name} · {nextRankMeta.occupied}/{nextRankMeta.seatLimit}
-                  </small>
-                ) : (
-                  <small>{v2.noNextRank}</small>
-                )}
+                <small>
+                  {nextRankMeta?.nextRank
+                    ? `${nextRankMeta.occupied}/${nextRankMeta.seatLimit} ★`
+                    : v2.noNextRank}
+                </small>
               </div>
               <div className="game-ui-v4-footer-actions">
-                <button type="button" onClick={handleDraw} disabled={!canDraw || blockPlayerTurnControls}>{t.draw}</button>
-                <button type="button" onClick={() => handlePromote(promoteReason)} disabled={!canPlay || Boolean(promoteReason) || blockPlayerTurnControls}>{t.promote}</button>
+                <button type="button" className="is-primary" onClick={handlePrimaryV4Action} disabled={primaryActionDisabled}>{primaryActionLabel}</button>
                 <button
                   type="button"
+                  className="is-secondary"
                   onClick={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)}
                   disabled={!canEndTurn || blockPlayerTurnControls}
                 >
@@ -646,7 +710,7 @@ export const BoardV4 = ({
           ) : null}
 
           {(!isSpectator || spectatorView === 'live') ? (
-          <section className="game-ui-v3-panel game-ui-v3-battlefield">
+          <section className="game-ui-v3-panel game-ui-v3-battlefield game-ui-v4-battlefield-panel">
             <h3>{v2.tableState}</h3>
             <div className="game-ui-v3-board-surface" aria-hidden="true">
               <span className="game-ui-v3-board-ring game-ui-v3-board-ring-pressure" />
@@ -655,53 +719,77 @@ export const BoardV4 = ({
               <span className="game-ui-v3-board-glow game-ui-v3-board-glow-left" />
               <span className="game-ui-v3-board-glow game-ui-v3-board-glow-right" />
             </div>
-            <div className={`game-ui-v3-battlefield-shell is-opponents-${opponentIds.length}`}>
-              <div className="game-ui-v3-pressure-lane">
-                <div className="game-ui-v3-zone-head game-ui-v3-opponent-summary">
-                  <span className="game-ui-v3-stage-label">{v2.playersOverview}</span>
-                  <strong>{opponentIds.length}</strong>
+            <div className={`game-ui-v3-battlefield-shell game-ui-v4-battlefield-shell is-opponents-${opponentIds.length}`}>
+              <div className="game-ui-v4-opponents-area">
+                <div className="game-ui-v4-opponents-side is-left">
+                  {topLeftOpponentIds.map((pid) => {
+                    const rankIdForPlayer = G.ranks?.[pid] ?? '';
+                    const opponentRankName = sharedRanks.find((rank) => rank.id === rankIdForPlayer)?.name ?? rankLabel(rankIdForPlayer, lang);
+                    const opponentCardsCount = G.hands?.[pid]?.length ?? 0;
+                    const isActiveOpponent = ctx.currentPlayer === pid;
+                    const isSelectedOpponent = selectedTargetId === pid;
+                    return (
+                      <button
+                        key={`v4-opp-left-${pid}`}
+                        type="button"
+                        className={`game-ui-v4-opponent-card${isActiveOpponent ? ' is-active' : ''}${isSelectedOpponent ? ' is-selected' : ''}${activeSelectionNeedsTarget ? ' is-targetable' : ''}`}
+                        onClick={() => {
+                          if (!activeSelectionNeedsTarget) return;
+                          setSelectedTargetId(pid);
+                          postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`);
+                        }}
+                        disabled={!activeSelectionNeedsTarget}
+                      >
+                        <div className="game-ui-v4-opponent-avatar">{toInitials(playerLabelById(pid))}</div>
+                        <div className="game-ui-v4-opponent-copy">
+                          <strong>{playerLabelById(pid)}</strong>
+                          <span>{opponentRankName}</span>
+                          <small>{t.yourHand}: {opponentCardsCount}</small>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="game-ui-v3-opponent-top">
-                  <BoardV3PlayerOverview
-                    opponentIds={showcaseOpponentIds}
-                    G={G}
-                    sharedRanks={sharedRanks}
-                    ctxCurrentPlayer={ctx.currentPlayer}
-                    lang={lang}
-                    selectedTargetId={selectedTargetId}
-                    activeSelectionNeedsTarget={activeSelectionNeedsTarget}
-                    setSelectedTargetId={setSelectedTargetId}
-                    postTargetPick={(pid) => postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`)}
-                    playerLabelById={playerLabelById}
-                    resourceLabels={resourceLabels}
-                    v2={v2}
-                    getNextRankSeatMeta={getNextRankSeatMeta}
-                    layout="lane"
-                  />
+                <div className="game-ui-v4-center-badge">
+                  <div className="game-ui-v4-center-badge-portrait">{toInitials(currentTurnPlayerLabel)}</div>
+                  <div className="game-ui-v4-center-badge-copy">
+                    <span>{currentStageFocus || v2.commandCenter}</span>
+                    <strong>{currentTurnPlayerLabel}</strong>
+                    <small>{activeArenaRankName || rankName}</small>
+                  </div>
+                </div>
+                <div className="game-ui-v4-opponents-side is-right">
+                  {topRightOpponentIds.map((pid) => {
+                    const rankIdForPlayer = G.ranks?.[pid] ?? '';
+                    const opponentRankName = sharedRanks.find((rank) => rank.id === rankIdForPlayer)?.name ?? rankLabel(rankIdForPlayer, lang);
+                    const opponentCardsCount = G.hands?.[pid]?.length ?? 0;
+                    const isActiveOpponent = ctx.currentPlayer === pid;
+                    const isSelectedOpponent = selectedTargetId === pid;
+                    return (
+                      <button
+                        key={`v4-opp-right-${pid}`}
+                        type="button"
+                        className={`game-ui-v4-opponent-card${isActiveOpponent ? ' is-active' : ''}${isSelectedOpponent ? ' is-selected' : ''}${activeSelectionNeedsTarget ? ' is-targetable' : ''}`}
+                        onClick={() => {
+                          if (!activeSelectionNeedsTarget) return;
+                          setSelectedTargetId(pid);
+                          postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`);
+                        }}
+                        disabled={!activeSelectionNeedsTarget}
+                      >
+                        <div className="game-ui-v4-opponent-avatar">{toInitials(playerLabelById(pid))}</div>
+                        <div className="game-ui-v4-opponent-copy">
+                          <strong>{playerLabelById(pid)}</strong>
+                          <span>{opponentRankName}</span>
+                          <small>{t.yourHand}: {opponentCardsCount}</small>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-              <div className={`game-ui-v3-center-row${hasLeftFlank ? ' has-left-flank' : ''}${hasRightFlank ? ' has-right-flank' : ''}`}>
-                {hasLeftFlank ? (
-                  <aside className="game-ui-v3-opponent-flank is-left">
-                    <BoardV3PlayerOverview
-                      opponentIds={opponentLayout.leftIds}
-                      G={G}
-                      sharedRanks={sharedRanks}
-                      ctxCurrentPlayer={ctx.currentPlayer}
-                      lang={lang}
-                      selectedTargetId={selectedTargetId}
-                      activeSelectionNeedsTarget={activeSelectionNeedsTarget}
-                      setSelectedTargetId={setSelectedTargetId}
-                      postTargetPick={(pid) => postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`)}
-                      playerLabelById={playerLabelById}
-                      resourceLabels={resourceLabels}
-                      v2={v2}
-                      getNextRankSeatMeta={getNextRankSeatMeta}
-                      layout="lane"
-                    />
-                  </aside>
-                ) : null}
-                <div className="game-ui-v3-altar-lane">
+              <div className="game-ui-v4-board-area">
+                <div className="game-ui-v3-altar-lane game-ui-v4-board-center">
                   {impactPulse ? (
                     <div className={`game-ui-v3-impact-pulse is-${impactPulse.tone}`} aria-live="polite">
                       <div className="game-ui-v3-impact-beam" aria-hidden="true" />
@@ -771,7 +859,7 @@ export const BoardV4 = ({
                             <div className="game-ui-v3-focus-resources">
                               {RESOURCE_ORDER.map((key) => (
                                 <span key={`focus-resource-${key}`}>
-                                  {resourceLabels[key]}: {activeArenaResources?.[key] ?? 0}
+                                  {RESOURCE_ICONS[key]} {activeArenaResources?.[key] ?? 0}
                                 </span>
                               ))}
                             </div>
@@ -801,26 +889,6 @@ export const BoardV4 = ({
                     </div>
                   </div>
                 </div>
-                {hasRightFlank ? (
-                  <aside className="game-ui-v3-opponent-flank is-right">
-                    <BoardV3PlayerOverview
-                      opponentIds={opponentLayout.rightIds}
-                      G={G}
-                      sharedRanks={sharedRanks}
-                      ctxCurrentPlayer={ctx.currentPlayer}
-                      lang={lang}
-                      selectedTargetId={selectedTargetId}
-                      activeSelectionNeedsTarget={activeSelectionNeedsTarget}
-                      setSelectedTargetId={setSelectedTargetId}
-                      postTargetPick={(pid) => postNotice('info', `${v2.pickTarget}: ${playerLabelById(pid)}`)}
-                      playerLabelById={playerLabelById}
-                      resourceLabels={resourceLabels}
-                      v2={v2}
-                      getNextRankSeatMeta={getNextRankSeatMeta}
-                      layout="lane"
-                    />
-                  </aside>
-                ) : null}
             </div>
             </div>
           </section>
@@ -883,6 +951,8 @@ export const BoardV4 = ({
                 actionLabel={v2.play}
                 onAction={(card) => handleHandCardAction(card, requestPlayHandCard)}
                 actionDisabled={(card) => !(handCardsView.find((row) => row.card.id === card.id)?.actionState.allowed ?? false)}
+                selected={(card) => visibleHandSelectedId === card.id}
+                cardClickAction={handleV4HandCardClick}
                 effectLabel={effectLabel}
                 badges={(card) => handCardsView.find((row) => row.card.id === card.id)?.badges}
                 helperText={(card) => handCardsView.find((row) => row.card.id === card.id)?.helperText}

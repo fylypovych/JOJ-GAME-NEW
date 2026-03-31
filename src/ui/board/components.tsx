@@ -69,6 +69,8 @@ type GameCardTileProps = {
   helperText?: string;
   previewText?: string;
   variant?: 'default' | 'v3';
+  selected?: boolean;
+  onCardClick?: () => void;
 };
 
 export const GameCardTile = ({
@@ -91,6 +93,8 @@ export const GameCardTile = ({
   helperText,
   previewText,
   variant = 'default',
+  selected = false,
+  onCardClick,
 }: GameCardTileProps) => {
   const imageSrc = normalizeImagePath(resolvedImage) ?? normalizeImagePath(card.image) ?? `/cards/${card.id}.png`;
   const withCacheBust = (src: string) => `${src}${src.includes('?') ? '&' : '?'}v=${Date.now()}`;
@@ -107,11 +111,17 @@ export const GameCardTile = ({
   const flavorText = cardFlavor(card.flavor, lang, card.flavorEn);
   const effectEntries = card.effects ?? [];
   return (
-    <div className={`game-card${variant === 'v3' ? ' is-v3' : ''}`}>
+    <div
+      className={`game-card${variant === 'v3' ? ' is-v3' : ''}${selected ? ' is-selected' : ''}${actionDisabled ? ' is-disabled' : ''}`}
+      onClick={onCardClick}
+    >
       <button
         type="button"
         className={`game-card-inline-action${variant === 'v3' ? ' is-v3' : ''}`}
-        onClick={onAction}
+        onClick={(e) => {
+          e.stopPropagation();
+          onAction();
+        }}
         disabled={actionDisabled}
         title={actionTitle}
       >
@@ -121,7 +131,10 @@ export const GameCardTile = ({
         <button
           type="button"
           className={`game-card-inline-action${variant === 'v3' ? ' is-v3' : ''} ${extraAction.className ?? ''}`.trim()}
-          onClick={extraAction.onClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            extraAction.onClick();
+          }}
           disabled={extraAction.disabled}
         >
           {extraAction.label}
@@ -131,7 +144,10 @@ export const GameCardTile = ({
         <button
           type="button"
           className={`game-card-inline-action${variant === 'v3' ? ' is-v3' : ''} ${utilityAction.className ?? ''}`.trim()}
-          onClick={utilityAction.onClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            utilityAction.onClick();
+          }}
         >
           {utilityAction.label}
         </button>

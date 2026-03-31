@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getBotSeatIds } from '../../game/bot-engine/config';
 import { clampBotCountToAllowed, getAvailableBotCounts } from '../../game/lobbyConfig';
 import { normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition } from '../../game/types';
@@ -542,7 +541,6 @@ type ActiveSessionSectionProps = {
   sessionBroken: boolean;
   canStart: boolean;
   activeMatch?: LobbyMatch | null;
-  roomPlayerNames: Record<string, string>;
   roomDraft: {
     roomCapacity: number;
     gameMode: GameMode;
@@ -566,7 +564,6 @@ export const ActiveSessionSection = ({
   sessionBroken,
   canStart,
   activeMatch = null,
-  roomPlayerNames,
   roomDraft,
   optionalModules,
   applyCurrentRoomToDraft,
@@ -618,7 +615,6 @@ export const ActiveSessionSection = ({
   const activeGameMode = activeMatch?.setupData?.gameMode ?? 'standard';
   const activePlayerCount = activeMatch?.players.length ?? 0;
   const botsCount = Math.max(0, Math.min(Math.max(0, activePlayerCount - 1), Math.floor(activeMatch?.setupData?.bots?.count ?? 0)));
-  const botSeatSet = new Set(getBotSeatIds(activeMatch?.players.length ?? 0, botsCount));
   const activeModules = activeMatch?.setupData?.gameSetup?.optionalMainDeckModuleIds ?? [];
   const activeModulesLabel = formatModuleList(activeModules, moduleNameById);
   const draftDiffersFromRoom = Boolean(activeMatch) && (
@@ -665,38 +661,10 @@ export const ActiveSessionSection = ({
             </div>
             <p className="lobby-room-status-line"><strong>{activeReadyLabel}</strong></p>
           </div>
-          <div className="lobby-room-create-summary lobby-room-create-summary-compact">
-            <h3>{t.roomSummaryRoster}</h3>
-            <div className="lobby-room-seat-list">
-              {activeMatch.players.map((player) => {
-                const name = roomPlayerNames[String(player.id)] || player.name?.trim() || '';
-                const isYou = String(player.id) === (session.playerID ?? '');
-                const isBot = botSeatSet.has(String(player.id)) && Boolean(name);
-                const isHost = player.id === 0;
-                return (
-                  <span key={`active-seat-${player.id}`} className={`lobby-room-seat${name ? ' is-filled' : ' is-empty'}${isYou ? ' is-you' : ''}`}>
-                    #{player.id} {name || t.lobbySeatOpen}
-                    {isYou ? ` · ${t.roomYouTag}` : ''}
-                    {isBot ? ` · ${t.roomBotTag}` : ''}
-                    {isHost ? ` · ${t.roomHostTag}` : ''}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
         </div>
       ) : null}
       {activeMatch ? (
         <div className="lobby-active-room-grid">
-          <div className="lobby-room-create-summary lobby-room-create-summary-compact">
-            <h3>{t.roomAppliedConfigTitle}</h3>
-            <div className="lobby-room-kv-grid">
-              <span>{t.gameModeLabel}</span><strong>{formatGameModeLabel(t, activeGameMode)}</strong>
-              <span>{t.roomCapacity}</span><strong>{activeMatch.players.length}</strong>
-              <span>{t.roomBotsLabel}</span><strong>{botsCount || t.roomBotsOff}</strong>
-              <span>{t.roomModulesLabel}</span><strong>{activeModulesLabel}</strong>
-            </div>
-          </div>
           <div className="lobby-room-create-summary lobby-room-create-summary-compact">
             <h3>{t.roomDraftConfigTitle}</h3>
             <div className="lobby-room-kv-grid">

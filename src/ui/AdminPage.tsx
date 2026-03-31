@@ -574,123 +574,39 @@ export const AdminPage = ({
     ? [...adminAnalytics.byMode].sort((left, right) => right.matchesFinished - left.matchesFinished)[0]
     : null;
   const topWinningRank = adminAnalytics?.topWinningRanks?.[0] ?? null;
-  return (
-    <section className={`board admin-panel${uiVariant === 'v2' ? ' board-v2-panel' : ''}${uiVariant === 'v3' ? ' board-v3-panel' : ''}${isV4 ? ' admin-panel-v4' : ''}`}>
-      <h2>{t.adminTitle}</h2>
-      {showV4Overview ? (
-        <>
-          <section className="admin-v4-hero">
-            <div>
-              <p className="admin-v4-kicker">GreenDesk Control Surface</p>
-              <h3>{activeTabLabel}</h3>
-              <p className="admin-v4-subtitle">
-                {sharedConfigLoaded
-                  ? `PostgreSQL online. Active match: ${activeMatchId || t.notSelected}.`
-                  : 'Loading shared config, runtime controls and telemetry.'}
-              </p>
-            </div>
-            <div className="admin-v4-hero-actions">
-              <button type="button" onClick={() => setActiveTab('matches')}>{t.tabMatches}</button>
-              <button type="button" onClick={() => setActiveTab('settings')}>{t.tabSettings}</button>
-              <button type="button" onClick={() => setActiveTab('github')}>{t.tabGithub}</button>
-            </div>
-          </section>
-          <section className="admin-v4-stats">
-            {v4StatCards.map((card) => (
-              <article key={card.label} className={`admin-v4-stat-card tone-${card.tone}`}>
-                <span>{card.label}</span>
-                <strong>{card.value}</strong>
-              </article>
-            ))}
-          </section>
-          <section className="admin-v4-overview-grid">
-            <article className="admin-v4-panel">
-              <header className="admin-v4-panel-head">
-                <div>
-                  <p>{v4Text.runtimeMeta}</p>
-                  <h4>{v4Text.runtimeTitle}</h4>
-                </div>
-                <span className={`admin-v4-badge ${sharedConfigLoaded ? 'is-good' : 'is-warn'}`}>
-                  {sharedConfigLoaded ? v4Text.ready : v4Text.loading}
-                </span>
-              </header>
-              <div className="admin-v4-status-stack">
-                <div><span>{v4Text.storageLabel}</span><strong>{storageMode === 'db' ? t.storageModeDb : t.storageModeFiles}</strong></div>
-                <div><span>{v4Text.serverLabel}</span><strong>{serverUrl || t.notSelected}</strong></div>
-                <div><span>{v4Text.configLabel}</span><strong>{sharedConfigLoaded ? v4Text.ready : v4Text.loading}</strong></div>
-              </div>
-            </article>
-            <article className="admin-v4-panel">
-              <header className="admin-v4-panel-head">
-                <div>
-                  <p>{v4Text.gitMeta}</p>
-                  <h4>{v4Text.gitTitle}</h4>
-                </div>
-                <span className={`admin-v4-badge ${gitAuthStatus?.hasGithubCredentials ? 'is-good' : 'is-muted'}`}>
-                  {gitAuthStatus?.hasGithubCredentials ? v4Text.connected : v4Text.notConnected}
-                </span>
-              </header>
-              <div className="admin-v4-status-stack">
-                <div><span>{v4Text.authLabel}</span><strong>{gitAuthStatus?.savedUsername || v4Text.notConnected}</strong></div>
-                <div><span>{v4Text.repoLabel}</span><strong>{gitStatus?.branch || t.notSelected}</strong></div>
-                <div><span>{v4Text.syncLabel}</span><strong>{gitStatus ? (gitStatus.dirty ? v4Text.dirty : gitStatus.behind > 0 ? `${gitStatus.behind} behind` : v4Text.upToDate) : v4Text.loading}</strong></div>
-              </div>
-              {gitActionMessage ? <p className="admin-v4-note">{gitActionMessage}</p> : null}
-            </article>
-            <article className="admin-v4-panel">
-              <header className="admin-v4-panel-head">
-                <div>
-                  <p>{v4Text.moderationMeta}</p>
-                  <h4>{v4Text.moderationTitle}</h4>
-                </div>
-                <span className={`admin-v4-badge ${unresolvedBugReports > 0 ? 'is-warn' : 'is-good'}`}>
-                  {unresolvedBugReports > 0 ? `${unresolvedBugReports}` : v4Text.clean}
-                </span>
-              </header>
-              <div className="admin-v4-status-stack">
-                <div><span>{v4Text.newReportsLabel}</span><strong>{String(unresolvedBugReports)}</strong></div>
-                <div><span>{v4Text.resolvedReportsLabel}</span><strong>{String(resolvedBugReports)}</strong></div>
-                <div><span>{v4Text.latestReporterLabel}</span><strong>{latestBugReport?.submittedBy.displayName || latestBugReport?.submittedBy.username || v4Text.unknownUser}</strong></div>
-              </div>
-              <p className="admin-v4-note">{latestBugReport?.descriptionPreview || v4Text.noData}</p>
-            </article>
-            <article className="admin-v4-panel">
-              <header className="admin-v4-panel-head">
-                <div>
-                  <p>{v4Text.usersAssetsMeta}</p>
-                  <h4>{v4Text.usersAssetsTitle}</h4>
-                </div>
-                <span className="admin-v4-badge is-muted">{assetsLoading || adminUsersLoading ? v4Text.loading : v4Text.ready}</span>
-              </header>
-              <div className="admin-v4-status-stack">
-                <div><span>{v4Text.usersLabel}</span><strong>{String(adminUsers.length)}</strong></div>
-                <div><span>{v4Text.adminsLabel}</span><strong>{String(adminCount)}</strong></div>
-                <div><span>{v4Text.assetsLabel}</span><strong>{String(assets.length)}</strong></div>
-              </div>
-              <p className="admin-v4-note">{v4Text.latestAssetLabel}: {latestAsset?.fileName || v4Text.noData}</p>
-            </article>
-            <article className="admin-v4-panel admin-v4-panel-wide">
-              <header className="admin-v4-panel-head">
-                <div>
-                  <p>{v4Text.analyticsMeta}</p>
-                  <h4>{v4Text.analyticsTitle}</h4>
-                </div>
-                <span className={`admin-v4-badge ${adminAnalytics ? 'is-good' : 'is-muted'}`}>
-                  {adminAnalytics ? `${adminAnalytics.matchesFinished}` : v4Text.loading}
-                </span>
-              </header>
-              <div className="admin-v4-metric-row">
-                <div><span>{v4Text.finishedLabel}</span><strong>{String(adminAnalytics?.matchesFinished ?? 0)}</strong></div>
-                <div><span>{v4Text.avgTurnsLabel}</span><strong>{String(adminAnalytics?.avgTurns ?? 0)}</strong></div>
-                <div><span>{v4Text.topModeLabel}</span><strong>{topMode ? `${topMode.mode} · ${topMode.matchesFinished}` : v4Text.noData}</strong></div>
-                <div><span>{v4Text.topRankLabel}</span><strong>{topWinningRank ? `${localizedRankName(topWinningRank.rankId)} · ${topWinningRank.count}` : v4Text.noData}</strong></div>
-              </div>
-            </article>
-          </section>
-        </>
-      ) : null}
-      <AdminTabButtons t={t} activeTab={activeTab} setActiveTab={setActiveTab} />
-      <hr />
+  const activeTabDescriptionMap: Record<AdminTab, string> = lang === 'uk'
+    ? {
+      matches: 'Оперативне керування матчами, швидкий перезапуск і контроль активної кімнати.',
+      deck: 'Редагування карт, модулів і структури основної колоди.',
+      import: 'Імпорт, експорт і пакетні операції над шаблонами.',
+      ranks: 'Налаштування звань, вимог і варіантів зображень.',
+      state: 'Інспекція state snapshot та аварійна зупинка поточного матчу.',
+      database: 'Збереження конфігів, резервні копії та міграції БД.',
+      analytics: 'Зведена телеметрія матчів, режимів і топових рангів.',
+      github: 'GitHub credentials, синхронізація репозиторію та деплой.',
+      users: 'Користувачі, ролі, профілі та активні сесії.',
+      awards: 'Керування нагородами та умовами їх видачі.',
+      bugReports: 'Черга репортів, скріншоти й модерація інцидентів.',
+      settings: 'Серверні налаштування, UI config і технічне обслуговування assets.',
+      simulation: 'Симуляції балансу, прогрес виконання і зведення по результатах.',
+    }
+    : {
+      matches: 'Live match operations, quick reset flow and active room control.',
+      deck: 'Card, module and shared deck structure management.',
+      import: 'Import, export and bulk template operations.',
+      ranks: 'Rank definitions, requirements and image variants.',
+      state: 'State snapshot inspection and emergency match stop.',
+      database: 'Config persistence, backups and database migrations.',
+      analytics: 'Match telemetry, mode trends and top rank outcomes.',
+      github: 'GitHub credentials, repository sync and deploy actions.',
+      users: 'Users, roles, profiles and active sessions.',
+      awards: 'Award definitions and unlock rule management.',
+      bugReports: 'Bug report queue, screenshots and moderation flow.',
+      settings: 'Server settings, UI config and asset maintenance.',
+      simulation: 'Balance simulations, run progress and result summaries.',
+    };
+  const activeTabPanel = (
+    <>
       {activeTab === 'matches' ? (
         <AdminMatchesTab
           t={t}
@@ -1031,6 +947,149 @@ export const AdminPage = ({
           localizedRankName={localizedRankName}
         />
       ) : null}
+    </>
+  );
+  return (
+    <section className={`board admin-panel${uiVariant === 'v2' ? ' board-v2-panel' : ''}${uiVariant === 'v3' ? ' board-v3-panel' : ''}${isV4 ? ' admin-panel-v4' : ''}`}>
+      <h2>{t.adminTitle}</h2>
+      {showV4Overview ? (
+        <>
+          <section className="admin-v4-hero">
+            <div>
+              <p className="admin-v4-kicker">GreenDesk Control Surface</p>
+              <h3>{activeTabLabel}</h3>
+              <p className="admin-v4-subtitle">
+                {sharedConfigLoaded
+                  ? `PostgreSQL online. Active match: ${activeMatchId || t.notSelected}.`
+                  : 'Loading shared config, runtime controls and telemetry.'}
+              </p>
+            </div>
+            <div className="admin-v4-hero-actions">
+              <button type="button" onClick={() => setActiveTab('matches')}>{t.tabMatches}</button>
+              <button type="button" onClick={() => setActiveTab('settings')}>{t.tabSettings}</button>
+              <button type="button" onClick={() => setActiveTab('github')}>{t.tabGithub}</button>
+            </div>
+          </section>
+          <section className="admin-v4-stats">
+            {v4StatCards.map((card) => (
+              <article key={card.label} className={`admin-v4-stat-card tone-${card.tone}`}>
+                <span>{card.label}</span>
+                <strong>{card.value}</strong>
+              </article>
+            ))}
+          </section>
+          <section className="admin-v4-overview-grid">
+            <article className="admin-v4-panel">
+              <header className="admin-v4-panel-head">
+                <div>
+                  <p>{v4Text.runtimeMeta}</p>
+                  <h4>{v4Text.runtimeTitle}</h4>
+                </div>
+                <span className={`admin-v4-badge ${sharedConfigLoaded ? 'is-good' : 'is-warn'}`}>
+                  {sharedConfigLoaded ? v4Text.ready : v4Text.loading}
+                </span>
+              </header>
+              <div className="admin-v4-status-stack">
+                <div><span>{v4Text.storageLabel}</span><strong>{storageMode === 'db' ? t.storageModeDb : t.storageModeFiles}</strong></div>
+                <div><span>{v4Text.serverLabel}</span><strong>{serverUrl || t.notSelected}</strong></div>
+                <div><span>{v4Text.configLabel}</span><strong>{sharedConfigLoaded ? v4Text.ready : v4Text.loading}</strong></div>
+              </div>
+            </article>
+            <article className="admin-v4-panel">
+              <header className="admin-v4-panel-head">
+                <div>
+                  <p>{v4Text.gitMeta}</p>
+                  <h4>{v4Text.gitTitle}</h4>
+                </div>
+                <span className={`admin-v4-badge ${gitAuthStatus?.hasGithubCredentials ? 'is-good' : 'is-muted'}`}>
+                  {gitAuthStatus?.hasGithubCredentials ? v4Text.connected : v4Text.notConnected}
+                </span>
+              </header>
+              <div className="admin-v4-status-stack">
+                <div><span>{v4Text.authLabel}</span><strong>{gitAuthStatus?.savedUsername || v4Text.notConnected}</strong></div>
+                <div><span>{v4Text.repoLabel}</span><strong>{gitStatus?.branch || t.notSelected}</strong></div>
+                <div><span>{v4Text.syncLabel}</span><strong>{gitStatus ? (gitStatus.dirty ? v4Text.dirty : gitStatus.behind > 0 ? `${gitStatus.behind} behind` : v4Text.upToDate) : v4Text.loading}</strong></div>
+              </div>
+              {gitActionMessage ? <p className="admin-v4-note">{gitActionMessage}</p> : null}
+            </article>
+            <article className="admin-v4-panel">
+              <header className="admin-v4-panel-head">
+                <div>
+                  <p>{v4Text.moderationMeta}</p>
+                  <h4>{v4Text.moderationTitle}</h4>
+                </div>
+                <span className={`admin-v4-badge ${unresolvedBugReports > 0 ? 'is-warn' : 'is-good'}`}>
+                  {unresolvedBugReports > 0 ? `${unresolvedBugReports}` : v4Text.clean}
+                </span>
+              </header>
+              <div className="admin-v4-status-stack">
+                <div><span>{v4Text.newReportsLabel}</span><strong>{String(unresolvedBugReports)}</strong></div>
+                <div><span>{v4Text.resolvedReportsLabel}</span><strong>{String(resolvedBugReports)}</strong></div>
+                <div><span>{v4Text.latestReporterLabel}</span><strong>{latestBugReport?.submittedBy.displayName || latestBugReport?.submittedBy.username || v4Text.unknownUser}</strong></div>
+              </div>
+              <p className="admin-v4-note">{latestBugReport?.descriptionPreview || v4Text.noData}</p>
+            </article>
+            <article className="admin-v4-panel">
+              <header className="admin-v4-panel-head">
+                <div>
+                  <p>{v4Text.usersAssetsMeta}</p>
+                  <h4>{v4Text.usersAssetsTitle}</h4>
+                </div>
+                <span className="admin-v4-badge is-muted">{assetsLoading || adminUsersLoading ? v4Text.loading : v4Text.ready}</span>
+              </header>
+              <div className="admin-v4-status-stack">
+                <div><span>{v4Text.usersLabel}</span><strong>{String(adminUsers.length)}</strong></div>
+                <div><span>{v4Text.adminsLabel}</span><strong>{String(adminCount)}</strong></div>
+                <div><span>{v4Text.assetsLabel}</span><strong>{String(assets.length)}</strong></div>
+              </div>
+              <p className="admin-v4-note">{v4Text.latestAssetLabel}: {latestAsset?.fileName || v4Text.noData}</p>
+            </article>
+            <article className="admin-v4-panel admin-v4-panel-wide">
+              <header className="admin-v4-panel-head">
+                <div>
+                  <p>{v4Text.analyticsMeta}</p>
+                  <h4>{v4Text.analyticsTitle}</h4>
+                </div>
+                <span className={`admin-v4-badge ${adminAnalytics ? 'is-good' : 'is-muted'}`}>
+                  {adminAnalytics ? `${adminAnalytics.matchesFinished}` : v4Text.loading}
+                </span>
+              </header>
+              <div className="admin-v4-metric-row">
+                <div><span>{v4Text.finishedLabel}</span><strong>{String(adminAnalytics?.matchesFinished ?? 0)}</strong></div>
+                <div><span>{v4Text.avgTurnsLabel}</span><strong>{String(adminAnalytics?.avgTurns ?? 0)}</strong></div>
+                <div><span>{v4Text.topModeLabel}</span><strong>{topMode ? `${topMode.mode} · ${topMode.matchesFinished}` : v4Text.noData}</strong></div>
+                <div><span>{v4Text.topRankLabel}</span><strong>{topWinningRank ? `${localizedRankName(topWinningRank.rankId)} · ${topWinningRank.count}` : v4Text.noData}</strong></div>
+              </div>
+            </article>
+          </section>
+        </>
+      ) : null}
+      {isV4 ? (
+        <>
+          <section className="admin-v4-tab-nav">
+            <AdminTabButtons t={t} activeTab={activeTab} setActiveTab={setActiveTab} />
+          </section>
+          <section className="admin-v4-workspace">
+            <header className="admin-v4-workspace-head">
+              <div>
+                <p className="admin-v4-kicker">{v4Text.runtimeMeta}</p>
+                <h3>{activeTabLabel}</h3>
+                <p className="admin-v4-subtitle">{activeTabDescriptionMap[activeTab]}</p>
+              </div>
+              <span className="admin-v4-badge is-muted">{matches.length} / {activeMatchId || t.notSelected}</span>
+            </header>
+            <div className="admin-v4-workspace-body">
+              {activeTabPanel}
+            </div>
+          </section>
+        </>
+      ) : (
+        <>
+          <AdminTabButtons t={t} activeTab={activeTab} setActiveTab={setActiveTab} />
+          <hr />
+          {activeTabPanel}
+        </>
+      )}
       <p>
         <a href="/">{t.openGame}</a>
       </p>

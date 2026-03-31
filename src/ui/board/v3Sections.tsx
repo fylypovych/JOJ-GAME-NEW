@@ -216,8 +216,10 @@ export const BoardV3HandSection = (props: {
   helperText?: (card: CardDefinition) => string | undefined;
   previewText?: (card: CardDefinition) => string | undefined;
   extraAction?: (card: CardDefinition) => { label: string; onClick: () => void; disabled?: boolean; className?: string } | undefined;
+  selected?: (card: CardDefinition) => boolean;
+  cardClickAction?: (card: CardDefinition) => void;
 }) => {
-  const { title, subtitle, headRight, cards, cardImageById, lang, openPreviewKey, togglePreview, closePreview, categoryText, actionLabel, onAction, actionDisabled, actionTitle, effectLabel, badges, helperText, previewText, extraAction } = props;
+  const { title, subtitle, headRight, cards, cardImageById, lang, openPreviewKey, togglePreview, closePreview, categoryText, actionLabel, onAction, actionDisabled, actionTitle, effectLabel, badges, helperText, previewText, extraAction, selected, cardClickAction } = props;
   return (
     <section className="game-ui-v3-hand-section">
       <div className="game-ui-v3-hand-head">
@@ -248,6 +250,8 @@ export const BoardV3HandSection = (props: {
             badges={badges?.(card)}
             helperText={helperText?.(card)}
             previewText={previewText?.(card)}
+            selected={selected?.(card) ?? false}
+            onCardClick={cardClickAction ? () => cardClickAction(card) : undefined}
             extraAction={(() => {
               const action = extraAction?.(card);
               return action ? { ...action, disabled: Boolean(action.disabled) } : undefined;

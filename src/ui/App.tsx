@@ -575,7 +575,6 @@ export const App = () => {
           sessionBroken={sessionBroken}
           canStart={canStart}
           activeMatch={matches.find((match) => match.matchID === session.matchID) ?? null}
-          roomPlayerNames={roomPlayerNames}
           roomDraft={{
             roomCapacity,
             gameMode,
