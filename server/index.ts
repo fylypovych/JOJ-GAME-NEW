@@ -95,6 +95,7 @@ if (adminRuntimePolicy.startupError) {
 }
 
 type MatchDbBackend = {
+  type?: () => number;
   connect?: () => Promise<void>;
   createMatch?: (matchID: string, opts: { initialState: unknown; metadata: Record<string, unknown> | null }) => Promise<void>;
   setState?: (matchID: string, state: unknown, deltalog?: unknown[]) => Promise<void>;
@@ -126,6 +127,7 @@ const persistMatchMirrorById = async (matchId: string) => {
 };
 
 const matchDb = {
+  type: () => currentMatchDbBackend.type?.() ?? 1,
   connect: async () => {
     await currentMatchDbBackend.connect?.();
   },
@@ -214,6 +216,7 @@ type MatchFetchForMirror = {
 };
 
 void (async () => {
+  await flatFileMatchDb.connect?.();
   for (const warning of adminRuntimePolicy.warnings) {
     await logLine('WARN', warning);
   }
