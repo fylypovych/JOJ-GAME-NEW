@@ -868,37 +868,32 @@ export const BoardV4 = ({
                   <strong>{canPlayHandCard ? v2.canPlayNow : v2.actionUnavailable}</strong>
                 </div>
               </div>
-              <div className="game-ui-v3-hand-head">
-                <div>
-                  <h3>{t.yourHand} ({hand.length}/8)</h3>
-                  {mustDiscardOverflow ? (
-                    <p className="game-ui-v3-subtle is-warn">{v2.handOverflowWarning.replace('{count}', String(handOverflow))}</p>
-                  ) : null}
-                </div>
-                <div className="game-ui-v3-hand-controls">
-                  <label>
-                    <span>{v2.handFilter}</span>
-                    <select value={handFilter} onChange={(e) => setHandFilter(e.target.value as HandFilter)}>
-                      <option value="all">{v2.filterAll}</option>
-                      <option value="playable">{v2.filterPlayable}</option>
-                      {['LYAP', 'SCANDAL', 'SUPPORT', 'COMMAND', 'VVNZ'].map((category) => (
-                        <option key={`filter-${category}`} value={category}>{categoryLabel(category, lang)}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <span>{v2.handSort}</span>
-                    <select value={handSort} onChange={(e) => setHandSort(e.target.value as HandSort)}>
-                      <option value="default">{v2.sortDefault}</option>
-                      <option value="playable">{v2.sortPlayable}</option>
-                      <option value="category">{v2.sortCategory}</option>
-                      <option value="title">{v2.sortTitle}</option>
-                    </select>
-                  </label>
-                </div>
-              </div>
               <BoardV3HandSection
                 title={`${t.yourHand} (${hand.length}/8)`}
+                subtitle={mustDiscardOverflow ? v2.handOverflowWarning.replace('{count}', String(handOverflow)) : undefined}
+                headRight={(
+                  <div className="game-ui-v3-hand-controls">
+                    <label>
+                      <span>{v2.handFilter}</span>
+                      <select value={handFilter} onChange={(e) => setHandFilter(e.target.value as HandFilter)}>
+                        <option value="all">{v2.filterAll}</option>
+                        <option value="playable">{v2.filterPlayable}</option>
+                        {['LYAP', 'SCANDAL', 'SUPPORT', 'COMMAND', 'VVNZ'].map((category) => (
+                          <option key={`filter-${category}`} value={category}>{categoryLabel(category, lang)}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>{v2.handSort}</span>
+                      <select value={handSort} onChange={(e) => setHandSort(e.target.value as HandSort)}>
+                        <option value="default">{v2.sortDefault}</option>
+                        <option value="playable">{v2.sortPlayable}</option>
+                        <option value="category">{v2.sortCategory}</option>
+                        <option value="title">{v2.sortTitle}</option>
+                      </select>
+                    </label>
+                  </div>
+                )}
                 cards={handCardsView.map(({ card }) => card)}
                 cardImageById={cardImageById}
                 lang={lang}

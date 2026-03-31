@@ -562,6 +562,7 @@ export const AdminPage = ({
     bugReports: t.tabBugReports,
   };
   const activeTabLabel = activeTabLabelMap[activeTab];
+  const showV4Overview = isV4 && activeTab === 'matches';
   const v4StatCards = [
     { label: t.matches, value: String(matches.length), tone: 'teal' },
     { label: t.deckCount, value: String(cardCatalog.length), tone: 'mint' },
@@ -580,7 +581,7 @@ export const AdminPage = ({
   return (
     <section className={`board admin-panel${uiVariant === 'v2' ? ' board-v2-panel' : ''}${uiVariant === 'v3' ? ' board-v3-panel' : ''}${isV4 ? ' admin-panel-v4' : ''}`}>
       <h2>{t.adminTitle}</h2>
-      {isV4 ? (
+      {showV4Overview ? (
         <>
           <section className="admin-v4-hero">
             <div>
