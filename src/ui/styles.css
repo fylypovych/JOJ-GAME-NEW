@@ -370,15 +370,18 @@ button:disabled {
   .admin-panel-v4 > h2,
   .admin-panel-v4 > .admin-v4-hero,
   .admin-panel-v4 > .admin-v4-stats,
-  .admin-panel-v4 > .admin-controls:first-of-type,
+  .admin-panel-v4 > .admin-v4-tab-nav,
   .admin-panel-v4 > hr,
-  .admin-panel-v4 > :not(h2):not(.admin-v4-hero):not(.admin-v4-stats):not(.admin-controls:first-of-type) {
+  .admin-panel-v4 > :not(h2):not(.admin-v4-hero):not(.admin-v4-stats):not(.admin-controls:first-of-type):not(.admin-v4-tab-nav) {
     grid-column: 1;
   }
 
-  .admin-panel-v4 > .admin-controls:first-of-type {
+  .admin-panel-v4 > .admin-v4-tab-nav {
     grid-row: auto;
     position: static;
+  }
+
+  .admin-v4-tab-nav .admin-controls {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -465,7 +468,7 @@ button:disabled {
 }
 
 @media (max-width: 640px) {
-  .admin-panel-v4 > .admin-controls:first-of-type,
+  .admin-v4-tab-nav .admin-controls,
   .admin-v4-stats,
   .admin-v4-overview-grid,
   .admin-v4-metric-row {
@@ -1346,18 +1349,22 @@ button:disabled {
 .admin-panel-v4 > .admin-v4-hero,
 .admin-panel-v4 > .admin-v4-stats,
 .admin-panel-v4 > hr,
-.admin-panel-v4 > :not(h2):not(.admin-v4-hero):not(.admin-v4-stats):not(.admin-controls:first-of-type) {
+.admin-panel-v4 > :not(h2):not(.admin-v4-hero):not(.admin-v4-stats):not(.admin-controls:first-of-type):not(.admin-v4-tab-nav) {
   grid-column: 2;
 }
 
-.admin-panel-v4 > .admin-controls:first-of-type {
+.admin-panel-v4 > .admin-v4-tab-nav {
   grid-column: 1;
   grid-row: 2 / span 40;
   align-self: start;
   position: sticky;
   top: 20px;
+}
+
+.admin-v4-tab-nav .admin-controls {
   display: grid;
   gap: 10px;
+  margin: 0;
   padding: 12px 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
@@ -1368,7 +1375,7 @@ button:disabled {
     0 12px 24px rgba(17, 21, 28, 0.24);
 }
 
-.admin-panel-v4 > .admin-controls:first-of-type button {
+.admin-v4-tab-nav .admin-controls button {
   justify-content: center;
   width: 100%;
   min-height: 46px;
@@ -1384,12 +1391,12 @@ button:disabled {
   gap: 5px;
 }
 
-.admin-panel-v4 > .admin-controls:first-of-type button:hover:not(:disabled) {
+.admin-v4-tab-nav .admin-controls button:hover:not(:disabled) {
   border-color: rgba(121, 172, 247, 0.22);
   background: rgba(255, 255, 255, 0.05);
 }
 
-.admin-panel-v4 > .admin-controls:first-of-type button:disabled {
+.admin-v4-tab-nav .admin-controls button:disabled {
   opacity: 1;
   border-color: rgba(111, 170, 255, 0.28);
   background: linear-gradient(180deg, #69aef7, #4f8fdc);
@@ -1633,15 +1640,6 @@ button:disabled {
   background: linear-gradient(135deg, rgba(252, 244, 228, 0.96), rgba(255, 255, 255, 0.9));
 }
 
-.admin-v4-tab-nav {
-  grid-column: 1 / -1;
-  margin-bottom: 0;
-}
-
-.admin-v4-tab-nav .admin-controls {
-  margin: 0;
-}
-
 .admin-v4-workspace {
   grid-column: 2;
   display: grid;
@@ -1747,15 +1745,19 @@ button:disabled {
   .admin-panel-v4 > .admin-v4-hero,
   .admin-panel-v4 > .admin-v4-stats,
   .admin-panel-v4 > hr,
-  .admin-panel-v4 > :not(h2):not(.admin-v4-hero):not(.admin-v4-stats):not(.admin-controls:first-of-type),
+  .admin-panel-v4 > :not(h2):not(.admin-v4-hero):not(.admin-v4-stats):not(.admin-controls:first-of-type):not(.admin-v4-tab-nav),
   .admin-v4-workspace {
     grid-column: 1;
   }
 
-  .admin-panel-v4 > .admin-controls:first-of-type {
+  .admin-panel-v4 > .admin-v4-tab-nav {
     grid-column: 1;
     grid-row: auto;
     position: static;
+  }
+
+  .admin-v4-tab-nav .admin-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .admin-v4-workspace-head {
