@@ -148,7 +148,7 @@ type UserTabsProps = {
   t: T;
   activeUserTab: UserTab;
   setActiveUserTab: (tab: UserTab) => void;
-  uiVariant?: 'v1' | 'v2' | 'v3';
+  uiVariant?: 'v1' | 'v2' | 'v3' | 'v4';
 };
 
 export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v1' }: UserTabsProps) => (
@@ -201,7 +201,7 @@ type LobbySectionProps = {
   optionalModules: Array<{ id: string; name: string; alwaysOn: boolean }>;
   selectedOptionalModuleIds: string[];
   setSelectedOptionalModuleIds: (ids: string[]) => void;
-  uiVariant?: 'v1' | 'v2' | 'v3';
+  uiVariant?: 'v1' | 'v2' | 'v3' | 'v4';
 };
 
 export const LobbySection = ({
@@ -556,7 +556,7 @@ type ActiveSessionSectionProps = {
   leaveRoom: () => void;
   refreshMatches: () => void;
   loading: boolean;
-  uiVariant?: 'v1' | 'v2' | 'v3';
+  uiVariant?: 'v1' | 'v2' | 'v3' | 'v4';
 };
 
 export const ActiveSessionSection = ({
@@ -1183,7 +1183,7 @@ type GallerySectionProps = {
   galleryCards: CardDefinition[];
   galleryCategories: CardDefinition['category'][];
   effectLabel: (resource: 'time' | 'reputation' | 'discipline' | 'documents' | 'tech' | 'rank') => string;
-  uiVariant?: 'v1' | 'v2' | 'v3';
+  uiVariant?: 'v1' | 'v2' | 'v3' | 'v4';
 };
 
 export const GallerySection = ({
@@ -1288,7 +1288,7 @@ export const RulesSection = ({
   t,
   rules,
   uiVariant = 'v1',
-}: { t: T; rules: readonly string[]; uiVariant?: 'v1' | 'v2' | 'v3' }) => (
+}: { t: T; rules: readonly string[]; uiVariant?: 'v1' | 'v2' | 'v3' | 'v4' }) => (
   <section className={`board${uiVariant === 'v2' ? ' board-v2-panel board-v2-rules' : ''}${uiVariant === 'v3' ? ' board-v3-panel board-v3-rules' : ''}`}>
     <h2>{t.rulesTitle}</h2>
     <ol className={`rules-list${uiVariant === 'v2' ? ' rules-list-v2' : ''}`}>

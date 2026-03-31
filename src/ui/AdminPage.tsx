@@ -16,6 +16,7 @@ import { useAdminSimulation } from './admin/useAdminSimulation';
 import { useAdminTemplateManager } from './admin/useAdminTemplateManager';
 import { useAdminAwards } from './admin/useAdminAwards';
 import { useAdminAnalytics } from './admin/useAdminAnalytics';
+import { useAdminAssets } from './admin/useAdminAssets';
 import { useAdminBugReports } from './admin/useAdminBugReports';
 import { useBugReportUiConfig } from './admin/useBugReportUiConfig';
 import { useGameUiConfig } from './admin/useGameUiConfig';
@@ -122,6 +123,7 @@ export const AdminPage = ({
   const [restartingServer, setRestartingServer] = useState<boolean>(false);
   const [adminActionError, setAdminActionError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<AdminTab>('matches');
+  const [v4Prefetched, setV4Prefetched] = useState(false);
   const optionalSimulationModules = useMemo(
     () => (sharedDeckTemplate.modules ?? [])
       .filter((module) => module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
@@ -316,6 +318,16 @@ export const AdminPage = ({
     loadGameUiConfig,
     saveGameUiConfig,
   } = useGameUiConfig({ lang, serverUrl, adminJsonFetch });
+  const {
+    assets,
+    assetsLoading,
+    assetsError,
+    assetsStatus,
+    assetsCleanupRunning,
+    loadAssets,
+    cleanupOrphanedFiles,
+    cleanupOrphanedRecords,
+  } = useAdminAssets({ lang, serverUrl, adminJsonFetch });
 
   const {
     gitStatus,
@@ -436,6 +448,7 @@ export const AdminPage = ({
     if (activeTab !== 'settings') return;
     void loadBugReportUiConfig();
     void loadGameUiConfig();
+    void loadAssets();
   }, [activeTab]);
   useEffect(() => {
     if (activeTab !== 'github') return;
@@ -445,9 +458,240 @@ export const AdminPage = ({
     if (activeTab !== 'bugReports' || bugReportsLoading) return;
     void loadBugReports();
   }, [activeTab]);
+  const isV4 = uiVariant === 'v4';
+  useEffect(() => {
+    if (!isV4 || v4Prefetched) return;
+    setV4Prefetched(true);
+    void loadAdminUsers();
+    void refreshAdminAnalytics();
+    void loadBugReports();
+    void loadAssets();
+    void loadGitAuthStatus({ preserveMessages: true });
+    void checkGitUpdates({ preserveMessages: true });
+  }, [isV4, v4Prefetched]);
+  const v4Text = lang === 'uk'
+    ? {
+      runtimeTitle: 'Стан системи',
+      runtimeMeta: 'live',
+      storageLabel: 'Сховище',
+      serverLabel: 'Сервер',
+      configLabel: 'Shared config',
+      gitTitle: 'GitHub та деплой',
+      gitMeta: 'repo',
+      authLabel: 'Доступ',
+      repoLabel: 'Гілка',
+      syncLabel: 'Синхронізація',
+      moderationTitle: 'Модерація',
+      moderationMeta: 'reports',
+      newReportsLabel: 'Нові',
+      resolvedReportsLabel: 'Вирішено',
+      latestReporterLabel: 'Останній автор',
+      usersAssetsTitle: 'Користувачі та assets',
+      usersAssetsMeta: 'library',
+      usersLabel: 'Користувачі',
+      adminsLabel: 'Адміни',
+      assetsLabel: 'Assets',
+      latestAssetLabel: 'Останній файл',
+      analyticsTitle: 'Пульс матчів',
+      analyticsMeta: 'telemetry',
+      finishedLabel: 'Завершено',
+      avgTurnsLabel: 'Сер. ходів',
+      topModeLabel: 'Топ-режим',
+      topRankLabel: 'Топ-звання',
+      connected: 'підключено',
+      notConnected: 'не підключено',
+      ready: 'готово',
+      loading: 'завантаження',
+      clean: 'чисто',
+      dirty: 'локальні зміни',
+      upToDate: 'актуально',
+      noData: 'ще немає даних',
+      unknownUser: 'невідомо',
+    }
+    : {
+      runtimeTitle: 'System status',
+      runtimeMeta: 'live',
+      storageLabel: 'Storage',
+      serverLabel: 'Server',
+      configLabel: 'Shared config',
+      gitTitle: 'GitHub and deploy',
+      gitMeta: 'repo',
+      authLabel: 'Access',
+      repoLabel: 'Branch',
+      syncLabel: 'Sync',
+      moderationTitle: 'Moderation',
+      moderationMeta: 'reports',
+      newReportsLabel: 'New',
+      resolvedReportsLabel: 'Resolved',
+      latestReporterLabel: 'Latest reporter',
+      usersAssetsTitle: 'Users and assets',
+      usersAssetsMeta: 'library',
+      usersLabel: 'Users',
+      adminsLabel: 'Admins',
+      assetsLabel: 'Assets',
+      latestAssetLabel: 'Latest file',
+      analyticsTitle: 'Match pulse',
+      analyticsMeta: 'telemetry',
+      finishedLabel: 'Finished',
+      avgTurnsLabel: 'Avg turns',
+      topModeLabel: 'Top mode',
+      topRankLabel: 'Top rank',
+      connected: 'connected',
+      notConnected: 'not connected',
+      ready: 'ready',
+      loading: 'loading',
+      clean: 'clean',
+      dirty: 'local changes',
+      upToDate: 'up to date',
+      noData: 'no data yet',
+      unknownUser: 'unknown',
+    };
+  const activeTabLabelMap: Record<AdminTab, string> = {
+    matches: t.tabMatches,
+    deck: t.tabDeck,
+    import: t.tabImportExport,
+    state: t.tabState,
+    ranks: t.tabRanks,
+    database: t.tabDatabase,
+    analytics: t.tabAnalytics,
+    github: t.tabGithub,
+    settings: t.tabSettings,
+    simulation: t.tabSimulation,
+    users: t.tabUsers,
+    awards: t.tabAwards,
+    bugReports: t.tabBugReports,
+  };
+  const activeTabLabel = activeTabLabelMap[activeTab];
+  const v4StatCards = [
+    { label: t.matches, value: String(matches.length), tone: 'teal' },
+    { label: t.deckCount, value: String(cardCatalog.length), tone: 'mint' },
+    { label: t.ranksTitle, value: String(sharedRanks.length), tone: 'blue' },
+    { label: t.roomModulesLabel, value: String(sharedDeckTemplate.modules.length), tone: 'sand' },
+  ];
+  const adminCount = adminUsers.filter((user) => user.role === 'administrator').length;
+  const unresolvedBugReports = bugReports.filter((report) => report.status === 'new').length;
+  const resolvedBugReports = bugReports.filter((report) => report.status === 'resolved').length;
+  const latestBugReport = bugReports[0] ?? null;
+  const latestAsset = assets.find((asset) => !asset.deletedAt) ?? assets[0] ?? null;
+  const topMode = adminAnalytics?.byMode
+    ? [...adminAnalytics.byMode].sort((left, right) => right.matchesFinished - left.matchesFinished)[0]
+    : null;
+  const topWinningRank = adminAnalytics?.topWinningRanks?.[0] ?? null;
   return (
-    <section className={`board admin-panel${uiVariant === 'v2' ? ' board-v2-panel' : ' board-v3-panel'}`}>
+    <section className={`board admin-panel${uiVariant === 'v2' ? ' board-v2-panel' : ''}${uiVariant === 'v3' ? ' board-v3-panel' : ''}${isV4 ? ' admin-panel-v4' : ''}`}>
       <h2>{t.adminTitle}</h2>
+      {isV4 ? (
+        <>
+          <section className="admin-v4-hero">
+            <div>
+              <p className="admin-v4-kicker">GreenDesk Control Surface</p>
+              <h3>{activeTabLabel}</h3>
+              <p className="admin-v4-subtitle">
+                {sharedConfigLoaded
+                  ? `PostgreSQL online. Active match: ${activeMatchId || t.notSelected}.`
+                  : 'Loading shared config, runtime controls and telemetry.'}
+              </p>
+            </div>
+            <div className="admin-v4-hero-actions">
+              <button type="button" onClick={() => setActiveTab('matches')}>{t.tabMatches}</button>
+              <button type="button" onClick={() => setActiveTab('settings')}>{t.tabSettings}</button>
+              <button type="button" onClick={() => setActiveTab('github')}>{t.tabGithub}</button>
+            </div>
+          </section>
+          <section className="admin-v4-stats">
+            {v4StatCards.map((card) => (
+              <article key={card.label} className={`admin-v4-stat-card tone-${card.tone}`}>
+                <span>{card.label}</span>
+                <strong>{card.value}</strong>
+              </article>
+            ))}
+          </section>
+          <section className="admin-v4-overview-grid">
+            <article className="admin-v4-panel">
+              <header className="admin-v4-panel-head">
+                <div>
+                  <p>{v4Text.runtimeMeta}</p>
+                  <h4>{v4Text.runtimeTitle}</h4>
+                </div>
+                <span className={`admin-v4-badge ${sharedConfigLoaded ? 'is-good' : 'is-warn'}`}>
+                  {sharedConfigLoaded ? v4Text.ready : v4Text.loading}
+                </span>
+              </header>
+              <div className="admin-v4-status-stack">
+                <div><span>{v4Text.storageLabel}</span><strong>{storageMode === 'db' ? t.storageModeDb : t.storageModeFiles}</strong></div>
+                <div><span>{v4Text.serverLabel}</span><strong>{serverUrl || t.notSelected}</strong></div>
+                <div><span>{v4Text.configLabel}</span><strong>{sharedConfigLoaded ? v4Text.ready : v4Text.loading}</strong></div>
+              </div>
+            </article>
+            <article className="admin-v4-panel">
+              <header className="admin-v4-panel-head">
+                <div>
+                  <p>{v4Text.gitMeta}</p>
+                  <h4>{v4Text.gitTitle}</h4>
+                </div>
+                <span className={`admin-v4-badge ${gitAuthStatus?.hasGithubCredentials ? 'is-good' : 'is-muted'}`}>
+                  {gitAuthStatus?.hasGithubCredentials ? v4Text.connected : v4Text.notConnected}
+                </span>
+              </header>
+              <div className="admin-v4-status-stack">
+                <div><span>{v4Text.authLabel}</span><strong>{gitAuthStatus?.savedUsername || v4Text.notConnected}</strong></div>
+                <div><span>{v4Text.repoLabel}</span><strong>{gitStatus?.branch || t.notSelected}</strong></div>
+                <div><span>{v4Text.syncLabel}</span><strong>{gitStatus ? (gitStatus.dirty ? v4Text.dirty : gitStatus.behind > 0 ? `${gitStatus.behind} behind` : v4Text.upToDate) : v4Text.loading}</strong></div>
+              </div>
+              {gitActionMessage ? <p className="admin-v4-note">{gitActionMessage}</p> : null}
+            </article>
+            <article className="admin-v4-panel">
+              <header className="admin-v4-panel-head">
+                <div>
+                  <p>{v4Text.moderationMeta}</p>
+                  <h4>{v4Text.moderationTitle}</h4>
+                </div>
+                <span className={`admin-v4-badge ${unresolvedBugReports > 0 ? 'is-warn' : 'is-good'}`}>
+                  {unresolvedBugReports > 0 ? `${unresolvedBugReports}` : v4Text.clean}
+                </span>
+              </header>
+              <div className="admin-v4-status-stack">
+                <div><span>{v4Text.newReportsLabel}</span><strong>{String(unresolvedBugReports)}</strong></div>
+                <div><span>{v4Text.resolvedReportsLabel}</span><strong>{String(resolvedBugReports)}</strong></div>
+                <div><span>{v4Text.latestReporterLabel}</span><strong>{latestBugReport?.submittedBy.displayName || latestBugReport?.submittedBy.username || v4Text.unknownUser}</strong></div>
+              </div>
+              <p className="admin-v4-note">{latestBugReport?.descriptionPreview || v4Text.noData}</p>
+            </article>
+            <article className="admin-v4-panel">
+              <header className="admin-v4-panel-head">
+                <div>
+                  <p>{v4Text.usersAssetsMeta}</p>
+                  <h4>{v4Text.usersAssetsTitle}</h4>
+                </div>
+                <span className="admin-v4-badge is-muted">{assetsLoading || adminUsersLoading ? v4Text.loading : v4Text.ready}</span>
+              </header>
+              <div className="admin-v4-status-stack">
+                <div><span>{v4Text.usersLabel}</span><strong>{String(adminUsers.length)}</strong></div>
+                <div><span>{v4Text.adminsLabel}</span><strong>{String(adminCount)}</strong></div>
+                <div><span>{v4Text.assetsLabel}</span><strong>{String(assets.length)}</strong></div>
+              </div>
+              <p className="admin-v4-note">{v4Text.latestAssetLabel}: {latestAsset?.fileName || v4Text.noData}</p>
+            </article>
+            <article className="admin-v4-panel admin-v4-panel-wide">
+              <header className="admin-v4-panel-head">
+                <div>
+                  <p>{v4Text.analyticsMeta}</p>
+                  <h4>{v4Text.analyticsTitle}</h4>
+                </div>
+                <span className={`admin-v4-badge ${adminAnalytics ? 'is-good' : 'is-muted'}`}>
+                  {adminAnalytics ? `${adminAnalytics.matchesFinished}` : v4Text.loading}
+                </span>
+              </header>
+              <div className="admin-v4-metric-row">
+                <div><span>{v4Text.finishedLabel}</span><strong>{String(adminAnalytics?.matchesFinished ?? 0)}</strong></div>
+                <div><span>{v4Text.avgTurnsLabel}</span><strong>{String(adminAnalytics?.avgTurns ?? 0)}</strong></div>
+                <div><span>{v4Text.topModeLabel}</span><strong>{topMode ? `${topMode.mode} · ${topMode.matchesFinished}` : v4Text.noData}</strong></div>
+                <div><span>{v4Text.topRankLabel}</span><strong>{topWinningRank ? `${localizedRankName(topWinningRank.rankId)} · ${topWinningRank.count}` : v4Text.noData}</strong></div>
+              </div>
+            </article>
+          </section>
+        </>
+      ) : null}
       <AdminTabButtons t={t} activeTab={activeTab} setActiveTab={setActiveTab} />
       <hr />
       {activeTab === 'matches' ? (
@@ -541,6 +785,14 @@ export const AdminPage = ({
           gameUiConfigLoading={gameUiConfigLoading}
           gameUiConfigError={gameUiConfigError}
           gameUiConfigStatus={gameUiConfigStatus}
+          assets={assets}
+          assetsLoading={assetsLoading}
+          assetsError={assetsError}
+          assetsStatus={assetsStatus}
+          assetsCleanupRunning={assetsCleanupRunning}
+          onRefreshAssets={() => { void loadAssets(); }}
+          onCleanupOrphanedFiles={() => { void cleanupOrphanedFiles(); }}
+          onCleanupOrphanedRecords={() => { void cleanupOrphanedRecords(); }}
         />
       ) : null}
       {activeTab === 'github' ? (

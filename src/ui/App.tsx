@@ -71,6 +71,7 @@ const lobbyClient = new LobbyClient({ server: SERVER_URL });
 const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
 const NetworkClientV2 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV2 })));
 const NetworkClientV3 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV3 })));
+const NetworkClientV4 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV4 })));
 
 const TEMPLATE_API = `${SERVER_URL}/api/shared-deck-template`;
 const RANKS_API = `${SERVER_URL}/api/shared-ranks`;
@@ -493,6 +494,10 @@ export const App = () => {
               <button type="button" onClick={() => setGameUiVariant('v3')} disabled={gameUiVariant === 'v3'}>
                 {t.gameUiV3}
               </button>
+              {' '}
+              <button type="button" onClick={() => setGameUiVariant('v4')} disabled={gameUiVariant === 'v4'}>
+                {('gameUiV4' in t ? (t as typeof t & { gameUiV4: string }).gameUiV4 : 'v4')}
+              </button>
               {' | '}
               <a className="app-toolbar-link-button" href="/admin">{t.openAdmin}</a>
             </p>
@@ -512,9 +517,13 @@ export const App = () => {
           <button type="button" onClick={() => setAdminUiVariant('v2')} disabled={adminUiVariant === 'v2'}>
             {t.gameUiV2}
           </button>{' '}
-          <button type="button" onClick={() => setAdminUiVariant('v3')} disabled={adminUiVariant === 'v3'}>
-            {t.gameUiV3}
-          </button>
+              <button type="button" onClick={() => setAdminUiVariant('v3')} disabled={adminUiVariant === 'v3'}>
+                {t.gameUiV3}
+              </button>
+              {' '}
+              <button type="button" onClick={() => setAdminUiVariant('v4')} disabled={adminUiVariant === 'v4'}>
+                {('gameUiV4' in t ? (t as typeof t & { gameUiV4: string }).gameUiV4 : 'v4')}
+              </button>
         </p>
       )}
       <p className="app-link-row">
@@ -617,7 +626,19 @@ export const App = () => {
       <div style={{ display: !isAdminRoute && activeUserTab === 'games' && session && canStart ? 'block' : 'none' }}>
         {session ? (
           <Suspense fallback={<p>{t.loading}</p>}>
-            {gameUiVariant === 'v3' ? <NetworkClientV3
+            {gameUiVariant === 'v4' ? <NetworkClientV4
+              key={`${session.matchID}:${session.playerID ?? 'spectator'}:v4`}
+              matchID={session.matchID}
+              playerID={session.spectator ? (null as never) : session.playerID}
+              credentials={session.credentials}
+              lang={lang}
+              playerName={session.spectator ? t.spectatorJoinedLabel : playerName}
+              knownPlayerNames={roomPlayerNames}
+              sharedRanks={sharedRanks}
+              cardImageById={cardImageById}
+              roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
+              onLeaveRoom={() => { void leaveRoom(); }}
+            /> : gameUiVariant === 'v3' ? <NetworkClientV3
               key={`${session.matchID}:${session.playerID ?? 'spectator'}:v3`}
               matchID={session.matchID}
               playerID={session.spectator ? (null as never) : session.playerID}

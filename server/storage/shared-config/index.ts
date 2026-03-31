@@ -6,7 +6,6 @@ export const createSharedConfigStore = (deps: SharedConfigStoreDeps): SharedConf
   const fileStore = createFileSharedConfigStore(deps);
   const storageMode = deps.storageMode ?? 'file';
   const databaseUrl = deps.databaseUrl ?? '';
-  const isPsqlMissing = (error: unknown) => String(error).includes('spawn psql ENOENT');
 
   if (storageMode !== 'postgres') {
     return {
@@ -25,32 +24,17 @@ export const createSharedConfigStore = (deps: SharedConfigStoreDeps): SharedConf
 
   return {
     saveTemplate: async () => {
-      try {
-        await postgresStore.saveTemplateToPostgresWithUrl(databaseUrl);
-      } catch (error) {
-        if (!isPsqlMissing(error)) throw error;
-        // eslint-disable-next-line no-console
-        console.warn(`[template] postgres save skipped (psql not found), fallback to disk: ${String(error)}`);
-      }
-      await fileStore.saveTemplateToDisk();
+      await postgresStore.saveTemplateToPostgresWithUrl(databaseUrl);
     },
     saveRanks: async () => {
-      try {
-        await postgresStore.saveRanksToPostgresWithUrl(databaseUrl);
-      } catch (error) {
-        if (!isPsqlMissing(error)) throw error;
-        // eslint-disable-next-line no-console
-        console.warn(`[ranks] postgres save skipped (psql not found), fallback to disk: ${String(error)}`);
-      }
-      await fileStore.saveRanksToDisk();
+      await postgresStore.saveRanksToPostgresWithUrl(databaseUrl);
     },
     loadTemplate: async () => {
       try {
         await postgresStore.loadTemplateFromPostgres();
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.warn(`[template] postgres load failed, fallback to disk: ${String(error)}`);
-        await fileStore.loadTemplateFromDisk();
+        console.warn(`[template] postgres load failed, seeding postgres from defaults: ${String(error)}`);
         await postgresStore.saveTemplateToPostgresWithUrl(databaseUrl).catch(() => undefined);
       }
     },
@@ -59,38 +43,22 @@ export const createSharedConfigStore = (deps: SharedConfigStoreDeps): SharedConf
         await postgresStore.loadRanksFromPostgres();
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.warn(`[ranks] postgres load failed, fallback to disk: ${String(error)}`);
-        await fileStore.loadRanksFromDisk();
+        console.warn(`[ranks] postgres load failed, seeding postgres from defaults: ${String(error)}`);
         await postgresStore.saveRanksToPostgresWithUrl(databaseUrl).catch(() => undefined);
       }
     },
     saveTemplateToDisk: async () => {
-      try {
-        await postgresStore.saveTemplateToPostgresWithUrl(databaseUrl);
-      } catch (error) {
-        if (!isPsqlMissing(error)) throw error;
-        // eslint-disable-next-line no-console
-        console.warn(`[template] postgres save skipped (psql not found), fallback to disk: ${String(error)}`);
-      }
-      await fileStore.saveTemplateToDisk();
+      await postgresStore.saveTemplateToPostgresWithUrl(databaseUrl);
     },
     saveRanksToDisk: async () => {
-      try {
-        await postgresStore.saveRanksToPostgresWithUrl(databaseUrl);
-      } catch (error) {
-        if (!isPsqlMissing(error)) throw error;
-        // eslint-disable-next-line no-console
-        console.warn(`[ranks] postgres save skipped (psql not found), fallback to disk: ${String(error)}`);
-      }
-      await fileStore.saveRanksToDisk();
+      await postgresStore.saveRanksToPostgresWithUrl(databaseUrl);
     },
     loadTemplateFromDisk: async () => {
       try {
         await postgresStore.loadTemplateFromPostgres();
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.warn(`[template] postgres load failed, fallback to disk: ${String(error)}`);
-        await fileStore.loadTemplateFromDisk();
+        console.warn(`[template] postgres load failed, seeding postgres from defaults: ${String(error)}`);
         await postgresStore.saveTemplateToPostgresWithUrl(databaseUrl).catch(() => undefined);
       }
     },
@@ -99,8 +67,7 @@ export const createSharedConfigStore = (deps: SharedConfigStoreDeps): SharedConf
         await postgresStore.loadRanksFromPostgres();
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.warn(`[ranks] postgres load failed, fallback to disk: ${String(error)}`);
-        await fileStore.loadRanksFromDisk();
+        console.warn(`[ranks] postgres load failed, seeding postgres from defaults: ${String(error)}`);
         await postgresStore.saveRanksToPostgresWithUrl(databaseUrl).catch(() => undefined);
       }
     },

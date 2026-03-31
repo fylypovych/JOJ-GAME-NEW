@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import type { Pool } from 'pg';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from './types';
 import { requireAdminMutationAuth } from '../admin-auth';
 import { registerAdminDbToolRoutes } from '../services/admin-db-tools';
@@ -78,6 +79,17 @@ type AdminRoutesDeps = {
     sslMode?: 'disable' | 'require';
   }) => Promise<void>;
   userStore?: UserStore | null;
+  pool?: Pool | null;
+  prepareBackupSnapshot?: () => Promise<void>;
+  backupRootDir?: string;
+  backupAssetDirs?: string[];
+  persistMatchSnapshot?: (args: {
+    matchId: string;
+    state: MatchDbStateLike;
+    metadata?: MatchDbMetadataLike;
+    snapshotKind?: 'initial' | 'autosave' | 'manual' | 'admin_stop' | 'admin_reset' | 'final';
+  }) => Promise<boolean> | boolean;
+  markMatchDeleted?: (matchId: string) => Promise<void> | void;
   getPasswordResetDeliveryHealth?: () => PasswordResetDeliveryHealth;
   getPublicPasswordResetDeliveryHealth?: () => PublicPasswordResetDeliveryHealth;
   deliverPasswordResetFn?: typeof deliverPasswordReset;
@@ -104,6 +116,12 @@ export const registerAdminRoutes = ({
   gameUiConfigPath,
   importJsonConfigToDb,
   userStore,
+  pool,
+  prepareBackupSnapshot,
+  backupRootDir,
+  backupAssetDirs,
+  persistMatchSnapshot,
+  markMatchDeleted,
   getPasswordResetDeliveryHealth: getPasswordResetDeliveryHealthFn = getPasswordResetDeliveryHealth,
   getPublicPasswordResetDeliveryHealth: getPublicPasswordResetDeliveryHealthFn = getPublicPasswordResetDeliveryHealth,
   deliverPasswordResetFn = deliverPasswordReset,
@@ -135,7 +153,7 @@ export const registerAdminRoutes = ({
 
   router.get('/api/game/ui-config', async (ctx: RouteCtx) => {
     if (!(await enforceRateLimit(ctx, 'public-game-ui-config-get', 60, 60_000))) return;
-    const config = await loadLobbyGameUiConfig(gameUiConfigPath);
+    const config = await loadLobbyGameUiConfig(gameUiConfigPath, pool);
     ctx.body = { ok: true, ...config };
   });
 
@@ -155,7 +173,7 @@ export const registerAdminRoutes = ({
   router.get('/api/admin/game/ui-config', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/game/ui-config'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-game-ui-config-get', 30, 60_000))) return;
-    const config = await loadLobbyGameUiConfig(gameUiConfigPath);
+    const config = await loadLobbyGameUiConfig(gameUiConfigPath, pool);
     ctx.body = { ok: true, ...config };
   });
 
@@ -165,7 +183,7 @@ export const registerAdminRoutes = ({
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/game/ui-config', maxBytes: JSON_BODY_LIMIT, logLine });
     if (!body) return;
     try {
-      const config = await saveLobbyGameUiConfig(gameUiConfigPath, body);
+      const config = await saveLobbyGameUiConfig(gameUiConfigPath, body, pool);
       ctx.body = { ok: true, ...config, message: 'Game UI config saved' };
     } catch (error) {
       ctx.status = 500;
@@ -512,6 +530,10 @@ export const registerAdminRoutes = ({
     dbSchemaPath,
     adminDbUiConfigPath,
     importJsonConfigToDb,
+    pool,
+    prepareBackupSnapshot,
+    backupRootDir,
+    backupAssetDirs,
   });
 
   router.get('/api/admin/match-state', async (ctx: RouteCtx) => {
@@ -541,6 +563,8 @@ export const registerAdminRoutes = ({
       ctx.body = { ok: false, error: 'Match not found' };
       return;
     }
+
+    await persistMatchSnapshot?.({ matchId: matchID, state, metadata: metadata ?? undefined, snapshotKind: 'manual' });
 
     ctx.body = {
       ok: true,
@@ -600,6 +624,7 @@ export const registerAdminRoutes = ({
 
     await db.setState?.(matchID, nextState);
     await db.setMetadata?.(matchID, nextMetadata);
+    await persistMatchSnapshot?.({ matchId: matchID, state: nextState, metadata: nextMetadata, snapshotKind: 'admin_stop' });
     await logLine('WARN', `admin stopped match matchID=${matchID}`);
 
     ctx.body = {
@@ -653,6 +678,7 @@ export const registerAdminRoutes = ({
 
     await db.setState?.(matchID, initialState, []);
     await db.setMetadata?.(matchID, nextMetadata);
+    await persistMatchSnapshot?.({ matchId: matchID, state: initialState, metadata: nextMetadata, snapshotKind: 'admin_reset' });
     await logLine('WARN', `admin reset match matchID=${matchID}`);
 
     ctx.body = {
@@ -695,6 +721,7 @@ export const registerAdminRoutes = ({
     }
 
     await db.wipe?.(matchID);
+    await markMatchDeleted?.(matchID);
     await logLine('WARN', `admin deleted match matchID=${matchID}`);
     ctx.body = { ok: true, matchID, deleted: true };
   });

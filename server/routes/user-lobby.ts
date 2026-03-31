@@ -1,4 +1,5 @@
 import { Readable, Writable } from 'node:stream';
+import type { Pool } from 'pg';
 import { readJsonBodySafe } from '../request-utils';
 import { createBotPlayerName, getBotSeatIds, normalizeBotSetup } from '../../src/game/bot-engine/config';
 import { clampBotCountToAllowed, clampRoomCapacityToAllowed } from '../../src/game/lobbyConfig';
@@ -220,9 +221,10 @@ export const registerUserLobbyRoutes = (args: {
   logLine: LogLine;
   jsonBodyLimit: number;
   gameUiConfigPath: string;
+  pool?: Pool | null;
   lobbyApiFactory?: (ctx: RouteCtx) => InternalLobbyApi;
 }) => {
-  const { router, userStore, logLine, jsonBodyLimit, gameUiConfigPath, lobbyApiFactory = createInternalLobbyApi } = args;
+  const { router, userStore, logLine, jsonBodyLimit, gameUiConfigPath, pool, lobbyApiFactory = createInternalLobbyApi } = args;
 
   router.post('/api/user-lobby/create-and-join', async (ctx: RouteCtx) => {
     if (!userStore) {
@@ -246,7 +248,7 @@ export const registerUserLobbyRoutes = (args: {
     }
     try {
       const lobbyApi = lobbyApiFactory(ctx);
-      const gameUiConfig = await loadLobbyGameUiConfig(gameUiConfigPath);
+      const gameUiConfig = await loadLobbyGameUiConfig(gameUiConfigPath, pool);
       const effectiveNumPlayers = clampRoomCapacityToAllowed(numPlayers, gameUiConfig.allowedRoomCapacities);
       const requestedBotSetup = normalizeBotSetup((setupData as { bots?: unknown } | null | undefined)?.bots, effectiveNumPlayers);
       const clampedBotCount = requestedBotSetup

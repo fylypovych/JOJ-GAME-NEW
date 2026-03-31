@@ -17,7 +17,10 @@ import { registerBugReportRoutes } from './routes/bug-reports';
 import { registerSharedRoutes } from './routes/shared';
 import { registerUploadRoutes } from './routes/uploads';
 import { registerUserLobbyRoutes } from './routes/user-lobby';
+import { createAssetStore } from './services/asset-store';
+import { createBoardgamePostgresDb } from './services/boardgame-postgres-db';
 import { createBugReportStore } from './services/bug-report-store';
+import { createMatchStateStore } from './services/match-state-store';
 import { createUserStore } from './services/user-store';
 import { createSharedConfigStore } from './storage/shared-config';
 import { getAdminRuntimePolicy } from './runtime-policy';
@@ -56,6 +59,7 @@ import { deliverPasswordReset } from './services/user-recovery';
 import {
   exportSharedDeckTemplateJson,
   exportSharedRanksJson,
+  getCardCatalog,
   getSharedRanks,
   getSharedDeckTemplateStats,
   importSharedRanksJson,
@@ -68,7 +72,15 @@ import {
 
 const require = createRequire(import.meta.url);
 const { Server, FlatFile } = require('boardgame.io/server') as {
-  FlatFile: new (args: { dir: string; logging?: boolean }) => unknown;
+  FlatFile: new (args: { dir: string; logging?: boolean }) => {
+    connect?: () => Promise<void>;
+    createMatch?: (matchID: string, opts: { initialState: unknown; metadata: Record<string, unknown> | null }) => Promise<void>;
+    setState?: (matchID: string, state: unknown, deltalog?: unknown[]) => Promise<void>;
+    setMetadata?: (matchID: string, metadata: unknown) => Promise<void>;
+    fetch?: (matchID: string, opts: { state?: boolean; metadata?: boolean; initialState?: boolean; log?: boolean }) => Promise<Record<string, unknown>>;
+    wipe?: (matchID: string) => Promise<void>;
+    listMatches?: (opts?: { gameName?: string; where?: { isGameover?: boolean; updatedBefore?: number; updatedAfter?: number } }) => Promise<string[]>;
+  };
   Server: (args: { games: unknown[]; origins?: string[]; db?: unknown }) => {
     run: (port: number, callback?: () => void) => void;
   };
@@ -78,32 +90,66 @@ const rateLimitState = new Map<string, { count: number; resetAt: number }>();
 
 const logLine = createFileLogger(logsPath);
 const adminRuntimePolicy = getAdminRuntimePolicy(process.env);
-const bugReportStore = createBugReportStore({
-  storePath: bugReportsPath,
-  imagesDir: bugReportImagesDir,
-});
-
 if (adminRuntimePolicy.startupError) {
   throw new Error(adminRuntimePolicy.startupError);
 }
 
-const matchDb = new FlatFile({ dir: matchesDbDir, logging: false });
-const rawMatchDb = matchDb as {
-  games?: { keys?: () => Promise<unknown[]> };
-  listMatches?: (...args: unknown[]) => Promise<unknown>;
+type MatchDbBackend = {
+  connect?: () => Promise<void>;
+  createMatch?: (matchID: string, opts: { initialState: unknown; metadata: Record<string, unknown> | null }) => Promise<void>;
+  setState?: (matchID: string, state: unknown, deltalog?: unknown[]) => Promise<void>;
+  setMetadata?: (matchID: string, metadata: unknown) => Promise<void>;
+  fetch?: (matchID: string, opts: { state?: boolean; metadata?: boolean; initialState?: boolean; log?: boolean }) => Promise<Record<string, unknown>>;
+  wipe?: (matchID: string) => Promise<void>;
+  listMatches?: (opts?: { gameName?: string; where?: { isGameover?: boolean; updatedBefore?: number; updatedAfter?: number } }) => Promise<string[]>;
 };
-if (rawMatchDb.games && typeof rawMatchDb.games.keys === 'function') {
-  const originalKeys = rawMatchDb.games.keys.bind(rawMatchDb.games);
-  rawMatchDb.games.keys = async () => {
-    const keys = await originalKeys();
-    return Array.isArray(keys) ? keys.filter((key): key is string => typeof key === 'string' && key.length > 0) : [];
-  };
-}
-if (typeof rawMatchDb.listMatches === 'function') {
-  const originalListMatches = rawMatchDb.listMatches.bind(rawMatchDb);
-  rawMatchDb.listMatches = async (...args: unknown[]) => {
+
+const flatFileMatchDb = new FlatFile({ dir: matchesDbDir, logging: false }) as MatchDbBackend;
+let currentMatchDbBackend: MatchDbBackend = flatFileMatchDb;
+let liveMirrorUserStore: ReturnType<typeof createUserStore> | null = null;
+let liveMirrorMatchStateStore: ReturnType<typeof createMatchStateStore> | null = null;
+
+const persistMatchMirrorById = async (matchId: string) => {
+  if (!liveMirrorMatchStateStore || !liveMirrorUserStore || typeof currentMatchDbBackend.fetch !== 'function') return;
+  const fetched = await currentMatchDbBackend.fetch(matchId, { state: true, metadata: true });
+  const state = (fetched?.state as Record<string, unknown> | null | undefined) ?? null;
+  const metadata = (fetched?.metadata as Record<string, unknown> | null | undefined) ?? undefined;
+  if (state) {
+    await liveMirrorMatchStateStore.persistMatchSnapshot({
+      matchId,
+      state,
+      metadata,
+      snapshotKind: ((state as { ctx?: { gameover?: unknown } }).ctx?.gameover ? 'final' : 'autosave'),
+    });
+  }
+  await liveMirrorUserStore.persistMatchResultIfFinished(matchId, state as never);
+};
+
+const matchDb = {
+  connect: async () => {
+    await currentMatchDbBackend.connect?.();
+  },
+  createMatch: async (matchID: string, opts: { initialState: unknown; metadata: Record<string, unknown> | null }) => {
+    await currentMatchDbBackend.createMatch?.(matchID, opts);
+    await persistMatchMirrorById(matchID);
+  },
+  setState: async (matchID: string, state: unknown, deltalog?: unknown[]) => {
+    await currentMatchDbBackend.setState?.(matchID, state, deltalog);
+    await persistMatchMirrorById(matchID);
+  },
+  setMetadata: async (matchID: string, metadata: unknown) => {
+    await currentMatchDbBackend.setMetadata?.(matchID, metadata);
+    await persistMatchMirrorById(matchID);
+  },
+  fetch: async (matchID: string, opts: { state?: boolean; metadata?: boolean; initialState?: boolean; log?: boolean }) =>
+    currentMatchDbBackend.fetch?.(matchID, opts) ?? {},
+  wipe: async (matchID: string) => {
+    await currentMatchDbBackend.wipe?.(matchID);
+    await liveMirrorMatchStateStore?.markMatchDeleted(matchID);
+  },
+  listMatches: async (opts?: { gameName?: string; where?: { isGameover?: boolean; updatedBefore?: number; updatedAfter?: number } }) => {
     try {
-      return await originalListMatches(...args);
+      return await currentMatchDbBackend.listMatches?.(opts) ?? [];
     } catch (error) {
       if (error instanceof TypeError && String(error.message).includes('endsWith')) {
         await logLine('WARN', `matchDb listMatches recovered from invalid key entry: ${error.message}`);
@@ -111,8 +157,8 @@ if (typeof rawMatchDb.listMatches === 'function') {
       }
       throw error;
     }
-  };
-}
+  },
+};
 
 const server = Server({
   games: [jojGame],
@@ -162,6 +208,11 @@ if (app && Array.isArray(app.middleware)) {
 const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });
 const { runGit, runShellCommand, spawnDetachedShell } = createCommandRunners(repoDir);
 
+type MatchFetchForMirror = {
+  state?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
+};
+
 void (async () => {
   for (const warning of adminRuntimePolicy.warnings) {
     await logLine('WARN', warning);
@@ -170,6 +221,13 @@ void (async () => {
   let sharedConfigStorageMode: 'file' | 'postgres' = requestedSharedConfigStorageMode;
   let userPool = null as ReturnType<typeof createPostgresPool> | null;
   let userStore = null as ReturnType<typeof createUserStore> | null;
+  let matchStateStore = null as ReturnType<typeof createMatchStateStore> | null;
+  let assetStore = null as ReturnType<typeof createAssetStore> | null;
+  let bugReportStore = createBugReportStore({
+    storePath: bugReportsPath,
+    imagesDir: bugReportImagesDir,
+    pool: null,
+  });
   let postgresAvailableForApp = false;
   const requireAdminAuth = createRequireAdminAuth({
     isAdminAuthEnabled,
@@ -177,6 +235,46 @@ void (async () => {
     logLine,
     getUserStore: () => userStore,
   });
+  const syncMatchStateMirror = async () => {
+    if (!matchStateStore) return;
+    const matchIds = (await matchDb.listMatches()).filter((matchId): matchId is string => typeof matchId === 'string' && matchId.length > 0);
+    for (const matchId of matchIds) {
+      const fetched = await matchDb.fetch(matchId, {
+        state: true,
+        metadata: true,
+      }) as MatchFetchForMirror | null;
+      if (fetched?.state) {
+        await matchStateStore.persistMatchSnapshot({
+          matchId,
+          state: fetched.state,
+          metadata: fetched.metadata ?? undefined,
+          snapshotKind: ((fetched.state as { ctx?: { gameover?: unknown } }).ctx?.gameover ? 'final' : 'autosave'),
+        });
+      }
+      if (userStore) {
+        await userStore.persistMatchResultIfFinished(matchId, (fetched?.state ?? null) as never);
+      }
+    }
+  };
+  const migrateFlatFileMatchesToPostgres = async (postgresMatchDb: MatchDbBackend) => {
+    const matchIds = await flatFileMatchDb.listMatches?.() ?? [];
+    for (const matchId of matchIds) {
+      const fetched = await flatFileMatchDb.fetch?.(matchId, {
+        state: true,
+        metadata: true,
+        initialState: true,
+        log: true,
+      });
+      const initialState = fetched?.initialState;
+      const metadata = (fetched?.metadata as Record<string, unknown> | null | undefined) ?? null;
+      if (!initialState || !metadata) continue;
+      await postgresMatchDb.createMatch?.(matchId, { initialState, metadata });
+      if (typeof fetched?.state !== 'undefined') {
+        await postgresMatchDb.setState?.(matchId, fetched.state, Array.isArray(fetched.log) ? fetched.log : []);
+      }
+      await postgresMatchDb.setMetadata?.(matchId, metadata);
+    }
+  };
 
   if (databaseUrl) {
     try {
@@ -185,19 +283,29 @@ void (async () => {
       userStore = createUserStore(userPool);
       await userStore.ensureSchema();
       await userStore.deleteExpiredSessions();
+      assetStore = createAssetStore(userPool);
+      await assetStore.ensureSchema();
+      await assetStore.syncDirectory(uploadsDir);
+      matchStateStore = createMatchStateStore(userPool);
+      await matchStateStore.ensureSchema();
+      liveMirrorUserStore = userStore;
+      liveMirrorMatchStateStore = matchStateStore;
+      const postgresMatchDb = createBoardgamePostgresDb(userPool) as MatchDbBackend & { ensureSchema?: () => Promise<void> };
+      await postgresMatchDb.ensureSchema?.();
+      await migrateFlatFileMatchesToPostgres(postgresMatchDb);
+      currentMatchDbBackend = postgresMatchDb;
+      bugReportStore = createBugReportStore({
+        storePath: bugReportsPath,
+        imagesDir: bugReportImagesDir,
+        pool: userPool,
+      });
+      await bugReportStore.ensureSchema();
       postgresAvailableForApp = true;
       await logLine('INFO', 'user auth/profile schema ready');
+      await syncMatchStateMirror();
       setInterval(async () => {
-        if (!userStore) return;
         try {
-          const pendingMatchIds = await userStore.listPendingPersistMatchIds();
-          for (const matchId of pendingMatchIds) {
-            const fetched = await (matchDb as { fetch?: (matchID: string, opts: { state?: boolean; metadata?: boolean }) => Promise<{ state?: unknown } | null> }).fetch?.(matchId, {
-              state: true,
-              metadata: true,
-            });
-            await userStore.persistMatchResultIfFinished(matchId, (fetched?.state ?? null) as never);
-          }
+          await syncMatchStateMirror();
         } catch (error) {
           await logLine('WARN', `user match persistence sweep failed: ${String(error instanceof Error ? error.message : error)}`);
         }
@@ -217,6 +325,24 @@ void (async () => {
       userStore = createUserStore(userPool);
       await userStore.ensureSchema();
       await userStore.deleteExpiredSessions();
+      assetStore = createAssetStore(userPool);
+      await assetStore.ensureSchema();
+      await assetStore.syncDirectory(uploadsDir);
+      matchStateStore = createMatchStateStore(userPool);
+      await matchStateStore.ensureSchema();
+      liveMirrorUserStore = userStore;
+      liveMirrorMatchStateStore = matchStateStore;
+      const postgresMatchDb = createBoardgamePostgresDb(userPool) as MatchDbBackend & { ensureSchema?: () => Promise<void> };
+      await postgresMatchDb.ensureSchema?.();
+      await migrateFlatFileMatchesToPostgres(postgresMatchDb);
+      currentMatchDbBackend = postgresMatchDb;
+      bugReportStore = createBugReportStore({
+        storePath: bugReportsPath,
+        imagesDir: bugReportImagesDir,
+        pool: userPool,
+      });
+      await bugReportStore.ensureSchema();
+      await syncMatchStateMirror();
       await logLine('WARN', 'user auth/profile module running on in-memory fallback for local/dev mode');
     } catch (error) {
       userPool = null;
@@ -248,6 +374,7 @@ void (async () => {
     ranksPath,
     exportSharedDeckTemplateJson,
     exportSharedRanksJson,
+    getCardCatalog,
     importSharedDeckTemplateJson,
     importSharedRanksJson,
     resetSharedRanks,
@@ -269,6 +396,7 @@ void (async () => {
       logLine,
       jsonBodyLimit: JSON_BODY_LIMIT,
       gameUiConfigPath,
+      pool: userPool,
     });
     registerAdminRoutes({
       router,
@@ -291,6 +419,19 @@ void (async () => {
       gameUiConfigPath,
       importJsonConfigToDb: syncCurrentJsonToPostgres,
       userStore,
+      pool: userPool,
+      prepareBackupSnapshot: syncMatchStateMirror,
+      backupRootDir: repoDir,
+      backupAssetDirs: [uploadsDir],
+      persistMatchSnapshot: async (args) => Boolean(await matchStateStore?.persistMatchSnapshot({
+        matchId: args.matchId,
+        state: args.state as { G?: Record<string, unknown> | null; ctx?: Record<string, unknown> | null },
+        metadata: args.metadata ? { ...args.metadata } : undefined,
+        snapshotKind: args.snapshotKind,
+      })),
+      markMatchDeleted: async (matchId) => {
+        await matchStateStore?.markMatchDeleted(matchId);
+      },
       deliverPasswordResetFn: deliverPasswordReset,
     });
     registerBugReportRoutes({
@@ -305,6 +446,8 @@ void (async () => {
       bugReportUiConfigPath,
       uploadsDir,
       userStore,
+      pool: userPool,
+      assetStore,
     });
     registerSharedRoutes({
       router,
@@ -333,6 +476,7 @@ void (async () => {
       JSON_BODY_LIMIT,
       IMAGE_UPLOAD_BODY_LIMIT,
       uploadsDir,
+      assetStore,
     });
   }
   await loadTemplate();

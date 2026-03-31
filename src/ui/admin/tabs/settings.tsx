@@ -43,6 +43,14 @@ export const AdminSettingsTab = ({
   gameUiConfigLoading,
   gameUiConfigError,
   gameUiConfigStatus,
+  assets,
+  assetsLoading,
+  assetsError,
+  assetsStatus,
+  assetsCleanupRunning,
+  onRefreshAssets,
+  onCleanupOrphanedFiles,
+  onCleanupOrphanedRecords,
 }: {
   t: T;
   lang: 'uk' | 'en';
@@ -78,6 +86,19 @@ export const AdminSettingsTab = ({
   gameUiConfigLoading: boolean;
   gameUiConfigError: string;
   gameUiConfigStatus: string;
+  assets: Array<{
+    path: string;
+    mime: string;
+    sizeBytes: number;
+    updatedAt: string;
+  }>;
+  assetsLoading: boolean;
+  assetsError: string;
+  assetsStatus: string;
+  assetsCleanupRunning: boolean;
+  onRefreshAssets: () => Promise<void> | void;
+  onCleanupOrphanedFiles: () => Promise<void> | void;
+  onCleanupOrphanedRecords: () => Promise<void> | void;
 }) => (
   <>
     <h3>{t.settingsTitle}</h3>
@@ -183,6 +204,31 @@ export const AdminSettingsTab = ({
     </p>
     {gameUiConfigStatus ? <p className="admin-success">{gameUiConfigStatus}</p> : null}
     {gameUiConfigError ? <p className="admin-error">{gameUiConfigError}</p> : null}
+    <h4>{_lang === 'uk' ? 'Файлові assets' : 'File assets'}</h4>
+    <p>{_lang === 'uk' ? 'Файли лежать у public/cards, а metadata по них зберігається в БД.' : 'Files stay in public/cards while their metadata is stored in the database.'}</p>
+    <p className="admin-controls">
+      <button type="button" onClick={() => void onRefreshAssets()} disabled={assetsLoading}>
+        {_lang === 'uk' ? 'Оновити список' : 'Refresh list'}
+      </button>
+      <button type="button" onClick={() => void onCleanupOrphanedFiles()} disabled={assetsCleanupRunning}>
+        {_lang === 'uk' ? 'Очистити зайві файли' : 'Clean orphaned files'}
+      </button>
+      <button type="button" onClick={() => void onCleanupOrphanedRecords()} disabled={assetsCleanupRunning}>
+        {_lang === 'uk' ? 'Очистити биті записи' : 'Clean orphaned records'}
+      </button>
+    </p>
+    {assetsStatus ? <p className="admin-success">{assetsStatus}</p> : null}
+    {assetsError ? <p className="admin-error">{assetsError}</p> : null}
+    <p>{_lang === 'uk' ? 'Останні assets:' : 'Recent assets:'} {assetsLoading ? (_lang === 'uk' ? 'завантаження...' : 'loading...') : assets.length}</p>
+    {assets.length ? (
+      <div className="admin-json-preview">
+        {assets.map((asset) => (
+          <p key={asset.path}>
+            <code>{asset.path}</code> · {asset.mime} · {Math.max(1, Math.round(asset.sizeBytes / 1024))} KB · {new Date(asset.updatedAt).toLocaleString()}
+          </p>
+        ))}
+      </div>
+    ) : null}
     <h4>{t.systemActions}</h4>
     <p className="admin-controls">
       <button type="button" onClick={onResetAll}>{t.resetAll}</button>

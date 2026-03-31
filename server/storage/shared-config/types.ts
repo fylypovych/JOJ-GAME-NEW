@@ -5,6 +5,7 @@ export type SharedConfigStoreDeps = {
   ranksPath: string;
   exportSharedDeckTemplateJson: () => string;
   exportSharedRanksJson: () => string;
+  getCardCatalog: () => unknown[];
   importSharedDeckTemplateJson: (text: string) => { ok: true } | { ok: false; error: string };
   importSharedRanksJson: (text: string) => { ok: true } | { ok: false; error: string };
   resetSharedRanks: () => void;
@@ -26,5 +27,5 @@ export type SharedConfigStore = {
 
 export type SharedConfigCoreDeps = Pick<
   SharedConfigStoreDeps,
-  'templatePath' | 'ranksPath' | 'exportSharedDeckTemplateJson' | 'exportSharedRanksJson' | 'importSharedDeckTemplateJson' | 'importSharedRanksJson' | 'resetSharedRanks'
+  'templatePath' | 'ranksPath' | 'exportSharedDeckTemplateJson' | 'exportSharedRanksJson' | 'getCardCatalog' | 'importSharedDeckTemplateJson' | 'importSharedRanksJson' | 'resetSharedRanks'
 >;

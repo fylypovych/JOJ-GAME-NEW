@@ -1,9 +1,11 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import type { Pool } from 'pg';
 import { getClientIp } from '../request-utils';
 import { getCurrentUserFromRequest } from '../services/user-auth';
 import type { UserStore } from '../services/user-store';
 import type { BugReportStatus } from '../services/bug-report-store';
+import { loadAppSettingJson, saveAppSettingJson } from '../services/app-settings-store';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouteCtx, RouterLike } from './types';
 
 type BugReportStoreLike = {
@@ -24,8 +26,10 @@ type BugReportStoreLike = {
   list: () => Promise<any[]>;
   getById: (id: string) => Promise<any | null>;
   updateStatus: (id: string, status: BugReportStatus) => Promise<any | null>;
-  getImagePathById: (id: string) => Promise<{ absPath: string; mime: string } | null>;
+  getImagePathById: (id: string) => Promise<{ absPath?: string; buffer?: Buffer; mime: string } | null>;
 };
+
+const BUG_REPORT_UI_CONFIG_KEY = 'bug_report_ui_config';
 
 const isStatus = (value: unknown): value is BugReportStatus =>
   value === 'new' || value === 'resolved' || value === 'closed';
@@ -70,6 +74,10 @@ export const registerBugReportRoutes = (args: {
   bugReportUiConfigPath: string;
   uploadsDir: string;
   userStore?: UserStore | null;
+  pool?: Pool | null;
+  assetStore?: {
+    getByPath: (assetPath: string) => Promise<{ fileName: string; mime: string; deletedAt: string | null } | null>;
+  } | null;
 }) => {
   const {
     router,
@@ -83,15 +91,27 @@ export const registerBugReportRoutes = (args: {
     bugReportUiConfigPath,
     uploadsDir,
     userStore,
+    pool,
+    assetStore,
   } = args;
 
   const readBugReportUiConfig = async () => {
+    const stored = await loadAppSettingJson<{ imagePath?: string }>(pool, BUG_REPORT_UI_CONFIG_KEY);
+    if (stored) {
+      return {
+        imagePath: typeof stored.imagePath === 'string' ? stored.imagePath.trim() : '',
+      };
+    }
     try {
       const raw = await readFile(bugReportUiConfigPath, 'utf8');
       const parsed = JSON.parse(raw) as { imagePath?: string };
-      return {
+      const migrated = {
         imagePath: typeof parsed.imagePath === 'string' ? parsed.imagePath.trim() : '',
       };
+      if (pool) {
+        await saveAppSettingJson(pool, BUG_REPORT_UI_CONFIG_KEY, { ...migrated, updatedAt: Date.now() }, 'migration-bug-report-ui');
+      }
+      return migrated;
     } catch {
       return { imagePath: '' };
     }
@@ -117,6 +137,12 @@ export const registerBugReportRoutes = (args: {
       ctx.body = { ok: false, error: 'Invalid bug report image path.' };
       return;
     }
+    const assetMeta = await assetStore?.getByPath(imagePath);
+    if (assetMeta?.deletedAt) {
+      ctx.status = 404;
+      ctx.body = { ok: false, error: 'Bug report image was deleted.' };
+      return;
+    }
     const absPath = path.join(uploadsDir, fileName);
     let fileBuffer: Buffer;
     try {
@@ -127,14 +153,15 @@ export const registerBugReportRoutes = (args: {
       return;
     }
     const ext = path.extname(fileName).toLowerCase();
-    const mime =
+    const mime = assetMeta?.mime ?? (
       ext === '.png'
         ? 'image/png'
         : ext === '.jpg' || ext === '.jpeg'
           ? 'image/jpeg'
           : ext === '.gif'
             ? 'image/gif'
-            : 'image/webp';
+            : 'image/webp'
+    );
     ctx.status = 200;
     if (typeof (ctx as { set?: (name: string, value: string) => void }).set === 'function') {
       (ctx as { set: (name: string, value: string) => void }).set('Content-Type', mime);
@@ -235,7 +262,7 @@ export const registerBugReportRoutes = (args: {
       (ctx as { set: (name: string, value: string) => void }).set('Content-Type', image.mime);
       (ctx as { set: (name: string, value: string) => void }).set('Cache-Control', 'private, max-age=60');
     }
-    ctx.body = await readFile(image.absPath);
+    ctx.body = image.buffer ?? await readFile(String(image.absPath));
   });
 
   router.post('/api/admin/bug-reports/status', async (ctx: RouteCtx) => {
@@ -276,6 +303,11 @@ export const registerBugReportRoutes = (args: {
     if (!body) return;
     const imagePath = typeof body.imagePath === 'string' ? body.imagePath.trim() : '';
     try {
+      if (pool) {
+        await saveAppSettingJson(pool, BUG_REPORT_UI_CONFIG_KEY, { imagePath, updatedAt: Date.now() }, 'admin-bug-report-ui');
+        ctx.body = { ok: true, imagePath };
+        return;
+      }
       const dir = bugReportUiConfigPath.replace(/[\\/][^\\/]+$/, '');
       await mkdir(dir, { recursive: true });
       await writeFile(

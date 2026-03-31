@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import type { Pool } from 'pg';
 
 export type BugReportStatus = 'new' | 'resolved' | 'closed';
 
@@ -71,12 +72,117 @@ const mimeToExt = (mime: string) => {
   throw new Error('Unsupported screenshot format.');
 };
 
+const mapPgRowToRecord = (row: Record<string, unknown>): BugReportRecord => ({
+  id: String(row.id ?? ''),
+  status: isBugReportStatus(String(row.status ?? '')) ? String(row.status) as BugReportStatus : 'new',
+  description: String(row.description ?? ''),
+  screenshotFileName: normalizeNullableString(row.screenshotFileName, 500),
+  screenshotMime: normalizeNullableString(row.screenshotMime, 200),
+  pageUrl: String(row.pageUrl ?? ''),
+  matchID: normalizeNullableString(row.matchID, 200),
+  playerID: normalizeNullableString(row.playerID, 200),
+  playerName: normalizeNullableString(row.playerName, 200),
+  spectator: row.spectator === true,
+  uiVariant: normalizeUiVariant(typeof row.uiVariant === 'string' ? row.uiVariant : null),
+  lang: normalizeLang(typeof row.lang === 'string' ? row.lang : null),
+  userAgent: String(row.userAgent ?? ''),
+  sourceIp: String(row.sourceIp ?? ''),
+  createdAt: String(row.createdAt ?? ''),
+  updatedAt: String(row.updatedAt ?? ''),
+  submittedBy: {
+    userId: normalizeNullableString(row.submittedUserId, 200),
+    username: normalizeNullableString(row.submittedUsername, 200),
+    displayName: normalizeNullableString(row.submittedDisplayName, 200),
+  },
+});
+
 export const createBugReportStore = (args: {
   storePath: string;
   imagesDir: string;
+  pool?: Pool | null;
 }) => {
-  const { storePath, imagesDir } = args;
+  const { storePath, imagesDir, pool } = args;
   let writeChain = Promise.resolve();
+
+  const ensureSchema = async () => {
+    if (!pool) return;
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS bug_reports (
+        id uuid PRIMARY KEY,
+        status text NOT NULL CHECK (status IN ('new', 'resolved', 'closed')),
+        description text NOT NULL,
+        screenshot_file_name text,
+        screenshot_mime text,
+        screenshot_data bytea,
+        page_url text NOT NULL DEFAULT '',
+        match_id text,
+        player_id text,
+        player_name text,
+        spectator boolean NOT NULL DEFAULT false,
+        ui_variant text NOT NULL DEFAULT 'unknown',
+        lang text NOT NULL DEFAULT 'uk',
+        user_agent text NOT NULL DEFAULT '',
+        source_ip text NOT NULL DEFAULT '',
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        submitted_user_id text,
+        submitted_username text,
+        submitted_display_name text
+      )
+    `);
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_bug_reports_created_at ON bug_reports (created_at DESC)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_bug_reports_status ON bug_reports (status)');
+    const existing = await pool.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM bug_reports');
+    if (Number(existing.rows[0]?.count ?? '0') > 0) return;
+
+    const legacyRows = await parseStore(storePath);
+    for (const row of legacyRows) {
+      let screenshotData: Buffer | null = null;
+      if (row.screenshotFileName) {
+        try {
+          screenshotData = await readFile(path.join(imagesDir, row.screenshotFileName));
+        } catch {
+          screenshotData = null;
+        }
+      }
+      await pool.query(
+        `INSERT INTO bug_reports (
+          id, status, description, screenshot_file_name, screenshot_mime, screenshot_data,
+          page_url, match_id, player_id, player_name, spectator, ui_variant, lang,
+          user_agent, source_ip, created_at, updated_at,
+          submitted_user_id, submitted_username, submitted_display_name
+        ) VALUES (
+          $1,$2,$3,$4,$5,$6,
+          $7,$8,$9,$10,$11,$12,$13,
+          $14,$15,$16,$17,
+          $18,$19,$20
+        )
+        ON CONFLICT (id) DO NOTHING`,
+        [
+          row.id,
+          row.status,
+          row.description,
+          row.screenshotFileName,
+          row.screenshotMime,
+          screenshotData,
+          row.pageUrl,
+          row.matchID,
+          row.playerID,
+          row.playerName,
+          row.spectator,
+          row.uiVariant,
+          row.lang,
+          row.userAgent,
+          row.sourceIp,
+          row.createdAt,
+          row.updatedAt,
+          row.submittedBy.userId,
+          row.submittedBy.username,
+          row.submittedBy.displayName,
+        ],
+      );
+    }
+  };
 
   const withStore = async <T>(mutate: (rows: BugReportRecord[]) => Promise<T>) => {
     const current = writeChain;
@@ -98,6 +204,7 @@ export const createBugReportStore = (args: {
   };
 
   return {
+    ensureSchema,
     create: async (input: {
       description: string;
       screenshot?: { mime: string; buffer: Buffer } | null;
@@ -111,15 +218,16 @@ export const createBugReportStore = (args: {
       userAgent?: string | null;
       sourceIp?: string | null;
       submittedBy?: { userId?: string | null; username?: string | null; displayName?: string | null } | null;
-    }) => withStore(async (rows) => {
+    }) => {
       const now = new Date().toISOString();
       let screenshotFileName: string | null = null;
       let screenshotMime: string | null = null;
+      let screenshotData: Buffer | null = null;
       if (input.screenshot) {
         const ext = mimeToExt(input.screenshot.mime);
         screenshotFileName = `${Date.now()}-${randomUUID()}.${ext}`;
         screenshotMime = input.screenshot.mime;
-        await writeFile(path.join(imagesDir, screenshotFileName), input.screenshot.buffer);
+        screenshotData = input.screenshot.buffer;
       }
       const record: BugReportRecord = {
         id: randomUUID(),
@@ -144,25 +252,167 @@ export const createBugReportStore = (args: {
           displayName: normalizeNullableString(input.submittedBy?.displayName, 200),
         },
       };
-      rows.unshift(record);
-      return record;
-    }),
+
+      if (pool) {
+        await pool.query(
+          `INSERT INTO bug_reports (
+            id, status, description, screenshot_file_name, screenshot_mime, screenshot_data,
+            page_url, match_id, player_id, player_name, spectator, ui_variant, lang,
+            user_agent, source_ip, created_at, updated_at,
+            submitted_user_id, submitted_username, submitted_display_name
+          ) VALUES (
+            $1,$2,$3,$4,$5,$6,
+            $7,$8,$9,$10,$11,$12,$13,
+            $14,$15,$16,$17,
+            $18,$19,$20
+          )`,
+          [
+            record.id,
+            record.status,
+            record.description,
+            record.screenshotFileName,
+            record.screenshotMime,
+            screenshotData,
+            record.pageUrl,
+            record.matchID,
+            record.playerID,
+            record.playerName,
+            record.spectator,
+            record.uiVariant,
+            record.lang,
+            record.userAgent,
+            record.sourceIp,
+            record.createdAt,
+            record.updatedAt,
+            record.submittedBy.userId,
+            record.submittedBy.username,
+            record.submittedBy.displayName,
+          ],
+        );
+        return record;
+      }
+
+      return withStore(async (rows) => {
+        if (input.screenshot) {
+          await writeFile(path.join(imagesDir, String(screenshotFileName)), input.screenshot.buffer);
+        }
+        rows.unshift(record);
+        return record;
+      });
+    },
     list: async () => {
+      if (pool) {
+        const result = await pool.query(`
+          SELECT
+            id::text AS id,
+            status,
+            description,
+            screenshot_file_name AS "screenshotFileName",
+            screenshot_mime AS "screenshotMime",
+            page_url AS "pageUrl",
+            match_id AS "matchID",
+            player_id AS "playerID",
+            player_name AS "playerName",
+            spectator,
+            ui_variant AS "uiVariant",
+            lang,
+            user_agent AS "userAgent",
+            source_ip AS "sourceIp",
+            created_at::text AS "createdAt",
+            updated_at::text AS "updatedAt",
+            submitted_user_id AS "submittedUserId",
+            submitted_username AS "submittedUsername",
+            submitted_display_name AS "submittedDisplayName"
+          FROM bug_reports
+          ORDER BY created_at DESC
+        `);
+        return result.rows.map((row) => mapPgRowToRecord(row));
+      }
       const rows = await parseStore(storePath);
       return rows.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
     },
     getById: async (id: string) => {
+      if (pool) {
+        const result = await pool.query(`
+          SELECT
+            id::text AS id,
+            status,
+            description,
+            screenshot_file_name AS "screenshotFileName",
+            screenshot_mime AS "screenshotMime",
+            page_url AS "pageUrl",
+            match_id AS "matchID",
+            player_id AS "playerID",
+            player_name AS "playerName",
+            spectator,
+            ui_variant AS "uiVariant",
+            lang,
+            user_agent AS "userAgent",
+            source_ip AS "sourceIp",
+            created_at::text AS "createdAt",
+            updated_at::text AS "updatedAt",
+            submitted_user_id AS "submittedUserId",
+            submitted_username AS "submittedUsername",
+            submitted_display_name AS "submittedDisplayName"
+          FROM bug_reports
+          WHERE id = $1
+          LIMIT 1
+        `, [id]);
+        return result.rows[0] ? mapPgRowToRecord(result.rows[0]) : null;
+      }
       const rows = await parseStore(storePath);
       return rows.find((row) => row.id === id) ?? null;
     },
-    updateStatus: async (id: string, status: BugReportStatus) => withStore(async (rows) => {
-      const target = rows.find((row) => row.id === id) ?? null;
-      if (!target) return null;
-      target.status = status;
-      target.updatedAt = new Date().toISOString();
-      return target;
-    }),
+    updateStatus: async (id: string, status: BugReportStatus) => {
+      if (pool) {
+        const result = await pool.query(`
+          UPDATE bug_reports
+          SET status = $2, updated_at = now()
+          WHERE id = $1
+          RETURNING
+            id::text AS id,
+            status,
+            description,
+            screenshot_file_name AS "screenshotFileName",
+            screenshot_mime AS "screenshotMime",
+            page_url AS "pageUrl",
+            match_id AS "matchID",
+            player_id AS "playerID",
+            player_name AS "playerName",
+            spectator,
+            ui_variant AS "uiVariant",
+            lang,
+            user_agent AS "userAgent",
+            source_ip AS "sourceIp",
+            created_at::text AS "createdAt",
+            updated_at::text AS "updatedAt",
+            submitted_user_id AS "submittedUserId",
+            submitted_username AS "submittedUsername",
+            submitted_display_name AS "submittedDisplayName"
+        `, [id, status]);
+        return result.rows[0] ? mapPgRowToRecord(result.rows[0]) : null;
+      }
+      return withStore(async (rows) => {
+        const target = rows.find((row) => row.id === id) ?? null;
+        if (!target) return null;
+        target.status = status;
+        target.updatedAt = new Date().toISOString();
+        return target;
+      });
+    },
     getImagePathById: async (id: string) => {
+      if (pool) {
+        const result = await pool.query<{ screenshot_mime: string | null; screenshot_data: Buffer | null }>(
+          'SELECT screenshot_mime, screenshot_data FROM bug_reports WHERE id = $1 LIMIT 1',
+          [id],
+        );
+        const row = result.rows[0];
+        if (!row?.screenshot_data || !row.screenshot_mime) return null;
+        return {
+          buffer: row.screenshot_data,
+          mime: row.screenshot_mime,
+        };
+      }
       const row = (await parseStore(storePath)).find((item) => item.id === id) ?? null;
       if (!row?.screenshotFileName || !row.screenshotMime) return null;
       return {
