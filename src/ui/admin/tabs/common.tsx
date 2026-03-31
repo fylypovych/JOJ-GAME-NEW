@@ -14,6 +14,7 @@ export type AdminNavCategory = {
   short: string;
   artLabel: string;
   description: string;
+  iconPath: string;
   tabs: AdminNavTab[];
 };
 
@@ -56,11 +57,13 @@ export const AdminCategoryButtons = ({
         type="button"
         className={`admin-v4-category-button${category.id === activeCategoryId ? ' is-active' : ''}`}
         onClick={() => onSelectCategory(category.id)}
+        aria-label={category.label}
+        title={category.label}
       >
         <span className={`admin-v4-category-thumb is-${category.id}`} aria-hidden="true">
-          <span>{category.short}</span>
+          <img src={category.iconPath} alt="" />
         </span>
-        <span className="admin-v4-category-copy">
+        <span className="admin-v4-category-copy" aria-hidden="true">
           <strong>{category.label}</strong>
           <small>{category.description}</small>
         </span>

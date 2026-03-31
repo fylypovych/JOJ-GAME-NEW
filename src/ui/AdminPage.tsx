@@ -630,6 +630,7 @@ export const AdminPage = ({
         short: 'OPS',
         artLabel: 'Command Deck',
         description: 'Матчі, стан і симуляції',
+        iconPath: '/admin-icons/operations.svg',
         tabs: [adminTabMeta.matches, adminTabMeta.state, adminTabMeta.simulation],
       },
       {
@@ -638,6 +639,7 @@ export const AdminPage = ({
         short: 'CNT',
         artLabel: 'Archive Bay',
         description: 'Колоди, імпорт, ранги, нагороди',
+        iconPath: '/admin-icons/content.svg',
         tabs: [adminTabMeta.deck, adminTabMeta.import, adminTabMeta.ranks, adminTabMeta.awards],
       },
       {
@@ -646,6 +648,7 @@ export const AdminPage = ({
         short: 'DATA',
         artLabel: 'Registry Grid',
         description: 'База, користувачі, репорти',
+        iconPath: '/admin-icons/data.svg',
         tabs: [adminTabMeta.database, adminTabMeta.users, adminTabMeta.bugReports],
       },
       {
@@ -654,6 +657,7 @@ export const AdminPage = ({
         short: 'INT',
         artLabel: 'Link Node',
         description: 'GitHub і зовнішні канали',
+        iconPath: '/admin-icons/integrations.svg',
         tabs: [adminTabMeta.github],
       },
       {
@@ -662,6 +666,7 @@ export const AdminPage = ({
         short: 'SYS',
         artLabel: 'Control Room',
         description: 'Аналітика й налаштування',
+        iconPath: '/admin-icons/system.svg',
         tabs: [adminTabMeta.analytics, adminTabMeta.settings],
       },
     ]
@@ -672,6 +677,7 @@ export const AdminPage = ({
         short: 'OPS',
         artLabel: 'Command Deck',
         description: 'Matches, state and simulations',
+        iconPath: '/admin-icons/operations.svg',
         tabs: [adminTabMeta.matches, adminTabMeta.state, adminTabMeta.simulation],
       },
       {
@@ -680,6 +686,7 @@ export const AdminPage = ({
         short: 'CNT',
         artLabel: 'Archive Bay',
         description: 'Decks, import, ranks and awards',
+        iconPath: '/admin-icons/content.svg',
         tabs: [adminTabMeta.deck, adminTabMeta.import, adminTabMeta.ranks, adminTabMeta.awards],
       },
       {
@@ -688,6 +695,7 @@ export const AdminPage = ({
         short: 'DATA',
         artLabel: 'Registry Grid',
         description: 'Database, users and reports',
+        iconPath: '/admin-icons/data.svg',
         tabs: [adminTabMeta.database, adminTabMeta.users, adminTabMeta.bugReports],
       },
       {
@@ -696,6 +704,7 @@ export const AdminPage = ({
         short: 'INT',
         artLabel: 'Link Node',
         description: 'GitHub and external channels',
+        iconPath: '/admin-icons/integrations.svg',
         tabs: [adminTabMeta.github],
       },
       {
@@ -704,6 +713,7 @@ export const AdminPage = ({
         short: 'SYS',
         artLabel: 'Control Room',
         description: 'Analytics and settings',
+        iconPath: '/admin-icons/system.svg',
         tabs: [adminTabMeta.analytics, adminTabMeta.settings],
       },
     ];
@@ -1211,6 +1221,7 @@ export const AdminPage = ({
                 />
               </div>
               <aside className={`admin-v4-category-banner is-${activeCategory.id}`}>
+                <img src={activeCategory.iconPath} alt="" className="admin-v4-category-banner-icon" />
                 <span className="admin-v4-category-art-label">{activeCategory.artLabel}</span>
                 <strong>{activeCategory.label}</strong>
                 <small>{activeCategory.description}</small>

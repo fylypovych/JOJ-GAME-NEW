@@ -1331,7 +1331,7 @@ button:disabled {
 
 .admin-panel-v4 {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-columns: 88px minmax(0, 1fr);
   gap: 22px;
   padding: 28px 28px 32px;
   border: 0;
@@ -1386,19 +1386,20 @@ button:disabled {
 
 .admin-v4-category-button {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: 1fr;
   align-items: center;
-  gap: 10px;
+  gap: 0;
   width: 100%;
-  min-height: 58px;
-  padding: 8px;
+  min-height: 60px;
+  padding: 8px 6px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.03);
   color: #cfd6e4;
   font-weight: 600;
   box-shadow: none;
-  text-align: left;
+  text-align: center;
+  justify-items: center;
 }
 
 .admin-v4-category-button:hover:not(:disabled) {
@@ -1420,22 +1421,14 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
+  width: 44px;
+  min-height: 44px;
   border-radius: 12px;
   overflow: hidden;
   background:
     radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), transparent 40%),
     linear-gradient(135deg, #7ca8e0, #38537f);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-}
-
-.admin-v4-category-thumb span {
-  position: relative;
-  z-index: 1;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: #f7fbff;
 }
 
 .admin-v4-category-thumb::after {
@@ -1446,6 +1439,16 @@ button:disabled {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.18);
   transform: rotate(-18deg);
+}
+
+.admin-v4-category-thumb img {
+  position: relative;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  opacity: 0.96;
 }
 
 .admin-v4-category-thumb.is-operations {
@@ -1479,9 +1482,8 @@ button:disabled {
 }
 
 .admin-v4-category-copy {
-  display: grid;
-  gap: 3px;
-}
+  display: none;
+  }
 
 .admin-v4-category-copy strong {
   font-size: 12px;
@@ -1816,9 +1818,20 @@ button:disabled {
   pointer-events: none;
 }
 
+.admin-v4-category-banner-icon {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  opacity: 0.34;
+}
+
 .admin-v4-category-banner strong,
 .admin-v4-category-banner small,
 .admin-v4-category-art-label,
+.admin-v4-category-banner-icon,
 .admin-v4-category-banner .admin-v4-badge {
   position: relative;
   z-index: 1;
@@ -1968,6 +1981,18 @@ button:disabled {
 
   .admin-v4-category-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-v4-category-button {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 10px;
+    justify-items: stretch;
+    text-align: left;
+  }
+
+  .admin-v4-category-copy {
+    display: grid;
+    gap: 3px;
   }
 
   .admin-v4-category-banner {
