@@ -11,23 +11,33 @@ export const AdminTabButtons = ({
   t: T;
   activeTab: AdminTab;
   setActiveTab: (tab: AdminTab) => void;
-}) => (
-  <p className="admin-controls">
-    <button type="button" onClick={() => setActiveTab('matches')} disabled={activeTab === 'matches'}>{t.tabMatches}</button>
-    <button type="button" onClick={() => setActiveTab('deck')} disabled={activeTab === 'deck'}>{t.tabDeck}</button>
-    <button type="button" onClick={() => setActiveTab('import')} disabled={activeTab === 'import'}>{t.tabImportExport}</button>
-    <button type="button" onClick={() => setActiveTab('ranks')} disabled={activeTab === 'ranks'}>{t.tabRanks}</button>
-    <button type="button" onClick={() => setActiveTab('state')} disabled={activeTab === 'state'}>{t.tabState}</button>
-    <button type="button" onClick={() => setActiveTab('database')} disabled={activeTab === 'database'}>{t.tabDatabase}</button>
-    <button type="button" onClick={() => setActiveTab('analytics')} disabled={activeTab === 'analytics'}>{t.tabAnalytics}</button>
-    <button type="button" onClick={() => setActiveTab('github')} disabled={activeTab === 'github'}>{t.tabGithub}</button>
-    <button type="button" onClick={() => setActiveTab('users')} disabled={activeTab === 'users'}>{t.tabUsers}</button>
-    <button type="button" onClick={() => setActiveTab('awards')} disabled={activeTab === 'awards'}>{t.tabAwards}</button>
-    <button type="button" onClick={() => setActiveTab('bugReports')} disabled={activeTab === 'bugReports'}>{t.tabBugReports}</button>
-    <button type="button" onClick={() => setActiveTab('settings')} disabled={activeTab === 'settings'}>{t.tabSettings}</button>
-    <button type="button" onClick={() => setActiveTab('simulation')} disabled={activeTab === 'simulation'}>{t.tabSimulation}</button>
-  </p>
-);
+}) => {
+  const tabs: Array<{ id: AdminTab; label: string; short: string }> = [
+    { id: 'matches', label: t.tabMatches, short: 'M' },
+    { id: 'deck', label: t.tabDeck, short: 'D' },
+    { id: 'import', label: t.tabImportExport, short: 'I' },
+    { id: 'ranks', label: t.tabRanks, short: 'R' },
+    { id: 'state', label: t.tabState, short: 'S' },
+    { id: 'database', label: t.tabDatabase, short: 'DB' },
+    { id: 'analytics', label: t.tabAnalytics, short: 'A' },
+    { id: 'github', label: t.tabGithub, short: 'GH' },
+    { id: 'users', label: t.tabUsers, short: 'U' },
+    { id: 'awards', label: t.tabAwards, short: 'AW' },
+    { id: 'bugReports', label: t.tabBugReports, short: 'BR' },
+    { id: 'settings', label: t.tabSettings, short: 'ST' },
+    { id: 'simulation', label: t.tabSimulation, short: 'SM' },
+  ];
+  return (
+    <p className="admin-controls">
+      {tabs.map((tab) => (
+        <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} disabled={activeTab === tab.id}>
+          <span className="admin-tab-icon" aria-hidden="true">{tab.short}</span>
+          <span className="admin-tab-label">{tab.label}</span>
+        </button>
+      ))}
+    </p>
+  );
+};
 
 export const AdminMatchesTab = ({
   t,

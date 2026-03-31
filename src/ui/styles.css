@@ -1319,26 +1319,28 @@ button:disabled {
 
 .admin-panel-v4 {
   display: grid;
-  grid-template-columns: minmax(208px, 248px) minmax(0, 1fr);
-  gap: 18px 24px;
-  padding: 24px;
-  border: 1px solid rgba(109, 159, 148, 0.28);
-  border-radius: 28px;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 22px;
+  padding: 28px 28px 32px;
+  border: 0;
+  border-radius: 26px;
   background:
-    linear-gradient(135deg, rgba(246, 249, 246, 0.96), rgba(255, 255, 255, 0.94)),
-    radial-gradient(820px 260px at 0% 0%, rgba(94, 177, 160, 0.16), transparent 62%);
+    linear-gradient(180deg, rgba(86, 93, 108, 0.98), rgba(70, 76, 90, 0.99)),
+    radial-gradient(920px 320px at 50% 0%, rgba(255, 255, 255, 0.06), transparent 62%);
   box-shadow:
-    0 20px 54px rgba(55, 79, 89, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    0 22px 54px rgba(23, 27, 36, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .admin-panel-v4 > h2 {
   grid-column: 1 / -1;
-  margin: 0;
-  font-size: 32px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #24443f;
+  margin: 0 0 6px;
+  font-size: 26px;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  text-align: center;
+  color: #f3f5fb;
 }
 
 .admin-panel-v4 > .admin-v4-hero,
@@ -1353,42 +1355,48 @@ button:disabled {
   grid-row: 2 / span 40;
   align-self: start;
   position: sticky;
-  top: 18px;
+  top: 20px;
   display: grid;
   gap: 10px;
-  padding: 16px 14px;
-  border: 1px solid rgba(93, 157, 145, 0.26);
-  border-radius: 24px;
+  padding: 12px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
   background:
-    linear-gradient(180deg, #5ba996, #4f9d8c 68%, #4a8f84);
+    linear-gradient(180deg, rgba(47, 53, 66, 0.98), rgba(35, 40, 52, 0.98));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 14px 34px rgba(48, 101, 93, 0.24);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 24px rgba(17, 21, 28, 0.24);
 }
 
 .admin-panel-v4 > .admin-controls:first-of-type button {
-  justify-content: flex-start;
+  justify-content: center;
   width: 100%;
-  padding: 11px 14px;
-  border-radius: 14px;
-  border-color: rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.14);
-  color: #f5fffb;
-  font-weight: 700;
+  min-height: 46px;
+  padding: 8px 6px;
+  border-radius: 12px;
+  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  color: #cfd6e4;
+  font-weight: 600;
   box-shadow: none;
-  text-align: left;
+  text-align: center;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .admin-panel-v4 > .admin-controls:first-of-type button:hover:not(:disabled) {
-  border-color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(121, 172, 247, 0.22);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .admin-panel-v4 > .admin-controls:first-of-type button:disabled {
   opacity: 1;
-  border-color: rgba(255, 255, 255, 0.24);
-  background: rgba(255, 255, 255, 0.95);
-  color: #28524b;
+  border-color: rgba(111, 170, 255, 0.28);
+  background: linear-gradient(180deg, #69aef7, #4f8fdc);
+  color: #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 8px 16px rgba(35, 77, 140, 0.24);
 }
 
 .admin-v4-hero {
@@ -1396,35 +1404,34 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 22px 24px;
-  border: 1px solid rgba(111, 169, 153, 0.24);
-  border-radius: 24px;
+  padding: 16px 18px;
+  border: 1px solid rgba(201, 208, 223, 0.74);
+  border-radius: 16px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(241, 248, 244, 0.9)),
-    radial-gradient(520px 180px at 100% 0%, rgba(231, 184, 93, 0.18), transparent 62%);
-  box-shadow: 0 16px 36px rgba(71, 96, 88, 0.08);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 247, 252, 0.98));
+  box-shadow: 0 10px 22px rgba(28, 34, 44, 0.08);
 }
 
 .admin-v4-kicker {
-  margin: 0 0 10px;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.22em;
+  margin: 0 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #5f8f85;
+  color: #8e97a7;
 }
 
 .admin-v4-hero h3 {
   margin: 0;
-  font-size: 28px;
-  color: #213740;
+  font-size: 20px;
+  color: #2e3847;
 }
 
 .admin-v4-subtitle {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   max-width: 620px;
-  color: #59707b;
-  line-height: 1.55;
+  color: #7e8898;
+  line-height: 1.45;
 }
 
 .admin-v4-hero-actions {
@@ -1588,11 +1595,12 @@ button:disabled {
 
 .admin-v4-stat-card {
   display: grid;
-  gap: 10px;
-  padding: 18px 18px 16px;
-  border: 1px solid rgba(103, 153, 146, 0.18);
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 14px 28px rgba(62, 86, 95, 0.08);
+  gap: 8px;
+  padding: 15px 16px 14px;
+  border: 1px solid rgba(203, 209, 223, 0.74);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 20px rgba(34, 40, 52, 0.06);
 }
 
 .admin-v4-stat-card span {
@@ -1627,7 +1635,7 @@ button:disabled {
 
 .admin-v4-tab-nav {
   grid-column: 1 / -1;
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .admin-v4-tab-nav .admin-controls {
@@ -1638,14 +1646,13 @@ button:disabled {
   grid-column: 2;
   display: grid;
   gap: 18px;
-  padding: 20px;
-  border: 1px solid rgba(111, 169, 153, 0.22);
-  border-radius: 24px;
+  padding: 18px;
+  border: 1px solid rgba(203, 209, 223, 0.72);
+  border-radius: 16px;
   background:
-    linear-gradient(180deg, rgba(239, 246, 244, 0.96), rgba(252, 255, 254, 0.96)),
-    radial-gradient(720px 220px at 100% 0%, rgba(108, 175, 157, 0.12), transparent 60%);
+    linear-gradient(180deg, rgba(251, 252, 254, 0.99), rgba(244, 247, 252, 0.99));
   box-shadow:
-    0 16px 34px rgba(55, 79, 89, 0.08),
+    0 14px 30px rgba(24, 29, 39, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
@@ -1654,8 +1661,8 @@ button:disabled {
   justify-content: space-between;
   gap: 18px;
   align-items: flex-start;
-  padding-bottom: 14px;
-  border-bottom: 1px solid rgba(102, 151, 144, 0.18);
+  padding: 2px 2px 14px;
+  border-bottom: 1px solid rgba(210, 216, 228, 0.9);
 }
 
 .admin-v4-workspace-body {
@@ -1666,10 +1673,10 @@ button:disabled {
 .admin-panel-v4 .admin-v4-workspace-body > * {
   margin: 0;
   padding: 18px 20px;
-  border: 1px solid rgba(89, 119, 130, 0.16);
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(245, 250, 249, 0.92));
-  box-shadow: 0 10px 20px rgba(44, 74, 78, 0.05);
+  border: 1px solid rgba(212, 218, 230, 0.96);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 249, 252, 0.98));
+  box-shadow: 0 8px 16px rgba(36, 43, 54, 0.04);
 }
 
 .admin-panel-v4 .admin-v4-workspace-body .admin-controls {
@@ -1697,7 +1704,7 @@ button:disabled {
 }
 
 .admin-panel-v4 label {
-  color: #35515b;
+  color: #5f6d80;
   font-weight: 600;
 }
 
@@ -1711,6 +1718,25 @@ button:disabled {
 .admin-panel-v4 ul,
 .admin-panel-v4 ol {
   line-height: 1.58;
+}
+
+.admin-panel-v4 .admin-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 20px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.admin-panel-v4 .admin-tab-label {
+  font-size: 10px;
+  line-height: 1.15;
 }
 
 @media (max-width: 980px) {
