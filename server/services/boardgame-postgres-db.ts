@@ -34,6 +34,8 @@ const isGameover = (metadata: MatchMetadata) =>
   typeof (metadata as { gameover?: unknown } | null)?.gameover !== 'undefined';
 
 export const createBoardgamePostgresDb = (pool: Pool) => {
+  const type = () => 1;
+
   const ensureSchema = async () => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS live_matches (
@@ -186,6 +188,7 @@ export const createBoardgamePostgresDb = (pool: Pool) => {
   };
 
   return {
+    type,
     connect,
     ensureSchema,
     createMatch,
