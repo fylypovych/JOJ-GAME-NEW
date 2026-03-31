@@ -97,6 +97,7 @@ export const GameCardTile = ({
   onCardClick,
 }: GameCardTileProps) => {
   const imageSrc = normalizeImagePath(resolvedImage) ?? normalizeImagePath(card.image) ?? `/cards/${card.id}.png`;
+  const categoryClass = `game-card-cat-${String(card.category).toLowerCase()}`;
   const withCacheBust = (src: string) => `${src}${src.includes('?') ? '&' : '?'}v=${Date.now()}`;
   const handleCardImageError = (event: SyntheticEvent<HTMLImageElement>) => {
     const img = event.currentTarget as HTMLImageElement & { dataset: { retried?: string } };
@@ -112,7 +113,7 @@ export const GameCardTile = ({
   const effectEntries = card.effects ?? [];
   return (
     <div
-      className={`game-card${variant === 'v3' ? ' is-v3' : ''}${selected ? ' is-selected' : ''}${actionDisabled ? ' is-disabled' : ''}`}
+      className={`game-card ${categoryClass}${variant === 'v3' ? ' is-v3' : ''}${selected ? ' is-selected' : ''}${actionDisabled ? ' is-disabled' : ''}${onCardClick ? ' is-clickable' : ''}`.trim()}
       onClick={onCardClick}
     >
       <button

@@ -7,6 +7,7 @@ import { parseImportedRanksPayload } from './sharedConfigSchema';
 import type { CardDefinition, RankDefinition } from './types';
 
 type SharedDeckTemplateJsonShape = {
+  catalog?: CardDefinition[];
   deck?: CardDefinition[];
   legendaryDeck?: CardDefinition[];
   rankTrack?: CardDefinition[];
@@ -28,6 +29,19 @@ export const defaultSharedDeckTemplateSeed = buildTemplateWithDefaults({
     ? rawTemplate.gameSetup
     : undefined,
 });
+
+const seededCardIds = new Set([
+  ...defaultSharedDeckTemplateSeed.deck.map((card) => card.id),
+  ...defaultSharedDeckTemplateSeed.legendaryDeck.map((card) => card.id),
+  ...defaultSharedDeckTemplateSeed.rankTrack.map((card) => card.id),
+]);
+
+export const defaultSharedExtraCatalogSeed: CardDefinition[] = Array.isArray(rawTemplate.catalog)
+  ? rawTemplate.catalog
+    .filter((card): card is CardDefinition => Boolean(card && typeof card.id === 'string' && card.id.trim()))
+    .filter((card) => !seededCardIds.has(card.id))
+    .map(cloneCard)
+  : [];
 
 export const defaultSharedRanksSeed: RankDefinition[] = normalizeSharedRanks(importedRanks ?? []);
 

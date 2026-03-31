@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { normalizeImagePath } from '../game/imagePaths';
 import type { CardDefinition, ResourceKey } from '../game/types';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 import { buildGameoverPlayerSummaries, buildResourceHighlightMeta, buildTurnHelpItems, getBoardPromoteReason } from './board/boardViewHelpers';
@@ -128,6 +129,7 @@ export const BoardV4 = ({
     resources,
     rankId,
     rankName: rawRankName,
+    rankImage,
     isCurrentPlayer,
     stage,
     canDraw,
@@ -373,6 +375,14 @@ export const BoardV4 = ({
     ? selectedPendingCardId
     : selectedHandCardId;
   const currentTurnPlayerLabel = playerLabelById(ctx.currentPlayer);
+  const resolvePlayerRankImage = (pid: string) => {
+    const rankIdForPlayer = G.ranks?.[pid] ?? '';
+    const rankMeta = sharedRanks.find((rank) => rank.id === rankIdForPlayer);
+    return normalizeImagePath(G.rankImageByPlayer?.[pid])
+      ?? normalizeImagePath(rankMeta?.imageVariants?.[0])
+      ?? normalizeImagePath(rankMeta?.image);
+  };
+  const currentTurnPortraitImage = (ctx.currentPlayer && resolvePlayerRankImage(ctx.currentPlayer)) || rankImage;
   const selectedPlayableHandCard = visibleHandSelectedId
     ? handCardsView.find((row) => row.card.id === visibleHandSelectedId)?.card ?? null
     : null;
@@ -728,6 +738,7 @@ export const BoardV4 = ({
                     const opponentCardsCount = G.hands?.[pid]?.length ?? 0;
                     const isActiveOpponent = ctx.currentPlayer === pid;
                     const isSelectedOpponent = selectedTargetId === pid;
+                    const opponentImage = resolvePlayerRankImage(pid);
                     return (
                       <button
                         key={`v4-opp-left-${pid}`}
@@ -740,7 +751,13 @@ export const BoardV4 = ({
                         }}
                         disabled={!activeSelectionNeedsTarget}
                       >
-                        <div className="game-ui-v4-opponent-avatar">{toInitials(playerLabelById(pid))}</div>
+                        <div className="game-ui-v4-opponent-avatar">
+                          {opponentImage ? (
+                            <img src={opponentImage} alt={opponentRankName} />
+                          ) : (
+                            <span>{toInitials(playerLabelById(pid))}</span>
+                          )}
+                        </div>
                         <div className="game-ui-v4-opponent-copy">
                           <strong>{playerLabelById(pid)}</strong>
                           <span>{opponentRankName}</span>
@@ -751,7 +768,13 @@ export const BoardV4 = ({
                   })}
                 </div>
                 <div className="game-ui-v4-center-badge">
-                  <div className="game-ui-v4-center-badge-portrait">{toInitials(currentTurnPlayerLabel)}</div>
+                  <div className="game-ui-v4-center-badge-portrait">
+                    {currentTurnPortraitImage ? (
+                      <img src={currentTurnPortraitImage} alt={activeArenaRankName || rankName} />
+                    ) : (
+                      <span>{toInitials(currentTurnPlayerLabel)}</span>
+                    )}
+                  </div>
                   <div className="game-ui-v4-center-badge-copy">
                     <span>{currentStageFocus || v2.commandCenter}</span>
                     <strong>{currentTurnPlayerLabel}</strong>
@@ -765,6 +788,7 @@ export const BoardV4 = ({
                     const opponentCardsCount = G.hands?.[pid]?.length ?? 0;
                     const isActiveOpponent = ctx.currentPlayer === pid;
                     const isSelectedOpponent = selectedTargetId === pid;
+                    const opponentImage = resolvePlayerRankImage(pid);
                     return (
                       <button
                         key={`v4-opp-right-${pid}`}
@@ -777,7 +801,13 @@ export const BoardV4 = ({
                         }}
                         disabled={!activeSelectionNeedsTarget}
                       >
-                        <div className="game-ui-v4-opponent-avatar">{toInitials(playerLabelById(pid))}</div>
+                        <div className="game-ui-v4-opponent-avatar">
+                          {opponentImage ? (
+                            <img src={opponentImage} alt={opponentRankName} />
+                          ) : (
+                            <span>{toInitials(playerLabelById(pid))}</span>
+                          )}
+                        </div>
                         <div className="game-ui-v4-opponent-copy">
                           <strong>{playerLabelById(pid)}</strong>
                           <span>{opponentRankName}</span>

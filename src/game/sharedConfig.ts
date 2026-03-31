@@ -1,5 +1,5 @@
 import { cloneCard, cloneRank } from './cloneUtils';
-import { defaultSharedDeckTemplateSeed, defaultSharedRanksSeed } from './defaultData';
+import { defaultSharedDeckTemplateSeed, defaultSharedExtraCatalogSeed, defaultSharedRanksSeed } from './defaultData';
 import { GENERAL_RANK_ID } from './ranks';
 import {
   buildTemplateWithDefaults,
@@ -78,7 +78,7 @@ const defaultSharedDeckTemplate = (): SharedDeckTemplate => buildTemplateWithDef
 
 let sharedDeckTemplate: SharedDeckTemplate = defaultSharedDeckTemplate();
 let sharedRanks: SharedRanks = defaultSharedRanksSeed.map(cloneRank);
-let sharedExtraCatalog: CardDefinition[] = [];
+let sharedExtraCatalog: CardDefinition[] = defaultSharedExtraCatalogSeed.map(cloneCard);
 
 export const getActiveRanks = (): SharedRanks => sharedRanks;
 export const getTopRankId = (): string => {
@@ -153,7 +153,7 @@ export const validateSharedDeckTemplateJson = (text: string): { ok: true } | { o
 
 export const resetSharedDeckTemplate = () => {
   sharedDeckTemplate = defaultSharedDeckTemplate();
-  sharedExtraCatalog = [];
+  sharedExtraCatalog = defaultSharedExtraCatalogSeed.map(cloneCard);
 };
 
 export const shuffle = shuffleItems;
