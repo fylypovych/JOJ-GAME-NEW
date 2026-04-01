@@ -26,6 +26,19 @@ const buildOpponentLayout = (opponentIds: string[]) => {
   };
 };
 
+const pickDeterministicRankCardImage = (sharedRanks: RankDefinition[], seed: string): string | undefined => {
+  const imagePool = sharedRanks
+    .flatMap((rank) => [
+      ...(rank.imageVariants ?? []),
+      ...(rank.image ? [rank.image] : []),
+    ])
+    .map((path) => normalizeImagePath(path))
+    .filter((path): path is string => Boolean(path));
+  if (imagePool.length === 0) return undefined;
+  const hash = Array.from(seed).reduce((acc, char) => ((acc * 31) + char.charCodeAt(0)) >>> 0, 7);
+  return imagePool[hash % imagePool.length];
+};
+
 export const toInitials = (value: string) => value
   .split(/\s+/)
   .filter(Boolean)
@@ -133,7 +146,10 @@ export const buildBoardV4ViewModel = (args: {
       ?? normalizeImagePath(rankMeta?.imageVariants?.[0])
       ?? normalizeImagePath(rankMeta?.image);
   };
-  const currentTurnPortraitImage = (ctx.currentPlayer && resolvePlayerRankImage(ctx.currentPlayer)) || rankImage;
+  const currentTurnPortraitImage = (ctx.currentPlayer && (
+    resolvePlayerRankImage(ctx.currentPlayer)
+      ?? pickDeterministicRankCardImage(sharedRanks, `turn:${ctx.currentPlayer}`)
+  )) || rankImage || pickDeterministicRankCardImage(sharedRanks, `self:${id}`);
   const buildOpponentCardItem = (pid: string): V4OpponentCardItem => {
     const rankIdForPlayer = G.ranks?.[pid] ?? '';
     return {
@@ -144,7 +160,7 @@ export const buildBoardV4ViewModel = (args: {
       isActive: ctx.currentPlayer === pid,
       isSelected: selectedTargetId === pid,
       isTargetable: activeSelectionNeedsTarget,
-      imageSrc: resolvePlayerRankImage(pid),
+      imageSrc: resolvePlayerRankImage(pid) ?? pickDeterministicRankCardImage(sharedRanks, `opp:${pid}`),
       initials: toInitials(playerLabelById(pid)),
     };
   };
