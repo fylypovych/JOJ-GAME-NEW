@@ -87,6 +87,17 @@ button:disabled {
     linear-gradient(180deg, #f6f6f1 0%, #edf3ef 48%, #edf4f8 100%);
 }
 
+.app.app-v4 > h1 {
+  margin: 2px 0 10px;
+  color: #f1efe3;
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-shadow:
+    0 1px 0 rgba(16, 19, 22, 0.4),
+    0 8px 24px rgba(16, 19, 22, 0.18);
+}
+
 .app > h1 {
   margin: 4px 0 8px;
   letter-spacing: 0.2px;
@@ -138,6 +149,34 @@ button:disabled {
   color: #21313f;
 }
 
+.app-top-toolbar-v4 {
+  border: 1px solid rgba(184, 188, 171, 0.22);
+  border-radius: 18px;
+  padding: 14px 16px;
+  background:
+    linear-gradient(180deg, rgba(39, 45, 45, 0.94), rgba(23, 28, 29, 0.96)),
+    radial-gradient(860px 180px at 12% 0%, rgba(92, 135, 130, 0.16), transparent 60%),
+    radial-gradient(740px 160px at 100% 0%, rgba(179, 152, 97, 0.14), transparent 58%);
+  box-shadow:
+    0 18px 40px rgba(18, 22, 28, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.app-top-toolbar-v4,
+.app-top-toolbar-v4 .app-top-row,
+.app-top-toolbar-v4 a {
+  color: #e9ede6;
+}
+
+.app-top-toolbar-v4 .app-top-toolbar-left {
+  flex: 1 1 52%;
+}
+
+.app-top-toolbar-v4 .app-top-toolbar-right {
+  flex: 1 1 360px;
+  justify-content: flex-end;
+}
+
 .app-top-toolbar-left,
 .app-top-toolbar-center,
 .app-top-toolbar-right {
@@ -170,9 +209,56 @@ button:disabled {
   transform: translateY(-1px);
 }
 
+.app-top-toolbar-v4 .app-toolbar-link-button {
+  border-color: rgba(143, 157, 168, 0.36);
+  border-radius: 14px;
+  padding: 10px 18px;
+  background: linear-gradient(180deg, #486fd6, #294aa6);
+  color: #f7faff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 8px 18px rgba(24, 42, 74, 0.18);
+}
+
+.app-top-toolbar-v4 .app-toolbar-link-button:hover {
+  border-color: rgba(166, 188, 235, 0.44);
+}
+
 .app-top-toolbar .app-top-row {
   margin: 0;
   white-space: nowrap;
+}
+
+.app-top-toolbar-v4 .app-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  white-space: normal;
+  color: #d4dacf;
+}
+
+.app-top-toolbar-v4 .app-top-row button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border-color: rgba(143, 157, 168, 0.34);
+  border-radius: 13px;
+  background: linear-gradient(180deg, rgba(63, 70, 73, 0.96), rgba(39, 44, 46, 0.98));
+  color: #edf1e8;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.app-top-toolbar-v4 .app-top-row button:hover:not(:disabled) {
+  border-color: rgba(180, 189, 173, 0.42);
+}
+
+.app-top-toolbar-v4 .app-top-row button:disabled {
+  opacity: 1;
+  border-color: rgba(126, 163, 230, 0.48);
+  background: linear-gradient(180deg, #496ed2, #274ba7);
+  color: #f7faff;
 }
 
 .user-tabs {
@@ -195,6 +281,32 @@ button:disabled {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.user-tabs-v4 {
+  gap: 10px;
+}
+
+.user-tabs-v4 button {
+  min-height: 42px;
+  padding: 8px 16px;
+  border-color: rgba(143, 157, 168, 0.34);
+  border-radius: 13px;
+  background: linear-gradient(180deg, rgba(64, 71, 74, 0.96), rgba(39, 45, 47, 0.98));
+  color: #edf1e8;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.user-tabs-v4 button:hover:not(:disabled) {
+  border-color: rgba(180, 189, 173, 0.42);
+}
+
+.user-tabs-v4 button:disabled {
+  opacity: 1;
+  border-color: rgba(90, 137, 225, 0.5);
+  background: linear-gradient(180deg, #4a70d6, #294aa7);
+  color: #f7faff;
 }
 
 .app-top-toolbar .user-tabs {
@@ -1337,6 +1449,7 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+.admin-shell-v4,
 .admin-panel-v4 {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr);
@@ -1352,6 +1465,7 @@ button:disabled {
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
+.admin-shell-v4 > h2,
 .admin-panel-v4 > h2 {
   grid-column: 1 / -1;
   margin: 0 0 6px;
@@ -1363,6 +1477,10 @@ button:disabled {
   color: #f3f5fb;
 }
 
+.admin-shell-v4 > .admin-v4-hero,
+.admin-shell-v4 > .admin-v4-stats,
+.admin-shell-v4 > hr,
+.admin-shell-v4 > :not(h2):not(.admin-v4-hero):not(.admin-v4-stats):not(.admin-controls:first-of-type):not(.admin-v4-tab-nav),
 .admin-panel-v4 > .admin-v4-hero,
 .admin-panel-v4 > .admin-v4-stats,
 .admin-panel-v4 > hr,
@@ -1370,6 +1488,7 @@ button:disabled {
   grid-column: 2;
 }
 
+.admin-shell-v4 > .admin-v4-tab-nav,
 .admin-panel-v4 > .admin-v4-tab-nav {
   grid-column: 1;
   grid-row: 2;
@@ -1786,15 +1905,15 @@ button:disabled {
 }
 
 .admin-v4-tab-strip button {
-  min-width: 132px;
-  min-height: 46px;
-  padding: 9px 14px;
+  min-width: 148px;
+  min-height: 52px;
+  padding: 10px 16px;
   border-radius: 14px;
   border-color: rgba(176, 186, 203, 0.72);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.995), rgba(242, 246, 251, 0.985));
   color: #314055;
-  gap: 10px;
-  font-weight: 700;
+  gap: 12px;
+  font-weight: 800;
   letter-spacing: 0;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.78),
@@ -2065,23 +2184,24 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.08);
   flex: 0 0 auto;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
 }
 
 .admin-panel-v4 .admin-tab-icon img {
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
   filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(638%) hue-rotate(178deg) brightness(91%) contrast(89%);
 }
 
 .admin-panel-v4 .admin-tab-label {
-  font-size: 12px;
-  line-height: 1.2;
+  font-size: 13px;
+  line-height: 1.15;
   white-space: nowrap;
 }
 
@@ -2437,6 +2557,8 @@ button:disabled {
 
 .game-ui-v3-kicker,
 .game-ui-v3-subtle,
+.game-ui-v4-kicker,
+.game-ui-v4-subtle,
 .game-ui-v3-shell .game-ui-v2-kicker,
 .game-ui-v3-shell .game-ui-v2-subtle,
 .game-ui-v3-shell .game-ui-v2-resource-name,
@@ -2447,19 +2569,22 @@ button:disabled {
   color: #5d7681;
 }
 
-.game-ui-v3-kicker {
+.game-ui-v3-kicker,
+.game-ui-v4-kicker {
   margin: 0 0 4px;
   font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.game-ui-v3-subtle {
+.game-ui-v3-subtle,
+.game-ui-v4-subtle {
   margin: 4px 0 0;
   font-size: 12px;
 }
 
-.game-ui-v3-subtle.is-warn {
+.game-ui-v3-subtle.is-warn,
+.game-ui-v4-subtle.is-warn {
   color: #b54708;
 }
 
@@ -2472,6 +2597,7 @@ button:disabled {
 }
 
 .game-ui-v3-header-leave,
+.game-ui-v3-header-copy,
 .game-ui-v3-shell .game-ui-v2-header-leave,
 .game-ui-v3-command-buttons button,
 .game-ui-v3-selection-actions button,
@@ -2691,7 +2817,10 @@ button:disabled {
 
 .game-ui-v3-command-top,
 .game-ui-v3-hand-head,
-.game-ui-v3-zone-head {
+.game-ui-v3-zone-head,
+.game-ui-v4-command-top,
+.game-ui-v4-hand-head,
+.game-ui-v4-zone-head {
   display: flex;
   justify-content: space-between;
   gap: 10px;
@@ -2774,19 +2903,25 @@ button:disabled {
 .game-ui-v3-hand-controls,
 .game-ui-v3-bot-strip-actions,
 .game-ui-v3-tab-row,
-.game-ui-v3-chip-row {
+.game-ui-v3-chip-row,
+.game-ui-v4-selection-actions,
+.game-ui-v4-hand-controls,
+.game-ui-v4-tab-row,
+.game-ui-v4-chip-row {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.game-ui-v3-steps {
+.game-ui-v3-steps,
+.game-ui-v4-steps {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.game-ui-v3-steps span {
+.game-ui-v3-steps span,
+.game-ui-v4-steps span {
   border-radius: 999px;
   padding: 4px 8px;
   background: rgba(244, 249, 249, 0.98);
@@ -2794,23 +2929,27 @@ button:disabled {
   font-size: 12px;
 }
 
-.game-ui-v3-steps span.is-done {
+.game-ui-v3-steps span.is-done,
+.game-ui-v4-steps span.is-done {
   background: rgba(224, 244, 237, 0.98);
   color: #2f7148;
 }
 
-.game-ui-v3-hand-controls label {
+.game-ui-v3-hand-controls label,
+.game-ui-v4-hand-controls label {
   display: grid;
   gap: 4px;
   font-size: 12px;
   color: #4f6387;
 }
 
-.game-ui-v3-hand-controls label span {
+.game-ui-v3-hand-controls label span,
+.game-ui-v4-hand-controls label span {
   font-weight: 700;
 }
 
-.game-ui-v3-hand-controls select {
+.game-ui-v3-hand-controls select,
+.game-ui-v4-hand-controls select {
   min-width: 150px;
 }
 
@@ -2907,6 +3046,7 @@ button:disabled {
 }
 
 .game-ui-v3-bot-speed-slider,
+.game-ui-v4-bot-speed-slider,
 .game-ui-v2-bot-speed-slider {
   display: grid;
   grid-template-columns: auto minmax(120px, 180px) auto;
@@ -2915,6 +3055,7 @@ button:disabled {
 }
 
 .game-ui-v3-bot-speed-slider small,
+.game-ui-v4-bot-speed-slider small,
 .game-ui-v2-bot-speed-slider small {
   grid-column: 1 / -1;
   color: #5d7681;
@@ -2922,27 +3063,32 @@ button:disabled {
 }
 
 .game-ui-v3-bot-speed-slider input[type="range"],
+.game-ui-v4-bot-speed-slider input[type="range"],
 .game-ui-v2-bot-speed-slider input[type="range"] {
   width: 100%;
 }
 
-.game-ui-v3-bot-speed-label {
+.game-ui-v3-bot-speed-label,
+.game-ui-v4-bot-speed-label {
   font-size: 12px;
   font-weight: 700;
   color: #5d7681;
   align-self: center;
 }
 
-.game-ui-v3-selection-panel {
+.game-ui-v3-selection-panel,
+.game-ui-v4-selection-panel {
   display: grid;
   gap: 10px;
 }
 
-.game-ui-v3-selection-panel-inline {
+.game-ui-v3-selection-panel-inline,
+.game-ui-v4-selection-panel-inline {
   margin-top: 10px;
 }
 
-.game-ui-v3-room-meta {
+.game-ui-v3-room-meta,
+.game-ui-v4-room-meta {
   margin-top: 4px;
 }
 
@@ -2950,32 +3096,37 @@ button:disabled {
   margin: 2px 0 0;
 }
 
-.game-ui-v3-header {
+.game-ui-v3-header,
+.game-ui-v4-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px 20px;
   align-items: start;
 }
 
-.game-ui-v3-header-main {
+.game-ui-v3-header-main,
+.game-ui-v4-header-main {
   min-width: 0;
 }
 
-.game-ui-v3-header-actions {
+.game-ui-v3-header-actions,
+.game-ui-v4-header-actions {
   display: flex;
   align-items: flex-end;
   flex-direction: column;
   gap: 12px;
 }
 
-.game-ui-v3-header-tools {
+.game-ui-v3-header-tools,
+.game-ui-v4-header-tools {
   display: grid;
   gap: 8px;
   justify-items: end;
   max-width: 100%;
 }
 
-.game-ui-v3-header-tools-head {
+.game-ui-v3-header-tools-head,
+.game-ui-v4-header-tools-head {
   display: flex;
   align-items: baseline;
   justify-content: flex-end;
@@ -2983,7 +3134,8 @@ button:disabled {
   flex-wrap: wrap;
 }
 
-.game-ui-v3-header-tools-label {
+.game-ui-v3-header-tools-label,
+.game-ui-v4-header-tools-label {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -2991,7 +3143,8 @@ button:disabled {
   color: #5d7681;
 }
 
-.game-ui-v3-header-tools-row {
+.game-ui-v3-header-tools-row,
+.game-ui-v4-header-tools-row {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -2999,7 +3152,8 @@ button:disabled {
   flex-wrap: wrap;
 }
 
-.game-ui-v3-header-button-row {
+.game-ui-v3-header-button-row,
+.game-ui-v4-header-button-row {
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -3007,60 +3161,73 @@ button:disabled {
   flex-wrap: wrap;
 }
 
-.game-ui-v3-stage-focus {
+.game-ui-v3-stage-focus,
+.game-ui-v4-stage-focus {
   margin-top: 6px;
   max-width: 560px;
 }
 
 .game-ui-v3-events-list,
-.game-ui-v3-help-list {
+.game-ui-v3-help-list,
+.game-ui-v4-events-list,
+.game-ui-v4-help-list {
   display: grid;
   gap: 8px;
 }
 
-.game-ui-v3-events-list {
+.game-ui-v3-events-list,
+.game-ui-v4-events-list {
   max-height: min(62vh, 980px);
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-right: 6px;
 }
 
-.game-ui-v3-event-head {
+.game-ui-v3-event-head,
+.game-ui-v4-event-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.game-ui-v3-event-row strong {
+.game-ui-v3-event-row strong,
+.game-ui-v4-event-row strong {
   font-size: 12px;
 }
 
-.game-ui-v3-event-row span {
+.game-ui-v3-event-row span,
+.game-ui-v4-event-row span {
   font-size: 13px;
 }
 
-.game-ui-v3-event-row.is-system {
+.game-ui-v3-event-row.is-system,
+.game-ui-v4-event-row.is-system {
   background: #f6fbff;
 }
 
-.game-ui-v3-event-row.is-warn {
+.game-ui-v3-event-row.is-warn,
+.game-ui-v4-event-row.is-warn {
   border-color: #f0cf9d;
   background: #fffaf0;
 }
 
 .game-ui-v3-event-row.is-good,
-.game-ui-v3-help-row.is-good {
+.game-ui-v3-help-row.is-good,
+.game-ui-v4-event-row.is-good,
+.game-ui-v4-help-row.is-good {
   border-color: #b8dfc6;
   background: #f3fcf5;
 }
 
-.game-ui-v3-event-row.is-legendary {
+.game-ui-v3-event-row.is-legendary,
+.game-ui-v4-event-row.is-legendary {
   border-color: #d8c5ff;
   background: linear-gradient(180deg, #fcf9ff, #f5eeff);
 }
 
-.game-ui-v3-event-chip {
+.game-ui-v3-event-chip,
+.game-ui-v4-event-chip {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
@@ -3069,12 +3236,14 @@ button:disabled {
   font-weight: 700;
 }
 
-.game-ui-v3-help-panel {
+.game-ui-v3-help-panel,
+.game-ui-v4-help-panel {
   display: grid;
   gap: 8px;
 }
 
-.game-ui-v3-help-row {
+.game-ui-v3-help-row,
+.game-ui-v4-help-row {
   border: 1px solid rgba(89, 145, 160, 0.32);
   border-radius: 10px;
   padding: 8px;
@@ -4050,12 +4219,12 @@ button:disabled {
   box-shadow: inset 0 0 0 1px rgba(236, 197, 122, 0.16), 0 0 0 2px rgba(213, 170, 92, 0.1);
 }
 
-.game-ui-v4-shell .game-ui-v3-impact-pulse {
+.game-ui-v4-shell .game-ui-v4-impact-pulse {
   background: rgba(16, 20, 21, 0.82);
   border: 1px solid rgba(217, 184, 104, 0.28);
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock {
+.game-ui-v4-shell .game-ui-v4-player-dock {
   order: 2;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
   align-items: start;
@@ -4072,44 +4241,45 @@ button:disabled {
   background: linear-gradient(90deg, transparent, rgba(215, 217, 209, 0.16), transparent);
 }
 
-.game-ui-v4-shell .game-ui-v3-hand-rail {
+.game-ui-v4-shell .game-ui-v4-hand-rail {
   display: none;
 }
 
-.game-ui-v4-shell .game-ui-v3-hand-frame,
-.game-ui-v4-shell .game-ui-v3-player-dock-main,
-.game-ui-v4-shell .game-ui-v3-player-dock-side,
-.game-ui-v4-shell .game-ui-v3-hand-section {
+.game-ui-v4-shell .game-ui-v4-hand-frame,
+.game-ui-v4-shell .game-ui-v4-player-dock-main,
+.game-ui-v4-shell .game-ui-v4-player-dock-side,
+.game-ui-v4-shell .game-ui-v4-hand-section {
   min-width: 0;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main,
-.game-ui-v4-shell .game-ui-v3-player-dock-side {
+.game-ui-v4-shell .game-ui-v4-player-dock-main,
+.game-ui-v4-shell .game-ui-v4-player-dock-side {
   gap: 12px;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main {
+.game-ui-v4-shell .game-ui-v4-player-dock-main {
   position: relative;
-  padding: 6px 4px 0;
+  padding: 10px 4px 0;
+  overflow: visible;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-side {
+.game-ui-v4-shell .game-ui-v4-player-dock-side {
   width: 100%;
 }
 
-.game-ui-v4-shell .game-ui-v3-hand-grid {
+.game-ui-v4-shell .game-ui-v4-hand-grid {
   display: flex;
   gap: 10px;
   overflow-x: auto;
   overflow-y: visible;
   max-width: 100%;
-  padding-top: 8px;
+  padding-top: 14px;
   padding-bottom: 6px;
   scrollbar-width: thin;
   flex-wrap: nowrap;
 }
 
-.game-ui-v4-shell .game-ui-v3-hand-grid > .game-card,
+.game-ui-v4-shell .game-ui-v4-hand-grid > .game-card,
 .game-ui-v4-shell .hand .game-card,
 .game-ui-v4-shell .game-card.is-v3 {
   flex: 0 0 196px;
@@ -4155,13 +4325,13 @@ button:disabled {
 }
 
 .game-ui-v4-shell .hand .game-card:hover,
-.game-ui-v4-shell .game-ui-v3-hand-grid > .game-card:hover,
+.game-ui-v4-shell .game-ui-v4-hand-grid > .game-card:hover,
 .game-ui-v4-shell .hand .game-card:focus-visible {
   transform: translateY(-8px) scale(1.07);
   border-color: rgba(213, 170, 92, 0.56);
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3.is-selected {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card.is-v3.is-selected {
   transform: translateY(-14px) scale(1.02);
   border-color: rgba(228, 193, 114, 0.72);
   box-shadow:
@@ -4170,15 +4340,15 @@ button:disabled {
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3.is-selected .game-card-inline-action.is-v3:not(.game-card-inline-discard) {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card.is-v3.is-selected .game-card-inline-action.is-v3:not(.game-card-inline-discard) {
   border-color: rgba(243, 208, 126, 0.88);
   background: linear-gradient(180deg, #f1d18e, #cb9844);
 }
 
 .game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3.has-open-preview,
 .game-ui-v4-shell .hand .game-card.has-open-preview:hover,
-.game-ui-v4-shell .game-ui-v3-hand-grid > .game-card.has-open-preview:hover,
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3.has-open-preview.is-selected {
+.game-ui-v4-shell .game-ui-v4-hand-grid > .game-card.has-open-preview:hover,
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card.is-v3.has-open-preview.is-selected {
   transform: none !important;
 }
 
@@ -4187,7 +4357,7 @@ button:disabled {
   cursor: not-allowed;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card-inline-action.is-v3:not(.game-card-inline-discard) {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card-inline-action.is-v3:not(.game-card-inline-discard) {
   position: absolute;
   top: 12px;
   left: 16px;
@@ -4213,22 +4383,22 @@ button:disabled {
   transition: background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card-inline-action.is-v3:not(.game-card-inline-discard):disabled {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card-inline-action.is-v3:not(.game-card-inline-discard):disabled {
   cursor: not-allowed;
   box-shadow: none;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3:hover .game-card-inline-action.is-v3:not(.game-card-inline-discard):disabled,
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3.is-selected .game-card-inline-action.is-v3:not(.game-card-inline-discard):disabled,
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3:focus-within .game-card-inline-action.is-v3:not(.game-card-inline-discard):disabled {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card.is-v3:hover .game-card-inline-action.is-v3:not(.game-card-inline-discard):disabled,
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card.is-v3.is-selected .game-card-inline-action.is-v3:not(.game-card-inline-discard):disabled,
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card.is-v3:focus-within .game-card-inline-action.is-v3:not(.game-card-inline-discard):disabled {
   opacity: 0.58;
 }
 
-.game-ui-v4-shell .game-ui-v3-hand-section > .game-ui-v3-hand-head {
+.game-ui-v4-shell .game-ui-v4-hand-section > .game-ui-v4-hand-head {
   margin-bottom: 2px;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-ui-v3-hand-controls {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-ui-v4-hand-controls {
   display: none;
 }
 
@@ -4278,10 +4448,11 @@ button:disabled {
 
 .game-ui-v4-shell .game-card-inline-action,
 .game-ui-v4-shell .game-card-inline-discard,
-.game-ui-v4-shell .game-ui-v3-header-leave,
-.game-ui-v4-shell .game-ui-v3-selection-actions button,
-.game-ui-v4-shell .game-ui-v3-pick-chip,
-.game-ui-v4-shell .game-ui-v3-tab-row button {
+.game-ui-v4-shell .game-ui-v4-header-leave,
+.game-ui-v4-shell .game-ui-v4-header-copy,
+.game-ui-v4-shell .game-ui-v4-selection-actions button,
+.game-ui-v4-shell .game-ui-v4-pick-chip,
+.game-ui-v4-shell .game-ui-v4-tab-row button {
   border-color: rgba(132, 145, 155, 0.34);
   background: linear-gradient(180deg, #4d5b67, #323b43);
   color: #edf4ff;
@@ -4289,17 +4460,17 @@ button:disabled {
 }
 
 .game-ui-v4-shell .game-ui-v3-command-buttons button:nth-child(2),
-.game-ui-v4-shell .game-ui-v3-mobile-bar button:nth-child(2) {
+.game-ui-v4-shell .game-ui-v4-mobile-bar button:nth-child(2) {
   border-color: rgba(109, 148, 225, 0.48);
   background: linear-gradient(180deg, #466fd8, #2347a7);
   color: #f4f8ff;
 }
 
-.game-ui-v4-shell .game-ui-v3-selection-actions .ghost {
+.game-ui-v4-shell .game-ui-v4-selection-actions .ghost {
   background: linear-gradient(180deg, #454b50, #2a2f34);
 }
 
-.game-ui-v4-shell .game-ui-v3-command {
+.game-ui-v4-shell .game-ui-v4-command {
   order: 3;
   position: static;
   display: grid;
@@ -4307,7 +4478,7 @@ button:disabled {
   padding: 12px 16px 16px;
 }
 
-.game-ui-v4-shell .game-ui-v3-command-top {
+.game-ui-v4-shell .game-ui-v4-command-top {
   grid-column: 1 / -1;
   align-items: center;
 }
@@ -4829,24 +5000,24 @@ button:disabled {
   align-items: center;
 }
 
-.game-ui-v4-shell .game-ui-v3-altar-focus-shell {
+.game-ui-v4-shell .game-ui-v4-altar-focus-shell {
   width: min(90%, 972px);
   margin-inline: auto;
 }
 
-.game-ui-v4-shell .game-ui-v3-table {
+.game-ui-v4-shell .game-ui-v4-table {
   display: grid;
   grid-template-columns: minmax(135px, 0.63fr) minmax(288px, 1.08fr) minmax(135px, 0.63fr);
   gap: 16px;
   align-items: center;
 }
 
-.game-ui-v4-shell .game-ui-v3-zone-deck,
-.game-ui-v4-shell .game-ui-v3-zone-discard {
+.game-ui-v4-shell .game-ui-v4-zone-deck,
+.game-ui-v4-shell .game-ui-v4-zone-discard {
   min-height: 234px;
 }
 
-.game-ui-v4-shell .game-ui-v3-zone-focus {
+.game-ui-v4-shell .game-ui-v4-zone-focus {
   min-height: 288px;
   background:
     linear-gradient(180deg, rgba(61, 66, 64, 0.22), rgba(24, 28, 28, 0.62)),
@@ -4857,7 +5028,7 @@ button:disabled {
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.game-ui-v4-shell .game-ui-v3-focus-card {
+.game-ui-v4-shell .game-ui-v4-focus-card {
   min-height: 223px;
   padding: 0;
   border: 0;
@@ -4866,129 +5037,129 @@ button:disabled {
   box-shadow: none;
 }
 
-.game-ui-v4-shell .game-ui-v3-zone-deck,
-.game-ui-v4-shell .game-ui-v3-zone-discard {
+.game-ui-v4-shell .game-ui-v4-zone-deck,
+.game-ui-v4-shell .game-ui-v4-zone-discard {
   background:
     linear-gradient(180deg, rgba(58, 62, 60, 0.12), rgba(24, 28, 28, 0.74)),
     rgba(22, 25, 27, 0.7);
 }
 
-.game-ui-v4-shell .game-ui-v3-focus-card .pile-preview.is-v3 > img,
-.game-ui-v4-shell .game-ui-v3-zone-card .pile-preview.is-v3 > img {
+.game-ui-v4-shell .game-ui-v4-focus-card .pile-preview.is-v3 > img,
+.game-ui-v4-shell .game-ui-v4-zone-card .pile-preview.is-v3 > img {
   border-radius: 12px;
   background: transparent;
 }
 
-.game-ui-v4-shell .game-ui-v3-focus-resources {
+.game-ui-v4-shell .game-ui-v4-focus-resources {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.game-ui-v4-shell .game-ui-v3-focus-resources span {
+.game-ui-v4-shell .game-ui-v4-focus-resources span {
   border-color: rgba(130, 139, 124, 0.18);
   color: #ece4cd;
   background: rgba(33, 37, 36, 0.72);
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock {
+.game-ui-v4-shell .game-ui-v4-player-dock {
   padding: 14px;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main {
+.game-ui-v4-shell .game-ui-v4-player-dock-main {
   gap: 10px;
 }
 
-.game-ui-v4-shell .game-ui-v3-hand-rail {
+.game-ui-v4-shell .game-ui-v4-hand-rail {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
-.game-ui-v4-shell .game-ui-v3-hand-rail-chip {
+.game-ui-v4-shell .game-ui-v4-hand-rail-chip {
   border: 1px solid rgba(172, 179, 170, 0.18);
   border-radius: 12px;
   background: rgba(16, 19, 21, 0.42);
 }
 
-.game-ui-v4-shell .game-ui-v3-hand-head {
+.game-ui-v4-shell .game-ui-v4-hand-head {
   align-items: end;
   margin-bottom: 8px;
   padding: 0 4px;
 }
 
-.game-ui-v4-shell .game-ui-v3-hand-head h3 {
+.game-ui-v4-shell .game-ui-v4-hand-head h3 {
   font-size: 1.45rem;
   letter-spacing: 0.01em;
 }
 
-.game-ui-v4-shell .game-ui-v3-hand-head .game-ui-v3-subtle {
+.game-ui-v4-shell .game-ui-v4-hand-head .game-ui-v3-subtle {
   max-width: 52ch;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-ui-v3-hand-grid {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-ui-v4-hand-grid {
   padding: 6px 4px 14px;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3 {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card.is-v3 {
   border-radius: 18px;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card-body.is-v3 strong {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card-body.is-v3 strong {
   font-size: 1.08rem;
   line-height: 1.08;
   text-wrap: balance;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card-body.is-v3 small {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card-body.is-v3 small {
   font-size: 0.84rem;
   line-height: 1.34;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card-body.is-v3 > small:first-of-type {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card-body.is-v3 > small:first-of-type {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #756b54;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3 .pill {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card.is-v3 .pill {
   border-radius: 999px;
   padding: 4px 8px;
   font-size: 0.73rem;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3 .pill-effect {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card.is-v3 .pill-effect {
   background: rgba(44, 54, 50, 0.88);
   color: #dbe8d8;
   border: 1px solid rgba(132, 163, 118, 0.24);
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3 .pill-badge {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card.is-v3 .pill-badge {
   background: rgba(61, 69, 78, 0.88);
   color: #e7e0cb;
   border: 1px solid rgba(194, 176, 128, 0.22);
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card-helper,
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card-preview {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card-helper,
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card-preview {
   color: #ccd3c4;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card-preview {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card-preview {
   color: #786f60;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card-helper {
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card-helper {
   color: #5f645f;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-side {
+.game-ui-v4-shell .game-ui-v4-player-dock-side {
   border-left: 1px solid rgba(187, 191, 182, 0.12);
   padding-left: 14px;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-side .game-ui-v3-hand-grid {
+.game-ui-v4-shell .game-ui-v4-player-dock-side .game-ui-v4-hand-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   flex-wrap: initial;
@@ -4997,19 +5168,19 @@ button:disabled {
   padding-right: 2px;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-side .game-ui-v3-hand-grid > .game-card {
+.game-ui-v4-shell .game-ui-v4-player-dock-side .game-ui-v4-hand-grid > .game-card {
   flex: initial;
   width: 100%;
   max-width: 100%;
 }
 
-.game-ui-v4-shell .game-ui-v3-player-dock-side .game-card.is-v3 {
+.game-ui-v4-shell .game-ui-v4-player-dock-side .game-card.is-v3 {
   flex: initial;
   width: 100%;
   max-width: 100%;
 }
 
-.game-ui-v4-shell .game-ui-v3-legendary-frame {
+.game-ui-v4-shell .game-ui-v4-legendary-frame {
   border-color: rgba(122, 130, 186, 0.34);
   background:
     linear-gradient(180deg, rgba(45, 49, 62, 0.98), rgba(27, 30, 42, 0.98)),
@@ -5019,43 +5190,43 @@ button:disabled {
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.game-ui-v4-shell .game-ui-v3-legendary-frame::before {
+.game-ui-v4-shell .game-ui-v4-legendary-frame::before {
   background:
     linear-gradient(140deg, rgba(255, 255, 255, 0.12), transparent 34%),
     radial-gradient(240px 120px at 0% 100%, rgba(180, 139, 72, 0.08), transparent 68%);
 }
 
-.game-ui-v4-shell .game-ui-v3-legendary-frame .game-ui-v3-hand-head h3,
-.game-ui-v4-shell .game-ui-v3-legendary-frame .game-ui-v3-hand-head .game-ui-v3-subtle {
+.game-ui-v4-shell .game-ui-v4-legendary-frame .game-ui-v4-hand-head h3,
+.game-ui-v4-shell .game-ui-v4-legendary-frame .game-ui-v3-subtle {
   color: #f1efff;
 }
 
-.game-ui-v4-shell .game-ui-v3-legendary-frame .game-card.is-v3 {
+.game-ui-v4-shell .game-ui-v4-legendary-frame .game-card.is-v3 {
   border-color: rgba(122, 130, 186, 0.34);
   background:
     linear-gradient(180deg, rgba(58, 61, 79, 0.98), rgba(35, 38, 52, 1)),
     radial-gradient(260px 120px at 100% 0%, rgba(149, 103, 214, 0.12), transparent 58%);
 }
 
-.game-ui-v4-shell .game-ui-v3-legendary-frame .game-card-body.is-v3 {
+.game-ui-v4-shell .game-ui-v4-legendary-frame .game-card-body.is-v3 {
   background:
     linear-gradient(180deg, rgba(245, 240, 255, 0.97), rgba(228, 222, 244, 0.95));
 }
 
-.game-ui-v4-shell .game-ui-v3-legendary-frame .game-card.is-v3::before {
+.game-ui-v4-shell .game-ui-v4-legendary-frame .game-card.is-v3::before {
   background: linear-gradient(90deg, rgba(170, 154, 234, 0.96), rgba(102, 94, 179, 0.96));
 }
 
-.game-ui-v4-shell .game-ui-v3-legendary-frame .game-card-body.is-v3 strong {
+.game-ui-v4-shell .game-ui-v4-legendary-frame .game-card-body.is-v3 strong {
   color: #f6f2ff;
 }
 
-.game-ui-v4-shell .game-ui-v3-legendary-frame .game-card-body.is-v3 small,
-.game-ui-v4-shell .game-ui-v3-legendary-frame .game-card.is-v3 .pill {
+.game-ui-v4-shell .game-ui-v4-legendary-frame .game-card-body.is-v3 small,
+.game-ui-v4-shell .game-ui-v4-legendary-frame .game-card.is-v3 .pill {
   color: #d8d2ef;
 }
 
-.game-ui-v4-shell .game-ui-v3-legendary-frame .game-card-inline-action.is-v3 {
+.game-ui-v4-shell .game-ui-v4-legendary-frame .game-card-inline-action.is-v3 {
   position: absolute;
   top: 12px;
   left: 16px;
@@ -5071,7 +5242,7 @@ button:disabled {
   color: #2c1d4c;
 }
 
-.game-ui-v4-shell .game-ui-v3-side {
+.game-ui-v4-shell .game-ui-v4-side {
   gap: 14px;
 }
 
@@ -5119,40 +5290,40 @@ button:disabled {
   backdrop-filter: blur(4px);
 }
 
-.game-ui-v4-gameover-summary .game-ui-v3-gameover-summary-row {
+.game-ui-v4-gameover-summary .game-ui-v4-gameover-summary-row {
   background:
     linear-gradient(180deg, rgba(35, 42, 39, 0.88), rgba(23, 28, 26, 0.94));
   border-color: rgba(179, 184, 168, 0.14);
 }
 
-.game-ui-v4-shell .game-ui-v3-side > section,
+.game-ui-v4-shell .game-ui-v4-side > section,
 .game-ui-v4-shell .board-chat {
   border-radius: 16px;
 }
 
-.game-ui-v4-shell .game-ui-v3-tab-row {
+.game-ui-v4-shell .game-ui-v4-tab-row {
   gap: 8px;
 }
 
-.game-ui-v4-shell .game-ui-v3-tab-row button {
+.game-ui-v4-shell .game-ui-v4-tab-row button {
   min-height: 42px;
   font-weight: 700;
 }
 
-.game-ui-v4-shell .game-ui-v3-events h3,
+.game-ui-v4-shell .game-ui-v4-events h3,
 .game-ui-v4-shell .board-chat h3,
-.game-ui-v4-shell .game-ui-v3-help-panel h3 {
+.game-ui-v4-shell .game-ui-v4-help-panel h3 {
   font-size: 1rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
-.game-ui-v4-shell .game-ui-v3-events-list {
+.game-ui-v4-shell .game-ui-v4-events-list {
   display: grid;
   gap: 10px;
 }
 
-.game-ui-v4-shell .game-ui-v3-event-row {
+.game-ui-v4-shell .game-ui-v4-event-row {
   border-radius: 12px;
   padding: 10px 12px;
 }
@@ -5161,28 +5332,28 @@ button:disabled {
   border-radius: 12px;
 }
 
-.game-ui-v4-shell .game-ui-v3-help-list {
+.game-ui-v4-shell .game-ui-v4-help-list {
   display: grid;
   gap: 10px;
 }
 
-.game-ui-v4-shell .game-ui-v3-help-row {
+.game-ui-v4-shell .game-ui-v4-help-row {
   border-radius: 12px;
   padding: 10px 12px;
 }
 
 @media (max-width: 1200px) {
-  .game-ui-v4-shell .game-ui-v3-grid {
+  .game-ui-v4-shell .game-ui-v4-grid {
     grid-template-columns: 1fr;
   }
 
-  .game-ui-v4-shell .game-ui-v3-side {
+  .game-ui-v4-shell .game-ui-v4-side {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
   }
 
-  .game-ui-v4-shell .game-ui-v3-side > section {
+  .game-ui-v4-shell .game-ui-v4-side > section {
     min-width: 0;
   }
 
@@ -5191,7 +5362,7 @@ button:disabled {
     justify-content: center;
   }
 
-  .game-ui-v4-shell .game-ui-v3-table {
+  .game-ui-v4-shell .game-ui-v4-table {
     grid-template-columns: 1fr;
   }
 
@@ -5220,13 +5391,13 @@ button:disabled {
     min-height: 0;
   }
 
-  .game-ui-v4-shell .game-ui-v3-zone-deck,
-  .game-ui-v4-shell .game-ui-v3-zone-discard,
-  .game-ui-v4-shell .game-ui-v3-zone-focus {
+  .game-ui-v4-shell .game-ui-v4-zone-deck,
+  .game-ui-v4-shell .game-ui-v4-zone-discard,
+  .game-ui-v4-shell .game-ui-v4-zone-focus {
     min-height: 0;
   }
 
-  .game-ui-v4-shell .game-ui-v3-player-dock-side {
+  .game-ui-v4-shell .game-ui-v4-player-dock-side {
     border-left: 0;
     padding-left: 0;
   }
@@ -5237,11 +5408,11 @@ button:disabled {
     gap: 10px;
   }
 
-  .game-ui-v4-shell .game-ui-v3-header {
+  .game-ui-v4-shell .game-ui-v4-header {
     padding: 12px;
   }
 
-  .game-ui-v4-shell .game-ui-v3-player-dock {
+  .game-ui-v4-shell .game-ui-v4-player-dock {
     grid-template-columns: 1fr;
     padding: 12px;
   }
@@ -5309,7 +5480,7 @@ button:disabled {
     padding: 9px 12px 10px;
   }
 
-  .game-ui-v4-shell .game-ui-v3-battlefield {
+  .game-ui-v4-shell .game-ui-v4-battlefield {
     padding: 12px;
   }
 

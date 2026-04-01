@@ -54,6 +54,7 @@ export {
   importSharedDeckTemplateJson,
   resetSharedDeckTemplate,
   resetSharedRanks,
+  repairGeneratedRankVisualData,
   removeCardAtFromSharedDeckTemplate,
   setSharedDeckBackImage,
   setSharedRanks,

@@ -21,15 +21,11 @@ export const useSharedConfigSync = (args: {
     adminFetch,
     templateApi,
     ranksApi,
-    sharedTemplateStorageKey,
-    ranksStorageKey,
     getSharedDeckTemplate,
     getCardCatalog,
     getSharedRanks,
     exportSharedDeckTemplateJson,
-    exportSharedRanksJson,
     importSharedDeckTemplateJson,
-    importSharedRanksJson,
     setSharedRanks,
   } = args;
   const [, setSharedDeckVersion] = useState(0);
@@ -68,7 +64,6 @@ export const useSharedConfigSync = (args: {
     setSharedDeckTemplate(getSharedDeckTemplate());
     setCardCatalog(getCardCatalog());
     const json = exportSharedDeckTemplateJson();
-    window.localStorage.setItem(sharedTemplateStorageKey, json);
     setSharedDeckVersion((v) => v + 1);
     if (!sync) return true;
     return syncTemplateToServer(json);
@@ -84,7 +79,6 @@ export const useSharedConfigSync = (args: {
       if (!result.ok) return false;
       setSharedDeckTemplate(getSharedDeckTemplate());
       setCardCatalog(getCardCatalog());
-      window.localStorage.setItem(sharedTemplateStorageKey, exportSharedDeckTemplateJson());
       setSharedDeckVersion((v) => v + 1);
       return true;
     } catch {
@@ -101,7 +95,6 @@ export const useSharedConfigSync = (args: {
       if (!setSharedRanks(payload.ranks)) return false;
       const nextRanks = getSharedRanks();
       setSharedRanksState(nextRanks);
-      window.localStorage.setItem(ranksStorageKey, exportSharedRanksJson());
       return true;
     } catch {
       return false;
@@ -111,21 +104,9 @@ export const useSharedConfigSync = (args: {
   useEffect(() => {
     void (async () => {
       const loadedFromServer = await loadTemplateFromServer();
-      if (!loadedFromServer) {
-        const saved = window.localStorage.getItem(sharedTemplateStorageKey);
-        if (saved) {
-          const result = importSharedDeckTemplateJson(saved);
-          if (result.ok) void refreshSharedDeckTemplate(false);
-        }
-      }
+      if (!loadedFromServer) return setSharedConfigLoaded(true);
       const loadedRanksFromServer = await loadRanksFromServer();
-      if (!loadedRanksFromServer) {
-        const saved = window.localStorage.getItem(ranksStorageKey);
-        if (saved) {
-          const result = importSharedRanksJson(saved);
-          if (result.ok) setSharedRanksState(getSharedRanks());
-        }
-      }
+      if (!loadedRanksFromServer) return setSharedConfigLoaded(true);
       setSharedConfigLoaded(true);
     })();
   }, []);

@@ -298,7 +298,7 @@ export const uiUkData = {
     storageModeLabel: 'Джерело даних',
     storageModeFiles: 'Локальні файли',
     storageModeDb: 'База даних',
-    storageModeHint: 'Для shared config, системних налаштувань і bug reports база даних уже є основним сховищем. Файли залишені лише як fallback, якщо БД недоступна.',
+    storageModeHint: 'Shared config, системні налаштування і bug reports працюють тільки через базу даних. Файловий fallback для цього контуру вимкнено.',
     dbConnectionTitle: 'Параметри підключення до БД',
     dbConnectionHint: 'Ці параметри зберігаються на сервері й використовуються для тесту з’єднання, імпорту та резервних копій.',
     dbConnectionPreview: 'Попередній рядок підключення',

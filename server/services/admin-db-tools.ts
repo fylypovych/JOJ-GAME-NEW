@@ -34,7 +34,7 @@ type AdminDbToolsDeps = {
 type CmdExecResult = { ok: boolean; stdout: string; stderr: string; error?: string };
 
 type StoredAdminDbUiConfig = {
-  storageMode?: 'file' | 'db';
+  storageMode?: 'db';
   dbConfig?: Partial<DbConnInput>;
   updatedAt?: number;
 };
@@ -272,7 +272,7 @@ export const registerAdminDbToolRoutes = ({
       if (!parsed) throw new Error('missing config');
       ctx.body = {
         ok: true,
-        storageMode: parsed.storageMode === 'db' ? 'db' : 'file',
+        storageMode: 'db',
         dbConfig: parsed.dbConfig
           ? {
             ...parsed.dbConfig,
@@ -282,7 +282,7 @@ export const registerAdminDbToolRoutes = ({
         hasSavedPassword: Boolean(parsed.dbConfig?.password),
       };
     } catch {
-      ctx.body = { ok: true, storageMode: 'file', dbConfig: null, hasSavedPassword: false };
+      ctx.body = { ok: true, storageMode: 'db', dbConfig: null, hasSavedPassword: false };
     }
   });
 
@@ -291,7 +291,6 @@ export const registerAdminDbToolRoutes = ({
     if (!(await enforceRateLimit(ctx, 'admin-db-ui-config-post', 20, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/ui-config', maxBytes: JSON_BODY_LIMIT, logLine });
     if (!body) return;
-    const storageMode = body.storageMode === 'db' ? 'db' : 'file';
     const rawDbConfig = (body.dbConfig && typeof body.dbConfig === 'object') ? (body.dbConfig as Record<string, unknown>) : {};
     const existingConfig = await loadStoredAdminDbUiConfig(adminDbUiConfigPath, pool);
     const storedPassword = typeof existingConfig?.dbConfig?.password === 'string' ? existingConfig.dbConfig.password : '';
@@ -308,7 +307,7 @@ export const registerAdminDbToolRoutes = ({
     } catch { /* noop */ }
     try {
       const storedPayload = {
-        storageMode,
+        storageMode: 'db',
         dbConfig: normalizedDbConfig,
         updatedAt: Date.now(),
       };

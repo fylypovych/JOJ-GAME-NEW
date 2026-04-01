@@ -1214,7 +1214,7 @@ export const AdminPage = ({
     </>
   );
   return (
-    <section className={`board admin-panel${uiVariant === 'v2' ? ' board-v2-panel' : ''}${uiVariant === 'v3' ? ' board-v3-panel' : ''}${isV4 ? ' admin-panel-v4' : ''}`}>
+    <section className={`${isV4 ? 'admin-shell-v4 admin-panel-v4' : `board admin-panel${uiVariant === 'v2' ? ' board-v2-panel' : ''}${uiVariant === 'v3' ? ' board-v3-panel' : ''}`}`}>
       <h2>{t.adminTitle}</h2>
       {isV4 ? (
         <>

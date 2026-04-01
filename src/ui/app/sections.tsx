@@ -6,6 +6,7 @@ import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { Language } from '../i18n';
 import { cardFlavor, cardTitleWithOverride, categoryLabel, text } from '../i18n';
 import { formatModuleDisplayName } from '../moduleDisplay';
+import { buildRoomShareLink, copyText } from './share';
 import type { GalleryCategoryFilter, LobbyMatch, UserTab } from './model';
 import type { AuthUser, UserAward, UserStats } from './useUserAccount';
 import type { UserMatchHistoryItem, UserSession } from './useUserAccount';
@@ -48,40 +49,6 @@ const formatModuleList = (
   moduleIds: string[],
   moduleNameById: Map<string, string>,
 ) => moduleIds.length ? moduleIds.map((id) => formatModuleName(id, moduleNameById)).join(', ') : '-';
-
-const buildRoomShareLink = (matchID: string) => {
-  const url = new URL(window.location.href);
-  url.searchParams.set('room', matchID);
-  return url.toString();
-};
-
-const copyText = async (value: string) => {
-  if (navigator.clipboard?.writeText && window.isSecureContext) {
-    try {
-      await navigator.clipboard.writeText(value);
-      return;
-    } catch {
-      // Fall through to legacy copy path below.
-    }
-  }
-  const textarea = document.createElement('textarea');
-  textarea.value = value;
-  textarea.setAttribute('readonly', 'true');
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
-  textarea.style.pointerEvents = 'none';
-  document.body.appendChild(textarea);
-  textarea.focus();
-  textarea.select();
-  textarea.setSelectionRange(0, textarea.value.length);
-  try {
-    const copied = document.execCommand('copy');
-    if (copied) return;
-  } finally {
-    document.body.removeChild(textarea);
-  }
-  window.prompt('Copy text', value);
-};
 
 const formatMatchOutcomeLabel = (t: T, item: UserMatchHistoryItem) => {
   if (item.winnerPlayerId && item.winnerPlayerId === item.playerId) return t.userMatchHistoryOutcomeWin;
@@ -151,7 +118,7 @@ type UserTabsProps = {
 };
 
 export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v1' }: UserTabsProps) => (
-  <p className={`user-tabs${uiVariant === 'v2' ? ' user-tabs-v2' : ''}${uiVariant === 'v3' ? ' user-tabs-v3' : ''}`}>
+  <p className={`user-tabs${uiVariant === 'v2' ? ' user-tabs-v2' : ''}${uiVariant === 'v3' ? ' user-tabs-v3' : ''}${uiVariant === 'v4' ? ' user-tabs-v4' : ''}`}>
     <button type="button" onClick={() => setActiveUserTab('games')} disabled={activeUserTab === 'games'}>
       {t.userTabGames}
     </button>
@@ -646,12 +613,16 @@ export const ActiveSessionSection = ({
         </div>
       ) : null}
       <p className="admin-controls">
-        <button type="button" onClick={() => { void copyText(inviteText); }} disabled={loading}>
-          {t.copyInviteText}
-        </button>
-        <button type="button" onClick={() => { void copyText(shareLink); }} disabled={loading}>
-          {t.copyInviteLink}
-        </button>
+        {uiVariant !== 'v4' ? (
+          <>
+            <button type="button" onClick={() => { void copyText(inviteText); }} disabled={loading}>
+              {t.copyInviteText}
+            </button>
+            <button type="button" onClick={() => { void copyText(shareLink); }} disabled={loading}>
+              {t.copyInviteLink}
+            </button>
+          </>
+        ) : null}
         <button type="button" onClick={refreshMatches} disabled={loading}>
           {t.refreshRooms}
         </button>

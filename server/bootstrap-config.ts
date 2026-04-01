@@ -31,8 +31,7 @@ export const IMAGE_UPLOAD_BODY_LIMIT = 16 * 1024 * 1024;
 loadEnvFile(envPath);
 
 export const isAdminAuthEnabled = true;
-const storageModeEnv = (process.env.STORAGE_MODE ?? 'file').trim().toLowerCase();
-export const requestedSharedConfigStorageMode = (storageModeEnv === 'postgres' || storageModeEnv === 'db') ? 'postgres' : 'file';
+export const requestedSharedConfigStorageMode = 'postgres';
 export const databaseUrl = (process.env.DATABASE_URL ?? '').trim();
 export const nodeEnv = (process.env.NODE_ENV ?? '').trim().toLowerCase();
 export const allowInMemoryUserStore = /^(1|true|yes)$/i.test((process.env.ALLOW_IN_MEMORY_USER_STORE ?? '').trim());

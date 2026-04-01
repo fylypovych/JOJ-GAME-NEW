@@ -298,7 +298,7 @@ export const uiEnData = {
     storageModeLabel: 'Data source',
     storageModeFiles: 'Local files',
     storageModeDb: 'Database',
-    storageModeHint: 'Database is already the primary store for shared config, system settings, and bug reports. Files remain only as a fallback when DB is unavailable.',
+    storageModeHint: 'Shared config, system settings, and bug reports are DB-only now. File fallback for this path is disabled.',
     dbConnectionTitle: 'DB connection settings',
     dbConnectionHint: 'These settings are stored on the server and used for connection tests, import, and backup operations.',
     dbConnectionPreview: 'Connection string preview',

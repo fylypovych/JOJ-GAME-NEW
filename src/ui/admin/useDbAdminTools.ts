@@ -16,10 +16,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
   const api = createAdminDbApiUrls(serverUrl);
   const dbText = dbAdminText(lang);
 
-  const [adminStorageMode, setAdminStorageMode] = useState<AdminStorageMode>(() => {
-    const raw = window.localStorage.getItem(ADMIN_STORAGE_MODE_STORAGE_KEY);
-    return raw === 'db' ? 'db' : 'file';
-  });
+  const [adminStorageMode, setAdminStorageMode] = useState<AdminStorageMode>('db');
   const [adminDbConfigDraft, setAdminDbConfigDraft] = useState<AdminDbConfigDraft>(() => parseStoredAdminDbConfig(window.localStorage.getItem(ADMIN_DB_CONFIG_STORAGE_KEY)));
 
   const [dbConfigSaveStatus, setDbConfigSaveStatus] = useState<string>('');
@@ -78,9 +75,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
           dbConfig?: Partial<AdminDbConfigDraft> | null;
         };
         if (!response.ok || !payload.ok || cancelled) return;
-        if (payload.storageMode === 'db' || payload.storageMode === 'file') {
-          setAdminStorageMode(payload.storageMode);
-        }
+        setAdminStorageMode('db');
         if (payload.dbConfig) {
           setAdminDbConfigDraft((prev) => ({
             host: typeof payload.dbConfig?.host === 'string' ? payload.dbConfig.host : prev.host,
@@ -109,7 +104,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            storageMode: adminStorageMode,
+            storageMode: 'db',
             dbConfig: adminDbConfigDraft,
           }),
         });
@@ -127,7 +122,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            storageMode: adminStorageMode,
+            storageMode: 'db',
             dbConfig: adminDbConfigDraft,
           }),
         });

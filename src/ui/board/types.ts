@@ -1,5 +1,6 @@
 import type { BoardProps } from 'boardgame.io/react';
 import type { JojGameState, RankDefinition, ResourceKey } from '../../game/types';
+import type { CardDefinition } from '../../game/types';
 import type { Language } from '../i18n';
 
 export type ReplacementByTarget = Record<string, ResourceKey[]>;
@@ -32,11 +33,14 @@ export type LocalizedBoardProps = Omit<BoardProps<JojGameState>, 'moves'> & {
   playerName?: string;
   knownPlayerNames?: Record<string, string>;
   sharedRanks?: RankDefinition[];
+  rankTrackCards?: CardDefinition[];
   cardImageById?: Record<string, string>;
   roomMeta?: {
     matchID: string;
     playerID?: string;
   };
+  inviteText?: string;
+  shareLink?: string;
   onLeaveRoom?: () => void;
   onStateChange?: (payload: {
     G: JojGameState;

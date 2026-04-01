@@ -18,6 +18,7 @@ import { buildBoardV4ViewModel, toInitials } from './board/useBoardV4ViewModel';
 import { useBoardV2Sync } from './board/useBoardV2Sync';
 import { useBoardV2UiController } from './board/useBoardV2UiController';
 import type { LocalizedBoardProps } from './board/types';
+import { copyText } from './app/share';
 
 type HandFilter = 'all' | 'playable' | CardDefinition['category'];
 type HandSort = 'default' | 'playable' | 'category' | 'title';
@@ -43,8 +44,11 @@ export const BoardV4 = ({
   playerName = '',
   knownPlayerNames = {},
   sharedRanks = [],
+  rankTrackCards = [],
   cardImageById = {},
   roomMeta,
+  inviteText,
+  shareLink,
   onLeaveRoom,
   onStateChange,
 }: LocalizedBoardProps) => {
@@ -353,6 +357,7 @@ export const BoardV4 = ({
     latestEvents,
     sharedResourceOrder: BOARD_RESOURCE_ORDER,
     sharedResourceIcons: BOARD_RESOURCE_ICONS,
+    rankTrackCards,
   });
   const { handleV4HandCardClick, handlePrimaryV4Action } = useBoardV4Interactions({
     hand,
@@ -449,24 +454,28 @@ export const BoardV4 = ({
         requestEndGameLabel={v2.requestEndGame}
         onRequestEndGame={handleRequestEndGameVote}
         requestEndGameDisabled={isSpectator || seatConnectionMissing || typeof moves.requestEndGameVote !== 'function' || endGameVoteActive || Boolean(ctx?.gameover)}
+        onCopyInvite={inviteText ? () => { void copyText(inviteText); } : undefined}
+        copyInviteLabel={inviteText ? t.copyInviteText : undefined}
+        onCopyInviteLink={shareLink ? () => { void copyText(shareLink); } : undefined}
+        copyInviteLinkLabel={shareLink ? t.copyInviteLink : undefined}
         sideContent={hasBotPlayers && !isSpectator ? (
           <>
-            <div className="game-ui-v3-header-tools-head">
-              <span className="game-ui-v3-header-tools-label">{v2.botControlsTitle}</span>
+            <div className="game-ui-v4-header-tools-head">
+              <span className="game-ui-v4-header-tools-label">{v2.botControlsTitle}</span>
               {botThinkingPlayerName ? (
-                <span className="game-ui-v3-subtle game-ui-v3-bot-thinking">
+                <span className="game-ui-v4-subtle game-ui-v4-bot-thinking">
                   {v2.botThinkingPrefix}: <strong>{botThinkingPlayerName}</strong>
                 </span>
               ) : botPlaybackEventText ? (
-                <span className="game-ui-v3-subtle game-ui-v3-bot-thinking">{botPlaybackEventText}</span>
+                <span className="game-ui-v4-subtle game-ui-v4-bot-thinking">{botPlaybackEventText}</span>
               ) : null}
             </div>
-            <div className="game-ui-v3-header-tools-row">
+            <div className="game-ui-v4-header-tools-row">
               <button type="button" onClick={() => setBotAutoplayEnabled((prev) => !prev)}>
                 {botAutoplayEnabled ? v2.botAutoplayPause : v2.botAutoplayResume}
               </button>
-              <div className="game-ui-v3-bot-speed-slider">
-                <span className="game-ui-v3-bot-speed-label">{v2.botSpeedLabel}</span>
+              <div className="game-ui-v4-bot-speed-slider">
+                <span className="game-ui-v4-bot-speed-label">{v2.botSpeedLabel}</span>
                 <input
                   type="range"
                   min="1"
@@ -497,9 +506,9 @@ export const BoardV4 = ({
       />
 
       {isSpectator ? (
-        <section className="game-ui-v3-spectator-strip">
-          <p className="game-ui-v3-subtle">{v2.spectatorCompactHint}</p>
-          <div className="game-ui-v3-tab-row">
+        <section className="game-ui-v4-spectator-strip">
+          <p className="game-ui-v4-subtle">{v2.spectatorCompactHint}</p>
+          <div className="game-ui-v4-tab-row">
             <button type="button" className={spectatorView === 'live' ? 'is-active' : ''} onClick={() => setSpectatorView('live')}>
               {v2.spectatorLiveView}
             </button>
@@ -510,10 +519,10 @@ export const BoardV4 = ({
         </section>
       ) : null}
 
-      <div className="game-ui-v3-grid">
-        <div className="game-ui-v3-main">
+      <div className="game-ui-v4-grid">
+        <div className="game-ui-v4-main">
           {!isSpectator ? (
-          <section className="game-ui-v3-panel game-ui-v3-command game-ui-v4-command-panel">
+          <section className="game-ui-v4-panel game-ui-v4-command game-ui-v4-command-panel">
             <V4BottomBar
               resources={footerResourceItems}
               rankName={rankName}
@@ -527,13 +536,13 @@ export const BoardV4 = ({
             />
             <div className="game-ui-v4-command-support">
               <div className="game-ui-v4-command-summary">
-                <p className="game-ui-v3-kicker">{v2.commandCenter}</p>
+                <p className="game-ui-v4-kicker">{v2.commandCenter}</p>
                 <h3>{blockPlayerTurnControls ? botPlaybackControlLabel : playerLabelById(ctx.currentPlayer)}</h3>
-                <p className="game-ui-v3-subtle">{t.turnStage}: {stageLabel(stage, t)} · {t.yourRank}: {rankName}</p>
+                <p className="game-ui-v4-subtle">{t.turnStage}: {stageLabel(stage, t)} · {t.yourRank}: {rankName}</p>
                 {promoteReason ? (
-                  <p className="game-ui-v3-subtle"><strong>{v2.blockedReason}:</strong> {promoteReason}</p>
+                  <p className="game-ui-v4-subtle"><strong>{v2.blockedReason}:</strong> {promoteReason}</p>
                 ) : (
-                  <p className="game-ui-v3-subtle">
+                  <p className="game-ui-v4-subtle">
                     {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
                   </p>
                 )}
@@ -573,7 +582,7 @@ export const BoardV4 = ({
           </section>
           ) : null}
           {isSpectator && spectatorView === 'summary' ? (
-            <section className="game-ui-v3-panel game-ui-v3-command">
+            <section className="game-ui-v4-panel game-ui-v4-command">
               <V4StandingsSummary
                 title={v2.finalStandingsTitle}
                 summaryLabels={{
@@ -589,17 +598,17 @@ export const BoardV4 = ({
             </section>
           ) : null}
           {draftPending && !myDraftDone ? (
-            <section className="game-ui-v3-panel game-ui-v3-command">
-              <div className="game-ui-v3-command-top">
+            <section className="game-ui-v4-panel game-ui-v4-command">
+              <div className="game-ui-v4-command-top">
                 <div>
-                  <p className="game-ui-v3-kicker">{v2.standardPlusKicker}</p>
+                  <p className="game-ui-v4-kicker">{v2.standardPlusKicker}</p>
                   <h3>{v2.legendarySelectionTitle}</h3>
-                  <p className="game-ui-v3-subtle">
+                  <p className="game-ui-v4-subtle">
                     {v2.legendarySelectionHint}
                   </p>
                 </div>
               </div>
-              <div className="hand game-ui-v3-hand-grid">
+              <div className="hand game-ui-v4-hand-grid">
                 {legendaryDraftPool.map((card) => {
                   const selected = draftSelection.includes(card.id);
                   return (
@@ -621,8 +630,8 @@ export const BoardV4 = ({
                   );
                 })}
               </div>
-              <div className="game-ui-v3-selection-actions">
-                <p className="game-ui-v3-subtle">{v2.selected}: {draftSelection.length}/5</p>
+              <div className="game-ui-v4-selection-actions">
+                <p className="game-ui-v4-subtle">{v2.selected}: {draftSelection.length}/5</p>
                 <button
                   type="button"
                   disabled={draftSelection.length !== 5 || typeof moves.selectLegendaryLoadout !== 'function'}
@@ -657,28 +666,28 @@ export const BoardV4 = ({
             boardContent={(
               <>
                 {impactPulse ? (
-                    <div className={`game-ui-v3-impact-pulse is-${impactPulse.tone}`} aria-live="polite">
-                      <div className="game-ui-v3-impact-beam" aria-hidden="true" />
+                    <div className={`game-ui-v4-impact-pulse is-${impactPulse.tone}`} aria-live="polite">
+                      <div className="game-ui-v4-impact-beam" aria-hidden="true" />
                       {impactPulse.imageSrc ? (
-                        <div className="game-ui-v3-impact-card">
+                        <div className="game-ui-v4-impact-card">
                           <img src={impactPulse.imageSrc} alt={displayedDiscardTitle || focusPrimaryLabel} />
                         </div>
                       ) : null}
-                      <div className="game-ui-v3-impact-copy">
-                        <span className="game-ui-v3-stage-label">{impactPulse.label}</span>
+                      <div className="game-ui-v4-impact-copy">
+                        <span className="game-ui-v4-stage-label">{impactPulse.label}</span>
                         <strong>{focusPrimaryLabel}</strong>
                         <p>{impactPulse.text}</p>
                       </div>
                     </div>
                 ) : null}
-                <div className="game-ui-v3-altar-focus-shell">
-                  <div className="game-ui-v3-table">
-                    <article className="game-ui-v3-zone game-ui-v3-zone-deck">
-                      <div className="game-ui-v3-zone-head">
-                        <span className="game-ui-v3-stage-label">{t.drawPile}</span>
+                <div className="game-ui-v4-altar-focus-shell">
+                  <div className="game-ui-v4-table">
+                    <article className="game-ui-v4-zone game-ui-v4-zone-deck">
+                      <div className="game-ui-v4-zone-head">
+                        <span className="game-ui-v4-stage-label">{t.drawPile}</span>
                         <strong>{G.deck?.length ?? 0}</strong>
                       </div>
-                      <div className="game-ui-v3-zone-card">
+                      <div className="game-ui-v4-zone-card">
                         <PilePreview
                           imageSrc={deckBackImage}
                           alt={t.drawPile}
@@ -690,15 +699,15 @@ export const BoardV4 = ({
                           fallback={<div className="pile-back-fallback">JOJ</div>}
                         />
                       </div>
-                      <p className="game-ui-v3-zone-meta">{v2.stageFocusDraw}</p>
+                      <p className="game-ui-v4-zone-meta">{v2.stageFocusDraw}</p>
                     </article>
-                    <article className="game-ui-v3-zone game-ui-v3-zone-focus">
-                      <div className="game-ui-v3-zone-head">
-                        <span className="game-ui-v3-stage-label">{selectedTargetId ? v2.pickTarget : v2.tableState}</span>
+                    <article className="game-ui-v4-zone game-ui-v4-zone-focus">
+                      <div className="game-ui-v4-zone-head">
+                        <span className="game-ui-v4-stage-label">{selectedTargetId ? v2.pickTarget : v2.tableState}</span>
                         <strong>{activeArenaPlayerName}</strong>
                       </div>
-                      <div className="game-ui-v3-focus-body">
-                        <div className="game-ui-v3-focus-card">
+                      <div className="game-ui-v4-focus-body">
+                        <div className="game-ui-v4-focus-card">
                           {displayedDiscardTitle ? (
                             <PilePreview
                               imageSrc={displayedDiscardImage}
@@ -710,19 +719,19 @@ export const BoardV4 = ({
                               variant="v3"
                             />
                           ) : (
-                            <div className="game-ui-v3-focus-empty">{v2.waitingAction}</div>
+                            <div className="game-ui-v4-focus-empty">{v2.waitingAction}</div>
                           )}
                         </div>
-                        <div className="game-ui-v3-focus-meta">
+                        <div className="game-ui-v4-focus-meta">
                           <strong>{displayedDiscardTitle || focusPrimaryLabel}</strong>
                           <span>{focusSecondaryLabel}</span>
-                          <div className={`game-ui-v3-focus-tone${latestArenaRow ? ` is-${latestArenaRow.tone}` : ''}`}>
+                          <div className={`game-ui-v4-focus-tone${latestArenaRow ? ` is-${latestArenaRow.tone}` : ''}`}>
                             {latestArenaRow?.label ?? v2.waitingAction}
                           </div>
-                          <p className="game-ui-v3-zone-meta">
+                          <p className="game-ui-v4-zone-meta">
                             {focusSupportingText}
                           </p>
-                          <div className="game-ui-v3-focus-resources">
+                          <div className="game-ui-v4-focus-resources">
                             {BOARD_RESOURCE_ORDER.map((key) => (
                               <span key={`focus-resource-${key}`}>
                                 {BOARD_RESOURCE_ICONS[key]} {activeArenaResources?.[key] ?? 0}
@@ -732,12 +741,12 @@ export const BoardV4 = ({
                         </div>
                       </div>
                     </article>
-                    <article className="game-ui-v3-zone game-ui-v3-zone-discard">
-                      <div className="game-ui-v3-zone-head">
-                        <span className="game-ui-v3-stage-label">{t.discardPile}</span>
+                    <article className="game-ui-v4-zone game-ui-v4-zone-discard">
+                      <div className="game-ui-v4-zone-head">
+                        <span className="game-ui-v4-stage-label">{t.discardPile}</span>
                         <strong>{G.discard?.length ?? 0}</strong>
                       </div>
-                      <div className="game-ui-v3-zone-card">
+                      <div className="game-ui-v4-zone-card">
                         {displayedDiscardTitle ? (
                           <PilePreview
                             imageSrc={displayedDiscardImage}
@@ -750,7 +759,7 @@ export const BoardV4 = ({
                           />
                         ) : <div className="pile-empty">{t.noCardsInDiscard}</div>}
                       </div>
-                      <p className="game-ui-v3-zone-meta">{displayedDiscardTitle || t.noCardsInDiscard}</p>
+                      <p className="game-ui-v4-zone-meta">{displayedDiscardTitle || t.noCardsInDiscard}</p>
                     </article>
                   </div>
                 </div>
@@ -763,17 +772,17 @@ export const BoardV4 = ({
           <V4PlayerDockSection
             mainContent={(
               <>
-                <div className="game-ui-v3-hand-rail">
-                <div className="game-ui-v3-hand-rail-chip">
-                  <span className="game-ui-v3-stage-label">{t.turnStage}</span>
+                <div className="game-ui-v4-hand-rail">
+                <div className="game-ui-v4-hand-rail-chip">
+                  <span className="game-ui-v4-stage-label">{t.turnStage}</span>
                   <strong>{stageLabel(stage, t)}</strong>
                 </div>
-                <div className="game-ui-v3-hand-rail-chip">
-                  <span className="game-ui-v3-stage-label">{t.yourHand}</span>
+                <div className="game-ui-v4-hand-rail-chip">
+                  <span className="game-ui-v4-stage-label">{t.yourHand}</span>
                   <strong>{hand.length}/8</strong>
                 </div>
-                <div className={`game-ui-v3-hand-rail-chip${mustDiscardOverflow ? ' is-warn' : ''}`}>
-                  <span className="game-ui-v3-stage-label">{v2.play}</span>
+                <div className={`game-ui-v4-hand-rail-chip${mustDiscardOverflow ? ' is-warn' : ''}`}>
+                  <span className="game-ui-v4-stage-label">{v2.play}</span>
                   <strong>{canPlayHandCard ? v2.canPlayNow : v2.actionUnavailable}</strong>
                 </div>
               </div>
@@ -781,7 +790,7 @@ export const BoardV4 = ({
                 title={`${t.yourHand} (${hand.length}/8)`}
                 subtitle={mustDiscardOverflow ? v2.handOverflowWarning.replace('{count}', String(handOverflow)) : undefined}
                 headRight={(
-                  <div className="game-ui-v3-hand-controls">
+                  <div className="game-ui-v4-hand-controls">
                     <label>
                       <span>{v2.handFilter}</span>
                       <select value={handFilter} onChange={(e) => setHandFilter(e.target.value as HandFilter)}>
@@ -833,7 +842,7 @@ export const BoardV4 = ({
               </>
             )}
             sideContent={!isSimplifiedMode ? (
-                <section className="game-ui-v3-panel game-ui-v3-legendary-frame">
+                <section className="game-ui-v4-panel game-ui-v4-legendary-frame">
                   <V4HandSection
                     title={`${t.legendaryHand} (${legendaryHand.length})`}
                     subtitle={t.legendaryHandHint}
@@ -925,7 +934,7 @@ export const BoardV4 = ({
       </div>
 
       {!isSpectator ? (
-      <div className="game-ui-v3-mobile-bar" aria-label={v2.mobileActions}>
+      <div className="game-ui-v4-mobile-bar" aria-label={v2.mobileActions}>
         <button type="button" onClick={handleDraw} disabled={!canDraw || blockPlayerTurnControls}>{t.draw}</button>
         <button type="button" onClick={() => handlePromote(promoteReason)} disabled={!canPlay || Boolean(promoteReason) || blockPlayerTurnControls}>{t.promote}</button>
         <button type="button" onClick={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)} disabled={!canEndTurn || blockPlayerTurnControls}>

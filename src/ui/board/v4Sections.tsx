@@ -158,19 +158,19 @@ export const V4BattlefieldSection = (props: {
 }) => {
   const { title, opponentCount, opponents, boardContent } = props;
   return (
-    <section className="game-ui-v3-panel game-ui-v3-battlefield game-ui-v4-battlefield-panel">
+    <section className="game-ui-v4-panel game-ui-v4-battlefield game-ui-v4-battlefield-panel">
       <h3>{title}</h3>
-      <div className="game-ui-v3-board-surface" aria-hidden="true">
-        <span className="game-ui-v3-board-ring game-ui-v3-board-ring-pressure" />
-        <span className="game-ui-v3-board-ring game-ui-v3-board-ring-altar" />
-        <span className="game-ui-v3-board-ring game-ui-v3-board-ring-tactical" />
-        <span className="game-ui-v3-board-glow game-ui-v3-board-glow-left" />
-        <span className="game-ui-v3-board-glow game-ui-v3-board-glow-right" />
+      <div className="game-ui-v4-board-surface" aria-hidden="true">
+        <span className="game-ui-v4-board-ring game-ui-v4-board-ring-pressure" />
+        <span className="game-ui-v4-board-ring game-ui-v4-board-ring-altar" />
+        <span className="game-ui-v4-board-ring game-ui-v4-board-ring-tactical" />
+        <span className="game-ui-v4-board-glow game-ui-v4-board-glow-left" />
+        <span className="game-ui-v4-board-glow game-ui-v4-board-glow-right" />
       </div>
-      <div className={`game-ui-v3-battlefield-shell game-ui-v4-battlefield-shell is-opponents-${opponentCount}`}>
+      <div className={`game-ui-v4-battlefield-shell is-opponents-${opponentCount}`}>
         {opponents}
         <div className="game-ui-v4-board-area">
-          <div className="game-ui-v3-altar-lane game-ui-v4-board-center">
+          <div className="game-ui-v4-altar-lane game-ui-v4-board-center">
             {boardContent}
           </div>
         </div>
@@ -185,15 +185,15 @@ export const V4PlayerDockSection = (props: {
 }) => {
   const { mainContent, sideContent } = props;
   return (
-    <section className="game-ui-v3-panel game-ui-v3-player-dock">
-      <div className="game-ui-v3-player-dock-main game-ui-v3-hand-frame">
-        <div className="game-ui-v3-player-station" aria-hidden="true">
-          <span className="game-ui-v3-player-station-edge" />
-          <span className="game-ui-v3-player-station-glow" />
+    <section className="game-ui-v4-panel game-ui-v4-player-dock">
+      <div className="game-ui-v4-player-dock-main game-ui-v4-hand-frame">
+        <div className="game-ui-v4-player-station" aria-hidden="true">
+          <span className="game-ui-v4-player-station-edge" />
+          <span className="game-ui-v4-player-station-glow" />
         </div>
         {mainContent}
       </div>
-      <aside className="game-ui-v3-player-dock-side">
+      <aside className="game-ui-v4-player-dock-side">
         {sideContent}
       </aside>
     </section>

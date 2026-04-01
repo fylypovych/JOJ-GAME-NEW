@@ -187,8 +187,7 @@ LIMIT 1;`;
     if (!result.ok) throw new Error(result.error);
     const raw = result.stdout.trim();
     if (!raw) {
-      await saveTemplateToPostgresWithUrl(deps.databaseUrl);
-      return;
+      throw new Error('shared deck template is missing in postgres');
     }
     const importResult = importSharedDeckTemplateJson(raw);
     if (!importResult.ok) {
@@ -206,8 +205,7 @@ LIMIT 1;`;
     if (!result.ok) throw new Error(result.error);
     const raw = result.stdout.trim();
     if (!raw) {
-      await saveRanksToPostgresWithUrl(deps.databaseUrl);
-      return;
+      throw new Error('shared ranks payload is missing in postgres');
     }
     let parsed: unknown;
     try {

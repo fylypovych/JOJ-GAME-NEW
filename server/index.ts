@@ -64,6 +64,7 @@ import {
   importSharedRanksJson,
   importSharedDeckTemplateJson,
   jojGame,
+  repairGeneratedRankVisualData,
   resetSharedRanks,
   resetSharedDeckTemplate,
   setSharedRanks,
@@ -356,11 +357,13 @@ void (async () => {
 
   if (sharedConfigStorageMode === 'postgres') {
     if (!databaseUrl || !postgresAvailableForApp) {
-      sharedConfigStorageMode = 'file';
-      await logLine('WARN', 'shared config postgres mode disabled: postgres is unavailable, falling back to file storage');
+      const errorText = 'shared config postgres mode requires a working PostgreSQL connection; file fallback is disabled';
+      await logLine('ERROR', errorText);
+      throw new Error(errorText);
     } else if (!hasPsqlCli()) {
-      sharedConfigStorageMode = 'file';
-      await logLine('WARN', 'shared config postgres mode disabled: psql CLI is not installed, falling back to file storage');
+      const errorText = 'shared config postgres mode requires psql CLI; file fallback is disabled';
+      await logLine('ERROR', errorText);
+      throw new Error(errorText);
     }
   }
 
@@ -482,6 +485,17 @@ void (async () => {
   }
   await loadTemplate();
   await loadRanks();
+  {
+    const repair = repairGeneratedRankVisualData();
+    if (repair.ranksChanged) {
+      await saveRanks();
+      await logLine('INFO', 'shared-ranks repaired with generated rank image bindings');
+    }
+    if (repair.templateChanged) {
+      await saveTemplate();
+      await logLine('INFO', 'shared-deck-template repaired with generated rank track sets');
+    }
+  }
   await logLine(
     userStore ? 'INFO' : 'WARN',
     userStore

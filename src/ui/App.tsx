@@ -60,6 +60,7 @@ import {
 import { useAdminAuth } from './app/useAdminAuth';
 import { useAdminSnapshot } from './app/useAdminSnapshot';
 import { BugReportWidget } from './app/BugReportWidget';
+import { buildRoomShareLink } from './app/share';
 import { useAppShellState } from './app/useAppShellState';
 import { useLobbySession } from './app/useLobbySession';
 import { useSharedConfigSync } from './app/useSharedConfigSync';
@@ -371,6 +372,18 @@ export const App = () => {
       }, {}),
     [cardCatalog],
   );
+  const activeSessionMatch = session
+    ? matches.find((match) => match.matchID === session.matchID) ?? null
+    : null;
+  const activeSessionShareLink = session ? buildRoomShareLink(session.matchID) : '';
+  const activeSessionGameModeLabel = activeSessionMatch?.setupData?.gameMode === 'standard_plus'
+    ? t.gameModeStandardPlus
+    : activeSessionMatch?.setupData?.gameMode === 'simplified'
+      ? t.gameModeSimplified
+      : t.gameModeStandard;
+  const activeSessionInviteText = session
+    ? `${t.activeRoom}: ${session.matchID}\n${t.gameModeLabel}: ${activeSessionGameModeLabel}\n${t.roomSummaryPlayers}: ${activeSessionMatch ? `${activeSessionMatch.players.filter((player) => Boolean(player.name?.trim())).length}/${activeSessionMatch.players.length}` : '-'}\n${activeSessionShareLink}`
+    : '';
   const effectLabel = (resource: 'time' | 'reputation' | 'discipline' | 'documents' | 'tech' | 'rank') =>
     resource === 'rank' ? t.rankResource : t.resources[resource];
   const rules = t.rulesList;
@@ -463,7 +476,7 @@ export const App = () => {
     <main className={`app app-${shellUiVariant}`} data-bug-report-capture-root="true">
       <h1>{isAdminRoute ? t.adminTitle : t.gameTitle}</h1>
       {!isAdminRoute ? (
-        <section className={`app-top-toolbar${shellUiVariant === 'v2' ? ' app-top-toolbar-v2' : ''}${shellUiVariant === 'v3' ? ' app-top-toolbar-v3' : ''}`}>
+        <section className={`app-top-toolbar${shellUiVariant === 'v2' ? ' app-top-toolbar-v2' : ''}${shellUiVariant === 'v3' ? ' app-top-toolbar-v3' : ''}${shellUiVariant === 'v4' ? ' app-top-toolbar-v4' : ''}`}>
           <div className="app-top-toolbar-left">
             <UserTabs t={t} activeUserTab={activeUserTab} setActiveUserTab={setActiveUserTab} uiVariant={gameUiVariant} />
           </div>
@@ -521,7 +534,7 @@ export const App = () => {
       </p>
 
       {isAdminRoute && (!adminAuthorized || adminAuthChecking) ? (
-        <section className={`board${adminUiVariant === 'v2' ? ' board-v2-panel' : ''}${adminUiVariant === 'v3' ? ' board-v3-panel' : ''}${adminUiVariant === 'v4' ? ' admin-panel-v4' : ''}`}>
+        <section className={adminUiVariant === 'v4' ? 'admin-shell-v4 admin-panel-v4' : `board${adminUiVariant === 'v2' ? ' board-v2-panel' : ''}${adminUiVariant === 'v3' ? ' board-v3-panel' : ''}`}>
           <h2>{t.adminTitle}</h2>
           <p>{adminAuthChecking ? t.loading : (adminAuthError || (adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminUnauthorized))}</p>
           {!adminAuthChecking ? (
@@ -567,14 +580,14 @@ export const App = () => {
         />
       ) : null}
 
-      {!isAdminRoute && activeUserTab === 'games' && session ? (
+      {!isAdminRoute && activeUserTab === 'games' && session && gameUiVariant !== 'v4' ? (
         <ActiveSessionSection
           t={t}
           session={session}
           playerName={playerName}
           sessionBroken={sessionBroken}
           canStart={canStart}
-          activeMatch={matches.find((match) => match.matchID === session.matchID) ?? null}
+          activeMatch={activeSessionMatch}
           optionalModules={optionalLobbyModules}
           leaveRoom={() => { void leaveRoom(); }}
           refreshMatches={() => { void refreshMatches(); }}
@@ -595,8 +608,11 @@ export const App = () => {
               playerName={session.spectator ? t.spectatorJoinedLabel : playerName}
               knownPlayerNames={roomPlayerNames}
               sharedRanks={sharedRanks}
+              rankTrackCards={sharedDeckTemplate.rankTrack}
               cardImageById={cardImageById}
               roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
+              inviteText={activeSessionInviteText}
+              shareLink={activeSessionShareLink}
               onLeaveRoom={() => { void leaveRoom(); }}
             /> : gameUiVariant === 'v3' ? <NetworkClientV3
               key={`${session.matchID}:${session.playerID ?? 'spectator'}:v3`}

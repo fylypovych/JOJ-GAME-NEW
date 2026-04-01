@@ -74,11 +74,112 @@ export type DeckModuleBuildResult = {
   gameSetup: SharedGameSetup;
 };
 
-const defaultSharedDeckTemplate = (): SharedDeckTemplate => buildTemplateWithDefaults(defaultSharedDeckTemplateSeed);
+const buildRankAssetPath = (index: number) => `/cards/${String(index).padStart(2, '0')}-1.webp`;
+const generatedRankCardCopies = (rankId: string) => (rankId === 'recruit' ? 6 : 4);
+const isGeneratedRankTrackCardId = (cardId: string) => /^rank-[a-z0-9_]+-(set-\d+|extra-\d+)$/i.test(cardId);
 
-let sharedDeckTemplate: SharedDeckTemplate = defaultSharedDeckTemplate();
-let sharedRanks: SharedRanks = defaultSharedRanksSeed.map(cloneRank);
-let sharedExtraCatalog: CardDefinition[] = defaultSharedExtraCatalogSeed.map(cloneCard);
+const defaultSharedDeckTemplate = (): SharedDeckTemplate => buildTemplateWithDefaults(defaultSharedDeckTemplateSeed);
+const emptySharedDeckTemplate = (): SharedDeckTemplate => buildTemplateWithDefaults({
+  deck: [],
+  legendaryDeck: [],
+  rankTrack: [],
+  modules: [],
+  gameSetup: {
+    optionalMainDeckModuleIds: [],
+    legendaryDeckMode: 'separate',
+  },
+});
+
+let sharedDeckTemplate: SharedDeckTemplate = emptySharedDeckTemplate();
+let sharedRanks: SharedRanks = [];
+let sharedExtraCatalog: CardDefinition[] = [];
+
+const hydrateSharedRanksWithGeneratedImages = (ranks: SharedRanks) => {
+  let changed = false;
+  const nextRanks = ranks.map((rank, index) => {
+    if (rank.image || (rank.imageVariants?.length ?? 0) > 0) return cloneRank(rank);
+    changed = true;
+    const imagePath = buildRankAssetPath(index);
+    return cloneRank({
+      ...rank,
+      image: imagePath,
+      imageVariants: [imagePath],
+    });
+  });
+  return { nextRanks, changed };
+};
+
+const buildGeneratedRankTrackFromRanks = (ranks: SharedRanks): CardDefinition[] => ranks.flatMap((rank, index) => {
+  const copies = generatedRankCardCopies(rank.id);
+  const baseImage = rank.imageVariants?.[0] || rank.image || buildRankAssetPath(index);
+  return Array.from({ length: copies }, (_, copyIndex) => {
+    const isExtraRecruit = rank.id === 'recruit' && copyIndex >= 4;
+    const suffix = isExtraRecruit ? `extra-${copyIndex - 3}` : `set-${copyIndex + 1}`;
+    return cloneCard({
+      id: `rank-${rank.id}-${suffix}`,
+      title: rank.name,
+      category: 'COMMAND',
+      image: baseImage,
+      grantRank: rank.id,
+      flavor: rank.flavor,
+    });
+  });
+});
+
+export const repairGeneratedRankVisualData = (): { ranksChanged: boolean; templateChanged: boolean } => {
+  let ranksChanged = false;
+  let templateChanged = false;
+
+  if (sharedRanks.length === 0) {
+    return { ranksChanged: false, templateChanged: false };
+  }
+
+  const hydratedRanks = hydrateSharedRanksWithGeneratedImages(sharedRanks);
+  if (hydratedRanks.changed) {
+    sharedRanks = hydratedRanks.nextRanks;
+    ranksChanged = true;
+  }
+
+  const expectedRankTrackCount = sharedRanks.reduce((acc, rank) => acc + generatedRankCardCopies(rank.id), 0);
+  const hasOnlyGeneratedRankCards = sharedDeckTemplate.rankTrack.every((card) => isGeneratedRankTrackCardId(card.id));
+  const needsRankTrackRepair = sharedDeckTemplate.rankTrack.length === 0
+    || (hasOnlyGeneratedRankCards && sharedDeckTemplate.rankTrack.length !== expectedRankTrackCount);
+
+  if (!needsRankTrackRepair) {
+    return { ranksChanged, templateChanged };
+  }
+
+  const generatedRankTrack = buildGeneratedRankTrackFromRanks(sharedRanks);
+  const rankModuleId = 'rank_default';
+  const rankModuleName = '2026.RANK.CARDS';
+  const nextModules = [...(sharedDeckTemplate.modules ?? [])];
+  const existingRankModuleIndex = nextModules.findIndex((module) => module.target === 'rankTrack' && module.category === 'RANK');
+  const nextRankModule: DeckModuleDefinition = {
+    id: rankModuleId,
+    name: rankModuleName,
+    moduleType: 'VISUAL_TRACK_MODULE',
+    category: 'RANK',
+    cardCount: generatedRankTrack.length,
+    enabled: true,
+    target: 'rankTrack',
+    cardIds: generatedRankTrack.map((card) => card.id),
+  };
+  if (existingRankModuleIndex >= 0) nextModules.splice(existingRankModuleIndex, 1, nextRankModule);
+  else nextModules.push(nextRankModule);
+
+  sharedDeckTemplate = {
+    ...sharedDeckTemplate,
+    rankTrack: generatedRankTrack,
+    modules: nextModules,
+    gameSetup: {
+      ...sharedDeckTemplate.gameSetup,
+      rankModuleId,
+    },
+  };
+  templateChanged = true;
+
+  return { ranksChanged, templateChanged };
+};
 
 export const getActiveRanks = (): SharedRanks => sharedRanks;
 export const getTopRankId = (): string => {

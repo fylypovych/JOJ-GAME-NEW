@@ -7,7 +7,7 @@ type T = ReturnType<typeof text>;
 export const AdminDatabaseTab = ({
   t,
   storageMode,
-  onStorageModeChange,
+  onStorageModeChange: _onStorageModeChange,
   dbConfigDraft,
   onDbConfigDraftChange,
   onSaveDbConfigDraft,
@@ -75,15 +75,7 @@ export const AdminDatabaseTab = ({
     <h3>{t.databaseTabTitle}</h3>
     <p>{t.databaseTabHint}</p>
     <h4>{t.storageModeTitle}</h4>
-    <p className="admin-controls">
-      <label>
-        {t.storageModeLabel}
-        <select value={storageMode} onChange={(e) => onStorageModeChange((e.target.value as AdminStorageMode) || 'file')}>
-          <option value="file">{t.storageModeFiles}</option>
-          <option value="db">{t.storageModeDb}</option>
-        </select>
-      </label>
-    </p>
+    <p><strong>{t.storageModeLabel}:</strong> {t.storageModeDb}</p>
     <p>{t.storageModeHint}</p>
 
     {storageMode === 'db' ? (
@@ -175,9 +167,7 @@ export const AdminDatabaseTab = ({
         {dbExportBackupStatus ? <p className="admin-success">{dbExportBackupStatus}</p> : null}
         {dbExportBackupError ? <p className="admin-error">{dbExportBackupError}</p> : null}
       </>
-    ) : (
-      <p>{t.dbTabFileModeHint}</p>
-    )}
+    ) : null}
   </>
   );
 };
