@@ -6,10 +6,11 @@ export type AdminNavTab = {
   id: AdminTab;
   label: string;
   short: string;
+  iconPath: string;
 };
 
 export type AdminNavCategory = {
-  id: 'operations' | 'content' | 'data' | 'integrations' | 'system';
+  id: 'start' | 'operations' | 'content' | 'data' | 'integrations' | 'system';
   label: string;
   short: string;
   artLabel: string;
@@ -33,7 +34,9 @@ export const AdminTabButtons = ({
     <p className={`admin-controls${className ? ` ${className}` : ''}`}>
       {tabs.map((tab) => (
         <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} disabled={activeTab === tab.id}>
-          <span className="admin-tab-icon" aria-hidden="true">{tab.short}</span>
+          <span className="admin-tab-icon" aria-hidden="true">
+            <img src={tab.iconPath} alt="" />
+          </span>
           <span className="admin-tab-label">{tab.label}</span>
         </button>
       ))}

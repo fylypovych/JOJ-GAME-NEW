@@ -214,6 +214,7 @@ export const uiUkData = {
       adminAnalyticsStalledRate: 'Частка завислих матчів',
       yes: 'так',
       no: 'ні',
+    tabStart: 'Початок',
     tabMatches: 'Матчі',
     tabDeck: 'Колода',
     tabImportExport: 'Імпорт/експорт',

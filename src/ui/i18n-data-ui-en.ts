@@ -214,6 +214,7 @@ export const uiEnData = {
       adminAnalyticsStalledRate: 'Stalled rate',
       yes: 'yes',
       no: 'no',
+    tabStart: 'Start',
     tabMatches: 'Matches',
     tabDeck: 'Deck',
     tabImportExport: 'Import/export',
