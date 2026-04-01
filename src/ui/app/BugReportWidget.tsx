@@ -185,9 +185,6 @@ export const BugReportWidget = ({
             <div className="bug-report-preview-wrap">
               <div className="bug-report-preview-head">
                 <strong>{t.bugReportImageAlt}</strong>
-                <button type="button" className="ghost" onClick={clearScreenshot} disabled={sending || capturing}>
-                  {t.bugReportRemoveImage}
-                </button>
               </div>
               <img className="bug-report-preview" src={screenshotDataUrl} alt={t.bugReportImageAlt} />
             </div>

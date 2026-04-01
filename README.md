@@ -1,186 +1,303 @@
 # Журнал Журналів (Web)
 
-`boardgame.io`-based web version of the game with multiplayer rooms, admin panel, deck/ranks editor, simulation tools, and PostgreSQL-ready admin DB tooling.
+Вебверсія гри на базі `boardgame.io` з багатокористувацькими кімнатами, кількома UI-варіантами (`v2`, `v3`, `v4`), акаунтами користувачів, адмінкою, редактором колоди/звань, симуляціями, bug-report системою та підтримкою `file`/`postgres` storage.
 
-## Run (Local)
+## Що є в проєкті
+
+- multiplayer rooms через `boardgame.io`
+- режими гри: `standard`, `standard_plus`, `simplified`
+- UI-варіанти клієнта: `v2`, `v3`, `v4`
+- акаунти користувачів, профілі, історія матчів, сесії, password reset
+- admin UI `/admin`
+- shared deck template + shared ranks
+- legendary deck, rank track, deck back image
+- аналітика, awards, bug reports
+- PostgreSQL backend для shared config, user data, bug reports, match mirror і самих матчів
+- file mirrors для сумісності та локальної роботи
+
+## Технології
+
+- frontend: React 18 + Vite + TypeScript
+- game server: `boardgame.io`
+- backend: Node.js + TypeScript
+- database: PostgreSQL
+- screenshots у bug report: `html2canvas`
+
+## Швидкий локальний старт
 
 ```bash
 npm install
 copy .env.example .env
+npm run dev:full
+```
+
+Або окремо:
+
+```bash
 npm run dev:web
 npm run dev:server
 ```
 
-- Frontend (Vite): `http://localhost:5173`
-- Game server (boardgame.io): `http://localhost:8000`
-- Health check: `http://localhost:8000/api/health`
+Адреси за замовчуванням:
 
-## Run (LAN Test)
+- frontend: `http://localhost:5173`
+- server: `http://localhost:8000`
+- health check: `http://localhost:8000/api/health`
+- admin UI: `http://localhost:5173/admin`
 
-1. Find your local IP (`ipconfig` on Windows), for example `192.168.0.25`.
-2. Start frontend for LAN:
+## LAN запуск
+
+1. Дізнайтесь локальну IP-адресу хоста, наприклад через `ipconfig`.
+2. Запустіть frontend:
 
 ```bash
 npm run dev:web -- --host 0.0.0.0
 ```
 
-3. Start server with allowed frontend origin:
+3. Запустіть сервер із правильним origin:
 
 ```bash
 set FRONTEND_ORIGIN=http://192.168.0.25:5173 && npm run dev:server
 ```
 
-4. Open on another device in the same network:
+4. Відкрийте застосунок на іншому пристрої:
 
 `http://192.168.0.25:5173`
 
-## Version Sync From Commit Message
+## Основні npm-скрипти
 
-If a commit message contains a marker like `v=0.0.0.26`, the local `commit-msg` hook first tries to sync `package.json` and `package-lock.json` automatically, then validates that the staged versions match that marker.
+```bash
+npm run dev:full
+npm run dev:web
+npm run dev:server
+npm run typecheck
+npm test
+npm run test:invariants
+npm run test:config
+npm run test:simulation
+npm run build
+npm run preview
+```
 
-Examples:
-
-- `v=0.0.0.26`
-- `auth fixes, v=0.0.0.27`
-
-If hooks are not configured yet, run:
+Додатково:
 
 ```bash
 npm run setup:git-hooks
+npm run set:version -- "v=0.0.1.48"
+npm run seed:shared-config
 ```
 
-Hooks are configured explicitly; `npm install` does not modify your git hooks automatically.
+## Runtime `.env`
 
-Normal flow:
+Мінімальний `.env.example` вже є в репозиторії:
 
-```bash
-git commit -m "v=0.0.0.95"
+```env
+PORT=8000
+FRONTEND_ORIGIN=http://localhost:5173
+WEB_PORT=4173
+VITE_PREVIEW_ALLOWED_HOSTS=joj.lol,www.joj.lol,localhost,127.0.0.1
+ADMIN_TOKEN=change-me-strong-token
 ```
 
-If `package.json` / `package-lock.json` are clean, the hook updates and stages them automatically.
+Актуальні важливі змінні середовища:
 
-If those files already contain unstaged manual edits, auto-sync is blocked on purpose. In that case sync version explicitly:
+- `PORT` - порт backend, за замовчуванням `8000`
+- `FRONTEND_ORIGIN` - дозволений frontend origin
+- `WEB_PORT` - порт для `vite preview`
+- `VITE_PREVIEW_ALLOWED_HOSTS` - allowlist для preview
+- `ADMIN_TOKEN` - обов'язково для production
+- `STORAGE_MODE` - `file`, `postgres`, або `db` (`db` нормалізується до `postgres`)
+- `DATABASE_URL` - обов'язково, якщо `STORAGE_MODE=postgres`
+- `NODE_ENV` - стандартна runtime-змінна Node.js
 
-```bash
-npm run set:version -- "v=0.0.0.94"
-```
+## Storage режими
 
-Then commit normally:
+### `file`
 
-```bash
-git commit -m "v=0.0.0.94"
-```
+Локальний режим без залежності від PostgreSQL.
 
-## Admin
+Основні runtime-файли:
 
-- Admin UI: `/admin`
-- Admin API supports token auth via `ADMIN_TOKEN` (see `.env.example`)
-- `/admin` now has a token login form and stores token locally in browser storage
-- Admin has dedicated tabs for:
-  - matches / state / deck / ranks / simulation
-  - `База Даних` (DB connection test, schema import/export, backup export/restore)
-  - `Налаштування` (server URL, GitHub update/build/restart, system actions)
+- shared deck template: `database/shared-deck-template.json`
+- shared ranks: `database/shared-ranks.json`
+- bug reports: `database/bug-reports.json`
+- bug report images: `database/bug-report-images/`
+- boardgame.io match data: `database/matches/`
+- server logs: `logs/server.log`
 
-### `.env` (Server Runtime Config)
+### `postgres`
 
-Server reads `.env` automatically on startup (if file exists).
+Поточний production-oriented режим.
 
-Available keys:
-- `PORT` (default `8000`)
-- `FRONTEND_ORIGIN` (default `http://localhost:5173`)
-- `WEB_PORT` (default `4173`, Vite preview port)
-- `VITE_PREVIEW_ALLOWED_HOSTS` (comma-separated host allowlist for `vite preview`)
-- `ADMIN_TOKEN` (empty = auth disabled; set this for LAN/public testing)
-- `STORAGE_MODE` (`file` or `postgres`; `db` alias is also accepted by server)
-- `DATABASE_URL` (required when `STORAGE_MODE=postgres`)
+У цьому режимі PostgreSQL використовується для:
 
-To enable admin protection (recommended):
+- shared config
+- user accounts / sessions / profile data
+- awards / analytics data
+- bug reports
+- boardgame.io matches
+- match state mirror / history
 
-```bash
-copy .env.example .env
-# then set ADMIN_TOKEN in .env
-```
+При старті сервер:
 
-## Persistence
+- піднімає PostgreSQL pool
+- проганяє SQL migrations
+- за потреби мігрує FlatFile match storage в PostgreSQL backend
+- залишає file mirrors для shared config сумісності / backup-сценаріїв
 
-- Shared deck template: `database/shared-deck-template.json`
-- Shared ranks: `database/shared-ranks.json`
-- Both shared JSON configs support versioned documents and backward-compatible legacy imports.
-- Match storage (boardgame.io FlatFile DB): `database/matches/`
-- Server logs: `logs/server.log`
+## PostgreSQL setup
 
-### PostgreSQL (Current Scope)
-
-Implemented:
-- Shared deck template (`deck`, `legendaryDeck`, `rankTrack`, `deckBackImage`)
-- Shared ranks
-- Admin DB tools in `/admin` -> `База Даних`
-
-Still file-based (for now):
-- `boardgame.io` match storage (`database/matches`)
-
-When `STORAGE_MODE=postgres`, shared config is stored in PostgreSQL and also mirrored to local JSON files for compatibility/backup.
-
-## PostgreSQL Setup (Shared Config Storage)
-
-1. Install / run PostgreSQL and create database/user.
-2. Set server env:
+1. Створіть БД та користувача.
+2. Додайте в `.env`:
 
 ```env
 STORAGE_MODE=postgres
 DATABASE_URL=postgresql://joj_user:password@127.0.0.1:5432/joj_game
 ```
 
-3. Import schema (`db/schema/db.sql`) once:
+3. Імпортуйте схему:
 
-Option A (Admin UI):
-- `/admin` -> `База Даних` -> `Імпортувати db.sql`
-
-Option B (CLI):
+Через CLI:
 
 ```bash
 psql "$DATABASE_URL" -f db/schema/db.sql
 ```
 
-4. Restart services with env refresh:
+Або через `/admin` -> `База Даних` -> `Імпортувати db.sql`
+
+4. Перезапустіть сервіси з оновленим env:
 
 ```bash
 pm2 restart joj-game-server joj-game-web --update-env
 ```
 
-5. Seed current JSON config into DB (one-click):
+5. За потреби імпортуйте поточні JSON-конфіги в БД:
+
 - `/admin` -> `База Даних` -> `Імпортувати дані JSON в БД`
+- або `npm run seed:shared-config`
 
-This imports current server-side JSON deck/ranks into PostgreSQL tables:
-- `deck_templates`
-- `deck_template_entries`
-- `rank_sets`
-- `rank_definitions`
+## Admin
 
-## DB Admin Operations (`/admin` -> `База Даних`)
+Admin UI доступний за адресою `/admin`.
 
-- DB connection test (`psql SELECT 1`)
-- Import schema (`db.sql`) into target PostgreSQL
-- Export schema (`db.sql`) download
-- Export SQL backup (`pg_dump`)
-- Restore SQL backup (upload `.sql` and apply via `psql`)
-- Import current JSON deck/ranks into DB (forced sync)
+Що є в адмінці:
 
-Notes:
-- DB connection form values are stored locally in browser storage (UI convenience).
-- Schema import / backup restore / backup export use DB connection form values.
-- JSON -> DB config import also uses DB connection form values (does not require server to already run in `postgres` mode).
+- matches / state
+- deck / ranks editor
+- simulation
+- analytics
+- awards
+- users
+- bug reports
+- database tools
+- GitHub update/build/restart flow
+- runtime/system settings
 
-## Ops / Deployment Helpers
+Захист:
 
-- PM2 process config: `ecosystem.config.cjs`
-- DB setup / migration notes: `docs/DB.md`
-- DB cutover / sync runbook: `docs/ops/db-cutover-checklist.md`
-- Firewall / port hardening notes: `docs/ops/deployment-hardening.md`
-- Runtime env / deploy safety policy: `docs/ops/runtime-config-policy.md`
-- Release checklist: `docs/ops/release-checklist.md`
+- admin API працює через admin auth
+- production startup без admin auth блокується runtime policy
+- `ADMIN_TOKEN` повинен бути заданий у production
 
-### PM2 (Example)
+Детальніше: [docs/ops/runtime-config-policy.md](docs/ops/runtime-config-policy.md)
+
+## Bug reports
+
+У клієнті є bug-report widget:
+
+- текстовий опис проблеми
+- автоскріншот сторінки гри
+- локальне збереження чернетки
+- кастомне admin-configured зображення для FAB-кнопки
+- admin review у вкладці bug reports
+
+Публічні API:
+
+- `GET /api/bug-reports/ui-config`
+- `GET /api/bug-reports/ui-image`
+- `POST /api/bug-reports`
+
+Admin API:
+
+- `GET /api/admin/bug-reports`
+- `GET /api/admin/bug-reports/detail`
+- `GET /api/admin/bug-reports/image`
+- `POST /api/admin/bug-reports/status`
+- `GET/POST /api/admin/bug-reports/ui-config`
+
+## User accounts
+
+Реалізовано:
+
+- registration / login
+- profile editing
+- sessions management
+- logout current / all sessions
+- password reset flow
+- match binding до користувача
+- user stats / awards / history
+
+Основні backend-роути:
+
+- `server/routes/auth.ts`
+- `server/routes/user-lobby.ts`
+- `server/routes/admin.ts`
+
+## UI варіанти
+
+Клієнт підтримує кілька UI-шарів:
+
+- `v2`
+- `v3`
+- `v4`
+
+`v4` зараз є найбільш кастомізованим і має окрему immersive layout-логіку для активної гри.
+
+Основні файли UI:
+
+- [src/ui/App.tsx](src/ui/App.tsx)
+- [src/ui/BoardV2.tsx](src/ui/BoardV2.tsx)
+- [src/ui/BoardV3.tsx](src/ui/BoardV3.tsx)
+- [src/ui/BoardV4.tsx](src/ui/BoardV4.tsx)
+- [src/ui/styles.css](src/ui/styles.css)
+
+## Version sync із commit message
+
+Якщо commit message містить маркер виду `v=0.0.1.48`, git hook синхронізує `package.json` і `package-lock.json`.
+
+Приклади:
+
+- `v=0.0.1.48`
+- `fix lobby auth, v=0.0.1.49`
+
+Перший запуск hooks:
+
+```bash
+npm run setup:git-hooks
+```
+
+Явна синхронізація:
+
+```bash
+npm run set:version -- "v=0.0.1.48"
+```
+
+## Build і preview
+
+```bash
+npm run build
+npm run preview
+```
+
+`vite preview` використовує `WEB_PORT` з `.env`, за замовчуванням `4173`.
+
+## PM2 / deployment
+
+Є готовий PM2 config:
+
+- [ecosystem.config.cjs](ecosystem.config.cjs)
+
+Базовий сценарій:
 
 ```bash
 npm run build
@@ -189,44 +306,54 @@ pm2 start ecosystem.config.cjs
 pm2 status
 ```
 
-Notes:
-- Set `FRONTEND_ORIGIN` / `WEB_PORT` / `VITE_PREVIEW_ALLOWED_HOSTS` in `.env` (preferred) before LAN/public testing.
-- After changing `.env` (for example `STORAGE_MODE` / `DATABASE_URL`), restart with:
-  - `pm2 restart joj-game-server joj-game-web --update-env`
-- `joj-game-web` uses `vite preview` on `:4173` (place behind reverse proxy).
-- `joj-game-server` runs on `:8000` (keep private; proxy through `80/443`).
-- Avoid editing `ecosystem.config.cjs` or `vite.config.ts` directly on the server; use `.env` instead to keep Git working tree clean.
+Після зміни `.env`:
 
-## Admin Deploy (GitHub -> Build -> Restart)
+```bash
+pm2 restart joj-game-server joj-game-web --update-env
+```
 
-`/admin` -> `Налаштування` -> `Оновити + зібрати + рестарт` performs:
+Нотатки:
 
-- `git pull --ff-only`
-- `npm ci --include=dev` (fallback: `npm install --include=dev`)
+- `joj-game-web` працює через `vite preview`
+- `joj-game-server` краще не експонувати напряму назовні
+- для production краще ставити reverse proxy перед `4173` і `8000`
+
+## Admin deploy flow
+
+В адмінці є сценарії:
+
+- перевірка git status
+- конфігурація GitHub HTTPS credentials
+- `git pull`
+- `npm ci` / fallback `npm install`
 - `npm run typecheck`
 - `npm run build`
-- `pm2 restart ecosystem.config.cjs --update-env`
+- `pm2 restart ... --update-env`
 
-The admin UI includes delayed/retry status refresh after restart to avoid false "update check failed" messages during process restart.
+Є окремі admin endpoints для:
 
-## Orange Pi / Armbian Quick Install
+- update
+- deploy
+- publish
+- restart
 
-Run on the Orange Pi (as root) after cloning the repo:
+## Orange Pi / Armbian
+
+Швидка інсталяція:
 
 ```bash
 bash scripts/install-orangepi.sh
 ```
 
-What it does:
-- installs base packages + Node.js 22 + PM2
-- installs helper command `joj` (and `start joj` compatibility wrapper if free)
-- creates `.env` from `.env.example` (if missing)
-- runs `npm install`
-- runs `npx tsc -b` and `npx vite build`
-- starts PM2 processes from `ecosystem.config.cjs`
-- opens LAN ports `4173` and `8000` in `ufw`
+Скрипт:
 
-Helper commands after install:
+- ставить Node.js 22 + PM2
+- створює `.env`, якщо його нема
+- запускає install / build
+- стартує PM2
+- відкриває LAN-порти в `ufw`
+
+Після інсталяції є helper-команди:
 
 ```bash
 joj start
@@ -235,20 +362,11 @@ joj restart
 joj status
 joj logs
 joj health
-start joj   # compatibility shortcut
 ```
 
-`joj update` runs:
+## Local HTTPS через Caddy
 
-```bash
-git pull --ff-only
-npm run build
-pm2 restart joj-game-server joj-game-web --update-env
-```
-
-## Local HTTPS (LAN) with Caddy + hosts file
-
-For local HTTPS before public DNS is ready, use Caddy internal CA:
+Приклад для LAN:
 
 ```caddy
 joj.lol, www.joj.lol {
@@ -262,35 +380,45 @@ joj.lol, www.joj.lol {
 }
 ```
 
-Requirements:
-- Windows `hosts` entries for `joj.lol` and `www.joj.lol` -> Orange Pi LAN IP
-- import Caddy local root certificate (`root.crt`) into Windows Trusted Root store
-- browser `Server URL` in app admin settings set to `https://joj.lol`
+## Безпека і runtime policy
 
-## Backend Protections (Implemented)
+Реально застосовуються:
 
-- Basic rate limits on admin/import/upload routes
-- Admin token protection for admin routes and admin write operations
-- Request payload size limits:
-  - normal JSON API: ~2 MB
-  - deck import JSON: ~8 MB
-  - image upload JSON body (data URL): ~16 MB
+- rate limits на admin/import/upload routes
+- admin auth
+- payload size limits для JSON / import / image upload
+- runtime validation для production env
 
-## Open Test Checklist
+Небезпечні режими припустимі лише локально:
 
-See `docs/ops/open-test-checklist.md`.
+- порожній `ADMIN_TOKEN`
+- пряме публічне відкриття server port без reverse proxy
 
-## Project Structure (High-level)
+## Структура проєкту
 
-Source code:
-- `src/` - frontend UI + game client logic
-- `server/` - backend routes/services/storage adapters
-- `server/db/` - DB command helpers (`psql` wrappers)
-- `server/storage/shared-config/` - shared config persistence (`file` / `postgres`)
-- `db/schema/` - tracked SQL schema
-- `docs/` - operational + development docs
+Код:
 
-Runtime data (server-generated / mutable):
-- `database/` - JSON shared config mirrors + boardgame.io match FlatFile data
-- `public/cards/` - uploaded/generated card assets
-- `logs/` - server logs
+- `src/` - frontend UI + клієнтська логіка гри
+- `server/` - backend routes / services / runtime bootstrap
+- `server/db/` - PostgreSQL helpers / migrations
+- `server/storage/shared-config/` - adapters для `file` / `postgres`
+- `db/schema/` - SQL schema
+- `db/migrations/` - SQL migrations
+- `tests/` - unit/invariant/config/simulation tests
+- `docs/` - ops + dev docs
+
+Runtime data:
+
+- `database/` - JSON mirrors, bug reports, match data, local mutable state
+- `public/cards/` - картки та інші зображення
+- `logs/` - серверні логи
+
+## Корисні документи
+
+- [docs/DB.md](docs/DB.md)
+- [docs/GAME_INVARIANTS.md](docs/GAME_INVARIANTS.md)
+- [docs/ops/runtime-config-policy.md](docs/ops/runtime-config-policy.md)
+- [docs/ops/release-checklist.md](docs/ops/release-checklist.md)
+- [docs/ops/db-cutover-checklist.md](docs/ops/db-cutover-checklist.md)
+- [docs/ops/open-test-checklist.md](docs/ops/open-test-checklist.md)
+- [docs/ops/deployment-hardening.md](docs/ops/deployment-hardening.md)

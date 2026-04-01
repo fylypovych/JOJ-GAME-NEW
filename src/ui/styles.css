@@ -7097,10 +7097,17 @@ button:disabled {
 }
 
 .app.app-v4.is-immersive-v4-game > h1,
-.app.app-v4.is-immersive-v4-game > .app-top-toolbar,
 .app.app-v4.is-immersive-v4-game > .app-link-row,
 .app.app-v4.is-immersive-v4-game > .app-footer {
   display: none;
+}
+
+.app.app-v4.is-immersive-v4-game > .app-top-toolbar.app-top-toolbar-v4 {
+  display: flex;
+  width: min(1520px, calc(100% - 40px));
+  margin: 14px auto 0;
+  position: relative;
+  z-index: 20;
 }
 
 .app.app-v4.is-immersive-v4-game .bug-report-widget {
@@ -7112,7 +7119,7 @@ button:disabled {
   width: min(1520px, 100%);
   min-height: 100vh;
   margin: 0 auto;
-  padding: 20px 20px 14px;
+  padding: 10px 20px 14px;
   box-sizing: border-box;
   gap: 10px;
 }
@@ -7139,7 +7146,6 @@ button:disabled {
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-header-main,
-.app.app-v4.is-immersive-v4-game .game-ui-v4-header-tools,
 .app.app-v4.is-immersive-v4-game .game-ui-v4-side {
   display: none;
 }
@@ -7149,6 +7155,57 @@ button:disabled {
   display: flex;
   gap: 8px;
   pointer-events: auto;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-header-actions {
+  align-items: flex-start;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-header-tools {
+  display: grid;
+  gap: 6px;
+  min-width: 280px;
+  padding: 8px 10px;
+  border: 1px solid rgba(154, 160, 165, 0.28);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(42, 47, 49, 0.92), rgba(24, 28, 30, 0.96));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 24px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-header-tools-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-header-tools-label {
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-header-tools-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-bot-speed-slider {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 6px 8px;
+  align-items: center;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-bot-speed-slider small {
+  grid-column: 1 / -1;
+  color: #b8c2b7;
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-header-copy,
@@ -7370,10 +7427,15 @@ button:disabled {
   grid-template-columns: 1fr;
   position: relative;
   z-index: 4;
+  gap: 14px;
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-side {
-  display: none;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-main {
@@ -7400,6 +7462,67 @@ button:disabled {
   flex-basis: 204px;
 }
 
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-main .game-card.is-v3,
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-main .game-card.is-v3.is-disabled {
+  opacity: 1;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-main .game-card.is-v3:hover,
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-main .game-card.is-v3:focus-visible,
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-main .game-ui-v4-hand-grid > .game-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(171, 175, 162, 0.22);
+  box-shadow:
+    0 20px 34px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -20px 24px rgba(0, 0, 0, 0.12);
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-main .game-card.is-v3.is-selected {
+  transform: translateY(-10px) scale(1.01);
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-main .game-card-popover {
+  display: none !important;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-main .game-card-body.is-v3 {
+  background: linear-gradient(180deg, rgb(205 205 203 / 96%), rgb(170 170 167 / 95%));
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-main .game-card-inline-action.is-v3:not(.game-card-inline-discard):disabled {
+  opacity: 0.72;
+  background: linear-gradient(180deg, #a68c57, #7a6537);
+  color: rgba(35, 25, 13, 0.88);
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-side .game-ui-v4-legendary-frame {
+  padding: 10px 12px 12px;
+  border: 1px solid rgba(189, 165, 94, 0.24);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(42, 37, 25, 0.92), rgba(22, 19, 14, 0.96)),
+    radial-gradient(circle at 50% 0%, rgba(206, 178, 96, 0.14), transparent 56%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-side .game-ui-v4-hand-head {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-side .game-ui-v4-hand-grid {
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 0 0 4px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-side .game-card.is-v3 {
+  flex: 0 0 198px;
+}
+
 .app.app-v4.is-immersive-v4-game .game-ui-v4-command-panel {
   margin-top: 6px;
   padding: 12px 12px 0;
@@ -7408,6 +7531,21 @@ button:disabled {
   border-radius: 0;
   background: linear-gradient(180deg, rgba(37, 42, 43, 0.18), rgba(22, 26, 27, 0.82) 44%);
   box-shadow: none;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-command-panel-top {
+  margin: 0 0 10px;
+  padding: 10px 12px 12px;
+  border-top: 0;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(31, 36, 38, 0.86), rgba(19, 23, 24, 0.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 26px rgba(0, 0, 0, 0.18);
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-command-panel-bottom {
+  margin-top: 6px;
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-command-support {
@@ -7460,6 +7598,11 @@ button:disabled {
 }
 
 @media (max-width: 1200px) {
+  .app.app-v4.is-immersive-v4-game > .app-top-toolbar.app-top-toolbar-v4 {
+    width: calc(100% - 24px);
+    margin-top: 12px;
+  }
+
   .app.app-v4.is-immersive-v4-game .game-ui-v4-shell {
     padding: 14px 12px 10px;
   }
@@ -7494,6 +7637,10 @@ button:disabled {
     padding-bottom: 8px;
   }
 
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-side .game-ui-v4-hand-grid {
+    padding-bottom: 8px;
+  }
+
   .app.app-v4.is-immersive-v4-game .game-ui-v4-footer-bar {
     flex-wrap: wrap;
     justify-content: center;
@@ -7510,6 +7657,11 @@ button:disabled {
     display: block;
   }
 
+  .app.app-v4.is-immersive-v4-game > .app-top-toolbar.app-top-toolbar-v4 {
+    width: calc(100% - 16px);
+    margin-top: 8px;
+  }
+
   .app.app-v4.is-immersive-v4-game .game-ui-v4-header {
     position: static;
     margin-bottom: 8px;
@@ -7520,6 +7672,15 @@ button:disabled {
   .app.app-v4.is-immersive-v4-game .game-ui-v4-header-button-row {
     width: 100%;
     flex-direction: column;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-header-tools {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-header-tools-row {
+    grid-template-columns: 1fr;
   }
 
   .app.app-v4.is-immersive-v4-game .game-ui-v4-side {

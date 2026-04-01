@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 export type V4FooterResourceItem = {
   key: string;
@@ -19,6 +19,68 @@ export type V4OpponentCardItem = {
   isTargetable: boolean;
   imageSrc?: string;
   initials: string;
+};
+
+const V4_PORTRAIT_CROP = {
+  left: 46,
+  right: 46,
+  top: 165,
+  bottom: 682,
+} as const;
+
+const portraitCropCache = new Map<string, string>();
+
+const cropPortraitImage = async (src: string) => {
+  const cached = portraitCropCache.get(src);
+  if (cached) return cached;
+
+  const result = await new Promise<string>((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const sx = Math.max(0, V4_PORTRAIT_CROP.left);
+      const sy = Math.max(0, V4_PORTRAIT_CROP.top);
+      const sw = Math.max(1, img.naturalWidth - V4_PORTRAIT_CROP.left - V4_PORTRAIT_CROP.right);
+      const sh = Math.max(1, img.naturalHeight - V4_PORTRAIT_CROP.top - V4_PORTRAIT_CROP.bottom);
+
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = sw;
+        canvas.height = sh;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(src);
+          return;
+        }
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+        resolve(canvas.toDataURL('image/png'));
+      } catch {
+        resolve(src);
+      }
+    };
+    img.onerror = () => resolve(src);
+    img.src = src;
+  });
+
+  portraitCropCache.set(src, result);
+  return result;
+};
+
+const V4PortraitImage = ({ src, alt }: { src: string; alt: string }) => {
+  const [croppedSrc, setCroppedSrc] = useState(src);
+
+  useEffect(() => {
+    let cancelled = false;
+    setCroppedSrc(src);
+    void cropPortraitImage(src).then((nextSrc) => {
+      if (!cancelled) setCroppedSrc(nextSrc);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [src]);
+
+  return <img src={croppedSrc} alt={alt} />;
 };
 
 export const V4BottomBar = (props: {
@@ -84,7 +146,7 @@ const V4OpponentCard = (props: {
     >
       <div className={`game-ui-v4-opponent-avatar${item.imageSrc ? '' : ' is-placeholder'}`}>
         {item.imageSrc ? (
-          <img src={item.imageSrc} alt={item.rankName} />
+          <V4PortraitImage src={item.imageSrc} alt={item.rankName} />
         ) : (
           <span className="game-ui-v4-opponent-avatar-fallback">{item.initials}</span>
         )}
@@ -130,7 +192,7 @@ export const V4OpponentsArea = (props: {
       <div className="game-ui-v4-center-badge">
         <div className="game-ui-v4-center-badge-portrait">
           {centerPortraitImage ? (
-            <img src={centerPortraitImage} alt={centerSubtitle || centerTitle} />
+            <V4PortraitImage src={centerPortraitImage} alt={centerSubtitle || centerTitle} />
           ) : (
             <span>{centerInitials}</span>
           )}

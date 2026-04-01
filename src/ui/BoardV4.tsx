@@ -521,6 +521,56 @@ export const BoardV4 = ({
 
       <div className="game-ui-v4-grid">
         <div className="game-ui-v4-main">
+          {!isSpectator ? (
+          <section className="game-ui-v4-panel game-ui-v4-command game-ui-v4-command-panel game-ui-v4-command-panel-top">
+            <div className="game-ui-v4-command-support">
+              <div className="game-ui-v4-command-summary">
+                <p className="game-ui-v4-kicker">{v2.commandCenter}</p>
+                <h3>{blockPlayerTurnControls ? botPlaybackControlLabel : playerLabelById(ctx.currentPlayer)}</h3>
+                <p className="game-ui-v4-subtle">{t.turnStage}: {stageLabel(stage, t)} · {t.yourRank}: {rankName}</p>
+                {promoteReason ? (
+                  <p className="game-ui-v4-subtle"><strong>{v2.blockedReason}:</strong> {promoteReason}</p>
+                ) : (
+                  <p className="game-ui-v4-subtle">
+                    {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
+                  </p>
+                )}
+              </div>
+              <V4NoticeStack notices={notices} dismissNotice={dismissNotice} />
+            </div>
+            <V4SelectionPanel
+              pendingSelection={pendingSelection}
+              activeSelectionNeedsTarget={activeSelectionNeedsTarget}
+              activeSelectionNeedsReplacement={activeSelectionNeedsReplacement}
+              activeSelectionNeedsResource={activeSelectionNeedsResource}
+              currentPendingCard={currentPendingCard}
+              selectedTargetId={selectedTargetId}
+              setSelectedTargetId={setSelectedTargetId}
+              opponentIds={opponentIds}
+              playerLabelById={playerLabelById}
+              v2={v2}
+              lang={lang}
+              replacementTargetIds={replacementTargetIds}
+              G={G}
+              replacementSelectionsByTarget={replacementSelectionsByTarget}
+              replacementActiveTargetId={replacementActiveTargetId}
+              setActiveReplacementTargetId={setActiveReplacementTargetId}
+              replacementActiveSelected={replacementActiveSelected}
+              replacementActiveSlots={replacementActiveSlots}
+              replacementActiveTargetResources={replacementActiveTargetResources}
+              resourceLabels={resourceLabels}
+              appendReplacementResource={appendReplacementResource}
+              undoReplacementResource={undoReplacementResource}
+              selectedResource={selectedResource}
+              setSelectedResource={setSelectedResource}
+              resources={resources}
+              confirmPendingSelection={confirmPendingSelection}
+              clearPendingSelection={clearPendingSelection}
+              pickTargetNotice={pickTargetNotice}
+            />
+          </section>
+          ) : null}
+
           {isSpectator && spectatorView === 'summary' ? (
             <section className="game-ui-v4-panel game-ui-v4-command">
               <V4StandingsSummary
@@ -608,11 +658,6 @@ export const BoardV4 = ({
                 {impactPulse ? (
                     <div className={`game-ui-v4-impact-pulse is-${impactPulse.tone}`} aria-live="polite">
                       <div className="game-ui-v4-impact-beam" aria-hidden="true" />
-                      {impactPulse.imageSrc ? (
-                        <div className="game-ui-v4-impact-card">
-                          <img src={impactPulse.imageSrc} alt={displayedDiscardTitle || focusPrimaryLabel} />
-                        </div>
-                      ) : null}
                       <div className="game-ui-v4-impact-copy">
                         <span className="game-ui-v4-stage-label">{impactPulse.label}</span>
                         <strong>{focusPrimaryLabel}</strong>
@@ -809,52 +854,7 @@ export const BoardV4 = ({
           ) : null}
 
           {!isSpectator ? (
-          <section className="game-ui-v4-panel game-ui-v4-command game-ui-v4-command-panel">
-            <div className="game-ui-v4-command-support">
-              <div className="game-ui-v4-command-summary">
-                <p className="game-ui-v4-kicker">{v2.commandCenter}</p>
-                <h3>{blockPlayerTurnControls ? botPlaybackControlLabel : playerLabelById(ctx.currentPlayer)}</h3>
-                <p className="game-ui-v4-subtle">{t.turnStage}: {stageLabel(stage, t)} · {t.yourRank}: {rankName}</p>
-                {promoteReason ? (
-                  <p className="game-ui-v4-subtle"><strong>{v2.blockedReason}:</strong> {promoteReason}</p>
-                ) : (
-                  <p className="game-ui-v4-subtle">
-                    {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
-                  </p>
-                )}
-              </div>
-              <V4NoticeStack notices={notices} dismissNotice={dismissNotice} />
-            </div>
-            <V4SelectionPanel
-              pendingSelection={pendingSelection}
-              activeSelectionNeedsTarget={activeSelectionNeedsTarget}
-              activeSelectionNeedsReplacement={activeSelectionNeedsReplacement}
-              activeSelectionNeedsResource={activeSelectionNeedsResource}
-              currentPendingCard={currentPendingCard}
-              selectedTargetId={selectedTargetId}
-              setSelectedTargetId={setSelectedTargetId}
-              opponentIds={opponentIds}
-              playerLabelById={playerLabelById}
-              v2={v2}
-              lang={lang}
-              replacementTargetIds={replacementTargetIds}
-              G={G}
-              replacementSelectionsByTarget={replacementSelectionsByTarget}
-              replacementActiveTargetId={replacementActiveTargetId}
-              setActiveReplacementTargetId={setActiveReplacementTargetId}
-              replacementActiveSelected={replacementActiveSelected}
-              replacementActiveSlots={replacementActiveSlots}
-              replacementActiveTargetResources={replacementActiveTargetResources}
-              resourceLabels={resourceLabels}
-              appendReplacementResource={appendReplacementResource}
-              undoReplacementResource={undoReplacementResource}
-              selectedResource={selectedResource}
-              setSelectedResource={setSelectedResource}
-              resources={resources}
-              confirmPendingSelection={confirmPendingSelection}
-              clearPendingSelection={clearPendingSelection}
-              pickTargetNotice={pickTargetNotice}
-            />
+          <section className="game-ui-v4-panel game-ui-v4-command game-ui-v4-command-panel game-ui-v4-command-panel-bottom">
             <V4BottomBar
               resources={footerResourceItems}
               rankName={rankName}
