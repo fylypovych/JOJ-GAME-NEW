@@ -25,8 +25,8 @@ export const runPsqlSql = async (
   sql: string,
 ): Promise<{ ok: true; stdout: string } | { ok: false; error: string }> => (
   new Promise((resolve) => {
-    const child = spawn('psql', [databaseUrl, '-v', 'ON_ERROR_STOP=1', '-tA', '-c', sql], {
-      stdio: ['ignore', 'pipe', 'pipe'],
+    const child = spawn('psql', [databaseUrl, '-v', 'ON_ERROR_STOP=1', '-tA', '-f', '-'], {
+      stdio: ['pipe', 'pipe', 'pipe'],
       env: process.env,
     });
     let stdout = '';
@@ -34,10 +34,11 @@ export const runPsqlSql = async (
     child.stdout.on('data', (chunk) => { stdout += String(chunk); });
     child.stderr.on('data', (chunk) => { stderr += String(chunk); });
     child.on('error', (error) => resolve({ ok: false, error: String(error) }));
+    child.stdin.write(sql);
+    child.stdin.end();
     child.on('close', (code) => {
       if (code === 0) resolve({ ok: true, stdout });
       else resolve({ ok: false, error: (stderr || stdout || `psql exit code ${code}`).trim() });
     });
   })
 );
-
