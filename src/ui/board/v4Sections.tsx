@@ -82,11 +82,11 @@ const V4OpponentCard = (props: {
       onClick={() => onClick(item.id)}
       disabled={!item.isTargetable}
     >
-      <div className="game-ui-v4-opponent-avatar">
+      <div className={`game-ui-v4-opponent-avatar${item.imageSrc ? '' : ' is-placeholder'}`}>
         {item.imageSrc ? (
           <img src={item.imageSrc} alt={item.rankName} />
         ) : (
-          <span>{item.initials}</span>
+          <span className="game-ui-v4-opponent-avatar-fallback">{item.initials}</span>
         )}
       </div>
       <div className="game-ui-v4-opponent-copy">
