@@ -7132,17 +7132,15 @@ button:disabled {
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-header {
-  position: absolute;
-  top: 14px;
-  right: 20px;
-  left: 20px;
-  z-index: 8;
+  position: static;
+  z-index: auto;
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 10px;
   padding: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
-  justify-content: flex-end;
-  pointer-events: none;
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-header-main,
@@ -7154,11 +7152,12 @@ button:disabled {
 .app.app-v4.is-immersive-v4-game .game-ui-v4-header-button-row {
   display: flex;
   gap: 8px;
-  pointer-events: auto;
+  flex-wrap: wrap;
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-header-actions {
   align-items: flex-start;
+  justify-content: flex-end;
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-header-tools {
@@ -7173,7 +7172,6 @@ button:disabled {
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
     0 10px 24px rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(8px);
-  pointer-events: auto;
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-header-tools-head {
@@ -7223,7 +7221,7 @@ button:disabled {
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-main {
   gap: 0;
-  padding-top: 34px;
+  padding-top: 0;
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-panel,
@@ -7235,7 +7233,7 @@ button:disabled {
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-battlefield-panel {
   min-height: 760px;
-  padding: 20px 20px 132px;
+  padding: 16px 20px 132px;
   position: relative;
   background:
     linear-gradient(180deg, rgba(58, 61, 60, 0.96) 0%, rgba(37, 42, 40, 0.94) 16%, rgba(28, 33, 32, 0.92) 17%, rgba(28, 33, 32, 0.88) 100%),
@@ -7252,7 +7250,7 @@ button:disabled {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, transparent 0 138px, rgba(214, 217, 206, 0.15) 138px 140px, transparent 140px),
+    linear-gradient(180deg, transparent 0 122px, rgba(214, 217, 206, 0.15) 122px 124px, transparent 124px),
     radial-gradient(circle at 50% 26%, rgba(0, 0, 0, 0.16), transparent 36%),
     radial-gradient(circle at 50% 70%, rgba(190, 181, 141, 0.1), transparent 26%);
   pointer-events: none;
@@ -7261,7 +7259,7 @@ button:disabled {
 .app.app-v4.is-immersive-v4-game .game-ui-v4-battlefield-panel::after {
   content: "";
   position: absolute;
-  inset: 144px 20px 24px;
+  inset: 128px 20px 24px;
   border-radius: 16px;
   background:
     linear-gradient(180deg, rgba(119, 131, 100, 0.22), rgba(39, 46, 43, 0.08) 24%, rgba(13, 16, 17, 0.08) 100%),
@@ -7283,7 +7281,7 @@ button:disabled {
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-battlefield-shell {
-  gap: 30px;
+  gap: 18px;
   position: relative;
   z-index: 1;
 }
@@ -7517,10 +7515,20 @@ button:disabled {
   justify-content: flex-start;
   gap: 14px;
   padding: 0 0 4px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-side .game-ui-v4-hand-grid > .game-card,
 .app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-side .game-card.is-v3 {
   flex: 0 0 198px;
+  width: 198px;
+  min-width: 198px;
+  max-width: 198px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-side .game-card-popover {
+  display: none !important;
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-command-panel {
@@ -7551,6 +7559,14 @@ button:disabled {
 .app.app-v4.is-immersive-v4-game .game-ui-v4-command-support {
   grid-template-columns: minmax(320px, 0.7fr) minmax(0, 1fr);
   margin-bottom: 10px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-notice-stack {
+  align-self: stretch;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-notice {
+  background: rgba(14, 18, 19, 0.42);
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-command-summary {
@@ -7613,7 +7629,7 @@ button:disabled {
   }
 
   .app.app-v4.is-immersive-v4-game .game-ui-v4-battlefield-panel::after {
-    inset: 132px 14px 20px;
+    inset: 120px 14px 20px;
   }
 
   .app.app-v4.is-immersive-v4-game .game-ui-v4-opponents-area,
@@ -7663,7 +7679,6 @@ button:disabled {
   }
 
   .app.app-v4.is-immersive-v4-game .game-ui-v4-header {
-    position: static;
     margin-bottom: 8px;
     justify-content: stretch;
   }
