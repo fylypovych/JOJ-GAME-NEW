@@ -4199,12 +4199,29 @@ button:disabled {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
     0 8px 16px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 140ms ease, transform 140ms ease, background 140ms ease, border-color 140ms ease;
 }
 
 .game-ui-v4-shell .game-ui-v3-player-dock-main .game-card-inline-action.is-v3:not(.game-card-inline-discard):disabled {
-  opacity: 0.58;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3:hover .game-card-inline-action.is-v3:not(.game-card-inline-discard),
+.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3.is-selected .game-card-inline-action.is-v3:not(.game-card-inline-discard),
+.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3:focus-within .game-card-inline-action.is-v3:not(.game-card-inline-discard) {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3:hover .game-card-inline-action.is-v3:not(.game-card-inline-discard):disabled,
+.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3.is-selected .game-card-inline-action.is-v3:not(.game-card-inline-discard):disabled,
+.game-ui-v4-shell .game-ui-v3-player-dock-main .game-card.is-v3:focus-within .game-card-inline-action.is-v3:not(.game-card-inline-discard):disabled {
+  opacity: 0.58;
 }
 
 .game-ui-v4-shell .game-ui-v3-hand-section > .game-ui-v3-hand-head {
@@ -4581,6 +4598,10 @@ button:disabled {
   background: linear-gradient(90deg, rgba(143, 73, 59, 0.96), rgba(99, 45, 38, 0.96));
 }
 
+.game-ui-v4-shell .game-ui-v4-opponent-card.is-placeholder-card::before {
+  display: none;
+}
+
 .game-ui-v4-shell .game-ui-v4-opponent-card.is-targetable:not(:disabled):hover,
 .game-ui-v4-shell .game-ui-v4-opponent-card.is-selected {
   transform: translateY(-4px);
@@ -4623,6 +4644,10 @@ button:disabled {
   background:
     linear-gradient(180deg, rgba(216, 199, 145, 0.18), rgba(97, 78, 46, 0.24)),
     radial-gradient(circle at 50% 36%, rgba(111, 122, 134, 0.96), rgba(31, 37, 45, 0.98));
+}
+
+.game-ui-v4-shell .game-ui-v4-opponent-card.is-placeholder-card .game-ui-v4-opponent-avatar {
+  margin-top: 0;
 }
 
 .game-ui-v4-shell .game-ui-v4-opponent-avatar.is-placeholder {
@@ -4777,7 +4802,7 @@ button:disabled {
 
 .game-ui-v4-shell .game-ui-v4-board-area {
   position: relative;
-  min-height: 420px;
+  min-height: 378px;
 }
 
 .game-ui-v4-shell .game-ui-v4-board-area::before {
@@ -4796,29 +4821,29 @@ button:disabled {
 .game-ui-v4-shell .game-ui-v4-board-center {
   position: relative;
   z-index: 1;
-  min-height: 420px;
+  min-height: 378px;
   align-items: center;
 }
 
 .game-ui-v4-shell .game-ui-v3-altar-focus-shell {
-  width: min(100%, 1080px);
+  width: min(90%, 972px);
   margin-inline: auto;
 }
 
 .game-ui-v4-shell .game-ui-v3-table {
   display: grid;
-  grid-template-columns: minmax(150px, 0.7fr) minmax(320px, 1.2fr) minmax(150px, 0.7fr);
-  gap: 18px;
+  grid-template-columns: minmax(135px, 0.63fr) minmax(288px, 1.08fr) minmax(135px, 0.63fr);
+  gap: 16px;
   align-items: center;
 }
 
 .game-ui-v4-shell .game-ui-v3-zone-deck,
 .game-ui-v4-shell .game-ui-v3-zone-discard {
-  min-height: 260px;
+  min-height: 234px;
 }
 
 .game-ui-v4-shell .game-ui-v3-zone-focus {
-  min-height: 320px;
+  min-height: 288px;
   background:
     linear-gradient(180deg, rgba(61, 66, 64, 0.22), rgba(24, 28, 28, 0.62)),
     rgba(22, 25, 27, 0.74);
@@ -4829,7 +4854,7 @@ button:disabled {
 }
 
 .game-ui-v4-shell .game-ui-v3-focus-card {
-  min-height: 248px;
+  min-height: 223px;
 }
 
 .game-ui-v4-shell .game-ui-v3-zone-deck,
@@ -4842,6 +4867,7 @@ button:disabled {
 .game-ui-v4-shell .game-ui-v3-focus-card .pile-preview.is-v3 > img,
 .game-ui-v4-shell .game-ui-v3-zone-card .pile-preview.is-v3 > img {
   border-radius: 12px;
+  background: transparent;
 }
 
 .game-ui-v4-shell .game-ui-v3-focus-resources {

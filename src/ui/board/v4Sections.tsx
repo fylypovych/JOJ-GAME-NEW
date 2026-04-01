@@ -78,7 +78,7 @@ const V4OpponentCard = (props: {
   return (
     <button
       type="button"
-      className={`game-ui-v4-opponent-card${item.isActive ? ' is-active' : ''}${item.isSelected ? ' is-selected' : ''}${item.isTargetable ? ' is-targetable' : ''}`}
+      className={`game-ui-v4-opponent-card${item.imageSrc ? '' : ' is-placeholder-card'}${item.isActive ? ' is-active' : ''}${item.isSelected ? ' is-selected' : ''}${item.isTargetable ? ' is-targetable' : ''}`}
       onClick={() => onClick(item.id)}
       disabled={!item.isTargetable}
     >
