@@ -99,9 +99,19 @@ const stageFiles = (files) => {
 
 const getVersionInputArg = () => process.argv.slice(2).join(' ').trim();
 
+const readLatestCommitMessage = () => {
+  try {
+    return runGit(['log', '-1', '--pretty=%B']).trim();
+  } catch {
+    return '';
+  }
+};
+
 const resolveVersionFromInput = () => {
   const candidate = getVersionInputArg();
-  if (!candidate) return '';
+  if (!candidate) {
+    return parseVersionFromCommitMessage(readLatestCommitMessage());
+  }
   const resolvedPath = path.resolve(process.cwd(), candidate);
   if (fs.existsSync(resolvedPath)) {
     return parseVersionFromCommitMessage(fs.readFileSync(resolvedPath, 'utf8'));
@@ -116,8 +126,8 @@ const main = () => {
   const conflictingFiles = getConflictingVersionFiles();
   if (conflictingFiles.length > 0) {
     const matchingVersions = [
-      readIndexedPackageVersion('package.json') || readPackageVersion(packageJsonPath),
-      readIndexedPackageVersion('package-lock.json') || readPackageVersion(packageLockPath),
+      readPackageVersion(packageJsonPath),
+      readPackageVersion(packageLockPath),
     ].every((currentVersion) => currentVersion === version);
     if (matchingVersions) {
       return 0;

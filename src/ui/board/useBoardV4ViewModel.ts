@@ -1,5 +1,5 @@
 import { normalizeImagePath } from '../../game/imagePaths';
-import { defaultSharedDeckTemplateSeed, defaultSharedExtraCatalogSeed } from '../../game/defaultData';
+import { defaultSharedDeckTemplateSeed } from '../../game/defaultData';
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from '../../game/types';
 import { cardTitle, rankLabel } from '../i18n';
 import { buildGameoverPlayerSummaries, buildResourceHighlightMeta } from './boardViewHelpers';
@@ -27,12 +27,8 @@ const buildOpponentLayout = (opponentIds: string[]) => {
   };
 };
 
-const fallbackRankCardsPool = [
-  ...defaultSharedDeckTemplateSeed.deck,
-  ...defaultSharedDeckTemplateSeed.legendaryDeck,
-  ...defaultSharedDeckTemplateSeed.rankTrack,
-  ...defaultSharedExtraCatalogSeed,
-].filter((card): card is CardDefinition & { image: string } => Boolean(card.grantRank && normalizeImagePath(card.image)));
+const fallbackRankCardsPool = defaultSharedDeckTemplateSeed.rankTrack
+  .filter((card): card is CardDefinition & { image: string } => Boolean(card.grantRank && normalizeImagePath(card.image)));
 
 const pickDeterministicRankCardImage = (
   _sharedRanks: RankDefinition[],
