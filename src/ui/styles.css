@@ -2810,6 +2810,161 @@ button:disabled {
   z-index: 2;
 }
 
+.game-ui-v4-panel,
+.game-ui-v4-header,
+.game-ui-v4-vote-popup-card,
+.game-ui-v4-selection-panel,
+.game-ui-v4-events,
+.game-ui-v4-side > section,
+.game-ui-v4-help-panel,
+.game-ui-v4-spectator-strip {
+  border-style: solid;
+  border-width: 1px;
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.game-ui-v4-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.95fr) minmax(210px, 0.72fr);
+  gap: 14px;
+}
+
+.game-ui-v4-main,
+.game-ui-v4-side {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.game-ui-v4-command {
+  position: sticky;
+  top: 12px;
+  z-index: 2;
+}
+
+.game-ui-v4-battlefield {
+  position: relative;
+  overflow: hidden;
+}
+
+.game-ui-v4-battlefield > h3 {
+  margin: 0 0 12px;
+}
+
+.game-ui-v4-battlefield-shell {
+  display: grid;
+  gap: 18px;
+}
+
+.game-ui-v4-board-surface {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.game-ui-v4-altar-focus-shell {
+  position: relative;
+}
+
+.game-ui-v4-table {
+  display: grid;
+  gap: 16px;
+}
+
+.game-ui-v4-zone,
+.game-ui-v4-zone-card {
+  border-style: solid;
+  border-width: 1px;
+}
+
+.game-ui-v4-zone {
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.game-ui-v4-zone-card {
+  border-radius: 12px;
+}
+
+.game-ui-v4-zone-head,
+.game-ui-v4-hand-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.game-ui-v4-zone-meta {
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
+.game-ui-v4-focus-body {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.85fr) minmax(0, 1.15fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.game-ui-v4-focus-empty {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  border-radius: 12px;
+}
+
+.game-ui-v4-focus-meta {
+  display: grid;
+  gap: 8px;
+}
+
+.game-ui-v4-focus-tone {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.game-ui-v4-player-dock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  gap: 14px;
+  align-items: start;
+}
+
+.game-ui-v4-player-dock-main,
+.game-ui-v4-player-dock-side {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.game-ui-v4-hand-grid {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.game-ui-v4-selection-actions,
+.game-ui-v4-tab-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.game-ui-v4-mobile-bar {
+  display: none;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px 14px 0 0;
+}
+
 .game-ui-v3-command,
 .game-ui-v2-command {
   overflow: hidden;
