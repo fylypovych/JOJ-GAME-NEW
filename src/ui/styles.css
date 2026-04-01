@@ -1372,7 +1372,7 @@ button:disabled {
 
 .admin-panel-v4 > .admin-v4-tab-nav {
   grid-column: 1;
-  grid-row: 2 / span 40;
+  grid-row: 2;
   align-self: start;
   position: sticky;
   top: 20px;
@@ -4101,8 +4101,9 @@ button:disabled {
   display: flex;
   gap: 10px;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
   max-width: 100%;
+  padding-top: 8px;
   padding-bottom: 6px;
   scrollbar-width: thin;
   flex-wrap: nowrap;
