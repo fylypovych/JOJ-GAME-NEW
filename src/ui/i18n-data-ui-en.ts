@@ -240,6 +240,8 @@ export const uiEnData = {
     bugReportDraftSaved: 'Draft saved locally.',
     bugReportScreenshotAttached: 'Screenshot attached to the bug report.',
     bugReportScreenshotFailed: 'Failed to capture screenshot.',
+    bugReportRemoveImage: 'REMOVE IMAGE',
+    bugReportImageRemoved: 'Image removed from the bug report.',
     bugReportDescriptionTooShort: 'Please describe the issue in more detail.',
     bugReportImageAlt: 'Bug report screenshot',
     adminBugReportsTitle: 'Bug reports',

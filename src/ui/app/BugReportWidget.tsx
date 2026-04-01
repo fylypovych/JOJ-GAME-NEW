@@ -83,6 +83,11 @@ export const BugReportWidget = ({
     setMessage(t.bugReportDraftSaved);
   };
 
+  const clearScreenshot = () => {
+    setScreenshotDataUrl('');
+    setMessage(t.bugReportImageRemoved);
+  };
+
   const captureScreenshot = async () => {
     setCapturing(true);
     setMessage('');
@@ -178,6 +183,12 @@ export const BugReportWidget = ({
           />
           {screenshotDataUrl ? (
             <div className="bug-report-preview-wrap">
+              <div className="bug-report-preview-head">
+                <strong>{t.bugReportImageAlt}</strong>
+                <button type="button" className="ghost" onClick={clearScreenshot} disabled={sending || capturing}>
+                  {t.bugReportRemoveImage}
+                </button>
+              </div>
               <img className="bug-report-preview" src={screenshotDataUrl} alt={t.bugReportImageAlt} />
             </div>
           ) : null}
@@ -187,6 +198,11 @@ export const BugReportWidget = ({
             <button type="button" onClick={() => { void captureScreenshot(); }} disabled={capturing || sending}>
               {capturing ? `${t.bugReportAttachImage}...` : t.bugReportAttachImage}
             </button>
+            {screenshotDataUrl ? (
+              <button type="button" className="ghost" onClick={clearScreenshot} disabled={sending || capturing}>
+                {t.bugReportRemoveImage}
+              </button>
+            ) : null}
             <button type="button" onClick={() => { void submitReport(); }} disabled={sending}>
               {sending ? `${t.bugReportSend}...` : t.bugReportSend}
             </button>

@@ -427,6 +427,19 @@ button:disabled {
   border: 1px solid rgba(128, 149, 166, 0.22);
 }
 
+.bug-report-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.bug-report-preview-head strong {
+  color: #38556d;
+  font-size: 13px;
+}
+
 .bug-report-preview,
 .admin-bug-report-image {
   width: 100%;
@@ -7074,4 +7087,458 @@ button:disabled {
   background: linear-gradient(180deg, #ffffff, #f5f9ff);
   box-shadow: 0 10px 24px rgba(21, 38, 68, 0.08);
   padding: 12px;
+}
+
+.app.app-v4.is-immersive-v4-game {
+  width: 100%;
+  padding: 0;
+  min-height: 100vh;
+  background: #171b1c;
+}
+
+.app.app-v4.is-immersive-v4-game > h1,
+.app.app-v4.is-immersive-v4-game > .app-top-toolbar,
+.app.app-v4.is-immersive-v4-game > .app-link-row,
+.app.app-v4.is-immersive-v4-game > .app-footer {
+  display: none;
+}
+
+.app.app-v4.is-immersive-v4-game .bug-report-widget {
+  right: 18px;
+  bottom: 18px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-shell {
+  width: min(1520px, 100%);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 20px 20px 14px;
+  box-sizing: border-box;
+  gap: 10px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-shell::before {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(214, 195, 128, 0.08), transparent 16%),
+    radial-gradient(circle at 50% 56%, rgba(126, 132, 106, 0.14), transparent 28%),
+    linear-gradient(180deg, #282d2e 0%, #1a1e20 24%, #171a1b 100%);
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-header {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  left: 20px;
+  z-index: 8;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-header-main,
+.app.app-v4.is-immersive-v4-game .game-ui-v4-header-tools,
+.app.app-v4.is-immersive-v4-game .game-ui-v4-side {
+  display: none;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-header-actions,
+.app.app-v4.is-immersive-v4-game .game-ui-v4-header-button-row {
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-header-copy,
+.app.app-v4.is-immersive-v4-game .game-ui-v4-header-leave {
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(69, 76, 81, 0.94), rgba(39, 44, 47, 0.98));
+  backdrop-filter: blur(8px);
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-grid {
+  grid-template-columns: 1fr;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-main {
+  gap: 0;
+  padding-top: 34px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-panel,
+.app.app-v4.is-immersive-v4-game .game-ui-v4-selection-panel,
+.app.app-v4.is-immersive-v4-game .game-ui-v4-spectator-strip {
+  border-color: rgba(178, 181, 170, 0.18);
+  border-radius: 18px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-battlefield-panel {
+  min-height: 760px;
+  padding: 20px 20px 132px;
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(58, 61, 60, 0.96) 0%, rgba(37, 42, 40, 0.94) 16%, rgba(28, 33, 32, 0.92) 17%, rgba(28, 33, 32, 0.88) 100%),
+    radial-gradient(circle at 50% 38%, rgba(198, 189, 151, 0.12), transparent 18%),
+    radial-gradient(circle at 17% 64%, rgba(148, 132, 90, 0.12), transparent 14%),
+    radial-gradient(circle at 76% 61%, rgba(173, 150, 96, 0.14), transparent 16%);
+  box-shadow:
+    0 26px 48px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-battlefield-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, transparent 0 138px, rgba(214, 217, 206, 0.15) 138px 140px, transparent 140px),
+    radial-gradient(circle at 50% 26%, rgba(0, 0, 0, 0.16), transparent 36%),
+    radial-gradient(circle at 50% 70%, rgba(190, 181, 141, 0.1), transparent 26%);
+  pointer-events: none;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-battlefield-panel::after {
+  content: "";
+  position: absolute;
+  inset: 144px 20px 24px;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(119, 131, 100, 0.22), rgba(39, 46, 43, 0.08) 24%, rgba(13, 16, 17, 0.08) 100%),
+    radial-gradient(circle at 50% 30%, rgba(216, 205, 169, 0.16), transparent 18%),
+    radial-gradient(circle at 21% 76%, rgba(182, 146, 88, 0.12), transparent 11%),
+    radial-gradient(circle at 72% 78%, rgba(183, 153, 102, 0.12), transparent 13%);
+  filter: blur(20px);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-battlefield > h3 {
+  display: none;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-board-surface {
+  opacity: 0.1;
+  filter: blur(5px);
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-battlefield-shell {
+  gap: 30px;
+  position: relative;
+  z-index: 1;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-opponents-area {
+  grid-template-columns: minmax(0, 1fr) 220px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-opponents-side {
+  gap: 14px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-opponent-card {
+  width: min(100%, 170px);
+  min-height: 188px;
+  padding: 10px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(70, 76, 80, 0.98), rgba(36, 40, 43, 0.98));
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-opponent-card::before {
+  height: 28px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-opponent-avatar {
+  margin-top: 20px;
+  min-height: 118px;
+  border-radius: 7px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-opponent-copy {
+  gap: 3px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-opponent-copy strong {
+  font-size: 1rem;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-opponent-copy span {
+  font-size: 0.82rem;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-opponent-copy small {
+  font-size: 0.76rem;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-center-badge {
+  gap: 8px;
+  margin-top: -4px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-center-badge-portrait {
+  width: 150px;
+  height: 150px;
+  border-width: 4px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-center-badge-copy {
+  min-width: 0;
+  padding: 10px 16px 12px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-center-badge-copy strong {
+  font-size: 1.05rem;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-board-area::before {
+  inset: auto 15% 22px;
+  height: 120px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-altar-focus-shell {
+  padding: 0 14px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-table {
+  grid-template-columns: 180px minmax(420px, 1fr) 180px;
+  align-items: end;
+  gap: 18px;
+  min-height: 360px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-zone {
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(58, 62, 61, 0.58), rgba(26, 31, 30, 0.62));
+  backdrop-filter: blur(8px);
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-zone-deck,
+.app.app-v4.is-immersive-v4-game .game-ui-v4-zone-discard {
+  min-height: 264px;
+  padding: 12px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-zone-focus {
+  min-height: 314px;
+  padding: 16px;
+  background: rgba(29, 35, 34, 0.32);
+  border-color: rgba(187, 190, 178, 0.12);
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-zone-card,
+.app.app-v4.is-immersive-v4-game .game-ui-v4-focus-card {
+  background: rgba(10, 12, 14, 0.22);
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-zone-card .pile-preview.is-v3 > img,
+.app.app-v4.is-immersive-v4-game .game-ui-v4-focus-card .pile-preview.is-v3 > img {
+  min-height: 210px;
+  object-fit: cover;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-focus-body {
+  grid-template-columns: minmax(200px, 0.72fr) minmax(0, 1fr);
+  align-items: center;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-focus-meta {
+  gap: 10px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-focus-meta strong {
+  font-size: 1.2rem;
+  text-transform: uppercase;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-zone-head strong {
+  color: #f3ead3;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock {
+  margin-top: -126px;
+  padding: 0 18px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  grid-template-columns: 1fr;
+  position: relative;
+  z-index: 4;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-side {
+  display: none;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-main {
+  padding: 0;
+  background: transparent;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-station {
+  display: none;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-hand-head,
+.app.app-v4.is-immersive-v4-game .game-ui-v4-hand-rail {
+  display: none;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-main .game-ui-v4-hand-grid {
+  justify-content: center;
+  gap: 16px;
+  padding: 0;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-main .game-card.is-v3 {
+  flex-basis: 204px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-command-panel {
+  margin-top: 6px;
+  padding: 12px 12px 0;
+  border: 0;
+  border-top: 1px solid rgba(184, 187, 175, 0.2);
+  border-radius: 0;
+  background: linear-gradient(180deg, rgba(37, 42, 43, 0.18), rgba(22, 26, 27, 0.82) 44%);
+  box-shadow: none;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-command-support {
+  grid-template-columns: minmax(320px, 0.7fr) minmax(0, 1fr);
+  margin-bottom: 10px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-command-summary {
+  padding: 10px 12px;
+  background: rgba(12, 14, 15, 0.28);
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-selection-panel {
+  margin-bottom: 10px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-footer-bar {
+  gap: 18px;
+  padding: 4px 0 0;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-footer-resources {
+  gap: 18px;
+  flex-wrap: nowrap;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-footer-resource {
+  gap: 6px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-footer-resource-label {
+  display: none;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-footer-resource strong {
+  font-size: 1.35rem;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-footer-rank {
+  min-width: 292px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-footer-actions {
+  grid-template-columns: repeat(2, minmax(210px, 230px));
+  gap: 14px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-footer-actions button {
+  min-height: 60px;
+}
+
+@media (max-width: 1200px) {
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-shell {
+    padding: 14px 12px 10px;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-battlefield-panel {
+    min-height: 0;
+    padding: 16px 14px 26px;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-battlefield-panel::after {
+    inset: 132px 14px 20px;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-opponents-area,
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-table,
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-command-support {
+    grid-template-columns: 1fr;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-opponents-side {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock {
+    margin-top: -32px;
+    padding: 0 6px;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock-main .game-ui-v4-hand-grid {
+    justify-content: flex-start;
+    padding-bottom: 8px;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-footer-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-footer-resources {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 860px) {
+  .app.app-v4.is-immersive-v4-game > .app-footer {
+    display: block;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-header {
+    position: static;
+    margin-bottom: 8px;
+    justify-content: stretch;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-header-actions,
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-header-button-row {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-side {
+    display: grid;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-main {
+    padding-top: 0;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-player-dock {
+    margin-top: 0;
+    padding: 0;
+  }
+
+  .app.app-v4.is-immersive-v4-game .game-ui-v4-command-panel {
+    border-top: 0;
+    border-radius: 16px;
+    padding: 12px;
+    margin-top: 10px;
+  }
 }

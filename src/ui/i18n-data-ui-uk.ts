@@ -240,6 +240,8 @@ export const uiUkData = {
     bugReportDraftSaved: 'Чернетку збережено локально.',
     bugReportScreenshotAttached: 'Скріншот додано до баг-репорту.',
     bugReportScreenshotFailed: 'Не вдалося зробити скріншот.',
+    bugReportRemoveImage: 'ВИДАЛИТИ ЗОБРАЖЕННЯ',
+    bugReportImageRemoved: 'Зображення видалено з баг-репорту.',
     bugReportDescriptionTooShort: 'Опишіть проблему детальніше.',
     bugReportImageAlt: 'Скріншот баг-репорту',
     adminBugReportsTitle: 'Баг-репорти',

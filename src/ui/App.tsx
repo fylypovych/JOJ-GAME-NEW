@@ -471,9 +471,10 @@ export const App = () => {
   }, [adminStorageMode]);
 
   const shellUiVariant = isAdminRoute ? adminUiVariant : gameUiVariant;
+  const isImmersiveV4Game = !isAdminRoute && activeUserTab === 'games' && Boolean(session) && canStart && gameUiVariant === 'v4';
 
   return (
-    <main className={`app app-${shellUiVariant}`} data-bug-report-capture-root="true">
+    <main className={`app app-${shellUiVariant}${isImmersiveV4Game ? ' is-immersive-v4-game' : ''}`} data-bug-report-capture-root="true">
       <h1>{isAdminRoute ? t.adminTitle : t.gameTitle}</h1>
       {!isAdminRoute ? (
         <section className={`app-top-toolbar${shellUiVariant === 'v2' ? ' app-top-toolbar-v2' : ''}${shellUiVariant === 'v3' ? ' app-top-toolbar-v3' : ''}${shellUiVariant === 'v4' ? ' app-top-toolbar-v4' : ''}`}>
