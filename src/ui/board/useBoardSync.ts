@@ -11,7 +11,7 @@ type PendingSelection =
   | { type: 'legendary-drone'; cardId: string }
   | { type: 'legendary-water'; cardId: string };
 
-export const useBoardV2Sync = (args: {
+export const useBoardSync = (args: {
   G?: JojGameState;
   ctx?: { turn?: number; gameover?: unknown };
   playerID?: string;
@@ -22,7 +22,7 @@ export const useBoardV2Sync = (args: {
   canEndTurn: boolean;
   stage?: string;
   id: string;
-  v2: { replacementSelection: string; actionUnavailable: string };
+  board: { replacementSelection: string; actionUnavailable: string };
   lang: 'uk' | 'en';
   cardTitle: (id: string, title: string, lang: 'uk' | 'en') => string;
   onStateChange?: (payload: { G: JojGameState; ctx: unknown }) => void;
@@ -105,11 +105,11 @@ export const useBoardV2Sync = (args: {
       }
       if (event.key.toLowerCase() === 'd' && args.canDraw) {
         event.preventDefault();
-        runMove(() => args.moves.drawCard(), args.v2.actionUnavailable);
+        runMove(() => args.moves.drawCard(), args.board.actionUnavailable);
       }
       if (event.key.toLowerCase() === 'e' && args.canEndTurn) {
         event.preventDefault();
-        runMove(() => args.moves.endTurn?.(), args.v2.actionUnavailable);
+        runMove(() => args.moves.endTurn?.(), args.board.actionUnavailable);
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -160,7 +160,7 @@ export const useBoardV2Sync = (args: {
       args.setActiveReplacementTargetId(null);
       runMove(
         () => args.moves.resolveDrawAutoCard?.([], {}),
-        args.v2.actionUnavailable,
+        args.board.actionUnavailable,
       );
       return;
     }
@@ -170,7 +170,7 @@ export const useBoardV2Sync = (args: {
       args.setSelectedResource(null);
       args.setReplacementSelectionsByTarget({});
       args.setActiveReplacementTargetId(replacementTargetIds[0] ?? null);
-      args.postNotice('info', `${args.v2.replacementSelection}: ${args.cardTitle(pending.card.id, pending.card.title, args.lang)}`);
+      args.postNotice('info', `${args.board.replacementSelection}: ${args.cardTitle(pending.card.id, pending.card.title, args.lang)}`);
       return { type: nextType, cardId: pending.card.id };
     });
   }, [args.G?.pendingDrawAutoResolution, args.G?.players, args.G?.lyapScandalShieldUntilTurn, args.G?.resources, args.ctx?.turn, args.id, args.stage, args.lang]);
@@ -179,3 +179,4 @@ export const useBoardV2Sync = (args: {
     args.setGameoverModalClosed(false);
   }, [args.ctx?.gameover]);
 };
+

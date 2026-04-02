@@ -1,5 +1,5 @@
 import { text } from '../../i18n';
-import type { AdminBugReportDetail, AdminBugReportListItem, AdminBugReportStatus } from '../useAdminBugReports';
+import type { AdminBugReportDetail, AdminBugReportListItem, AdminBugReportStatus, AdminBugReportUiVariant } from '../useAdminBugReports';
 
 type T = ReturnType<typeof text>;
 
@@ -7,6 +7,13 @@ const statusLabel = (t: T, value: AdminBugReportStatus) => {
   if (value === 'resolved') return t.bugReportStatusResolved;
   if (value === 'closed') return t.bugReportStatusClosed;
   return t.bugReportStatusNew;
+};
+
+const uiVariantLabel = (t: T, value: AdminBugReportUiVariant) => {
+  if (value === 'v4') return 'v4';
+  if (value === 'v3') return 'v3';
+  if (value === 'legacy') return t.bugReportUiLegacy;
+  return t.bugReportUiUnknown;
 };
 
 export const AdminBugReportsTab = ({
@@ -75,7 +82,7 @@ export const AdminBugReportsTab = ({
             <p>{t.userDisplayNameLabel}: {selectedReport.playerName ?? '-'}</p>
             <p>{t.activeMatch}: {selectedReport.matchID ?? '-'}</p>
             <p>{t.spectatorMode}: {selectedReport.spectator ? t.yes : t.no}</p>
-            <p>{t.gameUiLabel}: {selectedReport.uiVariant}</p>
+            <p>{t.gameUiLabel}: {uiVariantLabel(t, selectedReport.uiVariant)}</p>
             <p>{t.language}: {selectedReport.lang === 'en' ? t.langEn : t.langUk}</p>
             <p>{t.userSignedInAs}: {selectedReport.submittedBy.displayName ?? selectedReport.submittedBy.username ?? '-'}</p>
             <p>{t.adminPath}: <code>{selectedReport.pageUrl || '-'}</code></p>

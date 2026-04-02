@@ -3,7 +3,7 @@ import { DEFAULT_LOBBY_GAME_UI_CONFIG } from '../../game/lobbyConfig';
 import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { Language } from '../i18n';
 import { defaultLanguage } from '../i18n';
-import { ADMIN_UI_VARIANT_STORAGE_KEY, GAME_UI_VARIANT_STORAGE_KEY } from './clientConfig';
+import { ADMIN_UI_VARIANT_STORAGE_KEY, GAME_UI_VARIANT_STORAGE_KEY, LEGACY_ADMIN_UI_VARIANT_STORAGE_KEY } from './clientConfig';
 import {
   PLAYER_NAME_STORAGE_KEY,
   SERVER_URL_STORAGE_KEY,
@@ -28,13 +28,14 @@ export const useAppShellState = (serverUrl: string) => {
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
   const [profileScreen, setProfileScreen] = useState<'login' | 'register' | 'reset'>('login');
   const [authErrorModal, setAuthErrorModal] = useState('');
-  const [gameUiVariant, setGameUiVariant] = useState<'v2' | 'v3' | 'v4'>(() => {
+  const [gameUiVariant, setGameUiVariant] = useState<'v3' | 'v4'>(() => {
     const raw = window.localStorage.getItem(GAME_UI_VARIANT_STORAGE_KEY);
-    return raw === 'v2' || raw === 'v4' ? raw : 'v3';
+    return raw === 'v4' ? raw : 'v3';
   });
-  const [adminUiVariant, setAdminUiVariant] = useState<'v2' | 'v3' | 'v4'>(() => {
-    const raw = window.localStorage.getItem(ADMIN_UI_VARIANT_STORAGE_KEY);
-    return raw === 'v2' || raw === 'v4' ? raw : 'v3';
+  const [adminUiVariant, setAdminUiVariant] = useState<'v3' | 'v4'>(() => {
+    const raw = window.localStorage.getItem(ADMIN_UI_VARIANT_STORAGE_KEY)
+      ?? window.localStorage.getItem(LEGACY_ADMIN_UI_VARIANT_STORAGE_KEY);
+    return raw === 'v4' ? raw : 'v3';
   });
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
   const [deletingAdminMatch, setDeletingAdminMatch] = useState(false);
@@ -70,6 +71,7 @@ export const useAppShellState = (serverUrl: string) => {
 
   useEffect(() => {
     window.localStorage.setItem(ADMIN_UI_VARIANT_STORAGE_KEY, adminUiVariant);
+    window.localStorage.removeItem(LEGACY_ADMIN_UI_VARIANT_STORAGE_KEY);
   }, [adminUiVariant]);
 
   return {

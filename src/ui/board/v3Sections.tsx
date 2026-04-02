@@ -4,7 +4,7 @@ import { buildReplacementSlots } from './replacement';
 import { BoardChatPanel, GameCardTile } from './components';
 import { cardTitle, localizeSystemMessageText, rankLabel } from '../i18n';
 import { BOARD_RESOURCE_ORDER } from './resourceConstants';
-import type { BoardNotice } from './useBoardV2UiController';
+import type { BoardNotice } from './useBoardUiController';
 
 export const BoardV3SelectionPanel = (props: {
   pendingSelection: { type: string; cardId: string } | null;
@@ -16,7 +16,7 @@ export const BoardV3SelectionPanel = (props: {
   setSelectedTargetId: (value: string | null) => void;
   opponentIds: string[];
   playerLabelById: (id: string | null | undefined) => string;
-  v2: Record<string, string>;
+  board: Record<string, string>;
   lang: 'uk' | 'en';
   replacementTargetIds: string[];
   G: JojGameState;
@@ -46,7 +46,7 @@ export const BoardV3SelectionPanel = (props: {
     setSelectedTargetId,
     opponentIds,
     playerLabelById,
-    v2,
+    board,
     lang,
     replacementTargetIds,
     G,
@@ -70,21 +70,21 @@ export const BoardV3SelectionPanel = (props: {
   return (
     <div className="game-ui-v3-selection-panel game-ui-v3-selection-panel-inline">
       <div>
-        <div className="game-ui-v3-steps" aria-label={v2.stepAssistant}>
-          <span className={activeSelectionNeedsTarget ? 'is-done' : ''}>{v2.step1}</span>
-          <span className={(!activeSelectionNeedsTarget && (activeSelectionNeedsReplacement || activeSelectionNeedsResource)) ? 'is-done' : ''}>{v2.step2}</span>
-          <span>{v2.step3}</span>
+        <div className="game-ui-v3-steps" aria-label={board.stepAssistant}>
+          <span className={activeSelectionNeedsTarget ? 'is-done' : ''}>{board.step1}</span>
+          <span className={(!activeSelectionNeedsTarget && (activeSelectionNeedsReplacement || activeSelectionNeedsResource)) ? 'is-done' : ''}>{board.step2}</span>
+          <span>{board.step3}</span>
         </div>
         <p className="game-ui-v3-kicker">
           {activeSelectionNeedsTarget
-            ? v2.pickTarget
-            : (activeSelectionNeedsReplacement ? v2.replacementSelection : v2.pickResource)}
+            ? board.pickTarget
+            : (activeSelectionNeedsReplacement ? board.replacementSelection : board.pickResource)}
         </p>
         <h3>{currentPendingCard ? cardTitle(currentPendingCard.id, currentPendingCard.title, lang) : pendingSelection.cardId}</h3>
         <p className="game-ui-v3-subtle">
           {activeSelectionNeedsTarget
-            ? v2.selectableTargetHint
-            : (activeSelectionNeedsReplacement ? v2.replacementGuide : v2.selectableResourceHint)}
+            ? board.selectableTargetHint
+            : (activeSelectionNeedsReplacement ? board.replacementGuide : board.selectableResourceHint)}
         </p>
       </div>
       {activeSelectionNeedsTarget ? (
@@ -108,7 +108,7 @@ export const BoardV3SelectionPanel = (props: {
         <>
           {replacementTargetIds.length > 0 ? (
             <>
-              <p className="game-ui-v3-subtle">{v2.replacementTarget}</p>
+              <p className="game-ui-v3-subtle">{board.replacementTarget}</p>
               <div className="game-ui-v3-chip-row">
                 {replacementTargetIds.map((pid) => {
                   const targetResources = G?.resources?.[pid] ?? null;
@@ -131,7 +131,7 @@ export const BoardV3SelectionPanel = (props: {
               {replacementActiveTargetId ? (
                 <>
                   <p className="game-ui-v3-subtle">
-                    {v2.replacementProgress}: {replacementActiveSelected.length}/{replacementActiveSlots.length}
+                    {board.replacementProgress}: {replacementActiveSelected.length}/{replacementActiveSlots.length}
                   </p>
                   <div className="game-ui-v3-chip-row">
                     {BOARD_RESOURCE_ORDER.map((key) => (
@@ -146,13 +146,13 @@ export const BoardV3SelectionPanel = (props: {
                     ))}
                   </div>
                   <div className="game-ui-v3-selection-actions">
-                    <button type="button" className="ghost" onClick={undoReplacementResource}>{v2.undoPick}</button>
+                    <button type="button" className="ghost" onClick={undoReplacementResource}>{board.undoPick}</button>
                   </div>
                 </>
               ) : null}
             </>
           ) : (
-            <p className="game-ui-v3-subtle">{v2.replacementNotRequired}</p>
+            <p className="game-ui-v3-subtle">{board.replacementNotRequired}</p>
           )}
         </>
       ) : null}
@@ -171,8 +171,8 @@ export const BoardV3SelectionPanel = (props: {
         </div>
       ) : null}
       <div className="game-ui-v3-selection-actions">
-        <button type="button" onClick={confirmPendingSelection}>{v2.confirm}</button>
-        <button type="button" className="ghost" onClick={clearPendingSelection}>{v2.cancel}</button>
+        <button type="button" onClick={confirmPendingSelection}>{board.confirm}</button>
+        <button type="button" className="ghost" onClick={clearPendingSelection}>{board.cancel}</button>
       </div>
     </div>
   );
@@ -265,7 +265,7 @@ export const BoardV3HandSection = (props: {
 export const BoardV3SidePanel = (props: {
   sidePanelTab: 'events' | 'chat' | 'help';
   setSidePanelTab: (tab: 'events' | 'chat' | 'help') => void;
-  v2: Record<string, string>;
+  board: Record<string, string>;
   latestEvents: Array<{ id: string; type: 'player' | 'system'; text: string; playerID?: string; label: string; tone: 'neutral' | 'warn' | 'good' | 'legendary' }>;
   eventsTitle: string;
   spectatorMode?: boolean;
@@ -283,7 +283,7 @@ export const BoardV3SidePanel = (props: {
   const {
     sidePanelTab,
     setSidePanelTab,
-    v2,
+    board,
     latestEvents,
     eventsTitle,
     spectatorMode = false,
@@ -302,9 +302,9 @@ export const BoardV3SidePanel = (props: {
     <aside className="game-ui-v3-side">
       <section className="game-ui-v3-events game-ui-v3-mobile-tabs">
         <div className="game-ui-v3-tab-row">
-          <button type="button" className={sidePanelTab === 'events' ? 'is-active' : ''} onClick={() => setSidePanelTab('events')}>{v2.openEvents}</button>
-          <button type="button" className={sidePanelTab === 'chat' ? 'is-active' : ''} onClick={() => setSidePanelTab('chat')}>{v2.openChat}</button>
-          <button type="button" className={sidePanelTab === 'help' ? 'is-active' : ''} onClick={() => setSidePanelTab('help')}>{v2.openHelp}</button>
+          <button type="button" className={sidePanelTab === 'events' ? 'is-active' : ''} onClick={() => setSidePanelTab('events')}>{board.openEvents}</button>
+          <button type="button" className={sidePanelTab === 'chat' ? 'is-active' : ''} onClick={() => setSidePanelTab('chat')}>{board.openChat}</button>
+          <button type="button" className={sidePanelTab === 'help' ? 'is-active' : ''} onClick={() => setSidePanelTab('help')}>{board.openHelp}</button>
         </div>
       </section>
       <section className={`game-ui-v3-events${sidePanelTab !== 'events' ? ' game-ui-v3-mobile-hidden' : ''}`}>
@@ -322,7 +322,7 @@ export const BoardV3SidePanel = (props: {
               </div>
             );
           })}
-          {!latestEvents.length ? <p className="game-ui-v3-subtle">{v2.noEventsYet}</p> : null}
+          {!latestEvents.length ? <p className="game-ui-v3-subtle">{board.noEventsYet}</p> : null}
         </div>
       </section>
       <section className={sidePanelTab !== 'chat' ? 'game-ui-v3-mobile-hidden' : ''}>
@@ -368,11 +368,11 @@ export const BoardV3PlayerOverview = (props: {
   postTargetPick: (pid: string) => void;
   playerLabelById: (id: string | null | undefined) => string;
   resourceLabels: Record<ResourceKey, string>;
-  v2: Record<string, string>;
+  board: Record<string, string>;
   getNextRankSeatMeta: (args: { G: JojGameState; playerID: string; sharedRanks: RankDefinition[] }) => { seatBlocked: boolean };
   layout?: 'grid' | 'lane';
 }) => {
-  const { opponentIds, G, sharedRanks, ctxCurrentPlayer, lang, selectedTargetId, activeSelectionNeedsTarget, setSelectedTargetId, postTargetPick, playerLabelById, resourceLabels, v2, getNextRankSeatMeta, layout = 'grid' } = props;
+  const { opponentIds, G, sharedRanks, ctxCurrentPlayer, lang, selectedTargetId, activeSelectionNeedsTarget, setSelectedTargetId, postTargetPick, playerLabelById, resourceLabels, board, getNextRankSeatMeta, layout = 'grid' } = props;
   return (
     <div className={layout === 'lane' ? 'game-ui-v3-player-lane' : 'game-ui-v3-players-grid'}>
       {opponentIds.map((pid) => {
@@ -393,7 +393,7 @@ export const BoardV3PlayerOverview = (props: {
               postTargetPick(pid);
             }}
             disabled={!selectable}
-            title={selectable ? v2.selectableTargetHint : undefined}
+            title={selectable ? board.selectableTargetHint : undefined}
           >
             <div className="game-ui-v3-player-head">
               <strong>{playerLabelById(pid)}</strong>
@@ -401,10 +401,10 @@ export const BoardV3PlayerOverview = (props: {
             </div>
             <div className="game-ui-v3-player-rank">{pRank}</div>
             <div className="game-ui-v3-player-badges">
-              {active ? <span className="pill pill-badge">{v2.currentTurn}</span> : null}
-              {selectable ? <span className="pill pill-badge">{v2.targetableNow}</span> : null}
-              {pMeta.seatBlocked ? <span className="pill pill-badge">{v2.seatBlocked}</span> : null}
-              {(G.lyapScandalShieldUntilTurn?.[pid] ?? 0) > 0 ? <span className="pill pill-badge">{v2.shieldUntil}: {G.lyapScandalShieldUntilTurn?.[pid] ?? 0}</span> : null}
+              {active ? <span className="pill pill-badge">{board.currentTurn}</span> : null}
+              {selectable ? <span className="pill pill-badge">{board.targetableNow}</span> : null}
+              {pMeta.seatBlocked ? <span className="pill pill-badge">{board.seatBlocked}</span> : null}
+              {(G.lyapScandalShieldUntilTurn?.[pid] ?? 0) > 0 ? <span className="pill pill-badge">{board.shieldUntil}: {G.lyapScandalShieldUntilTurn?.[pid] ?? 0}</span> : null}
             </div>
             <div className="game-ui-v3-player-resources">
               {BOARD_RESOURCE_ORDER.map((key) => (
@@ -417,3 +417,4 @@ export const BoardV3PlayerOverview = (props: {
     </div>
   );
 };
+

@@ -1,13 +1,11 @@
 import { rulesListEn } from './i18n-rules';
-import { uiV2En } from './i18n-v2';
+import { uiBoardEn } from './i18n-board';
 
 export const uiEnData = {
     gameTitle: 'Journal of Journals',
     adminTitle: 'Admin Panel',
     language: 'Language',
     gameUiLabel: 'Game UI',
-    gameUiV1: 'v1',
-    gameUiV2: 'v2',
     gameUiV3: 'v3',
     gameUiV4: 'v4',
     langUk: 'Ukrainian',
@@ -258,6 +256,8 @@ export const uiEnData = {
     bugReportHasScreenshot: 'has screenshot',
     bugReportReporterIp: 'IP',
     bugReportReporterAgent: 'User-Agent',
+    bugReportUiLegacy: 'legacy interface',
+    bugReportUiUnknown: 'unknown interface',
     adminUsersTitle: 'Users',
     adminUsersHint: 'Search users, manage account status, inspect active sessions, and start password reset for account recovery.',
     adminUsersSearchPlaceholder: 'username, email, or display name',
@@ -631,7 +631,7 @@ export const uiEnData = {
     regenDeletedOriginalsLabel: 'deleted originals',
     regenFailedLabel: 'failed',
     githubDeployTooltip: 'Git pull + npm install + tsc + vite build + pm2 restart',
-    v2: uiV2En,
+    board: uiBoardEn,
     resources: {
       time: '🕓 Time',
       reputation: '⭐ Authority',
@@ -640,3 +640,4 @@ export const uiEnData = {
       tech: '💻 Tech',
     },
   } as const;
+

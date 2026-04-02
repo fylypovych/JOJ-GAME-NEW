@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 export const BoardV3Header = (props: {
   title: string;
-  uiVariant?: 'v2' | 'v3' | 'v4';
+  uiVariant?: 'v3' | 'v4';
   roomMeta?: { matchID: string; playerID?: string | null } | null;
   playerName: string;
   spectatorLabel: string;
@@ -21,7 +21,7 @@ export const BoardV3Header = (props: {
 }) => {
   const {
     title,
-    uiVariant = 'v2',
+    uiVariant = 'v3',
     roomMeta,
     playerName,
     spectatorLabel,
@@ -41,7 +41,7 @@ export const BoardV3Header = (props: {
   return (
     <header className="game-ui-v3-header">
       <div className="game-ui-v3-header-main">
-        <p className="game-ui-v3-kicker">{uiVariant === 'v4' ? 'JOJ V4 TCG' : uiVariant === 'v3' ? 'JOJ V3 TCG' : 'JOJ V2'}</p>
+        <p className="game-ui-v3-kicker">{uiVariant === 'v4' ? 'JOJ V4 TCG' : 'JOJ V3 TCG'}</p>
         <h2>{title}</h2>
         {roomMeta ? (
           <div className="game-ui-v3-room-meta">

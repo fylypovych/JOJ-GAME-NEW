@@ -29,7 +29,7 @@ type UsePendingSelectionArgs = {
   opponentIds: string[];
   moves: JojMoveApi;
   lang: Language;
-  v2: Record<string, string>;
+  board: Record<string, string>;
   postNotice: (type: NoticeKind, msg: string) => void;
   playerLabelById: (id: string | null | undefined) => string;
   cardTitle: (id: string, title: string, lang: Language) => string;
@@ -119,7 +119,7 @@ export const usePendingSelection = ({
   opponentIds,
   moves,
   lang,
-  v2,
+  board,
   postNotice,
   playerLabelById,
   cardTitle,
@@ -146,7 +146,7 @@ export const usePendingSelection = ({
       setSelectedTargetId(null);
       setReplacementSelectionsByTarget({});
       setActiveReplacementTargetId(null);
-      postNotice('info', `${v2.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
+      postNotice('info', `${board.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
       return false;
     }
     if (getCardPlayBehavior(card) === 'scandal') {
@@ -163,7 +163,7 @@ export const usePendingSelection = ({
       setSelectedTargetId(null);
       setReplacementSelectionsByTarget({});
       setActiveReplacementTargetId(targetsNeedingReplacement[0] ?? null);
-      postNotice('info', `${v2.pickResource}: ${cardTitle(card.id, card.title, lang)}`);
+      postNotice('info', `${board.pickResource}: ${cardTitle(card.id, card.title, lang)}`);
       return false;
     }
     moves.playCard(card.id, [], undefined);
@@ -176,13 +176,13 @@ export const usePendingSelection = ({
     if (cardNeedsTargetSelection(card)) {
       setPendingSelection({ type: 'legendary-drone', cardId: card.id });
       setSelectedTargetId(null);
-      postNotice('info', `${v2.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
+      postNotice('info', `${board.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
       return false;
     }
     if (cardNeedsResourceSelection(card)) {
       setPendingSelection({ type: 'legendary-water', cardId: card.id });
       setSelectedResource(null);
-      postNotice('info', `${v2.pickResource}: ${cardTitle(card.id, card.title, lang)}`);
+      postNotice('info', `${board.pickResource}: ${cardTitle(card.id, card.title, lang)}`);
       return false;
     }
     moves.playLegendaryCard(card.id, undefined, undefined);
@@ -262,27 +262,27 @@ export const usePendingSelection = ({
   const confirmPendingSelection = () => {
     if (!pendingSelection) return;
     if (pendingSelection.type === 'hand-lyap') {
-      if (!selectedTargetId) return postNotice('error', v2.targetRequired);
+      if (!selectedTargetId) return postNotice('error', board.targetRequired);
       const selectedCard = hand.find((card) => card.id === pendingSelection.cardId);
-      if (!selectedCard) return postNotice('error', v2.actionUnavailable);
+      if (!selectedCard) return postNotice('error', board.actionUnavailable);
       const shielded = hasActiveShield(G?.lyapScandalShieldUntilTurn?.[selectedTargetId], ctx?.turn);
       const targetResources = G?.resources?.[selectedTargetId];
-      if (!targetResources) return postNotice('error', v2.actionUnavailable);
+      if (!targetResources) return postNotice('error', board.actionUnavailable);
       if (shielded) {
         moves.playCard(pendingSelection.cardId, [], selectedTargetId);
       } else {
         const required = getRequiredReplacementSelectionCount(targetResources, selectedCard.effects);
         const selected = replacementSelectionsByTarget[selectedTargetId] ?? [];
-        if (selected.length !== required) return postNotice('error', v2.replacementIncomplete);
+        if (selected.length !== required) return postNotice('error', board.replacementIncomplete);
         if (!isReplacementPrefixValid(targetResources, selectedCard.effects, selected)) {
-          return postNotice('error', v2.replacementInvalid);
+          return postNotice('error', board.replacementInvalid);
         }
         moves.playCard(pendingSelection.cardId, selected, selectedTargetId);
       }
     }
     if (pendingSelection.type === 'hand-scandal') {
       const selectedCard = hand.find((card) => card.id === pendingSelection.cardId);
-      if (!selectedCard) return postNotice('error', v2.actionUnavailable);
+      if (!selectedCard) return postNotice('error', board.actionUnavailable);
       const targets = opponentIds.filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
       const replacementByTarget: Record<string, ResourceKey[]> = {};
       for (const pid of targets) {
@@ -294,11 +294,11 @@ export const usePendingSelection = ({
           : (replacementSelectionsByTarget[pid] ?? []);
         if (selected.length !== required) {
           if (!botPlayerIds.has(pid)) setActiveReplacementTargetId(pid);
-          return postNotice('error', v2.replacementIncomplete);
+          return postNotice('error', board.replacementIncomplete);
         }
         if (!isReplacementPrefixValid(targetResources, selectedCard.effects, selected)) {
           if (!botPlayerIds.has(pid)) setActiveReplacementTargetId(pid);
-          return postNotice('error', v2.replacementInvalid);
+          return postNotice('error', board.replacementInvalid);
         }
         replacementByTarget[pid] = selected;
       }
@@ -306,20 +306,20 @@ export const usePendingSelection = ({
     }
     if (pendingSelection.type === 'draw-lyap') {
       const pendingCard = G?.pendingDrawAutoResolution?.card;
-      if (!pendingCard) return postNotice('error', v2.actionUnavailable);
+      if (!pendingCard) return postNotice('error', board.actionUnavailable);
       const targetResources = G?.resources?.[id];
-      if (!targetResources) return postNotice('error', v2.actionUnavailable);
+      if (!targetResources) return postNotice('error', board.actionUnavailable);
       const required = getRequiredReplacementSelectionCount(targetResources, pendingCard.effects);
       const selected = replacementSelectionsByTarget[id] ?? [];
-      if (selected.length !== required) return postNotice('error', v2.replacementIncomplete);
+      if (selected.length !== required) return postNotice('error', board.replacementIncomplete);
       if (!isReplacementPrefixValid(targetResources, pendingCard.effects, selected)) {
-        return postNotice('error', v2.replacementInvalid);
+        return postNotice('error', board.replacementInvalid);
       }
       moves.resolveDrawAutoCard?.(selected, {});
     }
     if (pendingSelection.type === 'draw-scandal') {
       const pendingCard = G?.pendingDrawAutoResolution?.card;
-      if (!pendingCard) return postNotice('error', v2.actionUnavailable);
+      if (!pendingCard) return postNotice('error', board.actionUnavailable);
       const targets = Object.keys(G?.players ?? {}).filter((pid) => Number(G?.lyapScandalShieldUntilTurn?.[pid] ?? 0) <= Number(ctx?.turn ?? 0));
       const replacementByTarget: Record<string, ResourceKey[]> = {};
       for (const pid of targets) {
@@ -331,22 +331,22 @@ export const usePendingSelection = ({
           : (replacementSelectionsByTarget[pid] ?? []);
         if (selected.length !== required) {
           if (!botPlayerIds.has(pid)) setActiveReplacementTargetId(pid);
-          return postNotice('error', v2.replacementIncomplete);
+          return postNotice('error', board.replacementIncomplete);
         }
         if (!isReplacementPrefixValid(targetResources, pendingCard.effects, selected)) {
           if (!botPlayerIds.has(pid)) setActiveReplacementTargetId(pid);
-          return postNotice('error', v2.replacementInvalid);
+          return postNotice('error', board.replacementInvalid);
         }
         replacementByTarget[pid] = selected;
       }
       moves.resolveDrawAutoCard?.([], replacementByTarget);
     }
     if (pendingSelection.type === 'legendary-drone') {
-      if (!selectedTargetId) return postNotice('error', v2.targetRequired);
+      if (!selectedTargetId) return postNotice('error', board.targetRequired);
       moves.playLegendaryCard?.(pendingSelection.cardId, selectedTargetId, undefined);
     }
     if (pendingSelection.type === 'legendary-water') {
-      if (!selectedResource) return postNotice('error', v2.resourceRequired);
+      if (!selectedResource) return postNotice('error', board.resourceRequired);
       moves.playLegendaryCard?.(pendingSelection.cardId, undefined, selectedResource);
     }
     clearPendingSelection();
@@ -414,6 +414,7 @@ export const usePendingSelection = ({
     activeSelectionNeedsTarget: pendingSelection?.type === 'hand-lyap' || pendingSelection?.type === 'legendary-drone',
     activeSelectionNeedsResource: pendingSelection?.type === 'legendary-water',
     activeSelectionNeedsReplacement: manualReplacementTargetIds.length > 0,
-    pickTargetNotice: (targetId: string) => postNotice('info', `${v2.pickTarget}: ${playerLabelById(targetId)}`),
+    pickTargetNotice: (targetId: string) => postNotice('info', `${board.pickTarget}: ${playerLabelById(targetId)}`),
   };
 };
+

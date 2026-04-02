@@ -15,6 +15,7 @@ export const categories = {
   COMMAND: { uk: 'РІШЕННЯ', en: 'COMMAND' },
   VVNZ: { uk: 'ВВНЗ', en: 'VVNZ' },
   LEGENDARY: { uk: 'ЛЕГЕНДАРНА', en: 'LEGENDARY' },
+  RANK: { uk: 'Звання', en: 'Ranks' },
 } as const;
 
 export const cardTitlesUk: Record<string, string> = {

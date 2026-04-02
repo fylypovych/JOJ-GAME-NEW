@@ -98,15 +98,16 @@ export type Session = {
 };
 
 export type UserTab = 'games' | 'gallery' | 'rules' | 'profile' | 'statistics';
-export type GalleryCategoryFilter = CardDefinition['category'] | 'ALL';
+export type GalleryCategoryFilter = CardDefinition['category'] | 'RANK' | 'ALL';
 
-export const galleryCategories: CardDefinition['category'][] = [
+export const galleryCategories: GalleryCategoryFilter[] = [
   'LYAP',
   'SCANDAL',
   'SUPPORT',
   'COMMAND',
   'VVNZ',
   'LEGENDARY',
+  'RANK',
 ];
 
 export const parseSession = (raw: string | null): Session | null => {

@@ -84,7 +84,7 @@ const classifySystemEvent = (textValue: string, lang: 'uk' | 'en') => {
   };
 };
 
-export const useBoardV2DerivedState = (args: {
+export const useBoardDerivedState = (args: {
   G: JojGameState;
   ctx: { gameover?: unknown };
   stage?: string;
@@ -98,10 +98,10 @@ export const useBoardV2DerivedState = (args: {
   lang: 'uk' | 'en';
   handFilter: 'all' | 'playable' | CardDefinition['category'];
   handSort: 'default' | 'playable' | 'category' | 'title';
-  v2: Record<string, string>;
+  board: Record<string, string>;
   endTurnLabel: string;
 }) => {
-  const { G, ctx, stage, id, hand, legendaryHand, canPlay, canPlayHandCard, sharedRanks, resourceLabels, lang, handFilter, handSort, v2, endTurnLabel } = args;
+  const { G, ctx, stage, id, hand, legendaryHand, canPlay, canPlayHandCard, sharedRanks, resourceLabels, lang, handFilter, handSort, board, endTurnLabel } = args;
 
   const nextRankMeta = useMemo(() => getNextRankSeatMeta({ G, playerID: id, sharedRanks }), [G, id, sharedRanks]);
   const gameoverMeta = (ctx?.gameover ?? null) as { winner?: string; endReason?: string } | null;
@@ -138,13 +138,13 @@ export const useBoardV2DerivedState = (args: {
     return withMeta.map((row) => ({
       ...row,
       badges: [
-        row.actionState.allowed ? v2.canPlayNow : v2.notNow,
-        ...(cardNeedsTargetSelection(row.card) && getCardPlayBehavior(row.card) === 'lyap' ? [v2.requiresTarget] : []),
-        ...(getCardPlayBehavior(row.card) === 'vvnz' && row.actionState.reason ? [v2.blockedReason] : []),
+        row.actionState.allowed ? board.canPlayNow : board.notNow,
+        ...(cardNeedsTargetSelection(row.card) && getCardPlayBehavior(row.card) === 'lyap' ? [board.requiresTarget] : []),
+        ...(getCardPlayBehavior(row.card) === 'vvnz' && row.actionState.reason ? [board.blockedReason] : []),
       ],
-      helperText: row.actionState.reason ?? (!row.actionState.allowed && !canPlayHandCard ? v2.actionUnavailable : undefined),
+      helperText: row.actionState.reason ?? (!row.actionState.allowed && !canPlayHandCard ? board.actionUnavailable : undefined),
     }));
-  }, [hand, canPlayHandCard, G, id, sharedRanks, resourceLabels, lang, v2]);
+  }, [hand, canPlayHandCard, G, id, sharedRanks, resourceLabels, lang, board]);
 
   const handCardsView = useMemo(() => {
     const filtered = allHandCardsView.filter(({ card, playable }) => {
@@ -187,7 +187,7 @@ export const useBoardV2DerivedState = (args: {
     && (G.deck?.length ?? 0) === 0
     && !hasPlayableHandCard
     && !hasPlayableLegendaryCard;
-  const passButtonLabel = shouldShowSkipTurnLabel ? v2.skipTurn : endTurnLabel;
+  const passButtonLabel = shouldShowSkipTurnLabel ? board.skipTurn : endTurnLabel;
 
   return {
     nextRankMeta,
@@ -204,3 +204,4 @@ export const useBoardV2DerivedState = (args: {
     passButtonLabel,
   };
 };
+

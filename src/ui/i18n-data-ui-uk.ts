@@ -1,13 +1,11 @@
 import { rulesListUk } from './i18n-rules';
-import { uiV2Uk } from './i18n-v2';
+import { uiBoardUk } from './i18n-board';
 
 export const uiUkData = {
     gameTitle: 'Журнал Журналів',
     adminTitle: 'Адмін-панель',
     language: 'Мова',
     gameUiLabel: 'Інтерфейс гри',
-    gameUiV1: 'v1',
-    gameUiV2: 'v2',
     gameUiV3: 'v3',
     gameUiV4: 'v4',
     langUk: 'Українська',
@@ -258,6 +256,8 @@ export const uiUkData = {
     bugReportHasScreenshot: 'є скріншот',
     bugReportReporterIp: 'IP',
     bugReportReporterAgent: 'User-Agent',
+    bugReportUiLegacy: 'застарілий інтерфейс',
+    bugReportUiUnknown: 'невідомий інтерфейс',
     adminUsersTitle: 'Користувачі',
     adminUsersHint: 'Пошук, статуси акаунтів, активні сесії та запуск скидання пароля для відновлення доступу.',
     adminUsersSearchPlaceholder: 'username, email або display name',
@@ -631,7 +631,7 @@ export const uiUkData = {
     regenDeletedOriginalsLabel: 'видалено оригінали',
     regenFailedLabel: 'помилок',
     githubDeployTooltip: 'Git pull + npm install + tsc + vite build + pm2 restart',
-    v2: uiV2Uk,
+    board: uiBoardUk,
     resources: {
       time: '🕓 Час',
       reputation: '⭐ Авторитет',
@@ -640,3 +640,4 @@ export const uiUkData = {
       tech: '💻 Технології',
     },
   } as const;
+

@@ -82,7 +82,7 @@ export const buildTurnHelpItems = (args: {
   mustDiscardOverflow: boolean;
   handOverflow: number;
   handCount: number;
-  v2: ReturnType<typeof text>['v2'];
+  board: ReturnType<typeof text>['board'];
   t: ReturnType<typeof text>;
   promoteLabel: string;
   lang: Language;
@@ -92,19 +92,19 @@ export const buildTurnHelpItems = (args: {
   resourceLabels: Record<ResourceKey, string>;
 }) => [
   {
-    label: args.v2.helpCurrentStage,
+    label: args.board.helpCurrentStage,
     value: args.stageLabel,
     tone: 'neutral' as const,
   },
   {
     label: args.t.draw,
-    value: args.canDraw ? args.v2.helpActionReady : args.v2.confirmDrawFirst,
+    value: args.canDraw ? args.board.helpActionReady : args.board.confirmDrawFirst,
     tone: args.canDraw ? 'good' as const : 'neutral' as const,
   },
   {
     label: args.promoteLabel,
     value: !args.canPlay
-      ? args.v2.actionUnavailable
+      ? args.board.actionUnavailable
       : (args.promoteReason ?? buildNextRankHint({
         G: args.G,
         playerID: args.playerID,
@@ -113,24 +113,25 @@ export const buildTurnHelpItems = (args: {
         resourceLabels: args.resourceLabels,
         promoteLabel: args.promoteLabel,
         lang: args.lang,
-      }) ?? args.v2.helpActionReady),
+      }) ?? args.board.helpActionReady),
     tone: !args.canPlay || args.promoteReason ? 'warn' as const : 'good' as const,
   },
   {
     label: args.passButtonLabel,
-    value: args.canEndTurn ? args.v2.helpActionReady : args.v2.actionUnavailable,
+    value: args.canEndTurn ? args.board.helpActionReady : args.board.actionUnavailable,
     tone: args.canEndTurn ? 'good' as const : 'neutral' as const,
   },
   {
-    label: args.v2.helpPendingSelection,
+    label: args.board.helpPendingSelection,
     value: args.pendingSelectionLabel,
-    tone: args.pendingSelectionLabel === args.v2.waitingAction ? 'neutral' as const : 'warn' as const,
+    tone: args.pendingSelectionLabel === args.board.waitingAction ? 'neutral' as const : 'warn' as const,
   },
   {
-    label: args.v2.helpHandStatus,
+    label: args.board.helpHandStatus,
     value: args.mustDiscardOverflow
-      ? args.v2.handOverflowWarning.replace('{count}', String(args.handOverflow))
-      : `${args.v2.handCardsLabel}: ${args.handCount}/8`,
+      ? args.board.handOverflowWarning.replace('{count}', String(args.handOverflow))
+      : `${args.board.handCardsLabel}: ${args.handCount}/8`,
     tone: args.mustDiscardOverflow ? 'warn' as const : 'neutral' as const,
   },
 ];
+

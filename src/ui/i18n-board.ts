@@ -1,4 +1,4 @@
-export const uiV2Uk = {
+export const uiBoardUk = {
   commandCenter: 'Пульт ходу',
   whatNow: 'Що можна зробити зараз',
   handFilter: 'Фільтр руки',
@@ -136,7 +136,7 @@ export const uiV2Uk = {
   helpHandStatus: 'Стан руки',
 } as const;
 
-export const uiV2En = {
+export const uiBoardEn = {
   commandCenter: 'Command center',
   whatNow: 'Available actions now',
   handFilter: 'Hand filter',

@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { ADMIN_DB_CONFIG_STORAGE_KEY, ADMIN_STORAGE_MODE_STORAGE_KEY, createAdminDbApiUrls, dbAdminText, parseStoredAdminDbConfig } from './dbApi';
+import {
+  ADMIN_DB_CONFIG_STORAGE_KEY,
+  ADMIN_STORAGE_MODE_STORAGE_KEY,
+  LEGACY_ADMIN_DB_CONFIG_STORAGE_KEY,
+  LEGACY_ADMIN_STORAGE_MODE_STORAGE_KEY,
+  createAdminDbApiUrls,
+  dbAdminText,
+  parseStoredAdminDbConfig,
+} from './dbApi';
 import type { AdminDbConfigDraft, AdminStorageMode } from './types';
 import type { Language } from '../i18n';
 
@@ -17,7 +25,10 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
   const dbText = dbAdminText(lang);
 
   const [adminStorageMode, setAdminStorageMode] = useState<AdminStorageMode>('db');
-  const [adminDbConfigDraft, setAdminDbConfigDraft] = useState<AdminDbConfigDraft>(() => parseStoredAdminDbConfig(window.localStorage.getItem(ADMIN_DB_CONFIG_STORAGE_KEY)));
+  const [adminDbConfigDraft, setAdminDbConfigDraft] = useState<AdminDbConfigDraft>(() => parseStoredAdminDbConfig(
+    window.localStorage.getItem(ADMIN_DB_CONFIG_STORAGE_KEY)
+    ?? window.localStorage.getItem(LEGACY_ADMIN_DB_CONFIG_STORAGE_KEY),
+  ));
 
   const [dbConfigSaveStatus, setDbConfigSaveStatus] = useState<string>('');
   const [dbConnectionTestStatus, setDbConnectionTestStatus] = useState<string>('');
@@ -58,6 +69,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
 
   const saveDbConfigDraft = () => {
     window.localStorage.setItem(ADMIN_DB_CONFIG_STORAGE_KEY, JSON.stringify(adminDbConfigDraft));
+    window.localStorage.removeItem(LEGACY_ADMIN_DB_CONFIG_STORAGE_KEY);
     setDbConfigSaveStatus(dbText.localSave);
     setDbConnectionTestStatus('');
     setDbConnectionTestError('');
@@ -319,5 +331,6 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
     exportDbBackup,
     restoreDbBackup,
     ADMIN_STORAGE_MODE_STORAGE_KEY,
+    LEGACY_ADMIN_STORAGE_MODE_STORAGE_KEY,
   };
 };

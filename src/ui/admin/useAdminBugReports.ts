@@ -3,6 +3,7 @@ import type { Language } from '../i18n';
 
 type AdminJsonFetch = (url: string, init?: RequestInit) => Promise<Response>;
 export type AdminBugReportStatus = 'new' | 'resolved' | 'closed';
+export type AdminBugReportUiVariant = 'v3' | 'v4' | 'legacy' | 'unknown';
 
 export type AdminBugReportListItem = {
   id: string;
@@ -14,7 +15,7 @@ export type AdminBugReportListItem = {
   matchID: string | null;
   playerName: string | null;
   spectator: boolean;
-  uiVariant: 'v1' | 'v2' | 'v3' | 'unknown';
+  uiVariant: AdminBugReportUiVariant;
   lang: 'uk' | 'en';
   submittedBy: {
     userId: string | null;
@@ -35,7 +36,7 @@ export type AdminBugReportDetail = {
   playerID: string | null;
   playerName: string | null;
   spectator: boolean;
-  uiVariant: 'v1' | 'v2' | 'v3' | 'unknown';
+  uiVariant: AdminBugReportUiVariant;
   lang: 'uk' | 'en';
   userAgent: string;
   sourceIp: string;
@@ -51,6 +52,22 @@ const createErrors = (lang: Language) => ({
   loadDetail: lang === 'uk' ? 'Не вдалося завантажити деталі баг-репорту' : 'Failed to load bug report details',
   updateStatus: lang === 'uk' ? 'Не вдалося оновити статус баг-репорту' : 'Failed to update bug report status',
   loadImage: lang === 'uk' ? 'Не вдалося завантажити зображення баг-репорту' : 'Failed to load bug report image',
+});
+
+const normalizeBugReportUiVariant = (value: unknown): AdminBugReportUiVariant => {
+  if (value === 'v3' || value === 'v4') return value;
+  if (value === 'v1' || value === 'v2') return 'legacy';
+  return 'unknown';
+};
+
+const normalizeBugReportListItem = (report: AdminBugReportListItem): AdminBugReportListItem => ({
+  ...report,
+  uiVariant: normalizeBugReportUiVariant(report.uiVariant),
+});
+
+const normalizeBugReportDetail = (report: AdminBugReportDetail): AdminBugReportDetail => ({
+  ...report,
+  uiVariant: normalizeBugReportUiVariant(report.uiVariant),
 });
 
 export const useAdminBugReports = (args: {
@@ -78,7 +95,7 @@ export const useAdminBugReports = (args: {
       const response = await adminJsonFetch(`${serverUrl}/api/admin/bug-reports`);
       const payload = (await response.json()) as { ok?: boolean; error?: string; reports?: AdminBugReportListItem[] };
       if (!response.ok || !payload.ok) throw new Error(payload.error || errors.loadList);
-      setBugReports(payload.reports ?? []);
+      setBugReports((payload.reports ?? []).map(normalizeBugReportListItem));
     } catch (error) {
       setBugReportsError(String(error instanceof Error ? error.message : error));
     } finally {
@@ -100,7 +117,7 @@ export const useAdminBugReports = (args: {
       const response = await adminJsonFetch(`${serverUrl}/api/admin/bug-reports/detail?id=${encodeURIComponent(id)}`);
       const payload = (await response.json()) as { ok?: boolean; error?: string; report?: AdminBugReportDetail };
       if (!response.ok || !payload.ok || !payload.report) throw new Error(payload.error || errors.loadDetail);
-      setSelectedBugReport(payload.report);
+      setSelectedBugReport(normalizeBugReportDetail(payload.report));
       if (bugReportImageUrl) URL.revokeObjectURL(bugReportImageUrl);
       setBugReportImageUrl('');
       if (payload.report.hasScreenshot) {

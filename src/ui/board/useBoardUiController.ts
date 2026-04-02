@@ -10,7 +10,7 @@ type HandFilter = 'all' | 'playable' | CardDefinition['category'];
 type HandSort = 'default' | 'playable' | 'category' | 'title';
 type SidePanelTab = 'events' | 'chat' | 'help';
 
-export const useBoardV2UiController = (args: {
+export const useBoardUiController = (args: {
   G: Pick<JojGameState, 'players' | 'ranks' | 'resources' | 'promotedThisTurn'> | null | undefined;
   id: string;
   knownPlayerNames: Record<string, string>;
@@ -23,7 +23,7 @@ export const useBoardV2UiController = (args: {
   sharedRanks: RankDefinition[];
   resourceLabels: Record<ResourceKey, string>;
   lang: 'uk' | 'en';
-  v2: Record<string, string>;
+  board: Record<string, string>;
   t: ReturnType<typeof import('../i18n').text>;
 }) => {
   const {
@@ -39,7 +39,7 @@ export const useBoardV2UiController = (args: {
     sharedRanks,
     resourceLabels,
     lang,
-    v2,
+    board,
     t,
   } = args;
   const [chatInput, setChatInput] = useState('');
@@ -120,9 +120,9 @@ export const useBoardV2UiController = (args: {
         canPlayHandCard,
         lang,
       })
-      : { allowed: canPlayHandCard, reason: canPlayHandCard ? null : v2.actionUnavailable };
+      : { allowed: canPlayHandCard, reason: canPlayHandCard ? null : board.actionUnavailable };
     if (!actionState.allowed) {
-      postNotice('error', actionState.reason ?? v2.actionUnavailable);
+      postNotice('error', actionState.reason ?? board.actionUnavailable);
       return;
     }
     requestPlayHandCard(card);
@@ -134,35 +134,35 @@ export const useBoardV2UiController = (args: {
   };
 
   const handleDraw = () => {
-    if (!canDraw) return postNotice('error', v2.confirmDrawFirst);
-    runMove(() => moves.drawCard(), v2.actionUnavailable);
+    if (!canDraw) return postNotice('error', board.confirmDrawFirst);
+    runMove(() => moves.drawCard(), board.actionUnavailable);
   };
 
   const handlePromote = (promoteReason: string | null) => {
-    if (!canPlay) return postNotice('error', v2.actionUnavailable);
+    if (!canPlay) return postNotice('error', board.actionUnavailable);
     if (promoteReason) return postNotice('error', promoteReason);
-    runMove(() => moves.promote(), v2.actionUnavailable);
+    runMove(() => moves.promote(), board.actionUnavailable);
   };
 
   const handlePass = (endTurn?: () => unknown) => {
     if (!canEndTurn) return;
-    runMove(endTurn, v2.actionUnavailable);
+    runMove(endTurn, board.actionUnavailable);
   };
 
   const handleRequestEndGameVote = () => {
     if (typeof moves.requestEndGameVote !== 'function') {
-      postNotice('error', v2.actionUnavailable);
+      postNotice('error', board.actionUnavailable);
       return;
     }
-    runMove(() => moves.requestEndGameVote?.(), v2.actionUnavailable);
+    runMove(() => moves.requestEndGameVote?.(), board.actionUnavailable);
   };
 
   const handleRespondEndGameVote = (agree: boolean) => {
     if (typeof moves.respondEndGameVote !== 'function') {
-      postNotice('error', v2.actionUnavailable);
+      postNotice('error', board.actionUnavailable);
       return;
     }
-    runMove(() => moves.respondEndGameVote?.(agree), v2.actionUnavailable);
+    runMove(() => moves.respondEndGameVote?.(agree), board.actionUnavailable);
   };
 
   const handleDraftToggle = (cardId: string) => {
@@ -188,9 +188,9 @@ export const useBoardV2UiController = (args: {
       : null;
     const vvnzReason = actionState?.behavior === 'vvnz' ? actionState.reason : null;
     return [
-      playable ? v2.canPlayNow : v2.notNow,
-      ...(cardNeedsTargetSelection(card) && getCardPlayBehavior(card) === 'lyap' ? [v2.requiresTarget] : []),
-      ...(getCardPlayBehavior(card) === 'vvnz' && vvnzReason ? [v2.blockedReason] : []),
+      playable ? board.canPlayNow : board.notNow,
+      ...(cardNeedsTargetSelection(card) && getCardPlayBehavior(card) === 'lyap' ? [board.requiresTarget] : []),
+      ...(getCardPlayBehavior(card) === 'vvnz' && vvnzReason ? [board.blockedReason] : []),
     ];
   };
 
@@ -208,7 +208,7 @@ export const useBoardV2UiController = (args: {
       })
       : null;
     const vvnzReason = actionState?.behavior === 'vvnz' ? actionState.reason : null;
-    return vvnzReason || (!playable && !canPlayHandCard ? v2.actionUnavailable : undefined);
+    return vvnzReason || (!playable && !canPlayHandCard ? board.actionUnavailable : undefined);
   };
 
   return {
@@ -249,3 +249,4 @@ export const useBoardV2UiController = (args: {
     getHandHelperText,
   };
 };
+

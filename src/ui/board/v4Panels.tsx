@@ -4,7 +4,7 @@ import { buildReplacementSlots } from './replacement';
 import { BoardChatPanel, GameCardTile } from './components';
 import { cardTitle, localizeSystemMessageText } from '../i18n';
 import { BOARD_RESOURCE_ORDER } from './resourceConstants';
-import type { BoardNotice } from './useBoardV2UiController';
+import type { BoardNotice } from './useBoardUiController';
 
 export const V4Header = (props: {
   title: string;
@@ -125,7 +125,7 @@ export const V4SelectionPanel = (props: {
   setSelectedTargetId: (value: string | null) => void;
   opponentIds: string[];
   playerLabelById: (id: string | null | undefined) => string;
-  v2: Record<string, string>;
+  board: Record<string, string>;
   lang: 'uk' | 'en';
   replacementTargetIds: string[];
   G: JojGameState;
@@ -155,7 +155,7 @@ export const V4SelectionPanel = (props: {
     setSelectedTargetId,
     opponentIds,
     playerLabelById,
-    v2,
+    board,
     lang,
     replacementTargetIds,
     G,
@@ -179,21 +179,21 @@ export const V4SelectionPanel = (props: {
   return (
     <div className="game-ui-v4-selection-panel game-ui-v4-selection-panel-inline">
       <div>
-        <div className="game-ui-v4-steps" aria-label={v2.stepAssistant}>
-          <span className={activeSelectionNeedsTarget ? 'is-done' : ''}>{v2.step1}</span>
-          <span className={(!activeSelectionNeedsTarget && (activeSelectionNeedsReplacement || activeSelectionNeedsResource)) ? 'is-done' : ''}>{v2.step2}</span>
-          <span>{v2.step3}</span>
+        <div className="game-ui-v4-steps" aria-label={board.stepAssistant}>
+          <span className={activeSelectionNeedsTarget ? 'is-done' : ''}>{board.step1}</span>
+          <span className={(!activeSelectionNeedsTarget && (activeSelectionNeedsReplacement || activeSelectionNeedsResource)) ? 'is-done' : ''}>{board.step2}</span>
+          <span>{board.step3}</span>
         </div>
         <p className="game-ui-v4-kicker">
           {activeSelectionNeedsTarget
-            ? v2.pickTarget
-            : (activeSelectionNeedsReplacement ? v2.replacementSelection : v2.pickResource)}
+            ? board.pickTarget
+            : (activeSelectionNeedsReplacement ? board.replacementSelection : board.pickResource)}
         </p>
         <h3>{currentPendingCard ? cardTitle(currentPendingCard.id, currentPendingCard.title, lang) : pendingSelection.cardId}</h3>
         <p className="game-ui-v4-subtle">
           {activeSelectionNeedsTarget
-            ? v2.selectableTargetHint
-            : (activeSelectionNeedsReplacement ? v2.replacementGuide : v2.selectableResourceHint)}
+            ? board.selectableTargetHint
+            : (activeSelectionNeedsReplacement ? board.replacementGuide : board.selectableResourceHint)}
         </p>
       </div>
       {activeSelectionNeedsTarget ? (
@@ -217,7 +217,7 @@ export const V4SelectionPanel = (props: {
         <>
           {replacementTargetIds.length > 0 ? (
             <>
-              <p className="game-ui-v4-subtle">{v2.replacementTarget}</p>
+              <p className="game-ui-v4-subtle">{board.replacementTarget}</p>
               <div className="game-ui-v4-chip-row">
                 {replacementTargetIds.map((pid) => {
                   const targetResources = G?.resources?.[pid] ?? null;
@@ -240,7 +240,7 @@ export const V4SelectionPanel = (props: {
               {replacementActiveTargetId ? (
                 <>
                   <p className="game-ui-v4-subtle">
-                    {v2.replacementProgress}: {replacementActiveSelected.length}/{replacementActiveSlots.length}
+                    {board.replacementProgress}: {replacementActiveSelected.length}/{replacementActiveSlots.length}
                   </p>
                   <div className="game-ui-v4-chip-row">
                     {BOARD_RESOURCE_ORDER.map((key) => (
@@ -255,13 +255,13 @@ export const V4SelectionPanel = (props: {
                     ))}
                   </div>
                   <div className="game-ui-v4-selection-actions">
-                    <button type="button" className="ghost" onClick={undoReplacementResource}>{v2.undoPick}</button>
+                    <button type="button" className="ghost" onClick={undoReplacementResource}>{board.undoPick}</button>
                   </div>
                 </>
               ) : null}
             </>
           ) : (
-            <p className="game-ui-v4-subtle">{v2.replacementNotRequired}</p>
+            <p className="game-ui-v4-subtle">{board.replacementNotRequired}</p>
           )}
         </>
       ) : null}
@@ -280,8 +280,8 @@ export const V4SelectionPanel = (props: {
         </div>
       ) : null}
       <div className="game-ui-v4-selection-actions">
-        <button type="button" onClick={confirmPendingSelection}>{v2.confirm}</button>
-        <button type="button" className="ghost" onClick={clearPendingSelection}>{v2.cancel}</button>
+        <button type="button" onClick={confirmPendingSelection}>{board.confirm}</button>
+        <button type="button" className="ghost" onClick={clearPendingSelection}>{board.cancel}</button>
       </div>
     </div>
   );
@@ -357,7 +357,7 @@ export const V4HandSection = (props: {
 export const V4SidePanel = (props: {
   sidePanelTab: 'events' | 'chat' | 'help';
   setSidePanelTab: (tab: 'events' | 'chat' | 'help') => void;
-  v2: Record<string, string>;
+  board: Record<string, string>;
   latestEvents: Array<{ id: string; type: 'player' | 'system'; text: string; playerID?: string; label: string; tone: 'neutral' | 'warn' | 'good' | 'legendary' }>;
   eventsTitle: string;
   spectatorMode?: boolean;
@@ -375,7 +375,7 @@ export const V4SidePanel = (props: {
   const {
     sidePanelTab,
     setSidePanelTab,
-    v2,
+    board,
     latestEvents,
     eventsTitle,
     spectatorMode = false,
@@ -394,9 +394,9 @@ export const V4SidePanel = (props: {
     <aside className="game-ui-v4-side">
       <section className="game-ui-v4-events game-ui-v4-mobile-tabs">
         <div className="game-ui-v4-tab-row">
-          <button type="button" className={sidePanelTab === 'events' ? 'is-active' : ''} onClick={() => setSidePanelTab('events')}>{v2.openEvents}</button>
-          <button type="button" className={sidePanelTab === 'chat' ? 'is-active' : ''} onClick={() => setSidePanelTab('chat')}>{v2.openChat}</button>
-          <button type="button" className={sidePanelTab === 'help' ? 'is-active' : ''} onClick={() => setSidePanelTab('help')}>{v2.openHelp}</button>
+          <button type="button" className={sidePanelTab === 'events' ? 'is-active' : ''} onClick={() => setSidePanelTab('events')}>{board.openEvents}</button>
+          <button type="button" className={sidePanelTab === 'chat' ? 'is-active' : ''} onClick={() => setSidePanelTab('chat')}>{board.openChat}</button>
+          <button type="button" className={sidePanelTab === 'help' ? 'is-active' : ''} onClick={() => setSidePanelTab('help')}>{board.openHelp}</button>
         </div>
       </section>
       <section className={`game-ui-v4-events${sidePanelTab !== 'events' ? ' game-ui-v4-mobile-hidden' : ''}`}>
@@ -414,7 +414,7 @@ export const V4SidePanel = (props: {
               </div>
             );
           })}
-          {!latestEvents.length ? <p className="game-ui-v4-subtle">{v2.noEventsYet}</p> : null}
+          {!latestEvents.length ? <p className="game-ui-v4-subtle">{board.noEventsYet}</p> : null}
         </div>
       </section>
       <section className={sidePanelTab !== 'chat' ? 'game-ui-v4-mobile-hidden' : ''}>
@@ -447,3 +447,4 @@ export const V4SidePanel = (props: {
     </aside>
   );
 };
+

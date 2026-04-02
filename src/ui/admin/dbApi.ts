@@ -1,8 +1,10 @@
 import type { Language } from '../i18n';
 import type { AdminDbConfigDraft } from './types';
 
-export const ADMIN_STORAGE_MODE_STORAGE_KEY = 'joj-admin-storage-mode-v1';
-export const ADMIN_DB_CONFIG_STORAGE_KEY = 'joj-admin-db-config-v1';
+export const ADMIN_STORAGE_MODE_STORAGE_KEY = 'joj-admin-storage-mode';
+export const LEGACY_ADMIN_STORAGE_MODE_STORAGE_KEY = 'joj-admin-storage-mode-v1';
+export const ADMIN_DB_CONFIG_STORAGE_KEY = 'joj-admin-db-config';
+export const LEGACY_ADMIN_DB_CONFIG_STORAGE_KEY = 'joj-admin-db-config-v1';
 
 export const defaultAdminDbConfig = (): AdminDbConfigDraft => ({
   host: '127.0.0.1',

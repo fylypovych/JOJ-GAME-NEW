@@ -2,7 +2,7 @@ import { normalizeImagePath } from '../../game/imagePaths';
 import { canPlayHandCardAtStage } from '../../game/turnRules';
 import type { JojGameState, RankDefinition } from '../../game/types';
 
-export const useBoardV2StageState = (args: {
+export const useBoardStageState = (args: {
   G: JojGameState | null | undefined;
   ctx: { currentPlayer?: string; activePlayers?: Record<string, string> | null } | null | undefined;
   playerID: string;

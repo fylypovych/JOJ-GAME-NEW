@@ -41,6 +41,10 @@ pm2 restart joj-game-server joj-game-web --update-env
 3. Import current JSON deck/ranks into DB:
    - `/admin` -> `База Даних` -> `Імпортувати дані JSON в БД`
 
+4. Verify that DB matches local JSON:
+   - PowerShell: `powershell -ExecutionPolicy Bypass -File scripts/db-cutover-check.ps1`
+   - Linux / Ubuntu: `bash ./scripts/db-cutover-check.sh`
+
 ## Admin DB Tab Capabilities
 
 - Test DB connection (using `psql`)
@@ -79,4 +83,3 @@ SELECT count(*) FROM rank_definitions;
 
 DB data not visible after changing `.env`:
 - Restart PM2 with `--update-env`.
-

@@ -15,7 +15,7 @@ export const buildBoardV4ActionState = (args: {
   botPlaybackEventText: string;
   isCurrentPlayer: boolean;
   stage: string | undefined;
-  v2: {
+  board: {
     botThinkingPrefix: string;
     waitingAction: string;
     stageFocusDraw: string;
@@ -48,7 +48,7 @@ export const buildBoardV4ActionState = (args: {
     botPlaybackEventText,
     isCurrentPlayer,
     stage,
-    v2,
+    board,
     passButtonLabel,
     pendingSelection,
     activeSelectionNeedsTarget,
@@ -65,13 +65,13 @@ export const buildBoardV4ActionState = (args: {
   } = args;
 
   const botPlaybackControlLabel = botThinkingPlayerName
-    ? `${v2.botThinkingPrefix}: ${botThinkingPlayerName}`
-    : botPlaybackEventText || v2.waitingAction;
+    ? `${board.botThinkingPrefix}: ${botThinkingPlayerName}`
+    : botPlaybackEventText || board.waitingAction;
   const blockPlayerTurnControls = !isSpectator && isBotPlaybackActive;
   const effectiveIsCurrentPlayer = isCurrentPlayer && !blockPlayerTurnControls;
   const currentStageFocus = blockPlayerTurnControls
     ? botPlaybackControlLabel
-    : stage === 'draw' ? v2.stageFocusDraw : stage === 'play' ? v2.stageFocusPlay : stage === 'end' ? v2.stageFocusEnd : '';
+    : stage === 'draw' ? board.stageFocusDraw : stage === 'play' ? board.stageFocusPlay : stage === 'end' ? board.stageFocusEnd : '';
   const footerActionLabel = blockPlayerTurnControls ? botPlaybackControlLabel : passButtonLabel;
   const selectedPendingCardId = pendingSelection?.cardId ?? null;
   const visibleHandSelectedId = selectedPendingCardId && hand.some((card) => card.id === selectedPendingCardId)
@@ -81,12 +81,12 @@ export const buildBoardV4ActionState = (args: {
     ? handCardsView.find((row) => row.card.id === visibleHandSelectedId)?.card ?? null
     : null;
   const primaryActionLabel = (() => {
-    if (blockPlayerTurnControls) return v2.waitingAction;
-    if (pendingSelection) return v2.confirm;
+    if (blockPlayerTurnControls) return board.waitingAction;
+    if (pendingSelection) return board.confirm;
     if (stage === 'draw') return t.draw;
-    if (selectedPlayableHandCard) return v2.play;
+    if (selectedPlayableHandCard) return board.play;
     if (!promoteReason && canPlay) return t.promote;
-    return v2.play;
+    return board.play;
   })();
   const pendingSelectionReady = pendingSelection
     ? (activeSelectionNeedsTarget ? Boolean(selectedTargetId) : activeSelectionNeedsResource ? Boolean(selectedResource) : true)
@@ -108,3 +108,4 @@ export const buildBoardV4ActionState = (args: {
     primaryActionDisabled,
   };
 };
+

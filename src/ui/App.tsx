@@ -68,7 +68,6 @@ import { useUserAccount } from './app/useUserAccount';
 
 const lobbyClient = new LobbyClient({ server: SERVER_URL });
 const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
-const NetworkClientV2 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV2 })));
 const NetworkClientV3 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV3 })));
 const NetworkClientV4 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV4 })));
 
@@ -205,6 +204,7 @@ export const App = () => {
     exportDbBackup,
     restoreDbBackup,
     ADMIN_STORAGE_MODE_STORAGE_KEY,
+    LEGACY_ADMIN_STORAGE_MODE_STORAGE_KEY,
   } = useDbAdminTools({
     lang,
     adminFetch,
@@ -370,11 +370,18 @@ export const App = () => {
       if (fallbackBotCount > 0 && botCount !== fallbackBotCount) setBotCount(fallbackBotCount);
     }
   }, [lobbyGameUiConfig, roomCapacity, createWithBots, botCount]);
-  const galleryCards = useMemo(() => (
-    [...cardCatalog]
-      .filter((card) => galleryCategoryFilter === 'ALL' || card.category === galleryCategoryFilter)
-      .sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title))
-  ), [cardCatalog, galleryCategoryFilter]);
+  const galleryCards = useMemo(() => {
+    const rankTrackIds = new Set(sharedDeckTemplate.rankTrack.map((card) => card.id));
+    if (galleryCategoryFilter === 'RANK') {
+      return [...sharedDeckTemplate.rankTrack]
+        .sort((a, b) => a.title.localeCompare(b.title));
+    }
+    return [...cardCatalog]
+      .filter((card) => galleryCategoryFilter === 'ALL'
+        ? !rankTrackIds.has(card.id)
+        : card.category === galleryCategoryFilter && !rankTrackIds.has(card.id))
+      .sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
+  }, [cardCatalog, galleryCategoryFilter, sharedDeckTemplate.rankTrack]);
   const cardImageById = useMemo<Record<string, string>>(
     () =>
       cardCatalog.reduce<Record<string, string>>((acc, card) => {
@@ -479,6 +486,7 @@ export const App = () => {
 
   useEffect(() => {
     window.localStorage.setItem(ADMIN_STORAGE_MODE_STORAGE_KEY, adminStorageMode);
+    window.localStorage.removeItem(LEGACY_ADMIN_STORAGE_MODE_STORAGE_KEY);
   }, [adminStorageMode]);
 
   const shellUiVariant = isAdminRoute ? adminUiVariant : gameUiVariant;
@@ -488,7 +496,7 @@ export const App = () => {
     <main className={`app app-${shellUiVariant}${isImmersiveV4Game ? ' is-immersive-v4-game' : ''}`} data-bug-report-capture-root="true">
       <h1>{isAdminRoute ? t.adminTitle : t.gameTitle}</h1>
       {!isAdminRoute ? (
-        <section className={`app-top-toolbar${shellUiVariant === 'v2' ? ' app-top-toolbar-v2' : ''}${shellUiVariant === 'v3' ? ' app-top-toolbar-v3' : ''}${shellUiVariant === 'v4' ? ' app-top-toolbar-v4' : ''}`}>
+        <section className={`app-top-toolbar${shellUiVariant === 'v3' ? ' app-top-toolbar-v3' : ''}${shellUiVariant === 'v4' ? ' app-top-toolbar-v4' : ''}`}>
           <div className="app-top-toolbar-left">
             <UserTabs t={t} activeUserTab={activeUserTab} setActiveUserTab={setActiveUserTab} uiVariant={gameUiVariant} />
           </div>
@@ -503,9 +511,6 @@ export const App = () => {
               </button>
               {' | '}
               {t.gameUiLabel}:{' '}
-              <button type="button" onClick={() => setGameUiVariant('v2')} disabled={gameUiVariant === 'v2'}>
-                {t.gameUiV2}
-              </button>{' '}
               <button type="button" onClick={() => setGameUiVariant('v3')} disabled={gameUiVariant === 'v3'}>
                 {t.gameUiV3}
               </button>
@@ -529,16 +534,13 @@ export const App = () => {
           </button>
           {' | '}
           {t.gameUiLabel}:{' '}
-          <button type="button" onClick={() => setAdminUiVariant('v2')} disabled={adminUiVariant === 'v2'}>
-            {t.gameUiV2}
-          </button>{' '}
-              <button type="button" onClick={() => setAdminUiVariant('v3')} disabled={adminUiVariant === 'v3'}>
-                {t.gameUiV3}
-              </button>
-              {' '}
-              <button type="button" onClick={() => setAdminUiVariant('v4')} disabled={adminUiVariant === 'v4'}>
-                {('gameUiV4' in t ? (t as typeof t & { gameUiV4: string }).gameUiV4 : 'v4')}
-              </button>
+          <button type="button" onClick={() => setAdminUiVariant('v3')} disabled={adminUiVariant === 'v3'}>
+            {t.gameUiV3}
+          </button>
+          {' '}
+          <button type="button" onClick={() => setAdminUiVariant('v4')} disabled={adminUiVariant === 'v4'}>
+            {('gameUiV4' in t ? (t as typeof t & { gameUiV4: string }).gameUiV4 : 'v4')}
+          </button>
         </p>
       )}
       <p className="app-link-row">
@@ -546,7 +548,7 @@ export const App = () => {
       </p>
 
       {isAdminRoute && (!adminAuthorized || adminAuthChecking) ? (
-        <section className={adminUiVariant === 'v4' ? 'admin-shell-v4 admin-panel-v4' : `board${adminUiVariant === 'v2' ? ' board-v2-panel' : ''}${adminUiVariant === 'v3' ? ' board-v3-panel' : ''}`}>
+        <section className={adminUiVariant === 'v4' ? 'admin-shell-v4 admin-panel-v4' : 'board board-v3-panel'}>
           <h2>{t.adminTitle}</h2>
           <p>{adminAuthChecking ? t.loading : (adminAuthError || (adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminUnauthorized))}</p>
           {!adminAuthChecking ? (
@@ -626,32 +628,8 @@ export const App = () => {
               inviteText={activeSessionInviteText}
               shareLink={activeSessionShareLink}
               onLeaveRoom={() => { void leaveRoom(); }}
-            /> : gameUiVariant === 'v3' ? <NetworkClientV3
-              key={`${session.matchID}:${session.playerID ?? 'spectator'}:v3`}
-              matchID={session.matchID}
-              playerID={session.spectator ? (null as never) : session.playerID}
-              credentials={session.credentials}
-              lang={lang}
-              playerName={session.spectator ? t.spectatorJoinedLabel : playerName}
-              knownPlayerNames={roomPlayerNames}
-              sharedRanks={sharedRanks}
-              cardImageById={cardImageById}
-              roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
-              onLeaveRoom={() => { void leaveRoom(); }}
-            /> : gameUiVariant === 'v2' ? <NetworkClientV2
-              key={`${session.matchID}:${session.playerID ?? 'spectator'}:v2`}
-              matchID={session.matchID}
-              playerID={session.spectator ? (null as never) : session.playerID}
-              credentials={session.credentials}
-              lang={lang}
-              playerName={session.spectator ? t.spectatorJoinedLabel : playerName}
-              knownPlayerNames={roomPlayerNames}
-              sharedRanks={sharedRanks}
-              cardImageById={cardImageById}
-              roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
-              onLeaveRoom={() => { void leaveRoom(); }}
             /> : <NetworkClientV3
-              key={`${session.matchID}:${session.playerID ?? 'spectator'}:v3-fallback`}
+              key={`${session.matchID}:${session.playerID ?? 'spectator'}:v3`}
               matchID={session.matchID}
               playerID={session.spectator ? (null as never) : session.playerID}
               credentials={session.credentials}
