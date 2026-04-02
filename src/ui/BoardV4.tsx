@@ -824,9 +824,7 @@ export const BoardV4 = ({
                   } : undefined;
                 }}
               />
-              </>
-            )}
-            sideContent={!isSimplifiedMode ? (
+              {!isSimplifiedMode ? (
                 <section className="game-ui-v4-panel game-ui-v4-legendary-frame">
                   <V4HandSection
                     title={`${t.legendaryHand} (${legendaryHand.length})`}
@@ -849,7 +847,10 @@ export const BoardV4 = ({
                     previewText={(card) => handCardsView.find((row) => row.card.id === card.id)?.previewText}
                   />
                 </section>
-              ) : undefined}
+              ) : null}
+              </>
+            )}
+            sideContent={undefined}
           />
           ) : null}
 

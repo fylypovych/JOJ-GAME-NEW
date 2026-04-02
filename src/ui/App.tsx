@@ -321,7 +321,18 @@ export const App = () => {
         const response = await fetch(`${SERVER_URL}/api/game/ui-config`, { credentials: 'include' });
         const payload = await response.json() as { ok?: boolean };
         if (!response.ok || payload.ok !== true) return;
-        if (!cancelled) setLobbyGameUiConfig(normalizeLobbyGameUiConfig(payload));
+        if (!cancelled) {
+          const normalizedConfig = normalizeLobbyGameUiConfig(payload);
+          setLobbyGameUiConfig(normalizedConfig);
+          setRoomCapacity((currentRoomCapacity) => {
+            if (!normalizedConfig.allowedRoomCapacities.includes(currentRoomCapacity as typeof normalizedConfig.allowedRoomCapacities[number])) {
+              return normalizedConfig.defaultRoomCapacity;
+            }
+            return currentRoomCapacity === DEFAULT_LOBBY_GAME_UI_CONFIG.defaultRoomCapacity
+              ? normalizedConfig.defaultRoomCapacity
+              : currentRoomCapacity;
+          });
+        }
       } catch {
         // keep defaults when public config is unavailable
       }

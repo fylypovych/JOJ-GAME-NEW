@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { DEFAULT_LOBBY_GAME_UI_CONFIG } from '../../game/lobbyConfig';
 import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { Language } from '../i18n';
 import { defaultLanguage } from '../i18n';
@@ -16,7 +17,7 @@ export const useAppShellState = (serverUrl: string) => {
     return stored === 'en' || stored === 'uk' ? stored : defaultLanguage;
   });
   const [playerName, setPlayerName] = useState<string>(() => window.localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ?? '');
-  const [roomCapacity, setRoomCapacity] = useState<number>(2);
+  const [roomCapacity, setRoomCapacity] = useState<number>(DEFAULT_LOBBY_GAME_UI_CONFIG.defaultRoomCapacity);
   const [gameMode, setGameMode] = useState<GameMode>('standard');
   const [createWithBots, setCreateWithBots] = useState(false);
   const [botCount, setBotCount] = useState(1);
