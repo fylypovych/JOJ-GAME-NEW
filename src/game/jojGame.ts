@@ -102,15 +102,24 @@ const resolveSetupOverride = (setupData: unknown): Partial<SharedGameSetup> => {
   const out: Partial<SharedGameSetup> = {};
   if (raw.gameSetup && typeof raw.gameSetup === 'object') {
     const setup = raw.gameSetup as Record<string, unknown>;
-    out.lyapModuleId = safeId(setup.lyapModuleId);
-    out.scandalModuleId = safeId(setup.scandalModuleId);
-    out.supportModuleId = safeId(setup.supportModuleId);
-    out.commandModuleId = safeId(setup.commandModuleId);
-    out.optionalMainDeckModuleIds = Array.isArray(setup.optionalMainDeckModuleIds)
-      ? setup.optionalMainDeckModuleIds.filter((item): item is string => typeof item === 'string').map((id) => id.trim().toLowerCase()).filter(Boolean)
-      : undefined;
-    out.legendaryModuleId = safeId(setup.legendaryModuleId);
-    out.rankModuleId = safeId(setup.rankModuleId);
+    const lyapModuleId = safeId(setup.lyapModuleId);
+    if (lyapModuleId) out.lyapModuleId = lyapModuleId;
+    const scandalModuleId = safeId(setup.scandalModuleId);
+    if (scandalModuleId) out.scandalModuleId = scandalModuleId;
+    const supportModuleId = safeId(setup.supportModuleId);
+    if (supportModuleId) out.supportModuleId = supportModuleId;
+    const commandModuleId = safeId(setup.commandModuleId);
+    if (commandModuleId) out.commandModuleId = commandModuleId;
+    if (Array.isArray(setup.optionalMainDeckModuleIds)) {
+      out.optionalMainDeckModuleIds = setup.optionalMainDeckModuleIds
+        .filter((item): item is string => typeof item === 'string')
+        .map((id) => id.trim().toLowerCase())
+        .filter(Boolean);
+    }
+    const legendaryModuleId = safeId(setup.legendaryModuleId);
+    if (legendaryModuleId) out.legendaryModuleId = legendaryModuleId;
+    const rankModuleId = safeId(setup.rankModuleId);
+    if (rankModuleId) out.rankModuleId = rankModuleId;
     const mode = setup.legendaryDeckMode;
     if (mode === 'merged' || mode === 'separate') out.legendaryDeckMode = mode;
   }

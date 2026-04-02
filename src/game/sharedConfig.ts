@@ -90,9 +90,9 @@ const emptySharedDeckTemplate = (): SharedDeckTemplate => buildTemplateWithDefau
   },
 });
 
-let sharedDeckTemplate: SharedDeckTemplate = emptySharedDeckTemplate();
-let sharedRanks: SharedRanks = [];
-let sharedExtraCatalog: CardDefinition[] = [];
+let sharedDeckTemplate: SharedDeckTemplate = defaultSharedDeckTemplate();
+let sharedRanks: SharedRanks = defaultSharedRanksSeed.map(cloneRank);
+let sharedExtraCatalog: CardDefinition[] = defaultSharedExtraCatalogSeed.map(cloneCard);
 
 const hydrateSharedRanksWithGeneratedImages = (ranks: SharedRanks) => {
   let changed = false;
