@@ -4675,8 +4675,16 @@ button:disabled {
   color: #ead39a;
   font-size: 1.8rem;
   line-height: 1;
-  width: auto;
+  width: 28px;
+  height: 28px;
   text-align: center;
+}
+
+.game-ui-v4-shell .game-ui-v4-footer-resource-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .game-ui-v4-shell .game-ui-v4-footer-resource-label {
@@ -4810,11 +4818,11 @@ button:disabled {
 }
 
 .game-ui-v4-shell .game-ui-v4-opponent-card {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
   align-items: stretch;
   gap: 8px;
-  width: min(100%, 164px);
+  width: min(100%, 214px);
   min-height: 172px;
   padding: 8px;
   border: 1px solid rgba(150, 156, 161, 0.22);
@@ -4831,24 +4839,15 @@ button:disabled {
   justify-content: flex-start;
 }
 
+.game-ui-v4-shell .game-ui-v4-opponent-main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
 .game-ui-v4-shell .game-ui-v4-opponent-card:disabled {
   opacity: 0.9;
-}
-
-.game-ui-v4-shell .game-ui-v4-opponent-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 26px;
-  background: linear-gradient(90deg, rgba(65, 96, 145, 0.96), rgba(43, 68, 108, 0.96));
-}
-
-.game-ui-v4-shell .game-ui-v4-opponents-side.is-right .game-ui-v4-opponent-card::before {
-  background: linear-gradient(90deg, rgba(143, 73, 59, 0.96), rgba(99, 45, 38, 0.96));
-}
-
-.game-ui-v4-shell .game-ui-v4-opponent-card.is-placeholder-card::before {
-  display: none;
 }
 
 .game-ui-v4-shell .game-ui-v4-opponent-card.is-targetable:not(:disabled):hover,
@@ -4888,7 +4887,7 @@ button:disabled {
   width: 100%;
   border-radius: 12px;
   aspect-ratio: 1.04;
-  margin-top: 16px;
+  margin-top: 0;
   font-size: 2rem;
   background:
     linear-gradient(180deg, rgba(216, 199, 145, 0.18), rgba(97, 78, 46, 0.24)),
@@ -5009,6 +5008,58 @@ button:disabled {
   border-radius: 999px;
   background: rgba(16, 19, 21, 0.42);
   color: #efe7cf;
+}
+
+.game-ui-v4-shell .game-ui-v4-opponent-resources {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  padding: 4px 0;
+}
+
+.game-ui-v4-shell .game-ui-v4-opponent-resource {
+  display: grid;
+  place-items: center;
+  position: relative;
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(181, 169, 126, 0.38);
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.2), transparent 38%),
+    linear-gradient(180deg, rgba(84, 95, 92, 0.98), rgba(39, 47, 44, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 8px 14px rgba(0, 0, 0, 0.24);
+  color: #f7f1dd;
+}
+
+.game-ui-v4-shell .game-ui-v4-opponent-resource-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.game-ui-v4-shell .game-ui-v4-opponent-resource-icon img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.game-ui-v4-shell .game-ui-v4-opponent-resource strong {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #7dad46, #4f7f27);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.26);
+  color: #f8fff1;
+  font-size: 0.66rem;
+  line-height: 16px;
+  text-align: center;
 }
 
 .game-ui-v4-shell .game-ui-v4-center-badge {
@@ -5134,9 +5185,26 @@ button:disabled {
 }
 
 .game-ui-v4-shell .game-ui-v4-focus-resources span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border-color: rgba(130, 139, 124, 0.18);
   color: #ece4cd;
   background: rgba(33, 37, 36, 0.72);
+}
+
+.game-ui-v4-shell .game-ui-v4-inline-resource-icon {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.game-ui-v4-shell .game-ui-v4-inline-resource-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .game-ui-v4-shell .game-ui-v4-player-dock {
@@ -7226,25 +7294,25 @@ button:disabled {
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-opponent-card {
-  width: min(100%, 170px);
+  width: min(100%, 214px);
   min-height: 188px;
   padding: 10px;
   border-radius: 10px;
   background: linear-gradient(180deg, rgba(70, 76, 80, 0.98), rgba(36, 40, 43, 0.98));
 }
 
-.app.app-v4.is-immersive-v4-game .game-ui-v4-opponent-card::before {
-  height: 28px;
-}
-
 .app.app-v4.is-immersive-v4-game .game-ui-v4-opponent-avatar {
-  margin-top: 20px;
+  margin-top: 0;
   min-height: 118px;
   border-radius: 7px;
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-opponent-copy {
   gap: 3px;
+}
+
+.app.app-v4.is-immersive-v4-game .game-ui-v4-opponent-resources {
+  gap: 8px;
 }
 
 .app.app-v4.is-immersive-v4-game .game-ui-v4-opponent-copy strong {

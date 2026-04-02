@@ -77,6 +77,7 @@ export const buildBoardV4ViewModel = (args: {
   latestEvents: Array<{ id: string; label: string; text: string; type: 'player' | 'system'; playerID?: string; tone: 'neutral' | 'warn' | 'good' | 'legendary' }>;
   sharedResourceOrder: ResourceKey[];
   sharedResourceIcons: Record<ResourceKey, string>;
+  sharedResourceImagePaths: Record<ResourceKey, string>;
   rankTrackCards: CardDefinition[];
 }) => {
   const {
@@ -104,6 +105,7 @@ export const buildBoardV4ViewModel = (args: {
     latestEvents,
     sharedResourceOrder,
     sharedResourceIcons,
+    sharedResourceImagePaths,
     rankTrackCards,
   } = args;
 
@@ -165,6 +167,13 @@ export const buildBoardV4ViewModel = (args: {
       name: playerLabelById(pid),
       rankName: sharedRanks.find((rank) => rank.id === rankIdForPlayer)?.name ?? rankLabel(rankIdForPlayer, lang),
       cardsCount: G.hands?.[pid]?.length ?? 0,
+      resources: sharedResourceOrder.map((key) => ({
+        key,
+        icon: sharedResourceIcons[key],
+        imageSrc: sharedResourceImagePaths[key],
+        label: resourceLabels[key],
+        value: G.resources?.[pid]?.[key] ?? 0,
+      })),
       isActive: ctx.currentPlayer === pid,
       isSelected: selectedTargetId === pid,
       isTargetable: activeSelectionNeedsTarget,
@@ -177,6 +186,7 @@ export const buildBoardV4ViewModel = (args: {
   const footerResourceItems: V4FooterResourceItem[] = sharedResourceOrder.map((key) => ({
     key,
     icon: sharedResourceIcons[key],
+    imageSrc: sharedResourceImagePaths[key],
     label: resourceLabels[key],
     value: resources[key] ?? 0,
     highlighted: highlightedResources.has(key),

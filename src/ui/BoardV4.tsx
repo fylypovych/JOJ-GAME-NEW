@@ -5,7 +5,7 @@ import { buildTurnHelpItems, getBoardPromoteReason } from './board/boardViewHelp
 import { buildBoardV4ActionState } from './board/boardV4ActionState';
 import { GameCardTile, PilePreview } from './board/components';
 import { buildNextRankHint } from './board/rankHints';
-import { BOARD_RESOURCE_ICONS, BOARD_RESOURCE_ORDER } from './board/resourceConstants';
+import { BOARD_RESOURCE_ICONS, BOARD_RESOURCE_IMAGE_PATHS, BOARD_RESOURCE_ORDER } from './board/resourceConstants';
 import { V4HandSection, V4Header, V4NoticeStack, V4SelectionPanel, V4SidePanel } from './board/v4Panels';
 import { V4EndVoteModal, V4GameoverModal, V4StandingsSummary } from './board/v4ShellSections';
 import { V4BattlefieldSection, V4BottomBar, V4OpponentsArea, V4PlayerDockSection } from './board/v4Sections';
@@ -357,6 +357,7 @@ export const BoardV4 = ({
     latestEvents,
     sharedResourceOrder: BOARD_RESOURCE_ORDER,
     sharedResourceIcons: BOARD_RESOURCE_ICONS,
+    sharedResourceImagePaths: BOARD_RESOURCE_IMAGE_PATHS,
     rankTrackCards,
   });
   const { handleV4HandCardClick, handlePrimaryV4Action } = useBoardV4Interactions({
@@ -526,13 +527,9 @@ export const BoardV4 = ({
             <p className="game-ui-v4-kicker">{board.commandCenter}</p>
             <h3>{blockPlayerTurnControls ? botPlaybackControlLabel : playerLabelById(ctx.currentPlayer)}</h3>
             <p className="game-ui-v4-subtle">{t.turnStage}: {stageLabel(stage, t)} · {t.yourRank}: {rankName}</p>
-            {promoteReason ? (
-              <p className="game-ui-v4-subtle"><strong>{board.blockedReason}:</strong> {promoteReason}</p>
-            ) : (
-              <p className="game-ui-v4-subtle">
-                {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
-              </p>
-            )}
+            <p className="game-ui-v4-subtle">
+              {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
+            </p>
           </div>
           <V4NoticeStack notices={notices} dismissNotice={dismissNotice} />
         </div>
@@ -735,10 +732,18 @@ export const BoardV4 = ({
                           <div className="game-ui-v4-focus-resources">
                             {BOARD_RESOURCE_ORDER.map((key) => (
                               <span key={`focus-resource-${key}`}>
-                                {BOARD_RESOURCE_ICONS[key]} {activeArenaResources?.[key] ?? 0}
+                                <span className="game-ui-v4-inline-resource-icon" aria-hidden="true">
+                                  <img src={BOARD_RESOURCE_IMAGE_PATHS[key]} alt="" />
+                                </span>
+                                {activeArenaResources?.[key] ?? 0}
                               </span>
                             ))}
                           </div>
+                          {promoteReason ? (
+                            <p className="game-ui-v4-zone-meta">
+                              <strong>{board.blockedReason}:</strong> {promoteReason}
+                            </p>
+                          ) : null}
                         </div>
                       </div>
                     </article>

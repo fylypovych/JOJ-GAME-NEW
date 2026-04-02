@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 export type V4FooterResourceItem = {
   key: string;
   icon: string;
+  imageSrc?: string;
   label: string;
   value: number;
   highlighted: boolean;
@@ -14,6 +15,13 @@ export type V4OpponentCardItem = {
   name: string;
   rankName: string;
   cardsCount: number;
+  resources: Array<{
+    key: string;
+    icon: string;
+    imageSrc?: string;
+    label: string;
+    value: number;
+  }>;
   isActive: boolean;
   isSelected: boolean;
   isTargetable: boolean;
@@ -113,7 +121,9 @@ export const V4BottomBar = (props: {
             key={`footer-${item.key}`}
             className={`game-ui-v4-footer-resource${item.highlighted ? ' is-highlighted' : ''}${item.deficit ? ' is-deficit' : ''}`}
           >
-            <span className="game-ui-v4-footer-resource-icon" aria-hidden="true">{item.icon}</span>
+            <span className="game-ui-v4-footer-resource-icon" aria-hidden="true">
+              {item.imageSrc ? <img src={item.imageSrc} alt="" /> : item.icon}
+            </span>
             <strong>{item.value}</strong>
             <span className="game-ui-v4-footer-resource-label">{item.label}</span>
           </span>
@@ -144,18 +154,34 @@ const V4OpponentCard = (props: {
       onClick={() => onClick(item.id)}
       disabled={!item.isTargetable}
     >
-      <div className={`game-ui-v4-opponent-avatar${item.imageSrc ? '' : ' is-placeholder'}`}>
-        {item.imageSrc ? (
-          <V4PortraitImage src={item.imageSrc} alt={item.rankName} />
-        ) : (
-          <span className="game-ui-v4-opponent-avatar-fallback">{item.initials}</span>
-        )}
+      <div className="game-ui-v4-opponent-main">
+        <div className={`game-ui-v4-opponent-avatar${item.imageSrc ? '' : ' is-placeholder'}`}>
+          {item.imageSrc ? (
+            <V4PortraitImage src={item.imageSrc} alt={item.rankName} />
+          ) : (
+            <span className="game-ui-v4-opponent-avatar-fallback">{item.initials}</span>
+          )}
+        </div>
+        <div className="game-ui-v4-opponent-copy">
+          <strong>{item.name}</strong>
+          <span>{item.rankName}</span>
+          <small>{handLabel}: {item.cardsCount}</small>
+        </div>
       </div>
-      <div className="game-ui-v4-opponent-copy">
-        <strong>{item.name}</strong>
-        <span>{item.rankName}</span>
-        <small>{handLabel}: {item.cardsCount}</small>
-      </div>
+      <aside className="game-ui-v4-opponent-resources" aria-label={`${item.name} resources`}>
+        {item.resources.map((resource) => (
+          <span
+            key={`${item.id}-${resource.key}`}
+            className="game-ui-v4-opponent-resource"
+            title={`${resource.label}: ${resource.value}`}
+          >
+            <span className="game-ui-v4-opponent-resource-icon" aria-hidden="true">
+              {resource.imageSrc ? <img src={resource.imageSrc} alt="" /> : resource.icon}
+            </span>
+            <strong>{resource.value}</strong>
+          </span>
+        ))}
+      </aside>
     </button>
   );
 };
