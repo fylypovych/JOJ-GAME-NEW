@@ -8,7 +8,7 @@ import { buildNextRankHint } from './board/rankHints';
 import { BOARD_RESOURCE_ICONS, BOARD_RESOURCE_IMAGE_PATHS, BOARD_RESOURCE_ORDER } from './board/resourceConstants';
 import { V4HandSection, V4Header, V4NoticeStack, V4SelectionPanel, V4SidePanel } from './board/v4Panels';
 import { V4EndVoteModal, V4GameoverModal, V4StandingsSummary } from './board/v4ShellSections';
-import { V4BattlefieldSection, V4BottomBar, V4OpponentsArea, V4PlayerDockSection } from './board/v4Sections';
+import { V4BattlefieldSection, V4OpponentsArea, V4PlayerDockSection } from './board/v4Sections';
 import { useBoardDerivedState } from './board/useBoardDerivedState';
 import { useBotPlaybackQueue, type BotPlaybackSpeedLevel } from './board/useBotPlaybackQueue';
 import { usePendingSelection } from './board/usePendingSelection';
@@ -288,12 +288,9 @@ export const BoardV4 = ({
     blockPlayerTurnControls,
     effectiveIsCurrentPlayer,
     currentStageFocus,
-    footerActionLabel,
     selectedPendingCardId,
     visibleHandSelectedId,
     selectedPlayableHandCard,
-    primaryActionLabel,
-    primaryActionDisabled,
   } = buildBoardV4ActionState({
     isSpectator,
     isBotPlaybackActive,
@@ -331,7 +328,6 @@ export const BoardV4 = ({
     currentTurnPortraitImage,
     leftOpponentItems,
     rightOpponentItems,
-    footerResourceItems,
   } = buildBoardV4ViewModel({
     G,
     ctx,
@@ -562,22 +558,6 @@ export const BoardV4 = ({
           confirmPendingSelection={confirmPendingSelection}
           clearPendingSelection={clearPendingSelection}
           pickTargetNotice={pickTargetNotice}
-        />
-      </section>
-      ) : null}
-
-      {!isSpectator ? (
-      <section className="game-ui-v4-panel game-ui-v4-command game-ui-v4-command-panel game-ui-v4-command-panel-bottom">
-        <V4BottomBar
-          resources={footerResourceItems}
-          rankName={rankName}
-          rankHint={nextRankMeta?.nextRank ? `${nextRankMeta.occupied}/${nextRankMeta.seatLimit} ★` : board.noNextRank}
-          primaryActionLabel={primaryActionLabel}
-          primaryActionDisabled={primaryActionDisabled}
-          secondaryActionLabel={footerActionLabel}
-          secondaryActionDisabled={!canEndTurn || blockPlayerTurnControls}
-          onPrimaryAction={handlePrimaryV4Action}
-          onSecondaryAction={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)}
         />
       </section>
       ) : null}

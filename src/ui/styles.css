@@ -5068,6 +5068,7 @@ button:disabled {
   justify-items: center;
   padding-top: 0;
   align-self: start;
+  pointer-events: none;
 }
 
 .game-ui-v4-shell .game-ui-v4-center-badge-portrait {
@@ -5080,7 +5081,9 @@ button:disabled {
 }
 
 .game-ui-v4-shell .game-ui-v4-center-badge-copy {
-  width: 100%;
+  width: max-content;
+  min-width: 250px;
+  max-width: min(92vw, 420px);
   margin-top: -4px;
   padding: 9px 14px 10px;
   border: 1px solid rgba(159, 170, 188, 0.34);
@@ -5092,6 +5095,7 @@ button:disabled {
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 10px 16px rgba(0, 0, 0, 0.22);
   position: relative;
+  pointer-events: none;
 }
 
 .game-ui-v4-shell .game-ui-v4-center-badge-copy::before {
@@ -5109,7 +5113,8 @@ button:disabled {
   justify-content: center;
   gap: 6px;
   margin-top: 8px;
-  overflow: hidden;
+  width: 100%;
+  overflow: visible;
 }
 
 .game-ui-v4-shell .game-ui-v4-center-badge-resource {
