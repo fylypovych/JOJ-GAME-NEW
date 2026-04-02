@@ -632,6 +632,21 @@ export const BoardV4 = ({
               </div>
             </section>
           ) : null}
+          {!isSpectator ? (
+          <section className="game-ui-v4-panel game-ui-v4-command game-ui-v4-command-panel game-ui-v4-command-panel-bottom">
+            <V4BottomBar
+              resources={footerResourceItems}
+              rankName={rankName}
+              rankHint={nextRankMeta?.nextRank ? `${nextRankMeta.occupied}/${nextRankMeta.seatLimit} ★` : v2.noNextRank}
+              primaryActionLabel={primaryActionLabel}
+              primaryActionDisabled={primaryActionDisabled}
+              secondaryActionLabel={footerActionLabel}
+              secondaryActionDisabled={!canEndTurn || blockPlayerTurnControls}
+              onPrimaryAction={handlePrimaryV4Action}
+              onSecondaryAction={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)}
+            />
+          </section>
+          ) : null}
           {(!isSpectator || spectatorView === 'live') ? (
           <V4BattlefieldSection
             title={v2.tableState}
@@ -852,22 +867,6 @@ export const BoardV4 = ({
             )}
             sideContent={undefined}
           />
-          ) : null}
-
-          {!isSpectator ? (
-          <section className="game-ui-v4-panel game-ui-v4-command game-ui-v4-command-panel game-ui-v4-command-panel-bottom">
-            <V4BottomBar
-              resources={footerResourceItems}
-              rankName={rankName}
-              rankHint={nextRankMeta?.nextRank ? `${nextRankMeta.occupied}/${nextRankMeta.seatLimit} ★` : v2.noNextRank}
-              primaryActionLabel={primaryActionLabel}
-              primaryActionDisabled={primaryActionDisabled}
-              secondaryActionLabel={footerActionLabel}
-              secondaryActionDisabled={!canEndTurn || blockPlayerTurnControls}
-              onPrimaryAction={handlePrimaryV4Action}
-              onSecondaryAction={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)}
-            />
-          </section>
           ) : null}
 
           {ctx.gameover ? (

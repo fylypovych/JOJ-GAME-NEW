@@ -5369,6 +5369,26 @@ button:disabled {
   color: #f1efff;
 }
 
+.game-ui-v4-shell .game-ui-v4-legendary-frame .game-ui-v4-hand-grid {
+  display: flex;
+  grid-template-columns: none;
+  flex-wrap: nowrap;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-top: 14px;
+  padding-bottom: 6px;
+}
+
+.game-ui-v4-shell .game-ui-v4-legendary-frame .game-ui-v4-hand-grid > .game-card,
+.game-ui-v4-shell .game-ui-v4-legendary-frame .hand .game-card,
+.game-ui-v4-shell .game-ui-v4-legendary-frame .game-card.is-v3 {
+  flex: 0 0 196px;
+  width: 196px;
+  min-width: 196px;
+  max-width: 196px;
+}
+
 .game-ui-v4-shell .game-ui-v4-legendary-frame .game-card.is-v3 {
   border-color: rgba(122, 130, 186, 0.34);
   background:
