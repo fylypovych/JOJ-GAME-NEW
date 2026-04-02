@@ -659,6 +659,13 @@ export const BoardV4 = ({
                 centerKicker={currentStageFocus || board.commandCenter}
                 centerTitle={currentTurnPlayerLabel}
                 centerSubtitle={activeArenaRankName || rankName}
+                centerResources={BOARD_RESOURCE_ORDER.map((key) => ({
+                  key,
+                  icon: BOARD_RESOURCE_ICONS[key],
+                  imageSrc: BOARD_RESOURCE_IMAGE_PATHS[key],
+                  label: resourceLabels[key],
+                  value: activeArenaResources?.[key] ?? 0,
+                }))}
                 onOpponentClick={(pid) => {
                   if (!activeSelectionNeedsTarget) return;
                   setSelectedTargetId(pid);
@@ -729,16 +736,6 @@ export const BoardV4 = ({
                           <p className="game-ui-v4-zone-meta">
                             {focusSupportingText}
                           </p>
-                          <div className="game-ui-v4-focus-resources">
-                            {BOARD_RESOURCE_ORDER.map((key) => (
-                              <span key={`focus-resource-${key}`}>
-                                <span className="game-ui-v4-inline-resource-icon" aria-hidden="true">
-                                  <img src={BOARD_RESOURCE_IMAGE_PATHS[key]} alt="" />
-                                </span>
-                                {activeArenaResources?.[key] ?? 0}
-                              </span>
-                            ))}
-                          </div>
                           {promoteReason ? (
                             <p className="game-ui-v4-zone-meta">
                               <strong>{board.blockedReason}:</strong> {promoteReason}

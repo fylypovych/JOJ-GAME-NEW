@@ -141,6 +141,14 @@ export const V4BottomBar = (props: {
   );
 };
 
+type V4ResourceDisplayItem = {
+  key: string;
+  icon: string;
+  imageSrc?: string;
+  label: string;
+  value: number;
+};
+
 const V4OpponentCard = (props: {
   item: V4OpponentCardItem;
   handLabel: string;
@@ -195,6 +203,7 @@ export const V4OpponentsArea = (props: {
   centerKicker: string;
   centerTitle: string;
   centerSubtitle: string;
+  centerResources: V4ResourceDisplayItem[];
   onOpponentClick: (id: string) => void;
 }) => {
   const {
@@ -206,6 +215,7 @@ export const V4OpponentsArea = (props: {
     centerKicker,
     centerTitle,
     centerSubtitle,
+    centerResources,
     onOpponentClick,
   } = props;
   return (
@@ -227,6 +237,20 @@ export const V4OpponentsArea = (props: {
           <span>{centerKicker}</span>
           <strong>{centerTitle}</strong>
           <small>{centerSubtitle}</small>
+          <div className="game-ui-v4-center-badge-resources" aria-label={`${centerTitle} resources`}>
+            {centerResources.map((resource) => (
+              <span
+                key={`center-resource-${resource.key}`}
+                className="game-ui-v4-center-badge-resource"
+                title={`${resource.label}: ${resource.value}`}
+              >
+                <span className="game-ui-v4-center-badge-resource-icon" aria-hidden="true">
+                  {resource.imageSrc ? <img src={resource.imageSrc} alt="" /> : resource.icon}
+                </span>
+                <strong>{resource.value}</strong>
+              </span>
+            ))}
+          </div>
         </div>
       </div>
       <div className="game-ui-v4-opponents-side is-right">

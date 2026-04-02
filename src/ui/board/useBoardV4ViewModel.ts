@@ -26,6 +26,14 @@ const buildOpponentLayout = (opponentIds: string[]) => {
   };
 };
 
+const createBaseResourceRow = (): Record<ResourceKey, number> => ({
+  time: 1,
+  reputation: 1,
+  discipline: 1,
+  documents: 1,
+  tech: 1,
+});
+
 const pickDeterministicRankCardImage = (
   rankTrackCards: CardDefinition[],
   seed: string,
@@ -162,6 +170,7 @@ export const buildBoardV4ViewModel = (args: {
   )) || rankImage || pickDeterministicRankCardImage(rankTrackCards, `self:${id}`, G.ranks?.[id] ?? '');
   const buildOpponentCardItem = (pid: string): V4OpponentCardItem => {
     const rankIdForPlayer = G.ranks?.[pid] ?? '';
+    const opponentResources = G.resources?.[pid] ?? G.players?.[pid]?.resources ?? createBaseResourceRow();
     return {
       id: pid,
       name: playerLabelById(pid),
@@ -172,7 +181,7 @@ export const buildBoardV4ViewModel = (args: {
         icon: sharedResourceIcons[key],
         imageSrc: sharedResourceImagePaths[key],
         label: resourceLabels[key],
-        value: G.resources?.[pid]?.[key] ?? 0,
+        value: opponentResources[key] ?? 0,
       })),
       isActive: ctx.currentPlayer === pid,
       isSelected: selectedTargetId === pid,

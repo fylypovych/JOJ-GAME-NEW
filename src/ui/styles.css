@@ -5103,6 +5103,45 @@ button:disabled {
   pointer-events: none;
 }
 
+.game-ui-v4-shell .game-ui-v4-center-badge-resources {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.game-ui-v4-shell .game-ui-v4-center-badge-resource {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(181, 169, 126, 0.28);
+  background: rgba(12, 16, 24, 0.42);
+  color: #efe7cf;
+}
+
+.game-ui-v4-shell .game-ui-v4-center-badge-resource-icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.game-ui-v4-shell .game-ui-v4-center-badge-resource-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.game-ui-v4-shell .game-ui-v4-center-badge-resource strong {
+  color: #f4eddb;
+  font-size: 0.76rem;
+  line-height: 1;
+}
+
 .game-ui-v4-shell .game-ui-v4-board-area {
   position: relative;
   min-height: 378px;
