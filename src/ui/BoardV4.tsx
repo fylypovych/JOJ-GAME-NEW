@@ -569,6 +569,22 @@ export const BoardV4 = ({
       </section>
       ) : null}
 
+      {!isSpectator ? (
+      <section className="game-ui-v4-panel game-ui-v4-command game-ui-v4-command-panel game-ui-v4-command-panel-bottom">
+        <V4BottomBar
+          resources={footerResourceItems}
+          rankName={rankName}
+          rankHint={nextRankMeta?.nextRank ? `${nextRankMeta.occupied}/${nextRankMeta.seatLimit} ★` : board.noNextRank}
+          primaryActionLabel={primaryActionLabel}
+          primaryActionDisabled={primaryActionDisabled}
+          secondaryActionLabel={footerActionLabel}
+          secondaryActionDisabled={!canEndTurn || blockPlayerTurnControls}
+          onPrimaryAction={handlePrimaryV4Action}
+          onSecondaryAction={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)}
+        />
+      </section>
+      ) : null}
+
       <div className="game-ui-v4-grid">
         <div className="game-ui-v4-main">
           {isSpectator && spectatorView === 'summary' ? (
@@ -631,21 +647,6 @@ export const BoardV4 = ({
                 </button>
               </div>
             </section>
-          ) : null}
-          {!isSpectator ? (
-          <section className="game-ui-v4-panel game-ui-v4-command game-ui-v4-command-panel game-ui-v4-command-panel-bottom">
-            <V4BottomBar
-              resources={footerResourceItems}
-              rankName={rankName}
-              rankHint={nextRankMeta?.nextRank ? `${nextRankMeta.occupied}/${nextRankMeta.seatLimit} ★` : board.noNextRank}
-              primaryActionLabel={primaryActionLabel}
-              primaryActionDisabled={primaryActionDisabled}
-              secondaryActionLabel={footerActionLabel}
-              secondaryActionDisabled={!canEndTurn || blockPlayerTurnControls}
-              onPrimaryAction={handlePrimaryV4Action}
-              onSecondaryAction={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)}
-            />
-          </section>
           ) : null}
           {(!isSpectator || spectatorView === 'live') ? (
           <V4BattlefieldSection

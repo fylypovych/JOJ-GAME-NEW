@@ -4365,6 +4365,11 @@ button:disabled {
   transition: transform 180ms ease, border-color 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
 }
 
+.game-ui-v4-shell .game-ui-v4-player-dock-main .game-card.is-v3::before,
+.game-ui-v4-shell .game-ui-v4-legendary-frame .game-card.is-v3::before {
+  display: none;
+}
+
 .game-ui-v4-shell .game-card.is-v3.is-clickable {
   cursor: pointer;
 }
