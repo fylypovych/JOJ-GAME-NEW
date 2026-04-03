@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import type { CardDefinition, ResourceKey } from '../game/types';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 import { buildTurnHelpItems, getBoardPromoteReason } from './board/boardViewHelpers';
+import { buildNextRankHint } from './board/rankHints';
 import { buildBoardV4ActionState } from './board/boardV4ActionState';
 import { GameCardTile, PilePreview } from './board/components';
 import { BOARD_RESOURCE_ICONS, BOARD_RESOURCE_IMAGE_PATHS, BOARD_RESOURCE_ORDER } from './board/resourceConstants';
 import { V4HandSection, V4Header, V4NoticeStack, V4SelectionPanel, V4SidePanel } from './board/v4Panels';
 import { V4EndVoteModal, V4GameoverModal, V4StandingsSummary } from './board/v4ShellSections';
-import { V4BattlefieldSection, V4OpponentsArea, V4PlayerDockSection } from './board/v4Sections';
+import { V4BattlefieldSection, V4BottomBar, V4OpponentsArea, V4PlayerDockSection } from './board/v4Sections';
 import { useBoardDerivedState } from './board/useBoardDerivedState';
 import { useBotPlaybackQueue, type BotPlaybackSpeedLevel } from './board/useBotPlaybackQueue';
 import { usePendingSelection } from './board/usePendingSelection';
@@ -288,6 +289,9 @@ export const BoardV4 = ({
     blockPlayerTurnControls,
     effectiveIsCurrentPlayer,
     currentStageFocus,
+    footerActionLabel,
+    primaryActionDisabled,
+    primaryActionLabel,
     selectedPendingCardId,
     visibleHandSelectedId,
     selectedPlayableHandCard,
@@ -328,6 +332,7 @@ export const BoardV4 = ({
     currentTurnPortraitImage,
     leftOpponentItems,
     rightOpponentItems,
+    footerResourceItems,
   } = buildBoardV4ViewModel({
     G,
     ctx,
@@ -432,8 +437,33 @@ export const BoardV4 = ({
     sharedRanks,
     resourceLabels,
   });
+  const footerRankHint = buildNextRankHint({
+    G,
+    playerID: id,
+    sharedRanks,
+    resources,
+    resourceLabels,
+    promoteLabel: t.promote,
+    lang,
+  }) ?? board.helpActionReady;
+  const handleFooterPrimaryAction = () => {
+    if (blockPlayerTurnControls) return;
+    if (pendingSelection) {
+      void confirmPendingSelection();
+      return;
+    }
+    if (stage === 'draw') {
+      handleDraw();
+      return;
+    }
+    if (selectedPlayableHandCard) {
+      handleHandCardAction(selectedPlayableHandCard, requestPlayHandCard);
+      return;
+    }
+    handlePromote(promoteReason);
+  };
   const stageClass = stage ? `is-stage-${stage}` : 'is-stage-waiting';
-  const internalTheme = uiTheme === 'v1' ? 'v5' : 'v4';
+  const internalTheme = uiTheme === 'v1' ? 'v1' : 'v2';
 
   return (
     <section className={`game-ui-v4-shell is-theme-${internalTheme} ${stageClass}${compactMode ? ' is-compact' : ''}${isSpectator ? ' is-spectator' : ''}`}>
@@ -910,6 +940,20 @@ export const BoardV4 = ({
           helpItems={turnHelpItems}
         />
       </div>
+
+      {!isSpectator ? (
+      <V4BottomBar
+        resources={footerResourceItems}
+        rankName={rankName}
+        rankHint={footerRankHint}
+        primaryActionLabel={primaryActionLabel}
+        primaryActionDisabled={primaryActionDisabled}
+        secondaryActionLabel={footerActionLabel}
+        secondaryActionDisabled={!canEndTurn || blockPlayerTurnControls}
+        onPrimaryAction={handleFooterPrimaryAction}
+        onSecondaryAction={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)}
+      />
+      ) : null}
 
       {!isSpectator ? (
       <div className="game-ui-v4-mobile-bar" aria-label={board.mobileActions}>
