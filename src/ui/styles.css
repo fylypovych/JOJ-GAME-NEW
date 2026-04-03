@@ -2351,14 +2351,19 @@ button:disabled {
 
 .admin-v4-status-stack span,
 .admin-v4-metric-row span {
-  color: #6f808a;
+  color: #51626d;
   font-size: 13px;
+  font-weight: 700;
 }
 
 .admin-v4-status-stack strong,
 .admin-v4-metric-row strong {
-  color: #243944;
+  color: #1c2d37;
   text-align: right;
+}
+
+.admin-v4-note {
+  color: #485964;
 }
 
 .admin-v4-metric-row {
