@@ -4,7 +4,6 @@ import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 import { buildTurnHelpItems, getBoardPromoteReason } from './board/boardViewHelpers';
 import { buildBoardV4ActionState } from './board/boardV4ActionState';
 import { GameCardTile, PilePreview } from './board/components';
-import { buildNextRankHint } from './board/rankHints';
 import { BOARD_RESOURCE_ICONS, BOARD_RESOURCE_IMAGE_PATHS, BOARD_RESOURCE_ORDER } from './board/resourceConstants';
 import { V4HandSection, V4Header, V4NoticeStack, V4SelectionPanel, V4SidePanel } from './board/v4Panels';
 import { V4EndVoteModal, V4GameoverModal, V4StandingsSummary } from './board/v4ShellSections';
@@ -239,6 +238,7 @@ export const BoardV4 = ({
 
   const endGameVote = G?.endGameVote;
   const endGameVoteActive = Boolean(endGameVote?.active) && !ctx?.gameover;
+  const showTopCommandPanel = !isSpectator && (Boolean(pendingSelection) || notices.length > 0);
   const requestedByLabel = endGameVote?.requestedBy ? playerLabelById(endGameVote.requestedBy) : '';
   const hasVotedAgree = Boolean(endGameVote?.votes?.[id]);
   const {
@@ -516,17 +516,9 @@ export const BoardV4 = ({
         </section>
       ) : null}
 
-      {!isSpectator ? (
+      {showTopCommandPanel ? (
       <section className="game-ui-v4-panel game-ui-v4-command game-ui-v4-command-panel game-ui-v4-command-panel-top">
         <div className="game-ui-v4-command-support">
-          <div className="game-ui-v4-command-summary">
-            <p className="game-ui-v4-kicker">{board.commandCenter}</p>
-            <h3>{blockPlayerTurnControls ? botPlaybackControlLabel : playerLabelById(ctx.currentPlayer)}</h3>
-            <p className="game-ui-v4-subtle">{t.turnStage}: {stageLabel(stage, t)} · {t.yourRank}: {rankName}</p>
-            <p className="game-ui-v4-subtle">
-              {buildNextRankHint({ G, playerID: id, sharedRanks, resources, resourceLabels, promoteLabel: t.promote, lang })}
-            </p>
-          </div>
           <V4NoticeStack notices={notices} dismissNotice={dismissNotice} />
         </div>
         <V4SelectionPanel

@@ -5501,6 +5501,26 @@ button:disabled {
   backdrop-filter: blur(4px);
 }
 
+.game-ui-v4-gameover-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(10, 18, 30, 0.52);
+}
+
+.game-ui-v4-gameover-card {
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(32, 38, 44, 0.98), rgba(20, 24, 29, 0.99));
+  padding: 18px;
+}
+
 .game-ui-v4-gameover-summary .game-ui-v4-gameover-summary-row {
   background:
     linear-gradient(180deg, rgba(35, 42, 39, 0.88), rgba(23, 28, 26, 0.94));
