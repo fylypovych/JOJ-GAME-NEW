@@ -493,7 +493,7 @@ export const App = () => {
   const isImmersiveModernGame = !isAdminRoute && activeUserTab === 'games' && Boolean(session) && canStart;
 
   return (
-    <main className={`app app-${shellUiVariant}${shellUiVariant === 'v1' ? ' app-v5 app-v4' : ' app-v4 app-v2'}${isImmersiveModernGame && gameUiVariant === 'v2' ? ' is-immersive-v4-game' : ''}${isImmersiveModernGame && gameUiVariant === 'v1' ? ' is-immersive-v5-game is-immersive-v4-game' : ''}`} data-bug-report-capture-root="true">
+    <main className={`app app-${shellUiVariant}${shellUiVariant === 'v1' ? ' app-v5 app-v1' : ' app-v4 app-v2'}${isImmersiveModernGame && gameUiVariant === 'v2' ? ' is-immersive-v4-game' : ''}${isImmersiveModernGame && gameUiVariant === 'v1' ? ' is-immersive-v5-game' : ''}`} data-bug-report-capture-root="true">
       <h1>{isAdminRoute ? t.adminTitle : t.gameTitle}</h1>
       {!isAdminRoute ? (
         <section className={`app-top-toolbar app-top-toolbar-v4${shellUiVariant === 'v1' ? ' app-top-toolbar-v5' : ''}`}>
