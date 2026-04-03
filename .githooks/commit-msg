@@ -1,3 +1,4 @@
 #!/bin/sh
-node scripts/sync-version-from-commit.cjs "$1" || exit $?
-node scripts/check-version-sync.cjs "$1"
+# Version display is derived from git metadata at build/runtime.
+# Keep commit-msg hook as a no-op to avoid mutating package files on commit.
+exit 0

@@ -79,6 +79,7 @@ const ADMIN_MATCH_RESET_API = `${SERVER_URL}/api/admin/match-reset`;
 const ADMIN_MATCH_DELETE_API = `${SERVER_URL}/api/admin/match-delete`;
 
 export const App = () => {
+  const buildLabel = __APP_BUILD_LABEL__;
   const isAdminRoute = window.location.pathname.startsWith('/admin');
   const {
     lang,
@@ -1031,6 +1032,7 @@ export const App = () => {
       ) : null}
       <footer className="app-footer">
         &copy; ALL RIGHTS RESERVED BY "SOHODNY LLC, <a href="mailto:zhurnal.zhurnaliv@gmail.com">zhurnal.zhurnaliv@gmail.com</a>"
+        {buildLabel ? ` · ${buildLabel}` : ''}
       </footer>
     </main>
   );

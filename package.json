@@ -4,7 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prebuild": "node scripts/sync-version-from-commit.cjs",
     "dev": "vite",
     "dev:full": "concurrently \"npm:dev:web\" \"npm:dev:server\"",
     "dev:web": "vite",
