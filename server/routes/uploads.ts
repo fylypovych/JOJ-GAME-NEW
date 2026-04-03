@@ -2,6 +2,8 @@ import { access, mkdir, readdir, stat, unlink, writeFile } from 'node:fs/promise
 import path from 'node:path';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from './types';
 import { requireAdminMutationAuth } from '../admin-auth';
+import type { UserStore } from '../services/user-store';
+import { issueUserCsrfToken, requireUserAuth, requireUserCsrf } from '../services/user-auth';
 
 type UploadRoutesDeps = {
   router: RouterLike;
@@ -12,6 +14,7 @@ type UploadRoutesDeps = {
   JSON_BODY_LIMIT: number;
   IMAGE_UPLOAD_BODY_LIMIT: number;
   uploadsDir: string;
+  userStore?: UserStore | null;
   assetStore?: {
     upsertAsset: (input: {
       assetPath: string;
@@ -46,42 +49,52 @@ export const registerUploadRoutes = ({
   JSON_BODY_LIMIT,
   IMAGE_UPLOAD_BODY_LIMIT,
   uploadsDir,
+  userStore,
   assetStore,
 }: UploadRoutesDeps) => {
   const requireAdminWriteAccess = (ctx: RouteCtx, routeLabel: string) =>
     requireAdminMutationAuth(ctx, routeLabel, requireAdminAuth);
-
-  router.get('/api/admin/assets', async (ctx: RouteCtx) => {
-    if (!(await requireAdminAuth(ctx, '/api/admin/assets'))) return;
-    const kind = typeof ctx?.query?.kind === 'string' ? ctx.query.kind.trim() : 'card-image';
-    const limit = typeof ctx?.query?.limit === 'string' ? Number.parseInt(ctx.query.limit, 10) : 100;
-    const assets = assetStore ? await assetStore.listAssets({ kind, limit }) : [];
-    ctx.body = { ok: true, assets };
-  });
-
-  router.post('/api/upload-card-image', async (ctx: RouteCtx) => {
-    if (!(await requireAdminWriteAccess(ctx, '/api/upload-card-image'))) return;
-    if (!(await enforceRateLimit(ctx, 'upload-card-image', 240, 60_000))) return;
-    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/upload-card-image', maxBytes: IMAGE_UPLOAD_BODY_LIMIT, logLine });
-    if (!body) return;
+  const parseUploadBody = async (ctx: RouteCtx, routeLabel: string) => {
+    const body = await readJsonBodySafe({ ctx, routeLabel, maxBytes: IMAGE_UPLOAD_BODY_LIMIT, logLine });
+    if (!body) return null;
     const dataUrl = typeof body.dataUrl === 'string' ? body.dataUrl : '';
     const filename = typeof body.filename === 'string' ? body.filename : '';
     const cardId = typeof body.cardId === 'string' ? body.cardId : '';
     if (!dataUrl) {
       ctx.status = 400;
       ctx.body = { ok: false, error: 'Missing dataUrl' };
-      return;
+      return null;
     }
 
     const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
     if (!match) {
       ctx.status = 400;
       ctx.body = { ok: false, error: 'Invalid image data URL' };
-      return;
+      return null;
     }
 
-    const mime = match[1];
-    const base64 = match[2];
+    return {
+      body,
+      dataUrl,
+      filename,
+      cardId,
+      mime: match[1],
+      base64: match[2],
+    };
+  };
+  const saveUploadedImage = async ({
+    mime,
+    base64,
+    filename,
+    fallbackBaseName,
+    assetKind,
+  }: {
+    mime: string;
+    base64: string;
+    filename: string;
+    fallbackBaseName: string;
+    assetKind: string;
+  }) => {
     const extByMime: Record<string, string> = {
       'image/png': 'png',
       'image/webp': 'webp',
@@ -91,7 +104,7 @@ export const registerUploadRoutes = ({
     };
     const fallbackExt = extByMime[mime] ?? 'png';
     const parsedInput = path.parse(filename || '');
-    const inputBase = parsedInput.name || cardId || `card-${Date.now()}`;
+    const inputBase = parsedInput.name || fallbackBaseName || `asset-${Date.now()}`;
     const inputExt = (parsedInput.ext || '').replace(/^\./, '').toLowerCase();
     const ext = /^[a-z0-9]+$/.test(inputExt) ? inputExt : fallbackExt;
     const normalizedBase = inputBase
@@ -100,7 +113,7 @@ export const registerUploadRoutes = ({
       .replace(/^[-_]+|[-_]+$/g, '');
     const safeNameBase = /[a-z0-9]/.test(normalizedBase)
       ? normalizedBase
-      : `card-${Date.now()}`;
+      : `asset-${Date.now()}`;
 
     await mkdir(uploadsDir, { recursive: true });
     let candidate = `${safeNameBase}.${ext}`;
@@ -113,21 +126,74 @@ export const registerUploadRoutes = ({
       // file doesn't exist
     }
 
+    const buffer = Buffer.from(base64, 'base64');
+    await writeFile(outPath, buffer);
+    const assetPath = `/cards/${candidate}`;
+    await assetStore?.upsertAsset({
+      assetPath,
+      fileName: candidate,
+      mime,
+      sizeBytes: buffer.byteLength,
+      kind: assetKind,
+      source: 'upload',
+    });
+    await logLine('INFO', `image uploaded: ${candidate}`);
+    return assetPath;
+  };
+
+  router.get('/api/admin/assets', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/assets'))) return;
+    const kind = typeof ctx?.query?.kind === 'string' ? ctx.query.kind.trim() : 'card-image';
+    const limit = typeof ctx?.query?.limit === 'string' ? Number.parseInt(ctx.query.limit, 10) : 100;
+    const assets = assetStore ? await assetStore.listAssets({ kind, limit }) : [];
+    ctx.body = { ok: true, assets };
+  });
+
+  router.post('/api/upload-card-image', async (ctx: RouteCtx) => {
+    if (!(await requireAdminWriteAccess(ctx, '/api/upload-card-image'))) return;
+    if (!(await enforceRateLimit(ctx, 'upload-card-image', 240, 60_000))) return;
+    const parsed = await parseUploadBody(ctx, '/api/upload-card-image');
+    if (!parsed) return;
+
     try {
-      const buffer = Buffer.from(base64, 'base64');
-      await writeFile(outPath, buffer);
-      await assetStore?.upsertAsset({
-        assetPath: `/cards/${candidate}`,
-        fileName: candidate,
-        mime,
-        sizeBytes: buffer.byteLength,
-        kind: 'card-image',
-        source: 'upload',
+      const assetPath = await saveUploadedImage({
+        mime: parsed.mime,
+        base64: parsed.base64,
+        filename: parsed.filename,
+        fallbackBaseName: parsed.cardId || `card-${Date.now()}`,
+        assetKind: 'card-image',
       });
-      await logLine('INFO', `image uploaded: ${candidate}`);
-      ctx.body = { ok: true, path: `/cards/${candidate}` };
+      ctx.body = { ok: true, path: assetPath };
     } catch (error) {
       await logLine('ERROR', `image upload failed: ${String(error)}`);
+      ctx.status = 500;
+      ctx.body = { ok: false, error: 'Failed to save image' };
+    }
+  });
+
+  router.post('/api/profile/avatar-upload', async (ctx: RouteCtx) => {
+    if (!userStore) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      return;
+    }
+    if (!requireUserCsrf(ctx)) return;
+    const user = await requireUserAuth(ctx, userStore);
+    if (!user) return;
+    if (!(await enforceRateLimit(ctx, 'profile-avatar-upload', 30, 60_000))) return;
+    const parsed = await parseUploadBody(ctx, '/api/profile/avatar-upload');
+    if (!parsed) return;
+    try {
+      const assetPath = await saveUploadedImage({
+        mime: parsed.mime,
+        base64: parsed.base64,
+        filename: parsed.filename,
+        fallbackBaseName: `avatar-${user.id}`,
+        assetKind: 'avatar-image',
+      });
+      ctx.body = { ok: true, path: assetPath, csrfToken: issueUserCsrfToken(ctx) };
+    } catch (error) {
+      await logLine('ERROR', `avatar upload failed: ${String(error)}`);
       ctx.status = 500;
       ctx.body = { ok: false, error: 'Failed to save image' };
     }

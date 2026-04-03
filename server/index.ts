@@ -480,6 +480,7 @@ void (async () => {
       JSON_BODY_LIMIT,
       IMAGE_UPLOAD_BODY_LIMIT,
       uploadsDir,
+      userStore,
       assetStore,
     });
   }

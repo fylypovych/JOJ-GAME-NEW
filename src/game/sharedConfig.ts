@@ -79,16 +79,6 @@ const generatedRankCardCopies = (rankId: string) => (rankId === 'recruit' ? 6 : 
 const isGeneratedRankTrackCardId = (cardId: string) => /^rank-[a-z0-9_]+-(set-\d+|extra-\d+)$/i.test(cardId);
 
 const defaultSharedDeckTemplate = (): SharedDeckTemplate => buildTemplateWithDefaults(defaultSharedDeckTemplateSeed);
-const emptySharedDeckTemplate = (): SharedDeckTemplate => buildTemplateWithDefaults({
-  deck: [],
-  legendaryDeck: [],
-  rankTrack: [],
-  modules: [],
-  gameSetup: {
-    optionalMainDeckModuleIds: [],
-    legendaryDeckMode: 'separate',
-  },
-});
 
 let sharedDeckTemplate: SharedDeckTemplate = defaultSharedDeckTemplate();
 let sharedRanks: SharedRanks = defaultSharedRanksSeed.map(cloneRank);

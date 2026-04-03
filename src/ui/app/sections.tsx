@@ -4,7 +4,7 @@ import { normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition } from '../../game/types';
 import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { Language } from '../i18n';
-import { cardFlavor, cardTitleWithOverride, categoryLabel, text } from '../i18n';
+import { cardFlavor, cardTitleWithOverride, categoryLabel, rankLabel, text } from '../i18n';
 import { formatModuleDisplayName } from '../moduleDisplay';
 import { buildRoomShareLink, copyText } from './share';
 import type { GalleryCategoryFilter, LobbyMatch, UserTab } from './model';
@@ -54,6 +54,12 @@ const formatMatchOutcomeLabel = (t: T, item: UserMatchHistoryItem) => {
   if (item.winnerPlayerId && item.winnerPlayerId === item.playerId) return t.userMatchHistoryOutcomeWin;
   if (item.endReason === 'stalled-no-cards') return t.userMatchHistoryOutcomeStalled;
   return t.userMatchHistoryOutcomeLoss;
+};
+
+const localizeRankValue = (value: string | null | undefined, lang: Language) => {
+  const safeValue = String(value ?? '').trim();
+  if (!safeValue) return '-';
+  return rankLabel(safeValue.replace(/\s+/g, '_'), lang);
 };
 
 type AdminAuthCardProps = {
@@ -253,10 +259,10 @@ export const LobbySection = ({
   }, [invitedRoomId, matches, roomFilter]);
 
   return (
-  <section className={`board${uiVariant === 'v3' ? ' board-v3-panel lobby-v3-panel' : ''}`}>
+  <section className={`board${uiVariant === 'v3' ? ' board-v3-panel lobby-v3-panel' : ''}${uiVariant === 'v4' ? ' board-v4-panel board-v4-lobby' : ''}`}>
     <h2>{t.lobbyTitle}</h2>
-    <div className="lobby-layout">
-      <div className="lobby-col">
+    <div className={`lobby-layout${uiVariant === 'v4' ? ' board-v4-dual-layout' : ''}`}>
+      <div className={`lobby-col${uiVariant === 'v4' ? ' board-v4-column' : ''}`}>
         <h3>{t.roomListTitle}</h3>
         <p className="admin-controls">
           <button type="button" onClick={refreshMatches} disabled={loading}>
@@ -360,7 +366,7 @@ export const LobbySection = ({
         })}
         </div>
       </div>
-      <div className="lobby-col">
+      <div className={`lobby-col${uiVariant === 'v4' ? ' board-v4-column' : ''}`}>
         <h3>{t.roomCreateTitle}</h3>
         {authenticatedUser ? (
           <p>
@@ -483,7 +489,7 @@ export const LobbySection = ({
             {t.createRoom}
           </button>
         </p>
-        <div className="lobby-room-create-summary">
+        <div className={`lobby-room-create-summary${uiVariant === 'v4' ? ' board-v4-subpanel' : ''}`}>
           <h4>{t.roomSummaryReady}</h4>
           <ul>
             <li>{t.gameModeLabel}: {formatGameModeLabel(t, gameMode)}</li>
@@ -588,7 +594,7 @@ export const ActiveSessionSection = ({
   const inviteText = `${t.activeRoom}: ${session.matchID}\n${t.gameModeLabel}: ${formatGameModeLabel(t, activeGameMode)}\n${t.roomSummaryPlayers}: ${activeMatch ? `${activeMatch.players.filter((player) => Boolean(player.name?.trim())).length}/${activeMatch.players.length}` : '-'}\n${shareLink}`;
 
   return (
-    <section className={`board${uiVariant === 'v3' ? ' board-v3-panel lobby-v3-panel' : ''}`}>
+    <section className={`board${uiVariant === 'v3' ? ' board-v3-panel lobby-v3-panel' : ''}${uiVariant === 'v4' ? ' board-v4-panel board-v4-active-room' : ''}`}>
       <h2 className="lobby-active-room-title">
         {t.activeRoom}: {session.matchID}
       </h2>
@@ -638,8 +644,8 @@ export const ActiveSessionSection = ({
         </button>
       </p>
       {activeMatch ? (
-        <div className={`lobby-active-room-grid lobby-active-room-grid-summary${uiVariant === 'v4' ? ' is-v4' : ''}`}>
-          <div className={`lobby-room-create-summary lobby-room-create-summary-compact${uiVariant === 'v4' ? ' lobby-room-create-summary-v4-compact' : ''}`}>
+        <div className={`lobby-active-room-grid lobby-active-room-grid-summary${uiVariant === 'v4' ? ' is-v4 board-v4-summary-grid' : ''}`}>
+          <div className={`lobby-room-create-summary lobby-room-create-summary-compact${uiVariant === 'v4' ? ' lobby-room-create-summary-v4-compact board-v4-subpanel' : ''}`}>
             <h3>{t.roomSummaryReady}</h3>
             <div className="lobby-room-kv-grid">
               <span>{t.gameModeLabel}</span><strong>{formatGameModeLabel(t, activeGameMode)}</strong>
@@ -659,6 +665,7 @@ export const ActiveSessionSection = ({
 
 export const ProfileSection = ({
   t,
+  lang,
   user,
   loading,
   busy,
@@ -682,8 +689,11 @@ export const ProfileSection = ({
   onLogoutAllSessions,
   onLogoutSession,
   onOpenRegister,
+  onUploadAvatar,
+  uiVariant = 'v3',
 }: {
   t: T;
+  lang: Language;
   user: AuthUser | null;
   loading: boolean;
   busy: boolean;
@@ -723,15 +733,17 @@ export const ProfileSection = ({
   onLogoutAllSessions: () => void;
   onLogoutSession: (sessionId: string) => void;
   onOpenRegister: () => void;
+  onUploadAvatar: (file: File) => Promise<void>;
+  uiVariant?: 'v3' | 'v4';
 }) => (
-  <section className="board">
+  <section className={`board${uiVariant === 'v4' ? ' board-v4-panel board-v4-profile' : ''}`}>
     <h2>{t.userTabProfile}</h2>
     {loading ? <p>{t.loadingRooms}</p> : null}
     {error ? <p className="admin-error">{error}</p> : null}
-    {notice ? <p>{notice}</p> : null}
+    {notice ? <p className={uiVariant === 'v4' ? 'board-v4-notice' : ''}>{notice}</p> : null}
     {!user ? (
       <div className="auth-shell">
-        <div className="auth-card">
+        <div className={`auth-card${uiVariant === 'v4' ? ' board-v4-auth-card' : ''}`}>
           <h3>{t.userLoginTitle}</h3>
           <p>
             <input
@@ -761,9 +773,33 @@ export const ProfileSection = ({
           <button type="button" onClick={onSaveProfile} disabled={busy}>{t.userSaveProfileButton}</button>
           <button type="button" onClick={onLogout} disabled={busy}>{t.userLogoutButton}</button>
         </p>
-        <div className="lobby-layout">
-          <div className="lobby-col">
+        <div className={`lobby-layout${uiVariant === 'v4' ? ' board-v4-dual-layout board-v4-profile-layout' : ''}`}>
+          <div className={`lobby-col${uiVariant === 'v4' ? ' board-v4-column board-v4-subpanel' : ''}`}>
             <h3>{t.userProfileTitle}</h3>
+            <div className={`profile-avatar-panel${uiVariant === 'v4' ? ' profile-avatar-panel-v4' : ''}`}>
+              <span>{t.userAvatarPreviewLabel}</span>
+              <div className={`profile-avatar-preview${uiVariant === 'v4' ? ' profile-avatar-preview-v4' : ''}`}>
+                {profileDraft.avatarUrl?.trim()
+                  ? <img src={profileDraft.avatarUrl} alt={t.userAvatarPreviewLabel} />
+                  : <span>{user.displayName?.slice(0, 1) || user.username?.slice(0, 1) || '?'}</span>}
+              </div>
+              <label className={`profile-avatar-upload${uiVariant === 'v4' ? ' profile-avatar-upload-v4' : ''}`}>
+                <span>{t.userAvatarUploadButton}</span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  onChange={(e) => {
+                    const file = e.currentTarget.files?.[0];
+                    if (!file) return;
+                    void onUploadAvatar(file).finally(() => {
+                      e.currentTarget.value = '';
+                    });
+                  }}
+                  disabled={busy}
+                />
+              </label>
+              <small>{t.userAvatarUploadHint}</small>
+            </div>
             <p><input value={profileDraft.displayName} onChange={(e) => setProfileDraft({ ...profileDraft, displayName: e.target.value })} placeholder={t.userDisplayNameLabel} /></p>
             <p><input value={profileDraft.email} onChange={(e) => setProfileDraft({ ...profileDraft, email: e.target.value })} placeholder={t.userEmailLabel} /></p>
             <p><input value={profileDraft.avatarUrl} onChange={(e) => setProfileDraft({ ...profileDraft, avatarUrl: e.target.value })} placeholder={t.userAvatarUrlLabel} /></p>
@@ -792,7 +828,7 @@ export const ProfileSection = ({
               </ul>
             )}
           </div>
-          <div className="lobby-col">
+          <div className={`lobby-col${uiVariant === 'v4' ? ' board-v4-column board-v4-subpanel' : ''}`}>
             <h3>{t.userStatsTitle}</h3>
             {!stats ? <p>{t.simulationNoData}</p> : (
               <ul>
@@ -801,7 +837,7 @@ export const ProfileSection = ({
                 <li>{t.userStatWins}: {stats.wins}</li>
                 <li>{t.userStatWinRate}: {stats.winRatePct}%</li>
                 <li>{t.userStatAvgTurns}: {stats.avgTurns}</li>
-                <li>{t.userStatBestRank}: {stats.bestRankName}</li>
+                <li>{t.userStatBestRank}: {localizeRankValue(stats.bestRankName, lang)}</li>
                 <li>{t.userStatResourcesGained}: {stats.resourcesGainedTotal}</li>
                 <li>{t.userStatResourcesLost}: {stats.resourcesLostTotal}</li>
                 <li>{t.userStatLyaps}: {stats.lyapsPlayedOnOthers}</li>
@@ -830,7 +866,7 @@ export const ProfileSection = ({
                     {item.playerCount}p
                     {item.botCount > 0 ? ` · ${item.botCount} ${t.roomBotsLabel.toLowerCase()} (${formatBotDifficultyLabel(t, item.botDifficulty)})` : ''}
                     <br />
-                    {t.userMatchHistoryFinalRank}: {item.finalRankId.replace(/_/g, ' ')} · {t.userStatAvgTurns}: {item.turnsCompleted}
+                    {t.userMatchHistoryFinalRank}: {localizeRankValue(item.finalRankId, lang)} · {t.userStatAvgTurns}: {item.turnsCompleted}
                   </li>
                 ))}
               </ul>
@@ -850,6 +886,7 @@ export const RegisterSection = ({
   setRegisterDraft,
   onRegister,
   onBackToLogin,
+  uiVariant = 'v3',
 }: {
   t: T;
   busy: boolean;
@@ -858,12 +895,13 @@ export const RegisterSection = ({
   setRegisterDraft: (value: { username: string; email: string; password: string; displayName: string }) => void;
   onRegister: () => void;
   onBackToLogin: () => void;
+  uiVariant?: 'v3' | 'v4';
 }) => (
-  <section className="board">
+  <section className={`board${uiVariant === 'v4' ? ' board-v4-panel board-v4-auth-shell' : ''}`}>
     <h2>{t.userRegisterTitle}</h2>
     {error ? <p className="admin-error">{error}</p> : null}
     <div className="auth-shell">
-      <div className="auth-card">
+      <div className={`auth-card${uiVariant === 'v4' ? ' board-v4-auth-card' : ''}`}>
         <p><input value={registerDraft.username} onChange={(e) => setRegisterDraft({ ...registerDraft, username: e.target.value })} placeholder={t.userUsernameLabel} /></p>
         <p><input value={registerDraft.displayName} onChange={(e) => setRegisterDraft({ ...registerDraft, displayName: e.target.value })} placeholder={t.userDisplayNameLabel} /></p>
         <p><input value={registerDraft.email} onChange={(e) => setRegisterDraft({ ...registerDraft, email: e.target.value })} placeholder={t.userEmailLabel} /></p>
@@ -888,6 +926,7 @@ export const PasswordResetSection = ({
   setResetPasswordDraft,
   onResetPassword,
   onBackToLogin,
+  uiVariant = 'v3',
 }: {
   t: T;
   busy: boolean;
@@ -899,12 +938,13 @@ export const PasswordResetSection = ({
   setResetPasswordDraft: (value: { token: string; nextPassword: string }) => void;
   onResetPassword: () => void;
   onBackToLogin: () => void;
+  uiVariant?: 'v3' | 'v4';
 }) => (
-  <section className="board">
+  <section className={`board${uiVariant === 'v4' ? ' board-v4-panel board-v4-auth-shell' : ''}`}>
     <h2>{t.userPasswordResetTitle}</h2>
     {error ? <p className="admin-error">{error}</p> : null}
-    <div className="lobby-layout">
-      <div className="lobby-col">
+    <div className={`lobby-layout${uiVariant === 'v4' ? ' board-v4-dual-layout' : ''}`}>
+      <div className={`lobby-col${uiVariant === 'v4' ? ' board-v4-column board-v4-subpanel' : ''}`}>
         <h3>{t.userPasswordResetRequestButton}</h3>
         <p><input value={resetRequestDraft.login} onChange={(e) => setResetRequestDraft({ login: e.target.value })} placeholder={t.userLoginPlaceholder} /></p>
         <p className="admin-controls">
@@ -912,7 +952,7 @@ export const PasswordResetSection = ({
           <button type="button" onClick={onBackToLogin} disabled={busy}>{t.userGoToLoginButton}</button>
         </p>
       </div>
-      <div className="lobby-col">
+      <div className={`lobby-col${uiVariant === 'v4' ? ' board-v4-column board-v4-subpanel' : ''}`}>
         <h3>{t.userPasswordResetApplyButton}</h3>
         <p><input value={resetPasswordDraft.token} onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, token: e.target.value })} placeholder={t.userResetTokenLabel} /></p>
         <p><input type="password" value={resetPasswordDraft.nextPassword} onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, nextPassword: e.target.value })} placeholder={t.userNewPasswordLabel} /></p>
@@ -924,22 +964,26 @@ export const PasswordResetSection = ({
 
 export const StatisticsSection = ({
   t,
+  lang,
   user,
   stats,
   awards,
   matchHistory,
   sessions,
+  uiVariant = 'v3',
 }: {
   t: T;
+  lang: Language;
   user: AuthUser | null;
   stats: UserStats | null;
   awards: UserAward[];
   matchHistory: UserMatchHistoryItem[];
   sessions: UserSession[];
+  uiVariant?: 'v3' | 'v4';
 }) => {
   const [activeCategory, setActiveCategory] = useState<'general' | 'resources' | 'actions' | 'achievements' | 'history' | 'sessions'>('general');
   return (
-    <section className="board">
+    <section className={`board${uiVariant === 'v4' ? ' board-v4-panel board-v4-statistics' : ''}`}>
       <h2>{t.userTabStatistics}</h2>
       {!user ? <p>{t.statisticsLoginRequired}</p> : (
         <>
@@ -963,7 +1007,7 @@ export const StatisticsSection = ({
               <li>{t.userStatBotMatchesFinished}: {stats.botMatchesFinished}</li>
               <li>{t.userStatWinRate}: {stats.winRatePct}%</li>
               <li>{t.userStatAvgTurns}: {stats.avgTurns}</li>
-              <li>{t.userStatBestRank}: {stats.bestRankName}</li>
+              <li>{t.userStatBestRank}: {localizeRankValue(stats.bestRankName, lang)}</li>
               <li>{t.userStatLastMatchAt}: {stats.lastMatchAt ? new Date(stats.lastMatchAt).toLocaleString() : '-'}</li>
               <li>{t.userStatsByModeTitle}
                 <ul>
@@ -1021,7 +1065,7 @@ export const StatisticsSection = ({
                     {item.playerCount}p
                     {item.botCount > 0 ? ` · ${item.botCount} ${t.roomBotsLabel.toLowerCase()} (${formatBotDifficultyLabel(t, item.botDifficulty)})` : ''}
                     <br />
-                    {t.userMatchHistoryFinalRank}: {item.finalRankId.replace(/_/g, ' ')} · {t.userStatAvgTurns}: {item.turnsCompleted}
+                    {t.userMatchHistoryFinalRank}: {localizeRankValue(item.finalRankId, lang)} · {t.userStatAvgTurns}: {item.turnsCompleted}
                     <br />
                     {t.userStatResourcesGained}: {item.resourcesGainedTotal} · {t.userStatResourcesLost}: {item.resourcesLostTotal}
                   </li>
@@ -1100,7 +1144,7 @@ export const GallerySection = ({
   const togglePreview = (key: string) => setOpenPreviewKey((prev) => (prev === key ? null : key));
 
   return (
-    <section className={`board${uiVariant === 'v3' ? ' board-v3-panel board-v3-gallery' : ''}`}>
+    <section className={`board${uiVariant === 'v3' ? ' board-v3-panel board-v3-gallery' : ''}${uiVariant === 'v4' ? ' board-v4-panel board-v4-gallery' : ''}`}>
       <h2>{t.galleryTitle}</h2>
       <p>{t.galleryDescription}</p>
       <p className="gallery-category-tabs">
@@ -1189,7 +1233,7 @@ export const RulesSection = ({
   rules,
   uiVariant = 'v3',
 }: { t: T; rules: readonly string[]; uiVariant?: 'v3' | 'v4' }) => (
-  <section className={`board${uiVariant === 'v3' ? ' board-v3-panel board-v3-rules' : ''}`}>
+    <section className={`board${uiVariant === 'v3' ? ' board-v3-panel board-v3-rules' : ''}${uiVariant === 'v4' ? ' board-v4-panel board-v4-rules' : ''}`}>
     <h2>{t.rulesTitle}</h2>
     <ol className="rules-list">
       {rules.map((rule, index) => (

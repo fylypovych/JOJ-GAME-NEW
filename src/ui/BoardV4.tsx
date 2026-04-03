@@ -242,7 +242,6 @@ export const BoardV4 = ({
   const requestedByLabel = endGameVote?.requestedBy ? playerLabelById(endGameVote.requestedBy) : '';
   const hasVotedAgree = Boolean(endGameVote?.votes?.[id]);
   const {
-    nextRankMeta,
     gameoverMeta,
     winnerPlayerID,
     winnerRankName,
@@ -356,7 +355,7 @@ export const BoardV4 = ({
     sharedResourceImagePaths: BOARD_RESOURCE_IMAGE_PATHS,
     rankTrackCards,
   });
-  const { handleV4HandCardClick, handlePrimaryV4Action } = useBoardV4Interactions({
+  const { handleV4HandCardClick } = useBoardV4Interactions({
     hand,
     handCardsView,
     selectedHandCardId,

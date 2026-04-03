@@ -149,6 +149,7 @@ export const App = () => {
     login: loginUser,
     logout: logoutUser,
     updateProfile: updateUserProfile,
+    uploadAvatar,
     changePassword,
     requestPasswordReset,
     resetPassword,
@@ -648,6 +649,7 @@ export const App = () => {
       {!isAdminRoute && activeUserTab === 'profile' && (user || profileScreen === 'login') ? (
         <ProfileSection
           t={t}
+          lang={lang}
           user={user}
           loading={userLoading}
           busy={userBusy}
@@ -711,6 +713,20 @@ export const App = () => {
           onLogoutAllSessions={() => { void logoutAllSessions().catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
           onLogoutSession={(sessionId) => { void logoutSession(sessionId).catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
           onOpenRegister={() => setProfileScreen('register')}
+          onUploadAvatar={async (file) => {
+            setProfileNotice('');
+            setUserError('');
+            try {
+              const nextAvatarUrl = await uploadAvatar(file);
+              const nextDraft = { ...profileDraft, avatarUrl: nextAvatarUrl };
+              setProfileDraft(nextDraft);
+              await updateUserProfile({ ...nextDraft, preferredLang: lang });
+              setProfileNotice(t.userAvatarUploaded);
+            } catch (error) {
+              setUserError(String(error instanceof Error ? error.message : error));
+            }
+          }}
+          uiVariant={gameUiVariant}
         />
       ) : null}
 
@@ -727,6 +743,7 @@ export const App = () => {
               .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
           }}
           onBackToLogin={() => setProfileScreen('login')}
+          uiVariant={gameUiVariant}
         />
       ) : null}
 
@@ -749,17 +766,20 @@ export const App = () => {
               .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
           }}
           onBackToLogin={() => setProfileScreen('login')}
+          uiVariant={gameUiVariant}
         />
       ) : null}
 
       {!isAdminRoute && activeUserTab === 'statistics' ? (
         <StatisticsSection
           t={t}
+          lang={lang}
           user={user}
           stats={userStats}
           awards={userAwards}
           matchHistory={matchHistory}
           sessions={userSessions}
+          uiVariant={gameUiVariant}
         />
       ) : null}
 

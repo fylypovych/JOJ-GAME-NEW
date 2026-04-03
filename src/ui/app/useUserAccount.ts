@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { optimizeBlobForUpload } from '../admin/imageUpload';
 
 export type AuthUser = {
   id: string;
@@ -265,6 +266,28 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     }
   };
 
+  const uploadAvatar = async (file: File) => {
+    setBusy(true);
+    try {
+      const optimized = await optimizeBlobForUpload(file, file.name, {
+        maxWidth: 512,
+        maxHeight: 512,
+        quality: 0.9,
+      });
+      if (!optimized?.dataUrl) throw new Error(USER_ACCOUNT_ERRORS.genericRequest);
+      const payload = await postJsonWithCsrf(`${profileBase}/avatar-upload`, {
+        filename: optimized.filename,
+        dataUrl: optimized.dataUrl,
+      });
+      const path = typeof payload.path === 'string' ? payload.path.trim() : '';
+      if (!path) throw new Error(USER_ACCOUNT_ERRORS.genericRequest);
+      setError('');
+      return path;
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const bindMatchSession = async (input: { matchID: string; playerID: string; credentials: string; playerName?: string }) => {
     if (!user) return;
     try {
@@ -377,6 +400,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     login,
     logout,
     updateProfile,
+    uploadAvatar,
     changePassword,
     requestPasswordReset,
     resetPassword,
