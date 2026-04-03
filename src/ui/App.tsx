@@ -46,7 +46,6 @@ import {
   parseSession,
 } from './app/model';
 import {
-  ActiveSessionSection,
   AuthErrorModal,
   GallerySection,
   LobbySection,
@@ -68,8 +67,8 @@ import { useUserAccount } from './app/useUserAccount';
 
 const lobbyClient = new LobbyClient({ server: SERVER_URL });
 const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
-const NetworkClientV3 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV3 })));
-const NetworkClientV4 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV4 })));
+const NetworkClientV1 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV1 })));
+const NetworkClientV2 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV2 })));
 
 const TEMPLATE_API = `${SERVER_URL}/api/shared-deck-template`;
 const RANKS_API = `${SERVER_URL}/api/shared-ranks`;
@@ -247,7 +246,6 @@ export const App = () => {
     joinRoom,
     spectateRoom,
     leaveRoom,
-    sessionBroken,
     roomPlayerNames,
     canStart,
   } = useLobbySession({
@@ -491,13 +489,13 @@ export const App = () => {
   }, [adminStorageMode]);
 
   const shellUiVariant = isAdminRoute ? adminUiVariant : gameUiVariant;
-  const isImmersiveV4Game = !isAdminRoute && activeUserTab === 'games' && Boolean(session) && canStart && gameUiVariant === 'v4';
+  const isImmersiveModernGame = !isAdminRoute && activeUserTab === 'games' && Boolean(session) && canStart;
 
   return (
-    <main className={`app app-${shellUiVariant}${isImmersiveV4Game ? ' is-immersive-v4-game' : ''}`} data-bug-report-capture-root="true">
+    <main className={`app app-${shellUiVariant}${shellUiVariant === 'v1' ? ' app-v5 app-v4' : ' app-v4 app-v2'}${isImmersiveModernGame && gameUiVariant === 'v2' ? ' is-immersive-v4-game' : ''}${isImmersiveModernGame && gameUiVariant === 'v1' ? ' is-immersive-v5-game is-immersive-v4-game' : ''}`} data-bug-report-capture-root="true">
       <h1>{isAdminRoute ? t.adminTitle : t.gameTitle}</h1>
       {!isAdminRoute ? (
-        <section className={`app-top-toolbar${shellUiVariant === 'v3' ? ' app-top-toolbar-v3' : ''}${shellUiVariant === 'v4' ? ' app-top-toolbar-v4' : ''}`}>
+        <section className={`app-top-toolbar app-top-toolbar-v4${shellUiVariant === 'v1' ? ' app-top-toolbar-v5' : ''}`}>
           <div className="app-top-toolbar-left">
             <UserTabs t={t} activeUserTab={activeUserTab} setActiveUserTab={setActiveUserTab} uiVariant={gameUiVariant} />
           </div>
@@ -512,12 +510,12 @@ export const App = () => {
               </button>
               {' | '}
               {t.gameUiLabel}:{' '}
-              <button type="button" onClick={() => setGameUiVariant('v3')} disabled={gameUiVariant === 'v3'}>
-                {t.gameUiV3}
+              <button type="button" onClick={() => setGameUiVariant('v1')} disabled={gameUiVariant === 'v1'}>
+                {t.gameUiV1}
               </button>
               {' '}
-              <button type="button" onClick={() => setGameUiVariant('v4')} disabled={gameUiVariant === 'v4'}>
-                {('gameUiV4' in t ? (t as typeof t & { gameUiV4: string }).gameUiV4 : 'v4')}
+              <button type="button" onClick={() => setGameUiVariant('v2')} disabled={gameUiVariant === 'v2'}>
+                {t.gameUiV2}
               </button>
               {' | '}
               <a className="app-toolbar-link-button" href="/admin">{t.openAdmin}</a>
@@ -535,12 +533,8 @@ export const App = () => {
           </button>
           {' | '}
           {t.gameUiLabel}:{' '}
-          <button type="button" onClick={() => setAdminUiVariant('v3')} disabled={adminUiVariant === 'v3'}>
-            {t.gameUiV3}
-          </button>
-          {' '}
-          <button type="button" onClick={() => setAdminUiVariant('v4')} disabled={adminUiVariant === 'v4'}>
-            {('gameUiV4' in t ? (t as typeof t & { gameUiV4: string }).gameUiV4 : 'v4')}
+          <button type="button" onClick={() => setAdminUiVariant('v2')} disabled={adminUiVariant === 'v2'}>
+            {t.gameUiV2}
           </button>
         </p>
       )}
@@ -549,7 +543,7 @@ export const App = () => {
       </p>
 
       {isAdminRoute && (!adminAuthorized || adminAuthChecking) ? (
-        <section className={adminUiVariant === 'v4' ? 'admin-shell-v4 admin-panel-v4' : 'board board-v3-panel'}>
+        <section className="admin-shell-v4 admin-panel-v4">
           <h2>{t.adminTitle}</h2>
           <p>{adminAuthChecking ? t.loading : (adminAuthError || (adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminUnauthorized))}</p>
           {!adminAuthChecking ? (
@@ -595,27 +589,11 @@ export const App = () => {
         />
       ) : null}
 
-      {!isAdminRoute && activeUserTab === 'games' && session && gameUiVariant !== 'v4' ? (
-        <ActiveSessionSection
-          t={t}
-          session={session}
-          playerName={playerName}
-          sessionBroken={sessionBroken}
-          canStart={canStart}
-          activeMatch={activeSessionMatch}
-          optionalModules={optionalLobbyModules}
-          leaveRoom={() => { void leaveRoom(); }}
-          refreshMatches={() => { void refreshMatches(); }}
-          loading={loading}
-          uiVariant={gameUiVariant}
-        />
-      ) : null}
-
       <div style={{ display: !isAdminRoute && activeUserTab === 'games' && session && canStart ? 'block' : 'none' }}>
         {session ? (
           <Suspense fallback={<p>{t.loading}</p>}>
-            {gameUiVariant === 'v4' ? <NetworkClientV4
-              key={`${session.matchID}:${session.playerID ?? 'spectator'}:v4`}
+            {gameUiVariant === 'v1' ? <NetworkClientV1
+              key={`${session.matchID}:${session.playerID ?? 'spectator'}:v1`}
               matchID={session.matchID}
               playerID={session.spectator ? (null as never) : session.playerID}
               credentials={session.credentials}
@@ -629,8 +607,8 @@ export const App = () => {
               inviteText={activeSessionInviteText}
               shareLink={activeSessionShareLink}
               onLeaveRoom={() => { void leaveRoom(); }}
-            /> : <NetworkClientV3
-              key={`${session.matchID}:${session.playerID ?? 'spectator'}:v3`}
+            /> : <NetworkClientV2
+              key={`${session.matchID}:${session.playerID ?? 'spectator'}:v2`}
               matchID={session.matchID}
               playerID={session.spectator ? (null as never) : session.playerID}
               credentials={session.credentials}
@@ -638,8 +616,11 @@ export const App = () => {
               playerName={session.spectator ? t.spectatorJoinedLabel : playerName}
               knownPlayerNames={roomPlayerNames}
               sharedRanks={sharedRanks}
+              rankTrackCards={sharedDeckTemplate.rankTrack}
               cardImageById={cardImageById}
               roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
+              inviteText={activeSessionInviteText}
+              shareLink={activeSessionShareLink}
               onLeaveRoom={() => { void leaveRoom(); }}
             />}
           </Suspense>

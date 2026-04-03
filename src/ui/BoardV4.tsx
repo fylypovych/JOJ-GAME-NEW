@@ -40,6 +40,7 @@ export const BoardV4 = ({
   moves,
   playerID,
   lang = 'uk',
+  uiTheme = 'v2',
   playerName = '',
   knownPlayerNames = {},
   sharedRanks = [],
@@ -432,8 +433,10 @@ export const BoardV4 = ({
     resourceLabels,
   });
   const stageClass = stage ? `is-stage-${stage}` : 'is-stage-waiting';
+  const internalTheme = uiTheme === 'v1' ? 'v5' : 'v4';
+
   return (
-    <section className={`game-ui-v4-shell ${stageClass}${compactMode ? ' is-compact' : ''}${isSpectator ? ' is-spectator' : ''}`}>
+    <section className={`game-ui-v4-shell is-theme-${internalTheme} ${stageClass}${compactMode ? ' is-compact' : ''}${isSpectator ? ' is-spectator' : ''}`}>
       <V4Header
         title={blockPlayerTurnControls ? botPlaybackControlLabel : effectiveIsCurrentPlayer ? board.yourTurnTitle : board.gameTableTitle}
         roomMeta={roomMeta}

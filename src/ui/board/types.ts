@@ -30,6 +30,7 @@ export type JojMoveApi = {
 export type LocalizedBoardProps = Omit<BoardProps<JojGameState>, 'moves'> & {
   moves: JojMoveApi;
   lang?: Language;
+  uiTheme?: 'v1' | 'v2';
   playerName?: string;
   knownPlayerNames?: Record<string, string>;
   sharedRanks?: RankDefinition[];

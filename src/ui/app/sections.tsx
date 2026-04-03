@@ -120,11 +120,11 @@ type UserTabsProps = {
   t: T;
   activeUserTab: UserTab;
   setActiveUserTab: (tab: UserTab) => void;
-  uiVariant?: 'v3' | 'v4';
+  uiVariant?: 'v1' | 'v2';
 };
 
-export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v3' }: UserTabsProps) => (
-  <p className={`user-tabs${uiVariant === 'v3' ? ' user-tabs-v3' : ''}${uiVariant === 'v4' ? ' user-tabs-v4' : ''}`}>
+export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v2' }: UserTabsProps) => (
+  <p className={`user-tabs user-tabs-v4${uiVariant === 'v1' ? ' user-tabs-v5' : ''}`}>
     <button type="button" onClick={() => setActiveUserTab('games')} disabled={activeUserTab === 'games'}>
       {t.userTabGames}
     </button>
@@ -173,7 +173,7 @@ type LobbySectionProps = {
   optionalModules: Array<{ id: string; name: string; alwaysOn: boolean }>;
   selectedOptionalModuleIds: string[];
   setSelectedOptionalModuleIds: (ids: string[]) => void;
-  uiVariant?: 'v3' | 'v4';
+  uiVariant?: 'v1' | 'v2';
 };
 
 export const LobbySection = ({
@@ -206,7 +206,7 @@ export const LobbySection = ({
   optionalModules,
   selectedOptionalModuleIds,
   setSelectedOptionalModuleIds,
-  uiVariant = 'v3',
+  uiVariant = 'v2',
 }: LobbySectionProps) => {
   const [roomFilter, setRoomFilter] = useState<'all' | 'open' | 'free' | 'no_bots' | 'standard' | 'standard_plus'>('all');
   const moduleNameById = useMemo(
@@ -259,10 +259,10 @@ export const LobbySection = ({
   }, [invitedRoomId, matches, roomFilter]);
 
   return (
-  <section className={`board${uiVariant === 'v3' ? ' board-v3-panel lobby-v3-panel' : ''}${uiVariant === 'v4' ? ' board-v4-panel board-v4-lobby' : ''}`}>
+  <section className={`board board-v4-panel board-v4-lobby${uiVariant === 'v1' ? ' board-v5-panel board-v5-lobby' : ''}`}>
     <h2>{t.lobbyTitle}</h2>
-    <div className={`lobby-layout${uiVariant === 'v4' ? ' board-v4-dual-layout' : ''}`}>
-      <div className={`lobby-col${uiVariant === 'v4' ? ' board-v4-column' : ''}`}>
+    <div className="lobby-layout board-v4-dual-layout">
+      <div className="lobby-col board-v4-column">
         <h3>{t.roomListTitle}</h3>
         <p className="admin-controls">
           <button type="button" onClick={refreshMatches} disabled={loading}>
@@ -281,7 +281,7 @@ export const LobbySection = ({
         {visibleMatches.length === 0 ? (
           <div className="lobby-empty-state">
             <p>{t.noRooms}</p>
-            <p className="game-ui-v3-subtle">{t.noRoomsHelp}</p>
+            <p>{t.noRoomsHelp}</p>
             <p className="admin-controls">
               <button type="button" onClick={refreshMatches} disabled={loading}>{t.refreshRooms}</button>
               <button type="button" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })} disabled={loading}>{t.createRoom}</button>
@@ -307,7 +307,7 @@ export const LobbySection = ({
               <div className="lobby-room-card-head">
                 <div>
                   <strong>{match.matchID}</strong>
-                  <p className="game-ui-v3-subtle">
+                  <p>
                     {formatGameModeLabel(t, gameModeValue)} · {taken}/{capacity} · {hasFree ? (almostReady ? t.lobbyAlmostReady : t.roomStatusWaiting) : t.roomStatusFull}
                   </p>
                 </div>
@@ -366,7 +366,7 @@ export const LobbySection = ({
         })}
         </div>
       </div>
-      <div className={`lobby-col${uiVariant === 'v4' ? ' board-v4-column' : ''}`}>
+      <div className="lobby-col board-v4-column">
         <h3>{t.roomCreateTitle}</h3>
         {authenticatedUser ? (
           <p>
@@ -489,7 +489,7 @@ export const LobbySection = ({
             {t.createRoom}
           </button>
         </p>
-        <div className={`lobby-room-create-summary${uiVariant === 'v4' ? ' board-v4-subpanel' : ''}`}>
+        <div className={`lobby-room-create-summary lobby-room-create-summary-v4-compact board-v4-subpanel${uiVariant === 'v1' ? ' board-v5-subpanel' : ''}`}>
           <h4>{t.roomSummaryReady}</h4>
           <ul>
             <li>{t.gameModeLabel}: {formatGameModeLabel(t, gameMode)}</li>
@@ -498,7 +498,7 @@ export const LobbySection = ({
             <li>{t.roomModulesLabel}: {formatModuleList(selectedOptionalModuleIds, moduleNameById)}</li>
             <li>{t.roomDurationLabel}: {estimateRoomDurationLabel(t, roomCapacity, gameMode)}</li>
           </ul>
-          <p className="game-ui-v3-subtle">{t.roomDraftHint}</p>
+          <p>{t.roomDraftHint}</p>
         </div>
       </div>
     </div>
@@ -518,7 +518,7 @@ type ActiveSessionSectionProps = {
   leaveRoom: () => void;
   refreshMatches: () => void;
   loading: boolean;
-  uiVariant?: 'v3' | 'v4';
+  uiVariant?: 'v1' | 'v2';
 };
 
 export const ActiveSessionSection = ({
@@ -532,7 +532,7 @@ export const ActiveSessionSection = ({
   leaveRoom,
   refreshMatches,
   loading,
-  uiVariant = 'v3',
+  uiVariant = 'v2',
 }: ActiveSessionSectionProps) => {
   const [activityItems, setActivityItems] = useState<string[]>([]);
   const previousActiveMatchRef = useRef<LobbyMatch | null>(null);
@@ -594,7 +594,7 @@ export const ActiveSessionSection = ({
   const inviteText = `${t.activeRoom}: ${session.matchID}\n${t.gameModeLabel}: ${formatGameModeLabel(t, activeGameMode)}\n${t.roomSummaryPlayers}: ${activeMatch ? `${activeMatch.players.filter((player) => Boolean(player.name?.trim())).length}/${activeMatch.players.length}` : '-'}\n${shareLink}`;
 
   return (
-    <section className={`board${uiVariant === 'v3' ? ' board-v3-panel lobby-v3-panel' : ''}${uiVariant === 'v4' ? ' board-v4-panel board-v4-active-room' : ''}`}>
+    <section className={`board board-v4-panel board-v4-active-room${uiVariant === 'v1' ? ' board-v5-panel board-v5-active-room' : ''}`}>
       <h2 className="lobby-active-room-title">
         {t.activeRoom}: {session.matchID}
       </h2>
@@ -619,16 +619,12 @@ export const ActiveSessionSection = ({
         </div>
       ) : null}
       <p className="admin-controls">
-        {uiVariant !== 'v4' ? (
-          <>
-            <button type="button" onClick={() => { void copyText(inviteText); }} disabled={loading}>
-              {t.copyInviteText}
-            </button>
-            <button type="button" onClick={() => { void copyText(shareLink); }} disabled={loading}>
-              {t.copyInviteLink}
-            </button>
-          </>
-        ) : null}
+        <button type="button" onClick={() => { void copyText(inviteText); }} disabled={loading}>
+          {t.copyInviteText}
+        </button>
+        <button type="button" onClick={() => { void copyText(shareLink); }} disabled={loading}>
+          {t.copyInviteLink}
+        </button>
         <button type="button" onClick={refreshMatches} disabled={loading}>
           {t.refreshRooms}
         </button>
@@ -644,8 +640,8 @@ export const ActiveSessionSection = ({
         </button>
       </p>
       {activeMatch ? (
-        <div className={`lobby-active-room-grid lobby-active-room-grid-summary${uiVariant === 'v4' ? ' is-v4 board-v4-summary-grid' : ''}`}>
-          <div className={`lobby-room-create-summary lobby-room-create-summary-compact${uiVariant === 'v4' ? ' lobby-room-create-summary-v4-compact board-v4-subpanel' : ''}`}>
+        <div className={`lobby-active-room-grid lobby-active-room-grid-summary is-v4 board-v4-summary-grid${uiVariant === 'v1' ? ' board-v5-summary-grid' : ''}`}>
+          <div className={`lobby-room-create-summary lobby-room-create-summary-compact lobby-room-create-summary-v4-compact board-v4-subpanel${uiVariant === 'v1' ? ' board-v5-subpanel' : ''}`}>
             <h3>{t.roomSummaryReady}</h3>
             <div className="lobby-room-kv-grid">
               <span>{t.gameModeLabel}</span><strong>{formatGameModeLabel(t, activeGameMode)}</strong>
@@ -690,7 +686,7 @@ export const ProfileSection = ({
   onLogoutSession,
   onOpenRegister,
   onUploadAvatar,
-  uiVariant = 'v3',
+  uiVariant = 'v2',
 }: {
   t: T;
   lang: Language;
@@ -734,16 +730,16 @@ export const ProfileSection = ({
   onLogoutSession: (sessionId: string) => void;
   onOpenRegister: () => void;
   onUploadAvatar: (file: File) => Promise<void>;
-  uiVariant?: 'v3' | 'v4';
+  uiVariant?: 'v1' | 'v2';
 }) => (
-  <section className={`board${uiVariant === 'v4' ? ' board-v4-panel board-v4-profile' : ''}`}>
+  <section className={`board board-v4-panel board-v4-profile${uiVariant === 'v1' ? ' board-v5-panel board-v5-profile' : ''}`}>
     <h2>{t.userTabProfile}</h2>
     {loading ? <p>{t.loadingRooms}</p> : null}
     {error ? <p className="admin-error">{error}</p> : null}
-    {notice ? <p className={uiVariant === 'v4' ? 'board-v4-notice' : ''}>{notice}</p> : null}
+    {notice ? <p className="board-v4-notice">{notice}</p> : null}
     {!user ? (
       <div className="auth-shell">
-        <div className={`auth-card${uiVariant === 'v4' ? ' board-v4-auth-card' : ''}`}>
+        <div className={`auth-card board-v4-auth-card${uiVariant === 'v1' ? ' board-v5-auth-card' : ''}`}>
           <h3>{t.userLoginTitle}</h3>
           <p>
             <input
@@ -773,17 +769,17 @@ export const ProfileSection = ({
           <button type="button" onClick={onSaveProfile} disabled={busy}>{t.userSaveProfileButton}</button>
           <button type="button" onClick={onLogout} disabled={busy}>{t.userLogoutButton}</button>
         </p>
-        <div className={`lobby-layout${uiVariant === 'v4' ? ' board-v4-dual-layout board-v4-profile-layout' : ''}`}>
-          <div className={`lobby-col${uiVariant === 'v4' ? ' board-v4-column board-v4-subpanel' : ''}`}>
+        <div className="lobby-layout board-v4-dual-layout board-v4-profile-layout">
+          <div className={`lobby-col board-v4-column board-v4-subpanel${uiVariant === 'v1' ? ' board-v5-subpanel' : ''}`}>
             <h3>{t.userProfileTitle}</h3>
-            <div className={`profile-avatar-panel${uiVariant === 'v4' ? ' profile-avatar-panel-v4' : ''}`}>
+            <div className={`profile-avatar-panel profile-avatar-panel-v4${uiVariant === 'v1' ? ' profile-avatar-panel-v5' : ''}`}>
               <span>{t.userAvatarPreviewLabel}</span>
-              <div className={`profile-avatar-preview${uiVariant === 'v4' ? ' profile-avatar-preview-v4' : ''}`}>
+              <div className={`profile-avatar-preview profile-avatar-preview-v4${uiVariant === 'v1' ? ' profile-avatar-preview-v5' : ''}`}>
                 {profileDraft.avatarUrl?.trim()
                   ? <img src={profileDraft.avatarUrl} alt={t.userAvatarPreviewLabel} />
                   : <span>{user.displayName?.slice(0, 1) || user.username?.slice(0, 1) || '?'}</span>}
               </div>
-              <label className={`profile-avatar-upload${uiVariant === 'v4' ? ' profile-avatar-upload-v4' : ''}`}>
+              <label className={`profile-avatar-upload profile-avatar-upload-v4${uiVariant === 'v1' ? ' profile-avatar-upload-v5' : ''}`}>
                 <span>{t.userAvatarUploadButton}</span>
                 <input
                   type="file"
@@ -828,7 +824,7 @@ export const ProfileSection = ({
               </ul>
             )}
           </div>
-          <div className={`lobby-col${uiVariant === 'v4' ? ' board-v4-column board-v4-subpanel' : ''}`}>
+          <div className={`lobby-col board-v4-column board-v4-subpanel${uiVariant === 'v1' ? ' board-v5-subpanel' : ''}`}>
             <h3>{t.userStatsTitle}</h3>
             {!stats ? <p>{t.simulationNoData}</p> : (
               <ul>
@@ -886,7 +882,7 @@ export const RegisterSection = ({
   setRegisterDraft,
   onRegister,
   onBackToLogin,
-  uiVariant = 'v3',
+  uiVariant = 'v2',
 }: {
   t: T;
   busy: boolean;
@@ -895,13 +891,13 @@ export const RegisterSection = ({
   setRegisterDraft: (value: { username: string; email: string; password: string; displayName: string }) => void;
   onRegister: () => void;
   onBackToLogin: () => void;
-  uiVariant?: 'v3' | 'v4';
+  uiVariant?: 'v1' | 'v2';
 }) => (
-  <section className={`board${uiVariant === 'v4' ? ' board-v4-panel board-v4-auth-shell' : ''}`}>
+  <section className={`board board-v4-panel board-v4-auth-shell${uiVariant === 'v1' ? ' board-v5-panel board-v5-auth-shell' : ''}`}>
     <h2>{t.userRegisterTitle}</h2>
     {error ? <p className="admin-error">{error}</p> : null}
     <div className="auth-shell">
-      <div className={`auth-card${uiVariant === 'v4' ? ' board-v4-auth-card' : ''}`}>
+      <div className={`auth-card board-v4-auth-card${uiVariant === 'v1' ? ' board-v5-auth-card' : ''}`}>
         <p><input value={registerDraft.username} onChange={(e) => setRegisterDraft({ ...registerDraft, username: e.target.value })} placeholder={t.userUsernameLabel} /></p>
         <p><input value={registerDraft.displayName} onChange={(e) => setRegisterDraft({ ...registerDraft, displayName: e.target.value })} placeholder={t.userDisplayNameLabel} /></p>
         <p><input value={registerDraft.email} onChange={(e) => setRegisterDraft({ ...registerDraft, email: e.target.value })} placeholder={t.userEmailLabel} /></p>
@@ -926,7 +922,7 @@ export const PasswordResetSection = ({
   setResetPasswordDraft,
   onResetPassword,
   onBackToLogin,
-  uiVariant = 'v3',
+  uiVariant = 'v2',
 }: {
   t: T;
   busy: boolean;
@@ -938,13 +934,13 @@ export const PasswordResetSection = ({
   setResetPasswordDraft: (value: { token: string; nextPassword: string }) => void;
   onResetPassword: () => void;
   onBackToLogin: () => void;
-  uiVariant?: 'v3' | 'v4';
+  uiVariant?: 'v1' | 'v2';
 }) => (
-  <section className={`board${uiVariant === 'v4' ? ' board-v4-panel board-v4-auth-shell' : ''}`}>
+  <section className={`board board-v4-panel board-v4-auth-shell${uiVariant === 'v1' ? ' board-v5-panel board-v5-auth-shell' : ''}`}>
     <h2>{t.userPasswordResetTitle}</h2>
     {error ? <p className="admin-error">{error}</p> : null}
-    <div className={`lobby-layout${uiVariant === 'v4' ? ' board-v4-dual-layout' : ''}`}>
-      <div className={`lobby-col${uiVariant === 'v4' ? ' board-v4-column board-v4-subpanel' : ''}`}>
+    <div className="lobby-layout board-v4-dual-layout">
+      <div className={`lobby-col board-v4-column board-v4-subpanel${uiVariant === 'v1' ? ' board-v5-subpanel' : ''}`}>
         <h3>{t.userPasswordResetRequestButton}</h3>
         <p><input value={resetRequestDraft.login} onChange={(e) => setResetRequestDraft({ login: e.target.value })} placeholder={t.userLoginPlaceholder} /></p>
         <p className="admin-controls">
@@ -952,7 +948,7 @@ export const PasswordResetSection = ({
           <button type="button" onClick={onBackToLogin} disabled={busy}>{t.userGoToLoginButton}</button>
         </p>
       </div>
-      <div className={`lobby-col${uiVariant === 'v4' ? ' board-v4-column board-v4-subpanel' : ''}`}>
+      <div className={`lobby-col board-v4-column board-v4-subpanel${uiVariant === 'v1' ? ' board-v5-subpanel' : ''}`}>
         <h3>{t.userPasswordResetApplyButton}</h3>
         <p><input value={resetPasswordDraft.token} onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, token: e.target.value })} placeholder={t.userResetTokenLabel} /></p>
         <p><input type="password" value={resetPasswordDraft.nextPassword} onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, nextPassword: e.target.value })} placeholder={t.userNewPasswordLabel} /></p>
@@ -970,7 +966,7 @@ export const StatisticsSection = ({
   awards,
   matchHistory,
   sessions,
-  uiVariant = 'v3',
+  uiVariant = 'v2',
 }: {
   t: T;
   lang: Language;
@@ -979,11 +975,11 @@ export const StatisticsSection = ({
   awards: UserAward[];
   matchHistory: UserMatchHistoryItem[];
   sessions: UserSession[];
-  uiVariant?: 'v3' | 'v4';
+  uiVariant?: 'v1' | 'v2';
 }) => {
   const [activeCategory, setActiveCategory] = useState<'general' | 'resources' | 'actions' | 'achievements' | 'history' | 'sessions'>('general');
   return (
-    <section className={`board${uiVariant === 'v4' ? ' board-v4-panel board-v4-statistics' : ''}`}>
+    <section className={`board board-v4-panel board-v4-statistics${uiVariant === 'v1' ? ' board-v5-panel board-v5-statistics' : ''}`}>
       <h2>{t.userTabStatistics}</h2>
       {!user ? <p>{t.statisticsLoginRequired}</p> : (
         <>
@@ -1127,7 +1123,7 @@ type GallerySectionProps = {
   galleryCards: CardDefinition[];
   galleryCategories: GalleryCategoryFilter[];
   effectLabel: (resource: 'time' | 'reputation' | 'discipline' | 'documents' | 'tech' | 'rank') => string;
-  uiVariant?: 'v3' | 'v4';
+  uiVariant?: 'v1' | 'v2';
 };
 
 export const GallerySection = ({
@@ -1138,13 +1134,13 @@ export const GallerySection = ({
   galleryCards,
   galleryCategories,
   effectLabel,
-  uiVariant = 'v3',
+  uiVariant = 'v2',
 }: GallerySectionProps) => {
   const [openPreviewKey, setOpenPreviewKey] = useState<string | null>(null);
   const togglePreview = (key: string) => setOpenPreviewKey((prev) => (prev === key ? null : key));
 
   return (
-    <section className={`board${uiVariant === 'v3' ? ' board-v3-panel board-v3-gallery' : ''}${uiVariant === 'v4' ? ' board-v4-panel board-v4-gallery' : ''}`}>
+    <section className={`board board-v4-panel board-v4-gallery${uiVariant === 'v1' ? ' board-v5-panel board-v5-gallery' : ''}`}>
       <h2>{t.galleryTitle}</h2>
       <p>{t.galleryDescription}</p>
       <p className="gallery-category-tabs">
@@ -1231,9 +1227,9 @@ export const GallerySection = ({
 export const RulesSection = ({
   t,
   rules,
-  uiVariant = 'v3',
-}: { t: T; rules: readonly string[]; uiVariant?: 'v3' | 'v4' }) => (
-    <section className={`board${uiVariant === 'v3' ? ' board-v3-panel board-v3-rules' : ''}${uiVariant === 'v4' ? ' board-v4-panel board-v4-rules' : ''}`}>
+  uiVariant = 'v2',
+}: { t: T; rules: readonly string[]; uiVariant?: 'v1' | 'v2' }) => (
+    <section className={`board board-v4-panel board-v4-rules${uiVariant === 'v1' ? ' board-v5-panel board-v5-rules' : ''}`}>
     <h2>{t.rulesTitle}</h2>
     <ol className="rules-list">
       {rules.map((rule, index) => (

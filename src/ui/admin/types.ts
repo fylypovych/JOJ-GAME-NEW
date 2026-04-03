@@ -103,7 +103,7 @@ export type AdminAnalyticsSummary = {
 };
 
 export type AdminPageProps = {
-  uiVariant: 'v3' | 'v4';
+  uiVariant: 'v2';
   lang: Language;
   serverUrl: string;
   serverUrlDraft: string;

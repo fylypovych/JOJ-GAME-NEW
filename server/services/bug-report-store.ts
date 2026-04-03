@@ -16,7 +16,7 @@ export type BugReportRecord = {
   playerID: string | null;
   playerName: string | null;
   spectator: boolean;
-  uiVariant: 'v1' | 'v2' | 'v3' | 'unknown';
+  uiVariant: 'v1' | 'v2' | 'v3' | 'v4' | 'v5' | 'unknown';
   lang: 'uk' | 'en';
   userAgent: string;
   sourceIp: string;
@@ -32,8 +32,11 @@ export type BugReportRecord = {
 const isBugReportStatus = (value: string): value is BugReportStatus =>
   value === 'new' || value === 'resolved' || value === 'closed';
 
-const normalizeUiVariant = (value: string | null | undefined): BugReportRecord['uiVariant'] =>
-  value === 'v1' || value === 'v2' || value === 'v3' ? value : 'unknown';
+const normalizeUiVariant = (value: string | null | undefined): BugReportRecord['uiVariant'] => {
+  if (value === 'v5') return 'v1';
+  if (value === 'v4') return 'v2';
+  return value === 'v1' || value === 'v2' || value === 'v3' ? value : 'unknown';
+};
 
 const normalizeLang = (value: string | null | undefined): BugReportRecord['lang'] =>
   value === 'en' ? 'en' : 'uk';

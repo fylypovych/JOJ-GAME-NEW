@@ -456,7 +456,7 @@ export const AdminPage = ({
     if (activeTab !== 'bugReports' || bugReportsLoading) return;
     void loadBugReports();
   }, [activeTab]);
-  const isV4 = uiVariant === 'v4';
+  const isV4 = uiVariant === 'v2';
   useEffect(() => {
     if (!isV4 || v4Prefetched) return;
     setV4Prefetched(true);
@@ -740,22 +740,6 @@ export const AdminPage = ({
     ];
   const activeCategory = adminCategories.find((category) => category.tabs.some((tab) => tab.id === activeTab)) ?? adminCategories[0];
   const activeCategoryId = activeCategory.id;
-  const allAdminTabs: AdminNavTab[] = [
-    adminTabMeta.start,
-    adminTabMeta.matches,
-    adminTabMeta.deck,
-    adminTabMeta.import,
-    adminTabMeta.ranks,
-    adminTabMeta.state,
-    adminTabMeta.database,
-    adminTabMeta.analytics,
-    adminTabMeta.github,
-    adminTabMeta.users,
-    adminTabMeta.awards,
-    adminTabMeta.bugReports,
-    adminTabMeta.settings,
-    adminTabMeta.simulation,
-  ];
   const v4OverviewPanel = (
     <>
       <section className="admin-v4-hero">
@@ -1214,16 +1198,15 @@ export const AdminPage = ({
     </>
   );
   return (
-    <section className={`${isV4 ? 'admin-shell-v4 admin-panel-v4' : 'board admin-panel board-v3-panel'}`}>
+    <section className="admin-shell-v4 admin-panel-v4">
       <h2>{t.adminTitle}</h2>
-      {isV4 ? (
-        <>
-          <section className="admin-v4-tab-nav">
-            <AdminCategoryButtons
-              categories={adminCategories}
-              activeCategoryId={activeCategoryId}
-              onSelectCategory={(categoryId) => {
-                const category = adminCategories.find((item) => item.id === categoryId);
+      <>
+        <section className="admin-v4-tab-nav">
+          <AdminCategoryButtons
+            categories={adminCategories}
+            activeCategoryId={activeCategoryId}
+            onSelectCategory={(categoryId) => {
+              const category = adminCategories.find((item) => item.id === categoryId);
                 if (category?.tabs[0]) {
                   setActiveTab(category.tabs[0].id);
                 }
@@ -1255,14 +1238,7 @@ export const AdminPage = ({
               {activeTabPanel}
             </div>
           </section>
-        </>
-      ) : (
-        <>
-          <AdminTabButtons tabs={allAdminTabs} activeTab={activeTab} setActiveTab={setActiveTab} />
-          <hr />
-          {activeTabPanel}
-        </>
-      )}
+      </>
     </section>
   );
 };

@@ -10,8 +10,8 @@ const statusLabel = (t: T, value: AdminBugReportStatus) => {
 };
 
 const uiVariantLabel = (t: T, value: AdminBugReportUiVariant) => {
-  if (value === 'v4') return 'v4';
-  if (value === 'v3') return 'v3';
+  if (value === 'v1') return 'v1';
+  if (value === 'v2') return 'v2';
   if (value === 'legacy') return t.bugReportUiLegacy;
   return t.bugReportUiUnknown;
 };

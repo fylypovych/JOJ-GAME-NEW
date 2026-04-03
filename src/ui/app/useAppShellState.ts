@@ -28,14 +28,15 @@ export const useAppShellState = (serverUrl: string) => {
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
   const [profileScreen, setProfileScreen] = useState<'login' | 'register' | 'reset'>('login');
   const [authErrorModal, setAuthErrorModal] = useState('');
-  const [gameUiVariant, setGameUiVariant] = useState<'v3' | 'v4'>(() => {
+  const [gameUiVariant, setGameUiVariant] = useState<'v1' | 'v2'>(() => {
     const raw = window.localStorage.getItem(GAME_UI_VARIANT_STORAGE_KEY);
-    return raw === 'v4' ? raw : 'v3';
+    if (raw === 'v1' || raw === 'v5') return 'v1';
+    return 'v2';
   });
-  const [adminUiVariant, setAdminUiVariant] = useState<'v3' | 'v4'>(() => {
+  const [adminUiVariant, setAdminUiVariant] = useState<'v2'>(() => {
     const raw = window.localStorage.getItem(ADMIN_UI_VARIANT_STORAGE_KEY)
       ?? window.localStorage.getItem(LEGACY_ADMIN_UI_VARIANT_STORAGE_KEY);
-    return raw === 'v4' ? raw : 'v3';
+    return raw === 'v2' || raw === 'v4' ? 'v2' : 'v2';
   });
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
   const [deletingAdminMatch, setDeletingAdminMatch] = useState(false);

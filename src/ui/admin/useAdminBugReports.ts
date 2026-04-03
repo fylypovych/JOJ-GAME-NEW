@@ -3,7 +3,7 @@ import type { Language } from '../i18n';
 
 type AdminJsonFetch = (url: string, init?: RequestInit) => Promise<Response>;
 export type AdminBugReportStatus = 'new' | 'resolved' | 'closed';
-export type AdminBugReportUiVariant = 'v3' | 'v4' | 'legacy' | 'unknown';
+export type AdminBugReportUiVariant = 'v1' | 'v2' | 'legacy' | 'unknown';
 
 export type AdminBugReportListItem = {
   id: string;
@@ -55,8 +55,10 @@ const createErrors = (lang: Language) => ({
 });
 
 const normalizeBugReportUiVariant = (value: unknown): AdminBugReportUiVariant => {
-  if (value === 'v3' || value === 'v4') return value;
-  if (value === 'v1' || value === 'v2') return 'legacy';
+  if (value === 'v1' || value === 'v2') return value;
+  if (value === 'v5') return 'v1';
+  if (value === 'v4') return 'v2';
+  if (value === 'v3') return 'legacy';
   return 'unknown';
 };
 

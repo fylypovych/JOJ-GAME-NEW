@@ -36,7 +36,7 @@ export const BugReportWidget = ({
   session: Session | null;
   user: AuthUser | null;
   playerName: string;
-  gameUiVariant: 'v3' | 'v4';
+  gameUiVariant: 'v1' | 'v2';
 }) => {
   const t = text(lang);
   const initialDraft = useMemo(() => parseDraft(), []);
