@@ -138,6 +138,22 @@ export const registerAdminRoutes = ({
       output: [resetRes.stdout.trim(), cleanRes.stdout.trim()].filter(Boolean).join('\n').trim(),
     };
   };
+  const forceSyncToUpstream = async () => {
+    const fetchRes = await runGit(['fetch', 'origin']);
+    if (!fetchRes.ok) return { ok: false as const, error: fetchRes.error };
+    const resetRes = await runGit(['reset', '--hard', '@{u}']);
+    if (!resetRes.ok) return { ok: false as const, error: resetRes.error };
+    const cleanRes = await runGit(['clean', '-fd']);
+    if (!cleanRes.ok) return { ok: false as const, error: cleanRes.error };
+    return {
+      ok: true as const,
+      output: [
+        fetchRes.stdout.trim() || fetchRes.stderr.trim(),
+        resetRes.stdout.trim() || resetRes.stderr.trim(),
+        cleanRes.stdout.trim() || cleanRes.stderr.trim(),
+      ].filter(Boolean).join('\n').trim(),
+    };
+  };
 
   router.get('/api/health', (ctx: RouteCtx) => {
     ctx.body = {
@@ -827,11 +843,36 @@ export const registerAdminRoutes = ({
       await logLine('ERROR', `git runtime stash failed: ${stashRuntime.error}`);
       return;
     }
-    if (status.behind <= 0) {
+    if (status.behind <= 0 && !(ignoreLocalChanges && status.ahead > 0)) {
       ctx.body = { ok: true, updated: false, message: 'Already up to date', status };
       return;
     }
 
+    if (ignoreLocalChanges) {
+      const syncRes = await forceSyncToUpstream();
+      if (!syncRes.ok) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: 'Forced git sync failed', details: syncRes.error, status };
+        await logLine('ERROR', `git forced update failed: ${syncRes.error}`);
+        return;
+      }
+      const nextStatus = await getGitUpdateStatus(runGit);
+      if (!nextStatus.ok) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: 'Failed to read Git status after update', details: nextStatus.error };
+        await logLine('ERROR', `git post-update status failed: ${nextStatus.error}`);
+        return;
+      }
+      await logLine('WARN', `git forced update applied on branch=${status.branch}; output=${syncRes.output || '(no output)'}`);
+      ctx.body = {
+        ok: true,
+        updated: true,
+        message: 'Forced update applied',
+        output: syncRes.output,
+        status: nextStatus,
+      };
+      return;
+    }
     const pullRes = await runGit(['pull', '--ff-only']);
     if (!pullRes.ok) {
       ctx.status = 500;
@@ -905,11 +946,20 @@ export const registerAdminRoutes = ({
 
     const steps: Array<{ step: string; output?: string }> = [];
 
-    if (status.behind > 0) {
+    if (ignoreLocalChanges && (status.behind > 0 || status.ahead > 0)) {
+      const syncRes = await forceSyncToUpstream();
+      if (!syncRes.ok) {
+        ctx.status = 500;
+        ctx.body = { ok: false, error: 'Forced git sync failed', details: syncRes.error, status, steps };
+        await logLine('ERROR', `git deploy forced sync failed: ${syncRes.error}`);
+        return;
+      }
+      steps.push({ step: 'git fetch origin && git reset --hard @{u} && git clean -fd', output: syncRes.output || '(ok)' });
+    } else if (status.behind > 0) {
       const pullRes = await runGit(['pull', '--ff-only']);
       if (!pullRes.ok) {
         ctx.status = 500;
-        ctx.body = { ok: false, error: 'Git pull failed', details: pullRes.error, status };
+        ctx.body = { ok: false, error: 'Git pull failed', details: pullRes.error, status, steps };
         await logLine('ERROR', `git deploy pull failed: ${pullRes.error}`);
         return;
       }
