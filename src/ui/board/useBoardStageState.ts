@@ -1,4 +1,4 @@
-import { normalizeImagePath } from '../../game/imagePaths';
+import { CARD_ASSET_BASE_PATH, normalizeImagePath } from '../../game/imagePaths';
 import { canPlayHandCardAtStage } from '../../game/turnRules';
 import type { JojGameState, RankDefinition } from '../../game/types';
 
@@ -38,7 +38,7 @@ export const useBoardStageState = (args: {
   const deckBackImage = G?.deckBackImage ? normalizeImagePath(G.deckBackImage) : undefined;
   const lastDiscard = G?.discard?.length ? G.discard[G.discard.length - 1] : null;
   const lastDiscardImage = lastDiscard
-    ? (normalizeImagePath(cardImageById[lastDiscard.id]) ?? normalizeImagePath(lastDiscard.image) ?? `/cards/${lastDiscard.id}.png`)
+    ? (normalizeImagePath(cardImageById[lastDiscard.id]) ?? normalizeImagePath(lastDiscard.image) ?? `${CARD_ASSET_BASE_PATH}${lastDiscard.id}.png`)
     : undefined;
 
   return {

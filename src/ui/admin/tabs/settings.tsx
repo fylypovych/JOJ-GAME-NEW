@@ -120,7 +120,7 @@ export const AdminSettingsTab = ({
     <p className="admin-controls">
       <label>
         {t.bugReportIconPathLabel}
-        <input value={bugReportImagePath} onChange={(e) => onBugReportImagePathChange(e.target.value)} placeholder="/cards/bug-report-icon.webp" />
+        <input value={bugReportImagePath} onChange={(e) => onBugReportImagePathChange(e.target.value)} placeholder="/card-assets/bug-report-icon.webp" />
       </label>
       <button type="button" onClick={() => void onSaveBugReportImagePath()} disabled={bugReportUiConfigLoading}>
         {t.saveServerUrl}
@@ -205,7 +205,7 @@ export const AdminSettingsTab = ({
     {gameUiConfigStatus ? <p className="admin-success">{gameUiConfigStatus}</p> : null}
     {gameUiConfigError ? <p className="admin-error">{gameUiConfigError}</p> : null}
     <h4>{_lang === 'uk' ? 'Файлові assets' : 'File assets'}</h4>
-    <p>{_lang === 'uk' ? 'Файли лежать у public/cards, а metadata по них зберігається в БД.' : 'Files stay in public/cards while their metadata is stored in the database.'}</p>
+    <p>{_lang === 'uk' ? 'Файли лежать у public/card-assets, а metadata по них зберігається в БД.' : 'Files stay in public/card-assets while their metadata is stored in the database.'}</p>
     <p className="admin-controls">
       <button type="button" onClick={() => void onRefreshAssets()} disabled={assetsLoading}>
         {_lang === 'uk' ? 'Оновити список' : 'Refresh list'}

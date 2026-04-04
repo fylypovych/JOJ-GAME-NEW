@@ -1,4 +1,5 @@
 import { cardTitlesEnById, cardTitlesUk, defaultCardTitlesEnById } from '../i18n-data';
+import { CARD_ASSET_BASE_PATH } from '../../game/imagePaths';
 import type { CardDefinition, JojGameState } from '../../game/types';
 
 const extractQuotedCardTitle = (text: string) => {
@@ -57,7 +58,7 @@ export const resolvePlaybackCardMeta = (args: {
   if (matchedId) {
     return {
       title,
-      imageSrc: `/cards/${matchedId}.png`,
+      imageSrc: `${CARD_ASSET_BASE_PATH}${matchedId}.png`,
     };
   }
 
@@ -65,7 +66,7 @@ export const resolvePlaybackCardMeta = (args: {
     if (localizedTitle?.trim().toLowerCase() === normalizedTitle) {
       return {
         title,
-        imageSrc: args.cardImageById[cardId] || `/cards/${cardId}.png`,
+        imageSrc: args.cardImageById[cardId] || `${CARD_ASSET_BASE_PATH}${cardId}.png`,
       };
     }
   }
@@ -73,7 +74,7 @@ export const resolvePlaybackCardMeta = (args: {
     if (localizedTitle?.trim().toLowerCase() === normalizedTitle) {
       return {
         title,
-        imageSrc: args.cardImageById[cardId] || `/cards/${cardId}.png`,
+        imageSrc: args.cardImageById[cardId] || `${CARD_ASSET_BASE_PATH}${cardId}.png`,
       };
     }
   }
@@ -81,7 +82,7 @@ export const resolvePlaybackCardMeta = (args: {
     if (localizedTitle?.trim().toLowerCase() === normalizedTitle) {
       return {
         title,
-        imageSrc: args.cardImageById[cardId] || `/cards/${cardId}.png`,
+        imageSrc: args.cardImageById[cardId] || `${CARD_ASSET_BASE_PATH}${cardId}.png`,
       };
     }
   }

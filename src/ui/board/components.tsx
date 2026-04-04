@@ -1,5 +1,5 @@
 import type { ReactNode, RefObject, SyntheticEvent } from 'react';
-import { normalizeImagePath } from '../../game/imagePaths';
+import { CARD_ASSET_BASE_PATH, normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition, JojGameState, ResourceKey } from '../../game/types';
 import type { Language } from '../i18n';
 import { cardFlavor, cardTitleWithOverride, categoryLabel, localizeSystemMessageText } from '../i18n';
@@ -96,7 +96,7 @@ export const GameCardTile = ({
   selected = false,
   onCardClick,
 }: GameCardTileProps) => {
-  const imageSrc = normalizeImagePath(resolvedImage) ?? normalizeImagePath(card.image) ?? `/cards/${card.id}.png`;
+  const imageSrc = normalizeImagePath(resolvedImage) ?? normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`;
   const categoryClass = `game-card-cat-${String(card.category).toLowerCase()}`;
   const withCacheBust = (src: string) => `${src}${src.includes('?') ? '&' : '?'}v=${Date.now()}`;
   const handleCardImageError = (event: SyntheticEvent<HTMLImageElement>) => {

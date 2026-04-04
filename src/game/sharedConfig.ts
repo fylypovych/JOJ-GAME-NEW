@@ -20,6 +20,7 @@ import {
 } from './sharedConfigTemplate';
 import { isValidRank, normalizeSharedRanks, resolveRandomRankImageFromRanks } from './sharedConfigRanks';
 import { parseImportedRanksPayload, serializeSharedRanksDocument } from './sharedConfigSchema';
+import { CARD_ASSET_BASE_PATH } from './imagePaths';
 import type { CardCategory, CardDefinition, RankDefinition } from './types';
 
 export type DeckModuleType = 'MAIN_DECK_MODULE' | 'SEPARATE_DECK_MODULE' | 'SYSTEM_MODULE' | 'VISUAL_TRACK_MODULE';
@@ -74,7 +75,7 @@ export type DeckModuleBuildResult = {
   gameSetup: SharedGameSetup;
 };
 
-const buildRankAssetPath = (index: number) => `/cards/${String(index).padStart(2, '0')}-1.webp`;
+const buildRankAssetPath = (index: number) => `${CARD_ASSET_BASE_PATH}${String(index).padStart(2, '0')}-1.webp`;
 const generatedRankCardCopies = (rankId: string) => (rankId === 'recruit' ? 6 : 4);
 const isGeneratedRankTrackCardId = (cardId: string) => /^rank-[a-z0-9_]+-(set-\d+|extra-\d+)$/i.test(cardId);
 

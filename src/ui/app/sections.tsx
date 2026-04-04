@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { clampBotCountToAllowed, getAvailableBotCounts } from '../../game/lobbyConfig';
-import { normalizeImagePath } from '../../game/imagePaths';
+import { CARD_ASSET_BASE_PATH, normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition } from '../../game/types';
 import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { Language } from '../i18n';
@@ -8,6 +8,7 @@ import { cardFlavor, cardTitleWithOverride, categoryLabel, rankLabel, text } fro
 import { formatModuleDisplayName } from '../moduleDisplay';
 import { buildRoomShareLink, copyText } from './share';
 import type { GalleryCategoryFilter, LobbyMatch, UserTab } from './model';
+import { getPublicTabPath } from './routes';
 import type { AuthUser, UserAward, UserStats } from './useUserAccount';
 import type { UserMatchHistoryItem, UserSession } from './useUserAccount';
 
@@ -125,21 +126,56 @@ type UserTabsProps = {
 
 export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v2' }: UserTabsProps) => (
   <p className={`user-tabs user-tabs-v2${uiVariant === 'v1' ? ' user-tabs-v1' : ''}`}>
-    <button type="button" onClick={() => setActiveUserTab('games')} disabled={activeUserTab === 'games'}>
+    <a
+      href={getPublicTabPath('games')}
+      aria-current={activeUserTab === 'games' ? 'page' : undefined}
+      onClick={(event) => {
+        event.preventDefault();
+        setActiveUserTab('games');
+      }}
+    >
       {t.userTabGames}
-    </button>
-    <button type="button" onClick={() => setActiveUserTab('gallery')} disabled={activeUserTab === 'gallery'}>
+    </a>
+    <a
+      href={getPublicTabPath('gallery')}
+      aria-current={activeUserTab === 'gallery' ? 'page' : undefined}
+      onClick={(event) => {
+        event.preventDefault();
+        setActiveUserTab('gallery');
+      }}
+    >
       {t.userTabGallery}
-    </button>
-    <button type="button" onClick={() => setActiveUserTab('rules')} disabled={activeUserTab === 'rules'}>
+    </a>
+    <a
+      href={getPublicTabPath('rules')}
+      aria-current={activeUserTab === 'rules' ? 'page' : undefined}
+      onClick={(event) => {
+        event.preventDefault();
+        setActiveUserTab('rules');
+      }}
+    >
       {t.userTabRules}
-    </button>
-    <button type="button" onClick={() => setActiveUserTab('profile')} disabled={activeUserTab === 'profile'}>
+    </a>
+    <a
+      href={getPublicTabPath('profile')}
+      aria-current={activeUserTab === 'profile' ? 'page' : undefined}
+      onClick={(event) => {
+        event.preventDefault();
+        setActiveUserTab('profile');
+      }}
+    >
       {t.userTabProfile}
-    </button>
-    <button type="button" onClick={() => setActiveUserTab('statistics')} disabled={activeUserTab === 'statistics'}>
+    </a>
+    <a
+      href={getPublicTabPath('statistics')}
+      aria-current={activeUserTab === 'statistics' ? 'page' : undefined}
+      onClick={(event) => {
+        event.preventDefault();
+        setActiveUserTab('statistics');
+      }}
+    >
       {t.userTabStatistics}
-    </button>
+    </a>
   </p>
 );
 
@@ -1185,7 +1221,7 @@ export const GallerySection = ({
                 }}
               >
             <img
-              src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
+              src={normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`}
               alt={cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.display = 'none';
@@ -1200,7 +1236,7 @@ export const GallerySection = ({
                   }}
                 >
               <img
-                src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
+                src={normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`}
                   alt={cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}
               />
                 </div>

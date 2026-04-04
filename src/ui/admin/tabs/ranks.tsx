@@ -35,14 +35,14 @@ export const AdminRanksTab = ({
         <li key={`rank-${rank.id}-${index}`}><div className="admin-inline-editor"><div className="admin-editor-grid">
           <label>ID<input value={rank.id} onChange={(e) => updateRankAt(index, (row) => ({ ...row, id: e.target.value }))} /></label>
           <label>{t.rankNameLabel}<input value={rank.name} onChange={(e) => updateRankAt(index, (row) => ({ ...row, name: e.target.value }))} /></label>
-          <label>{t.rankImageLabel}<input value={rank.image ?? ''} onChange={(e) => updateRankAt(index, (row) => ({ ...row, image: e.target.value }))} placeholder="/cards/rank-*.webp" /></label>
+          <label>{t.rankImageLabel}<input value={rank.image ?? ''} onChange={(e) => updateRankAt(index, (row) => ({ ...row, image: e.target.value }))} placeholder="/card-assets/rank-*.webp" /></label>
           <label>{t.rankImageFileLabel}<input type="file" accept="image/*" onChange={(e) => { void attachRankImageFile(index, rank.id, e.target.files?.[0] ?? null); e.currentTarget.value = ''; }} /></label>
           <label>{t.rankImageVariantsLabel}
             <textarea
               className="admin-textarea"
               value={(rank.imageVariants ?? []).join('\n')}
               onChange={(e) => updateRankAt(index, (row) => ({ ...row, imageVariants: e.target.value.split('\n').map((v) => v.trim()).filter(Boolean) }))}
-              placeholder="/cards/rank-1.webp"
+              placeholder="/card-assets/rank-1.webp"
             />
           </label>
           <label>{t.rankVariantImageFileLabel}<input type="file" accept="image/*" onChange={(e) => { void attachRankVariantImageFile(index, rank.id, e.target.files?.[0] ?? null); e.currentTarget.value = ''; }} /></label>
@@ -71,14 +71,14 @@ export const AdminRanksTab = ({
     <div className="admin-inline-editor"><div className="admin-editor-grid">
       <label>ID<input value={rankDraft.id} onChange={(e) => setRankDraft((prev) => ({ ...prev, id: e.target.value }))} /></label>
       <label>{t.rankNameLabel}<input value={rankDraft.name} onChange={(e) => setRankDraft((prev) => ({ ...prev, name: e.target.value }))} /></label>
-      <label>{t.rankImageLabel}<input value={rankDraft.image ?? ''} onChange={(e) => setRankDraft((prev) => ({ ...prev, image: e.target.value }))} placeholder="/cards/rank-*.webp" /></label>
+      <label>{t.rankImageLabel}<input value={rankDraft.image ?? ''} onChange={(e) => setRankDraft((prev) => ({ ...prev, image: e.target.value }))} placeholder="/card-assets/rank-*.webp" /></label>
       <label>{t.rankImageFileLabel}<input type="file" accept="image/*" onChange={(e) => { void attachRankDraftImageFile(e.target.files?.[0] ?? null); e.currentTarget.value = ''; }} /></label>
       <label>{t.rankImageVariantsLabel}
         <textarea
           className="admin-textarea"
           value={(rankDraft.imageVariants ?? []).join('\n')}
           onChange={(e) => setRankDraft((prev) => ({ ...prev, imageVariants: e.target.value.split('\n').map((v) => v.trim()).filter(Boolean) }))}
-          placeholder="/cards/rank-1.webp"
+          placeholder="/card-assets/rank-1.webp"
         />
       </label>
       <label>{t.rankVariantImageFileLabel}<input type="file" accept="image/*" onChange={(e) => { void attachRankDraftVariantImageFile(e.target.files?.[0] ?? null); e.currentTarget.value = ''; }} /></label>

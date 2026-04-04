@@ -58,7 +58,7 @@ const buildV3OpponentLayout = (opponentIds: string[]) => {
   };
 };
 
-export const BoardV3 = ({
+export const LegacyGameBoard = ({
   G: incomingG,
   ctx: incomingCtx,
   moves,

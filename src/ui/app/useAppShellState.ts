@@ -10,6 +10,7 @@ import {
   type GalleryCategoryFilter,
   type UserTab,
 } from './model';
+import { getPublicTabFromPathname, getPublicTabPath } from './routes';
 
 export const useAppShellState = (serverUrl: string) => {
   const [lang, setLang] = useState<Language>(() => {
@@ -25,7 +26,7 @@ export const useAppShellState = (serverUrl: string) => {
   const [botProfile, setBotProfile] = useState<BotProfile>('balanced');
   const [selectedOptionalModuleIds, setSelectedOptionalModuleIds] = useState<string[]>(['vvnz_default']);
   const [adminSelectedMatchID, setAdminSelectedMatchID] = useState<string>('');
-  const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
+  const [activeUserTab, setActiveUserTab] = useState<UserTab>(() => getPublicTabFromPathname(window.location.pathname) ?? 'games');
   const [profileScreen, setProfileScreen] = useState<'login' | 'register' | 'reset'>('login');
   const [authErrorModal, setAuthErrorModal] = useState('');
   const [gameUiVariant, setGameUiVariant] = useState<'v1' | 'v2'>(() => {
@@ -74,6 +75,32 @@ export const useAppShellState = (serverUrl: string) => {
     window.localStorage.setItem(ADMIN_UI_VARIANT_STORAGE_KEY, adminUiVariant);
     window.localStorage.removeItem(LEGACY_ADMIN_UI_VARIANT_STORAGE_KEY);
   }, [adminUiVariant]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (window.location.pathname.startsWith('/admin')) return;
+      const routeTab = getPublicTabFromPathname(window.location.pathname);
+      if (routeTab) setActiveUserTab(routeTab);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (window.location.pathname.startsWith('/admin')) return;
+
+    const targetPath = getPublicTabPath(activeUserTab);
+    const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+    const normalizedTargetPath = targetPath.replace(/\/+$/, '') || '/';
+
+    if (currentPath === normalizedTargetPath) return;
+    if (currentPath === '/' && activeUserTab === 'games') return;
+
+    window.history.pushState({}, '', `${targetPath}${window.location.search}${window.location.hash}`);
+  }, [activeUserTab]);
 
   return {
     lang,

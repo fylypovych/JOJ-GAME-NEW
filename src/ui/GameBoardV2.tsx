@@ -35,7 +35,7 @@ const botSpeedHint = (lang: 'uk' | 'en', speed: BotPlaybackSpeedLevel) => {
 const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
   stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
 
-export const BoardV4 = ({
+export const GameBoardV2 = ({
   G: incomingG,
   ctx: incomingCtx,
   moves,
@@ -323,6 +323,8 @@ export const BoardV4 = ({
     activeArenaResources,
     activeArenaRankName,
     latestArenaRow,
+    actualDiscardTitle,
+    actualDiscardImage,
     displayedDiscardTitle,
     displayedDiscardImage,
     focusPrimaryLabel,
@@ -506,6 +508,7 @@ export const BoardV4 = ({
               <div className="game-ui-v4-bot-speed-slider">
                 <span className="game-ui-v4-bot-speed-label">{board.botSpeedLabel}</span>
                 <input
+                  className="game-ui-v4-bot-speed-range"
                   type="range"
                   min="1"
                   max="5"
@@ -513,7 +516,7 @@ export const BoardV4 = ({
                   value={botPlaybackSpeed}
                   onChange={(e) => setBotPlaybackSpeed(Number(e.target.value) as BotPlaybackSpeedLevel)}
                 />
-                <strong>{botPlaybackSpeed}</strong>
+                <strong className="game-ui-v4-bot-speed-value">{botPlaybackSpeed}</strong>
                 <small>{botSpeedHint(lang, botPlaybackSpeed)}</small>
               </div>
             </div>
@@ -754,11 +757,11 @@ export const BoardV4 = ({
                         <strong>{G.discard?.length ?? 0}</strong>
                       </div>
                       <div className="game-ui-v4-zone-card">
-                        {displayedDiscardTitle ? (
+                        {actualDiscardTitle ? (
                           <PilePreview
-                            imageSrc={displayedDiscardImage}
-                            alt={displayedDiscardTitle}
-                            previewKey={`v3-discard-${botPlaybackCardTitle || lastDiscard?.id || displayedDiscardTitle}`}
+                            imageSrc={actualDiscardImage}
+                            alt={actualDiscardTitle}
+                            previewKey={`v3-discard-${lastDiscard?.id || actualDiscardTitle}`}
                             openPreviewKey={openPreviewKey}
                             onTogglePreview={togglePreview}
                             onClosePreview={() => setOpenPreviewKey(null)}
@@ -766,7 +769,7 @@ export const BoardV4 = ({
                           />
                         ) : <div className="pile-empty">{t.noCardsInDiscard}</div>}
                       </div>
-                      <p className="game-ui-v4-zone-meta">{displayedDiscardTitle || t.noCardsInDiscard}</p>
+                      <p className="game-ui-v4-zone-meta">{actualDiscardTitle || t.noCardsInDiscard}</p>
                     </article>
                   </div>
                 </div>

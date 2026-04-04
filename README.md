@@ -257,8 +257,9 @@ Admin API:
 
 - [src/ui/App.tsx](src/ui/App.tsx)
 - [src/ui/BoardV2.tsx](src/ui/BoardV2.tsx)
-- [src/ui/BoardV3.tsx](src/ui/BoardV3.tsx)
-- [src/ui/BoardV4.tsx](src/ui/BoardV4.tsx)
+- [src/ui/GameBoardV1.tsx](src/ui/GameBoardV1.tsx)
+- [src/ui/GameBoardV2.tsx](src/ui/GameBoardV2.tsx)
+- [src/ui/LegacyGameBoard.tsx](src/ui/LegacyGameBoard.tsx)
 - [src/ui/styles.css](src/ui/styles.css)
 
 ## Version sync із commit message
@@ -410,7 +411,7 @@ joj.lol, www.joj.lol {
 Runtime data:
 
 - `database/` - JSON mirrors, bug reports, match data, local mutable state
-- `public/cards/` - картки та інші зображення
+- `public/card-assets/` - картки та інші зображення
 - `logs/` - серверні логи
 
 ## Корисні документи

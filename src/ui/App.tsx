@@ -62,6 +62,7 @@ import { BugReportWidget } from './app/BugReportWidget';
 import { buildRoomShareLink } from './app/share';
 import { useAppShellState } from './app/useAppShellState';
 import { useLobbySession } from './app/useLobbySession';
+import { getCanonicalPublicPath, getPublicTabPath } from './app/routes';
 import { useSharedConfigSync } from './app/useSharedConfigSync';
 import { useUserAccount } from './app/useUserAccount';
 
@@ -481,8 +482,53 @@ export const App = () => {
   }, [adminSelectedMatchID, matches, session?.matchID]);
 
   useEffect(() => {
-    document.title = isAdminRoute ? t.adminTitle : t.gameTitle;
-  }, [isAdminRoute, t.adminTitle, t.gameTitle]);
+    if (isAdminRoute) {
+      document.title = t.adminTitle;
+      return;
+    }
+
+    const tabTitle = activeUserTab === 'gallery'
+      ? t.userTabGallery
+      : activeUserTab === 'rules'
+        ? t.userTabRules
+        : activeUserTab === 'profile'
+          ? t.userTabProfile
+          : activeUserTab === 'statistics'
+            ? t.userTabStatistics
+            : t.userTabGames;
+    document.title = `${tabTitle} | ${t.gameTitle}`;
+  }, [activeUserTab, isAdminRoute, t.adminTitle, t.gameTitle, t.userTabGallery, t.userTabGames, t.userTabProfile, t.userTabRules, t.userTabStatistics]);
+
+  useEffect(() => {
+    if (isAdminRoute) return;
+
+    const canonicalHref = new URL(getCanonicalPublicPath(window.location.pathname, activeUserTab), window.location.origin).toString();
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', canonicalHref);
+
+    const description = activeUserTab === 'gallery'
+      ? 'Browse the JOJ card gallery and inspect the current card set.'
+      : activeUserTab === 'rules'
+        ? 'Read the rules, modes, and core flow of the JOJ card game.'
+        : activeUserTab === 'profile'
+          ? 'Manage your JOJ player profile, sessions, and account settings.'
+          : activeUserTab === 'statistics'
+            ? 'View JOJ player statistics, awards, and match history.'
+            : 'Create or join JOJ game rooms and start a multiplayer match.';
+
+    let descriptionMeta = document.querySelector('meta[name="description"]');
+    if (!descriptionMeta) {
+      descriptionMeta = document.createElement('meta');
+      descriptionMeta.setAttribute('name', 'description');
+      document.head.appendChild(descriptionMeta);
+    }
+    descriptionMeta.setAttribute('content', description);
+  }, [activeUserTab, isAdminRoute]);
 
   useEffect(() => {
     window.localStorage.setItem(ADMIN_STORAGE_MODE_STORAGE_KEY, adminStorageMode);
@@ -540,7 +586,7 @@ export const App = () => {
         </p>
       )}
       <p className="app-link-row">
-        {isAdminRoute ? <a href="/">{t.openGame}</a> : null}
+        {isAdminRoute ? <a href={getPublicTabPath('games')}>{t.openGame}</a> : null}
       </p>
 
       {isAdminRoute && (!adminAuthorized || adminAuthChecking) ? (

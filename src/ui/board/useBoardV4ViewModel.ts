@@ -146,8 +146,12 @@ export const buildBoardV4ViewModel = (args: {
     lastDiscard,
     lastDiscardImage,
   });
+  const actualDiscardTitle = lastDiscardTitle;
+  const actualDiscardImage = lastDiscardImage;
   const displayedDiscardTitle = botPlaybackCardTitle || playbackCardMeta.title || lastDiscardTitle;
-  const displayedDiscardImage = (botPlaybackCardTitle || playbackCardMeta.title) ? playbackCardMeta.imageSrc : lastDiscardImage;
+  const displayedDiscardImage = (botPlaybackCardTitle || playbackCardMeta.title)
+    ? (playbackCardMeta.imageSrc ?? lastDiscardImage)
+    : lastDiscardImage;
   const focusPrimaryLabel = lastDiscardTitle || activeArenaPlayerName;
   const focusSecondaryLabel = activeArenaRankName || rankName;
   const focusSupportingText = currentStageFocus;
@@ -211,6 +215,8 @@ export const buildBoardV4ViewModel = (args: {
     activeArenaResources,
     activeArenaRankName,
     latestArenaRow,
+    actualDiscardTitle,
+    actualDiscardImage,
     displayedDiscardTitle,
     displayedDiscardImage,
     focusPrimaryLabel,
