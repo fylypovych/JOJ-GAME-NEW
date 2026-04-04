@@ -1,12 +1,12 @@
 # Журнал Журналів (Web)
 
-Вебверсія гри на базі `boardgame.io` з багатокористувацькими кімнатами, кількома UI-варіантами (`v2`, `v3`, `v4`), акаунтами користувачів, адмінкою, редактором колоди/звань, симуляціями, bug-report системою та підтримкою `file`/`postgres` storage.
+Вебверсія гри на базі `boardgame.io` з багатокористувацькими кімнатами, двома актуальними UI-варіантами (`v1`, `v2`), акаунтами користувачів, адмінкою, редактором колоди/звань, симуляціями, bug-report системою та підтримкою `file`/`postgres` storage.
 
 ## Що є в проєкті
 
 - multiplayer rooms через `boardgame.io`
 - режими гри: `standard`, `standard_plus`, `simplified`
-- UI-варіанти клієнта: `v2`, `v3`, `v4`
+- UI-варіанти клієнта: `v1`, `v2`
 - акаунти користувачів, профілі, історія матчів, сесії, password reset
 - admin UI `/admin`
 - shared deck template + shared ranks
@@ -14,6 +14,8 @@
 - аналітика, awards, bug reports
 - PostgreSQL backend для shared config, user data, bug reports, match mirror і самих матчів
 - file mirrors для сумісності та локальної роботи
+- SEO-friendly публічні маршрути: `/games`, `/cards`, `/rules`, `/profile`, `/statistics`
+- `sitemap.xml` і `robots.txt` для індексації
 
 ## Технології
 
@@ -245,22 +247,37 @@ Admin API:
 
 ## UI варіанти
 
-Клієнт підтримує кілька UI-шарів:
+Клієнт підтримує два актуальні UI-шари:
 
+- `v1`
 - `v2`
-- `v3`
-- `v4`
 
-`v4` зараз є найбільш кастомізованим і має окрему immersive layout-логіку для активної гри.
+`v2` є основним сучасним інтерфейсом з immersive layout-логікою для активної гри.
+
+`LegacyGameBoard` залишено в кодовій базі як legacy-реалізацію для старих внутрішніх секцій і поступового рефакторингу, але перемикач дизайну працює через `v1` / `v2`.
 
 Основні файли UI:
 
 - [src/ui/App.tsx](src/ui/App.tsx)
-- [src/ui/BoardV2.tsx](src/ui/BoardV2.tsx)
 - [src/ui/GameBoardV1.tsx](src/ui/GameBoardV1.tsx)
 - [src/ui/GameBoardV2.tsx](src/ui/GameBoardV2.tsx)
 - [src/ui/LegacyGameBoard.tsx](src/ui/LegacyGameBoard.tsx)
 - [src/ui/styles.css](src/ui/styles.css)
+
+## SEO маршрути
+
+Публічні сторінки, які мають окремі URL:
+
+- `/games`
+- `/cards`
+- `/rules`
+- `/profile`
+- `/statistics`
+
+Додатково в `public/` лежать:
+
+- `sitemap.xml`
+- `robots.txt`
 
 ## Version sync із commit message
 
@@ -374,12 +391,14 @@ joj.lol, www.joj.lol {
   tls internal
   encode gzip
 
-  @api path /api/* /games/* /socket.io/*
+  @api path /api/* /socket.io/*
   reverse_proxy @api 127.0.0.1:8000
 
   reverse_proxy 127.0.0.1:4173
 }
 ```
+
+Важливо: `/games`, `/cards`, `/rules`, `/profile`, `/statistics` мають залишатися frontend-роутами і не повинні прокситись у backend як API-маски.
 
 ## Безпека і runtime policy
 
