@@ -4392,6 +4392,10 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+.game-ui-v2-header-footer {
+  grid-column: 1 / -1;
+}
+
 .game-ui-v3-header-tools,
 .game-ui-v2-header-tools {
   display: grid;

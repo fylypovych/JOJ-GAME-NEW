@@ -489,6 +489,19 @@ export const GameBoardV2 = ({
         copyInviteLabel={inviteText ? t.copyInviteText : undefined}
         onCopyInviteLink={shareLink ? () => { void copyText(shareLink); } : undefined}
         copyInviteLinkLabel={shareLink ? t.copyInviteLink : undefined}
+        footerContent={!isSpectator ? (
+          <V2BottomBar
+            resources={footerResourceItems}
+            rankName={rankName}
+            rankHint={footerRankHint}
+            primaryActionLabel={primaryActionLabel}
+            primaryActionDisabled={primaryActionDisabled}
+            secondaryActionLabel={footerActionLabel}
+            secondaryActionDisabled={!canEndTurn || blockPlayerTurnControls}
+            onPrimaryAction={handleFooterPrimaryAction}
+            onSecondaryAction={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)}
+          />
+        ) : undefined}
         sideContent={hasBotPlayers && !isSpectator ? (
           <>
             <div className="game-ui-v2-header-tools-head">
@@ -523,20 +536,6 @@ export const GameBoardV2 = ({
           </>
         ) : undefined}
       />
-
-      {!isSpectator ? (
-      <V2BottomBar
-        resources={footerResourceItems}
-        rankName={rankName}
-        rankHint={footerRankHint}
-        primaryActionLabel={primaryActionLabel}
-        primaryActionDisabled={primaryActionDisabled}
-        secondaryActionLabel={footerActionLabel}
-        secondaryActionDisabled={!canEndTurn || blockPlayerTurnControls}
-        onPrimaryAction={handleFooterPrimaryAction}
-        onSecondaryAction={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)}
-      />
-      ) : null}
 
       <V2EndVoteModal
         open={endGameVoteActive}

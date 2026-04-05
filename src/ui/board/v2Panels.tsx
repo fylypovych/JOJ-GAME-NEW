@@ -27,6 +27,7 @@ export const V2Header = (props: {
   onCopyInviteLink?: () => void;
   copyInviteLinkLabel?: string;
   sideContent?: ReactNode;
+  footerContent?: ReactNode;
 }) => {
   const {
     title,
@@ -49,6 +50,7 @@ export const V2Header = (props: {
     onCopyInviteLink,
     copyInviteLinkLabel,
     sideContent,
+    footerContent,
   } = props;
   return (
     <header className="game-ui-v2-header">
@@ -94,6 +96,7 @@ export const V2Header = (props: {
           </button>
         </div>
       </div>
+      {footerContent ? <div className="game-ui-v2-header-footer">{footerContent}</div> : null}
     </header>
   );
 };
