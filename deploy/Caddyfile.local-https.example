@@ -2,7 +2,7 @@ joj.lol, www.joj.lol {
   tls internal
   encode gzip
 
-  @api path /api/* /games/* /socket.io/*
+  @api path /api/* /socket.io/*
   reverse_proxy @api 127.0.0.1:8000
 
   reverse_proxy 127.0.0.1:4173

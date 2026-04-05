@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { CardDefinition, ResourceKey } from '../game/types';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
 import { buildTurnHelpItems, getBoardPromoteReason } from './board/boardViewHelpers';
@@ -58,13 +58,6 @@ export const GameBoardV2 = ({
   const isSpectator = !playerID;
   const [spectatorView, setSpectatorView] = useState<'live' | 'summary'>('live');
   const [selectedHandCardId, setSelectedHandCardId] = useState<string | null>(null);
-  const [impactPulse, setImpactPulse] = useState<{
-    id: string;
-    label: string;
-    text: string;
-    tone: 'neutral' | 'warn' | 'good' | 'legendary';
-    imageSrc?: string;
-  } | null>(null);
   const {
     G,
     ctx,
@@ -322,7 +315,6 @@ export const GameBoardV2 = ({
     activeArenaPlayerName,
     activeArenaResources,
     activeArenaRankName,
-    latestArenaRow,
     actualDiscardTitle,
     actualDiscardImage,
     displayedDiscardTitle,
@@ -383,40 +375,6 @@ export const GameBoardV2 = ({
     promoteReason,
     handlePromote,
   });
-
-  useEffect(() => {
-    if (!latestArenaRow?.id) return;
-    const impactText = latestArenaRow.type === 'system'
-      ? latestArenaRow.text
-      : `${playerLabelById(latestArenaRow.playerID)}: ${latestArenaRow.text}`;
-    setImpactPulse({
-      id: latestArenaRow.id,
-      label: latestArenaRow.label,
-      text: impactText,
-      tone: latestArenaRow.tone,
-      imageSrc: lastDiscardImage,
-    });
-    const timeoutId = window.setTimeout(() => {
-      setImpactPulse((current) => (current?.id === latestArenaRow.id ? null : current));
-    }, 2400);
-    return () => window.clearTimeout(timeoutId);
-  }, [latestArenaRow?.id, latestArenaRow?.label, latestArenaRow?.text, latestArenaRow?.tone, latestArenaRow?.type, latestArenaRow?.playerID, playerLabelById, lastDiscardImage]);
-
-  useEffect(() => {
-    if (!botPlaybackEventText) return;
-    const syntheticId = `bot-playback-${botPlaybackEventText}`;
-    setImpactPulse({
-      id: syntheticId,
-      label: board.recentEvents,
-      text: botPlaybackEventText,
-      tone: 'warn',
-      imageSrc: displayedDiscardImage ?? lastDiscardImage,
-    });
-    const timeoutId = window.setTimeout(() => {
-      setImpactPulse((current) => (current?.id === syntheticId ? null : current));
-    }, 1800);
-    return () => window.clearTimeout(timeoutId);
-  }, [botPlaybackEventText, displayedDiscardImage, lastDiscardImage, board.recentEvents]);
 
   const turnHelpItems = buildTurnHelpItems({
     stage,
@@ -504,16 +462,14 @@ export const GameBoardV2 = ({
         ) : undefined}
         sideContent={hasBotPlayers && !isSpectator ? (
           <>
-            <div className="game-ui-v2-header-tools-head">
-              <span className="game-ui-v2-header-tools-label">{board.botControlsTitle}</span>
-              {botThinkingPlayerName ? (
-                <span className="game-ui-v2-subtle game-ui-v2-bot-thinking">
-                  {board.botThinkingPrefix}: <strong>{botThinkingPlayerName}</strong>
-                </span>
-              ) : botPlaybackEventText ? (
-                <span className="game-ui-v2-subtle game-ui-v2-bot-thinking">{botPlaybackEventText}</span>
-              ) : null}
-            </div>
+              <div className="game-ui-v2-header-tools-head">
+                <span className="game-ui-v2-header-tools-label">{board.botControlsTitle}</span>
+                {botThinkingPlayerName ? (
+                  <span className="game-ui-v2-subtle game-ui-v2-bot-thinking">
+                    {board.botThinkingPrefix}: <strong>{botThinkingPlayerName}</strong>
+                  </span>
+                ) : null}
+              </div>
             <div className="game-ui-v2-header-tools-row">
               <button type="button" onClick={() => setBotAutoplayEnabled((prev) => !prev)}>
                 {botAutoplayEnabled ? board.botAutoplayPause : board.botAutoplayResume}
@@ -695,16 +651,6 @@ export const GameBoardV2 = ({
             )}
             boardContent={(
               <>
-                {impactPulse ? (
-                    <div className={`game-ui-v2-impact-pulse is-${impactPulse.tone}`} aria-live="polite">
-                      <div className="game-ui-v2-impact-beam" aria-hidden="true" />
-                      <div className="game-ui-v2-impact-copy">
-                        <span className="game-ui-v2-stage-label">{impactPulse.label}</span>
-                        <strong>{focusPrimaryLabel}</strong>
-                        <p>{impactPulse.text}</p>
-                      </div>
-                    </div>
-                ) : null}
                 <div className="game-ui-v2-altar-focus-shell">
                   <div className="game-ui-v2-table">
                     <article className="game-ui-v2-zone game-ui-v2-zone-deck">
@@ -716,11 +662,11 @@ export const GameBoardV2 = ({
                         <PilePreview
                           imageSrc={deckBackImage}
                           alt={t.drawPile}
-                          previewKey="v3-pile-deck"
+                          previewKey="v2-pile-deck"
                           openPreviewKey={openPreviewKey}
                           onTogglePreview={togglePreview}
                           onClosePreview={() => setOpenPreviewKey(null)}
-                          variant="v3"
+                          variant="v1"
                           fallback={<div className="pile-back-fallback">JOJ</div>}
                         />
                       </div>
@@ -737,11 +683,11 @@ export const GameBoardV2 = ({
                             <PilePreview
                               imageSrc={displayedDiscardImage}
                               alt={displayedDiscardTitle}
-                              previewKey={`v3-focus-${botPlaybackCardTitle || lastDiscard?.id || displayedDiscardTitle}`}
+                              previewKey={`v2-focus-${botPlaybackCardTitle || lastDiscard?.id || displayedDiscardTitle}`}
                               openPreviewKey={openPreviewKey}
                               onTogglePreview={togglePreview}
                               onClosePreview={() => setOpenPreviewKey(null)}
-                              variant="v3"
+                              variant="v1"
                             />
                           ) : (
                             <div className="game-ui-v2-focus-empty">{board.waitingAction}</div>
@@ -750,9 +696,6 @@ export const GameBoardV2 = ({
                         <div className="game-ui-v2-focus-meta">
                           <strong>{displayedDiscardTitle || focusPrimaryLabel}</strong>
                           <span>{focusSecondaryLabel}</span>
-                          <div className={`game-ui-v2-focus-tone${latestArenaRow ? ` is-${latestArenaRow.tone}` : ''}`}>
-                            {latestArenaRow?.label ?? board.waitingAction}
-                          </div>
                           <p className="game-ui-v2-zone-meta">
                             {focusSupportingText}
                           </p>
@@ -774,11 +717,11 @@ export const GameBoardV2 = ({
                           <PilePreview
                             imageSrc={actualDiscardImage}
                             alt={actualDiscardTitle}
-                            previewKey={`v3-discard-${lastDiscard?.id || actualDiscardTitle}`}
+                            previewKey={`v2-discard-${lastDiscard?.id || actualDiscardTitle}`}
                             openPreviewKey={openPreviewKey}
                             onTogglePreview={togglePreview}
                             onClosePreview={() => setOpenPreviewKey(null)}
-                            variant="v3"
+                            variant="v1"
                           />
                         ) : <div className="pile-empty">{t.noCardsInDiscard}</div>}
                       </div>
