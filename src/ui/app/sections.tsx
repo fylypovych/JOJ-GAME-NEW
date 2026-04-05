@@ -525,7 +525,7 @@ export const LobbySection = ({
             {t.createRoom}
           </button>
         </p>
-        <div className={`lobby-room-create-summary lobby-room-create-summary-v4-compact board-v2-subpanel${uiVariant === 'v1' ? ' board-v1-subpanel' : ''}`}>
+        <div className={`lobby-room-create-summary lobby-room-create-summary-v2-compact board-v2-subpanel${uiVariant === 'v1' ? ' board-v1-subpanel' : ''}`}>
           <h4>{t.roomSummaryReady}</h4>
           <ul>
             <li>{t.gameModeLabel}: {formatGameModeLabel(t, gameMode)}</li>
@@ -676,8 +676,8 @@ export const ActiveSessionSection = ({
         </button>
       </p>
       {activeMatch ? (
-        <div className={`lobby-active-room-grid lobby-active-room-grid-summary is-v4 board-v2-summary-grid${uiVariant === 'v1' ? ' board-v1-summary-grid' : ''}`}>
-          <div className={`lobby-room-create-summary lobby-room-create-summary-compact lobby-room-create-summary-v4-compact board-v2-subpanel${uiVariant === 'v1' ? ' board-v1-subpanel' : ''}`}>
+        <div className={`lobby-active-room-grid lobby-active-room-grid-summary is-v2 board-v2-summary-grid${uiVariant === 'v1' ? ' board-v1-summary-grid' : ''}`}>
+          <div className={`lobby-room-create-summary lobby-room-create-summary-compact lobby-room-create-summary-v2-compact board-v2-subpanel${uiVariant === 'v1' ? ' board-v1-subpanel' : ''}`}>
             <h3>{t.roomSummaryReady}</h3>
             <div className="lobby-room-kv-grid">
               <span>{t.gameModeLabel}</span><strong>{formatGameModeLabel(t, activeGameMode)}</strong>

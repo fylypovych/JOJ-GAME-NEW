@@ -16,7 +16,7 @@ export type BugReportRecord = {
   playerID: string | null;
   playerName: string | null;
   spectator: boolean;
-  uiVariant: 'v1' | 'v2' | 'v3' | 'v4' | 'v5' | 'unknown';
+  uiVariant: 'v1' | 'v2' | 'v3' | 'unknown';
   lang: 'uk' | 'en';
   userAgent: string;
   sourceIp: string;

@@ -590,7 +590,7 @@ export const App = () => {
       </p>
 
       {isAdminRoute && (!adminAuthorized || adminAuthChecking) ? (
-        <section className="admin-shell-v4 admin-panel-v4">
+        <section className="admin-shell-v2 admin-panel-v2">
           <h2>{t.adminTitle}</h2>
           <p>{adminAuthChecking ? t.loading : (adminAuthError || (adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminUnauthorized))}</p>
           {!adminAuthChecking ? (

@@ -31,13 +31,13 @@ export const useAppShellState = (serverUrl: string) => {
   const [authErrorModal, setAuthErrorModal] = useState('');
   const [gameUiVariant, setGameUiVariant] = useState<'v1' | 'v2'>(() => {
     const raw = window.localStorage.getItem(GAME_UI_VARIANT_STORAGE_KEY);
-    if (raw === 'v1' || raw === 'v5') return 'v1';
+    if (raw === 'v1') return 'v1';
     return 'v2';
   });
   const [adminUiVariant, setAdminUiVariant] = useState<'v2'>(() => {
     const raw = window.localStorage.getItem(ADMIN_UI_VARIANT_STORAGE_KEY)
       ?? window.localStorage.getItem(LEGACY_ADMIN_UI_VARIANT_STORAGE_KEY);
-    return raw === 'v2' || raw === 'v4' ? 'v2' : 'v2';
+    return raw === 'v2' ? 'v2' : 'v2';
   });
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
   const [deletingAdminMatch, setDeletingAdminMatch] = useState(false);
