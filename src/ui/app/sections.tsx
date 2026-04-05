@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { clampBotCountToAllowed, getAvailableBotCounts } from '../../game/lobbyConfig';
 import { CARD_ASSET_BASE_PATH, normalizeImagePath } from '../../game/imagePaths';
-import type { CardDefinition } from '../../game/types';
+import type { CardDefinition, RankDefinition } from '../../game/types';
 import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { Language } from '../i18n';
 import { cardFlavor, cardTitleWithOverride, categoryLabel, rankLabel, text } from '../i18n';
@@ -1263,14 +1263,159 @@ export const GallerySection = ({
 export const RulesSection = ({
   t,
   rules,
+  sharedRanks,
+  lang,
   uiVariant = 'v2',
-}: { t: T; rules: readonly string[]; uiVariant?: 'v1' | 'v2' }) => (
+}: { t: T; rules: readonly string[]; sharedRanks: readonly RankDefinition[]; lang: Language; uiVariant?: 'v1' | 'v2' }) => {
+  const rulesPage = t.rulesPage;
+  const formatResourceMap = (value: Partial<Record<'time' | 'reputation' | 'discipline' | 'documents' | 'tech', number>>) => {
+    const parts = Object.entries(value)
+      .filter(([, amount]) => typeof amount === 'number' && amount !== 0)
+      .map(([key, amount]) => `${amount > 0 ? '+' : ''}${amount} ${t.resources[key as keyof typeof t.resources]}`);
+    return parts.length ? parts.join(', ') : '—';
+  };
+
+  return (
     <section className={`board board-v2-panel board-v2-rules${uiVariant === 'v1' ? ' board-v1-panel board-v1-rules' : ''}`}>
-    <h2>{t.rulesTitle}</h2>
-    <ol className="rules-list">
-      {rules.map((rule, index) => (
-        <li key={`rule-${index}`}>{rule}</li>
-      ))}
-    </ol>
-  </section>
-);
+      <div className="rules-hero">
+        <div className="rules-hero-copy">
+          <p className="rules-kicker">{rulesPage.heroKicker}</p>
+          <h2>{t.rulesTitle}</h2>
+          <h3>{rulesPage.heroTitle}</h3>
+          <p>{rulesPage.heroDescription}</p>
+        </div>
+        <div className="rules-facts-grid">
+          {rulesPage.quickFacts.map((fact) => (
+            <article key={fact.label} className="rules-fact-card">
+              <span>{fact.label}</span>
+              <strong>{fact.value}</strong>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <div className="rules-section-grid">
+        <article className="rules-content-card">
+          <h3>{rulesPage.philosophyTitle}</h3>
+          <ul className="rules-bullet-list">
+            {rulesPage.philosophyPoints.map((point) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
+        </article>
+        <article className="rules-content-card">
+          <h3>{rulesPage.setupTitle}</h3>
+          <ul className="rules-bullet-list">
+            {rulesPage.setupPoints.map((point) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
+        </article>
+      </div>
+
+      <div className="rules-content-card">
+        <h3>{rulesPage.resourcesTitle}</h3>
+        <div className="rules-resource-grid">
+          {rulesPage.resources.map((resource) => (
+            <article key={resource.key} className="rules-resource-card">
+              <span className="rules-resource-label">{t.resources[resource.key]}</span>
+              <strong>{resource.title}</strong>
+              <p>{resource.description}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <div className="rules-section-grid">
+        <article className="rules-content-card">
+          <h3>{rulesPage.turnTitle}</h3>
+          <div className="rules-step-list">
+            {rulesPage.turnSteps.map((step) => (
+              <div key={step.title} className="rules-step-card">
+                <strong>{step.title}</strong>
+                <p>{step.description}</p>
+              </div>
+            ))}
+          </div>
+        </article>
+        <article className="rules-content-card">
+          <h3>{rulesPage.cardTypesTitle}</h3>
+          <div className="rules-cardtype-list">
+            {rulesPage.cardTypes.map((type) => (
+              <div key={type.title} className="rules-cardtype-item">
+                <strong>{type.title}</strong>
+                <p>{type.description}</p>
+              </div>
+            ))}
+          </div>
+        </article>
+      </div>
+
+      <div className="rules-section-grid">
+        <article className="rules-content-card">
+          <h3>{rulesPage.promotionTitle}</h3>
+          <ul className="rules-bullet-list">
+            {rulesPage.promotionPoints.map((point) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
+        </article>
+        <article className="rules-content-card">
+          <h3>{rulesPage.modesTitle}</h3>
+          <div className="rules-mode-list">
+            {rulesPage.modes.map((mode) => (
+              <div key={mode.title} className="rules-mode-item">
+                <strong>{mode.title}</strong>
+                <p>{mode.description}</p>
+              </div>
+            ))}
+          </div>
+        </article>
+      </div>
+
+      <div className="rules-content-card">
+        <h3>{rulesPage.endingTitle}</h3>
+        <ul className="rules-bullet-list">
+          {rulesPage.endingPoints.map((point) => (
+            <li key={point}>{point}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="rules-content-card">
+        <div className="rules-rank-head">
+          <div>
+            <h3>{rulesPage.rankTrackTitle}</h3>
+            <p>{rulesPage.rankTrackHint}</p>
+          </div>
+        </div>
+        <div className="rules-rank-table">
+          <div className="rules-rank-row is-head">
+            <span>{rulesPage.rankTrackColumns.rank}</span>
+            <span>{rulesPage.rankTrackColumns.requirements}</span>
+            <span>{rulesPage.rankTrackColumns.cost}</span>
+            <span>{rulesPage.rankTrackColumns.bonus}</span>
+          </div>
+          {sharedRanks.map((rank) => (
+            <div key={rank.id} className={`rules-rank-row${rank.victory ? ' is-victory' : ''}`}>
+              <strong>{rankLabel(rank.id, lang) || rank.name}</strong>
+              <span>{formatResourceMap(rank.requirement)}</span>
+              <span>{formatResourceMap(rank.cost)}</span>
+              <span>{rank.victory ? (lang === 'uk' ? 'Перемога в грі' : 'Wins the game') : formatResourceMap(rank.bonus)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rules-content-card">
+        <h3>{rulesPage.quickRulesTitle}</h3>
+        <p>{rulesPage.quickRulesIntro}</p>
+        <ol className="rules-list">
+          {rules.map((rule, index) => (
+            <li key={`rule-${index}`}>{rule}</li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+};

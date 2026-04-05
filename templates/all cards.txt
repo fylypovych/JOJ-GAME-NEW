@@ -122,7 +122,5 @@ legendary-09	LEGENDARY	Вода “ПроZORRO”
 legendary-10	LEGENDARY	Дрончик
 legendary-11	LEGENDARY	Старий польський корч
 legendary-12	LEGENDARY	Грамота “Єбать ти молодець”
-legendary-13	LEGENDARY	Хороший прес-офіцер
 legendary-14	LEGENDARY	Відпустка
 legendary-15	LEGENDARY	SLON.FM
-

@@ -1948,14 +1948,6 @@
       "flavor": "Офіційно визнано неофіційним героєм."
     },
     {
-      "id": "legendary-13",
-      "title": "Хороший прес-офіцер",
-      "category": "LEGENDARY",
-      "image": "/cards/card-1771884483248.webp",
-      "effects": [],
-      "flavor": "Новина — це зброя, якщо подати її з посмішкою."
-    },
-    {
       "id": "legendary-14",
       "title": "Відпустка",
       "category": "LEGENDARY",
@@ -2109,7 +2101,6 @@
     "legendary-10",
     "legendary-11",
     "legendary-12",
-    "legendary-13",
     "legendary-14",
     "legendary-15"
   ],
@@ -3848,14 +3839,6 @@
       "flavor": "Офіційно визнано неофіційним героєм."
     },
     {
-      "id": "legendary-13",
-      "title": "Хороший прес-офіцер",
-      "category": "LEGENDARY",
-      "image": "/cards/card-1771884483248.webp",
-      "effects": [],
-      "flavor": "Новина — це зброя, якщо подати її з посмішкою."
-    },
-    {
       "id": "legendary-14",
       "title": "Відпустка",
       "category": "LEGENDARY",
@@ -4074,7 +4057,7 @@
       "name": "2026.LEGENDARY.MODULE",
       "moduleType": "SEPARATE_DECK_MODULE",
       "category": "LEGENDARY",
-      "cardCount": 15,
+      "cardCount": 14,
       "enabled": true,
       "target": "legendaryDeck",
       "cardIds": [
@@ -4090,7 +4073,6 @@
         "legendary-10",
         "legendary-11",
         "legendary-12",
-        "legendary-13",
         "legendary-14",
         "legendary-15"
       ],

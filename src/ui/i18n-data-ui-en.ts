@@ -1,4 +1,4 @@
-import { rulesListEn } from './i18n-rules';
+import { rulesListEn, rulesPageEn } from './i18n-rules';
 import { uiBoardEn } from './i18n-board';
 
 export const uiEnData = {
@@ -108,6 +108,7 @@ export const uiEnData = {
     noCardsYet: 'No cards available',
     rulesTitle: 'Game Rules',
     rulesList: rulesListEn,
+    rulesPage: rulesPageEn,
     lobbyTitle: 'Game lobby',
     playerName: 'Player name',
     playerNamePlaceholder: 'Enter your name',
@@ -551,6 +552,15 @@ export const uiEnData = {
     ranksImportFile: 'Ranks JSON file',
     rankCostLabel: 'Cost:',
     rankBonusLabel: 'Bonus cost:',
+    rankImageHelp: 'Primary rank image. If there are no variants, this image is used in the game.',
+    rankImageVariantsHelp: 'Add as many variants as you need. Each row or upload adds a separate image.',
+    rankAddVariantLabel: 'Add variant',
+    rankVariantsEmpty: 'No variants yet. Add at least one if you want a gallery.',
+    rankRequirementsTitle: 'Rank requirements',
+    rankTransitionCostTitle: 'Promotion cost',
+    rankBonusTitle: 'Promotion bonus',
+    rankCreateTitle: 'New rank',
+    rankCreateHint: 'Fill in the basics first, then add images and resource parameters.',
     ranksJsonArrayError: 'Ranks JSON must be an array.',
     ranksSchemaError: 'Invalid ranks schema.',
     ranksImportSuccess: 'Ranks import successful. Count:',

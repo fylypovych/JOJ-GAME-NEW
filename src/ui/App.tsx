@@ -825,7 +825,7 @@ export const App = () => {
       ) : null}
 
       {!isAdminRoute && activeUserTab === 'rules' ? (
-        <RulesSection t={t} rules={rules} uiVariant={gameUiVariant} />
+        <RulesSection t={t} rules={rules} sharedRanks={sharedRanks} lang={lang} uiVariant={gameUiVariant} />
       ) : null}
 
       {isAdminRoute && adminAuthorized ? (
