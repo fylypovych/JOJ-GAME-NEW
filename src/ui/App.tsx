@@ -542,7 +542,7 @@ export const App = () => {
     <main className={`app app-${shellUiVariant}${shellUiVariant === 'v1' ? ' app-v1' : ' app-v2'}${isImmersiveModernGame && gameUiVariant === 'v2' ? ' is-immersive-v2-game' : ''}${isImmersiveModernGame && gameUiVariant === 'v1' ? ' is-immersive-v1-game' : ''}`} data-bug-report-capture-root="true">
       <h1>{isAdminRoute ? t.adminTitle : t.gameTitle}</h1>
       {!isAdminRoute ? (
-        <section className={`app-top-toolbar app-top-toolbar-v2${shellUiVariant === 'v1' ? ' app-top-toolbar-v1' : ''}`}>
+        <section className={`app-top-toolbar ${shellUiVariant === 'v1' ? 'app-top-toolbar-v1' : 'app-top-toolbar-v2'}`}>
           <div className="app-top-toolbar-left">
             <UserTabs t={t} activeUserTab={activeUserTab} setActiveUserTab={setActiveUserTab} uiVariant={gameUiVariant} />
           </div>
