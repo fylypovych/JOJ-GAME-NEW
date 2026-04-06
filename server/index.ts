@@ -200,10 +200,33 @@ const corsMiddleware = async (ctx: any, next: () => Promise<unknown>) => {
     }
     await next();
   };
+const publicGamesRouteCompatibilityMiddleware = async (ctx: any, next: () => Promise<unknown>) => {
+  const method = String(ctx?.method ?? '').toUpperCase();
+  const path = typeof ctx?.path === 'string' ? ctx.path.replace(/\/+$/, '') || '/' : '';
+  const accept = typeof ctx?.request?.headers?.accept === 'string' ? String(ctx.request.headers.accept) : '';
+  const wantsHtml = accept.includes('text/html') || accept.includes('*/*');
+
+  if (method === 'GET' && path === '/games' && wantsHtml) {
+    ctx.status = 302;
+    if (typeof ctx.redirect === 'function') {
+      ctx.redirect('/');
+      return;
+    }
+    if (typeof ctx.set === 'function') {
+      ctx.set('Location', '/');
+    }
+    ctx.body = '';
+    return;
+  }
+
+  await next();
+};
 if (app && Array.isArray(app.middleware)) {
+  app.middleware.unshift(publicGamesRouteCompatibilityMiddleware);
   app.middleware.unshift(securityHeadersMiddleware);
   app.middleware.unshift(corsMiddleware);
 } else if (router && typeof router.use === 'function') {
+  router.use(publicGamesRouteCompatibilityMiddleware);
   router.use(securityHeadersMiddleware);
   router.use(corsMiddleware);
 }
