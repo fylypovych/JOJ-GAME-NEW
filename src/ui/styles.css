@@ -371,7 +371,8 @@ button:disabled {
   border-color: rgba(180, 189, 173, 0.42);
 }
 
-.user-tabs-v2 button:disabled {
+.user-tabs-v2 button.is-active,
+.user-tabs-v2 button[aria-current="page"] {
   opacity: 1;
   border-color: rgba(90, 137, 225, 0.5);
   background: linear-gradient(180deg, #4a70d6, #294aa7);
@@ -391,7 +392,8 @@ button:disabled {
   border-color: rgba(183, 165, 136, 0.44);
 }
 
-.user-tabs-v1 button:disabled {
+.user-tabs-v1 button.is-active,
+.user-tabs-v1 button[aria-current="page"] {
   opacity: 1;
   border-color: rgba(86, 121, 187, 0.42);
   background: linear-gradient(180deg, #5e88d6, #3d66b2);
@@ -2902,6 +2904,160 @@ button:disabled {
   font-size: 13px;
   line-height: 1.15;
   white-space: nowrap;
+}
+
+.admin-shell-v1,
+.admin-panel-v1 {
+  background:
+    linear-gradient(180deg, rgba(247, 243, 235, 0.99), rgba(231, 223, 209, 0.99)),
+    radial-gradient(920px 320px at 50% 0%, rgba(255, 255, 255, 0.7), transparent 62%);
+  box-shadow:
+    0 22px 54px rgba(120, 102, 72, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.admin-shell-v1 > h2,
+.admin-panel-v1 > h2 {
+  color: #4f4336;
+}
+
+.admin-shell-v1 > .admin-v4-tab-nav,
+.admin-panel-v1 > .admin-v4-tab-nav {
+  top: 18px;
+}
+
+.admin-panel-v1 .admin-v4-category-list {
+  border-color: rgba(171, 154, 126, 0.3);
+  background:
+    linear-gradient(180deg, rgba(250, 246, 239, 0.99), rgba(236, 227, 214, 0.99));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 12px 24px rgba(120, 102, 72, 0.12);
+}
+
+.admin-panel-v1 .admin-v4-category-button {
+  border-color: rgba(176, 158, 126, 0.22);
+  background: rgba(255, 255, 255, 0.52);
+  color: #645543;
+}
+
+.admin-panel-v1 .admin-v4-category-button:hover:not(:disabled) {
+  border-color: rgba(110, 146, 212, 0.34);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.admin-panel-v1 .admin-v4-category-button.is-active {
+  border-color: rgba(99, 138, 212, 0.34);
+  background: linear-gradient(180deg, #6e9ff0, #4f79c9);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 8px 16px rgba(76, 106, 162, 0.2);
+}
+
+.admin-panel-v1 .admin-v4-category-copy small {
+  color: #857563;
+}
+
+.admin-panel-v1 .admin-v4-workspace {
+  border-color: rgba(181, 164, 136, 0.28);
+  background:
+    linear-gradient(180deg, rgba(252, 248, 241, 0.995), rgba(240, 232, 220, 0.99));
+  box-shadow:
+    0 14px 30px rgba(120, 102, 72, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.admin-panel-v1 .admin-v4-workspace-head {
+  border-bottom-color: rgba(187, 170, 142, 0.34);
+}
+
+.admin-panel-v1 .admin-v4-kicker {
+  color: #8b7a66;
+}
+
+.admin-panel-v1 .admin-v4-subtitle,
+.admin-panel-v1 .admin-v4-note,
+.admin-panel-v1 label,
+.admin-panel-v1 p,
+.admin-panel-v1 li,
+.admin-panel-v1 span,
+.admin-panel-v1 code,
+.admin-panel-v1 small {
+  color: #5e5143;
+}
+
+.admin-panel-v1 strong,
+.admin-panel-v1 h3,
+.admin-panel-v1 h4,
+.admin-panel-v1 .admin-v4-panel-head h4,
+.admin-panel-v1 .admin-v4-status-stack strong,
+.admin-panel-v1 .admin-v4-metric-row strong {
+  color: #342b23;
+}
+
+.admin-panel-v1 .admin-v4-status-stack span,
+.admin-panel-v1 .admin-v4-metric-row span,
+.admin-panel-v1 .admin-v4-panel-head p,
+.admin-panel-v1 .admin-v4-stat-card span,
+.admin-panel-v1 .admin-v4-category-art-label,
+.admin-panel-v1 .admin-v4-category-banner small {
+  color: #776857;
+}
+
+.admin-panel-v1 .admin-v4-panel,
+.admin-panel-v1 .admin-v4-hero,
+.admin-panel-v1 .admin-v4-stat-card,
+.admin-panel-v1 .admin-v4-workspace-body > * {
+  border-color: rgba(181, 164, 136, 0.24);
+  background:
+    linear-gradient(180deg, rgba(251, 247, 241, 0.99), rgba(238, 229, 216, 0.99));
+  box-shadow:
+    0 12px 24px rgba(120, 102, 72, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.admin-panel-v1 .admin-v4-metric-row > div,
+.admin-panel-v1 .admin-v4-category-banner {
+  border-color: rgba(181, 164, 136, 0.24);
+  background:
+    linear-gradient(180deg, rgba(249, 245, 238, 0.99), rgba(236, 227, 214, 0.99));
+}
+
+.admin-panel-v1 .admin-v4-badge.is-muted {
+  background: rgba(219, 210, 194, 0.82);
+  color: #5b4c3c;
+}
+
+.admin-panel-v1 .admin-v4-tab-strip button,
+.admin-panel-v1 .admin-v4-hero-actions button,
+.admin-panel-v1 .admin-v4-workspace-body button,
+.admin-panel-v1 .admin-v4-workspace-body input,
+.admin-panel-v1 .admin-v4-workspace-body select,
+.admin-panel-v1 .admin-v4-workspace-body textarea {
+  border-color: rgba(176, 158, 126, 0.3);
+  background: linear-gradient(180deg, rgba(252, 248, 242, 0.995), rgba(236, 227, 214, 0.99));
+  color: #5b4c3d;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 4px 12px rgba(120, 102, 72, 0.06);
+}
+
+.admin-panel-v1 .admin-v4-tab-strip button:hover:not(:disabled),
+.admin-panel-v1 .admin-v4-hero-actions button:hover:not(:disabled),
+.admin-panel-v1 .admin-v4-workspace-body button:hover:not(:disabled) {
+  border-color: rgba(104, 144, 219, 0.42);
+  color: #3c4c65;
+}
+
+.admin-panel-v1 .admin-v4-tab-strip button:disabled {
+  border-color: rgba(96, 143, 221, 0.52);
+  background: linear-gradient(180deg, rgba(113, 167, 244, 0.96), rgba(80, 127, 207, 0.96));
+  color: #fff;
+}
+
+.admin-panel-v1 > hr {
+  background: linear-gradient(90deg, rgba(169, 146, 104, 0.24), rgba(169, 146, 104, 0));
 }
 
 @media (max-width: 980px) {

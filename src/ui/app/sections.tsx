@@ -125,19 +125,19 @@ type UserTabsProps = {
 
 export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v2' }: UserTabsProps) => (
   <p className={`user-tabs user-tabs-v2${uiVariant === 'v1' ? ' user-tabs-v1' : ''}`}>
-    <button type="button" onClick={() => setActiveUserTab('games')} disabled={activeUserTab === 'games'}>
+    <button type="button" onClick={() => setActiveUserTab('games')} aria-current={activeUserTab === 'games' ? 'page' : undefined} className={activeUserTab === 'games' ? 'is-active' : ''}>
       {t.userTabGames}
     </button>
-    <button type="button" onClick={() => setActiveUserTab('gallery')} disabled={activeUserTab === 'gallery'}>
+    <button type="button" onClick={() => setActiveUserTab('gallery')} aria-current={activeUserTab === 'gallery' ? 'page' : undefined} className={activeUserTab === 'gallery' ? 'is-active' : ''}>
       {t.userTabGallery}
     </button>
-    <button type="button" onClick={() => setActiveUserTab('rules')} disabled={activeUserTab === 'rules'}>
+    <button type="button" onClick={() => setActiveUserTab('rules')} aria-current={activeUserTab === 'rules' ? 'page' : undefined} className={activeUserTab === 'rules' ? 'is-active' : ''}>
       {t.userTabRules}
     </button>
-    <button type="button" onClick={() => setActiveUserTab('profile')} disabled={activeUserTab === 'profile'}>
+    <button type="button" onClick={() => setActiveUserTab('profile')} aria-current={activeUserTab === 'profile' ? 'page' : undefined} className={activeUserTab === 'profile' ? 'is-active' : ''}>
       {t.userTabProfile}
     </button>
-    <button type="button" onClick={() => setActiveUserTab('statistics')} disabled={activeUserTab === 'statistics'}>
+    <button type="button" onClick={() => setActiveUserTab('statistics')} aria-current={activeUserTab === 'statistics' ? 'page' : undefined} className={activeUserTab === 'statistics' ? 'is-active' : ''}>
       {t.userTabStatistics}
     </button>
   </p>

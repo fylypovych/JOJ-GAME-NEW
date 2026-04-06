@@ -534,6 +534,10 @@ export const App = () => {
           </button>
           {' | '}
           {t.gameUiLabel}:{' '}
+          <button type="button" onClick={() => setAdminUiVariant('v1')} disabled={adminUiVariant === 'v1'}>
+            {t.gameUiV1}
+          </button>
+          {' '}
           <button type="button" onClick={() => setAdminUiVariant('v2')} disabled={adminUiVariant === 'v2'}>
             {t.gameUiV2}
           </button>
@@ -544,7 +548,7 @@ export const App = () => {
       </p>
 
       {isAdminRoute && (!adminAuthorized || adminAuthChecking) ? (
-        <section className="admin-shell-v4 admin-panel-v4">
+        <section className={`admin-shell-v4 admin-panel-v4 admin-shell-v2 admin-panel-v2${adminUiVariant === 'v1' ? ' admin-shell-v1 admin-panel-v1' : ''}`}>
           <h2>{t.adminTitle}</h2>
           <p>{adminAuthChecking ? t.loading : (adminAuthError || (adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminUnauthorized))}</p>
           {!adminAuthChecking ? (

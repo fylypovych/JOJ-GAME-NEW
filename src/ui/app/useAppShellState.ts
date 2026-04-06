@@ -33,10 +33,11 @@ export const useAppShellState = (serverUrl: string) => {
     if (raw === 'v1' || raw === 'v5') return 'v1';
     return 'v2';
   });
-  const [adminUiVariant, setAdminUiVariant] = useState<'v2'>(() => {
+  const [adminUiVariant, setAdminUiVariant] = useState<'v1' | 'v2'>(() => {
     const raw = window.localStorage.getItem(ADMIN_UI_VARIANT_STORAGE_KEY)
       ?? window.localStorage.getItem(LEGACY_ADMIN_UI_VARIANT_STORAGE_KEY);
-    return raw === 'v2' || raw === 'v4' ? 'v2' : 'v2';
+    if (raw === 'v1' || raw === 'v5') return 'v1';
+    return 'v2';
   });
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
   const [deletingAdminMatch, setDeletingAdminMatch] = useState(false);
