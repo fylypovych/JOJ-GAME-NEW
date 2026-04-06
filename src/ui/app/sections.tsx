@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { clampBotCountToAllowed, getAvailableBotCounts } from '../../game/lobbyConfig';
-import { normalizeImagePath } from '../../game/imagePaths';
+import { CARD_ASSET_BASE_PATH, normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition } from '../../game/types';
 import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { Language } from '../i18n';
@@ -1185,7 +1185,7 @@ export const GallerySection = ({
                 }}
               >
             <img
-              src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
+              src={normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`}
               alt={cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.display = 'none';
@@ -1200,7 +1200,7 @@ export const GallerySection = ({
                   }}
                 >
               <img
-                src={normalizeImagePath(card.image) ?? `/cards/${card.id}.png`}
+                src={normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`}
                   alt={cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}
               />
                 </div>

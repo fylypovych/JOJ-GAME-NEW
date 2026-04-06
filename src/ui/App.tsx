@@ -501,26 +501,31 @@ export const App = () => {
             <UserTabs t={t} activeUserTab={activeUserTab} setActiveUserTab={setActiveUserTab} uiVariant={gameUiVariant} />
           </div>
           <div className="app-top-toolbar-right">
-            <p className="app-top-row">
-              {t.language}:{' '}
-              <button type="button" onClick={() => setLang('uk')} disabled={lang === 'uk'}>
-                {t.langUk}
-              </button>{' '}
-              <button type="button" onClick={() => setLang('en')} disabled={lang === 'en'}>
-                {t.langEn}
-              </button>
-              {' | '}
-              {t.gameUiLabel}:{' '}
-              <button type="button" onClick={() => setGameUiVariant('v1')} disabled={gameUiVariant === 'v1'}>
-                {t.gameUiV1}
-              </button>
-              {' '}
-              <button type="button" onClick={() => setGameUiVariant('v2')} disabled={gameUiVariant === 'v2'}>
-                {t.gameUiV2}
-              </button>
-              {' | '}
+            <div className="app-top-row app-toolbar-controls">
+              <div className="app-toolbar-group">
+                <span className="app-toolbar-label">{t.language}:</span>
+                <div className="app-toolbar-button-row">
+                  <button type="button" onClick={() => setLang('uk')} disabled={lang === 'uk'}>
+                    {t.langUk}
+                  </button>
+                  <button type="button" onClick={() => setLang('en')} disabled={lang === 'en'}>
+                    {t.langEn}
+                  </button>
+                </div>
+              </div>
+              <div className="app-toolbar-group">
+                <span className="app-toolbar-label">{t.gameUiLabel}:</span>
+                <div className="app-toolbar-button-row">
+                  <button type="button" onClick={() => setGameUiVariant('v1')} disabled={gameUiVariant === 'v1'}>
+                    {t.gameUiV1}
+                  </button>
+                  <button type="button" onClick={() => setGameUiVariant('v2')} disabled={gameUiVariant === 'v2'}>
+                    {t.gameUiV2}
+                  </button>
+                </div>
+              </div>
               <a className="app-toolbar-link-button" href="/admin">{t.openAdmin}</a>
-            </p>
+            </div>
           </div>
         </section>
       ) : (

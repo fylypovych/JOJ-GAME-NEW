@@ -114,14 +114,14 @@ export const V2BottomBar = (props: {
     onSecondaryAction,
   } = props;
   return (
-    <div className="game-ui-v2-footer-bar">
-      <div className="game-ui-v2-footer-resources">
+    <div className="game-ui-v2-footer-bar game-ui-v4-footer-bar">
+      <div className="game-ui-v2-footer-resources game-ui-v4-footer-resources">
         {resources.map((item) => (
           <span
             key={`footer-${item.key}`}
-            className={`game-ui-v2-footer-resource${item.highlighted ? ' is-highlighted' : ''}${item.deficit ? ' is-deficit' : ''}`}
+            className={`game-ui-v2-footer-resource game-ui-v4-footer-resource${item.highlighted ? ' is-highlighted' : ''}${item.deficit ? ' is-deficit' : ''}`}
           >
-            <span className="game-ui-v2-footer-resource-icon" aria-hidden="true">
+            <span className="game-ui-v2-footer-resource-icon game-ui-v4-footer-resource-icon" aria-hidden="true">
               {item.imageSrc ? <img src={item.imageSrc} alt="" /> : item.icon}
             </span>
             <strong>{item.value}</strong>
@@ -129,11 +129,11 @@ export const V2BottomBar = (props: {
           </span>
         ))}
       </div>
-      <div className="game-ui-v2-footer-rank">
+      <div className="game-ui-v2-footer-rank game-ui-v4-footer-rank">
         <strong>{rankName}</strong>
         <small>{rankHint}</small>
       </div>
-      <div className="game-ui-v2-footer-actions">
+      <div className="game-ui-v2-footer-actions game-ui-v4-footer-actions">
         <button type="button" className="is-primary" onClick={onPrimaryAction} disabled={primaryActionDisabled}>{primaryActionLabel}</button>
         <button type="button" className="is-secondary" onClick={onSecondaryAction} disabled={secondaryActionDisabled}>{secondaryActionLabel}</button>
       </div>
@@ -158,32 +158,32 @@ const V2OpponentCard = (props: {
   return (
     <button
       type="button"
-      className={`game-ui-v2-opponent-card${item.imageSrc ? '' : ' is-placeholder-card'}${item.isActive ? ' is-active' : ''}${item.isSelected ? ' is-selected' : ''}${item.isTargetable ? ' is-targetable' : ''}`}
+      className={`game-ui-v2-opponent-card game-ui-v4-opponent-card${item.imageSrc ? '' : ' is-placeholder-card'}${item.isActive ? ' is-active' : ''}${item.isSelected ? ' is-selected' : ''}${item.isTargetable ? ' is-targetable' : ''}`}
       onClick={() => onClick(item.id)}
       disabled={!item.isTargetable}
     >
-      <div className="game-ui-v2-opponent-main">
-        <div className={`game-ui-v2-opponent-avatar${item.imageSrc ? '' : ' is-placeholder'}`}>
+      <div className="game-ui-v2-opponent-main game-ui-v4-opponent-main">
+        <div className={`game-ui-v2-opponent-avatar game-ui-v4-opponent-avatar${item.imageSrc ? '' : ' is-placeholder'}`}>
           {item.imageSrc ? (
             <V2PortraitImage src={item.imageSrc} alt={item.rankName} />
           ) : (
             <span className="game-ui-v2-opponent-avatar-fallback">{item.initials}</span>
           )}
         </div>
-        <div className="game-ui-v2-opponent-copy">
+        <div className="game-ui-v2-opponent-copy game-ui-v4-opponent-copy">
           <strong>{item.name}</strong>
           <span>{item.rankName}</span>
           <small>{handLabel}: {item.cardsCount}</small>
         </div>
       </div>
-      <aside className="game-ui-v2-opponent-resources" aria-label={`${item.name} resources`}>
+      <aside className="game-ui-v2-opponent-resources game-ui-v4-opponent-resources" aria-label={`${item.name} resources`}>
         {item.resources.map((resource) => (
           <span
             key={`${item.id}-${resource.key}`}
-            className="game-ui-v2-opponent-resource"
+            className="game-ui-v2-opponent-resource game-ui-v4-opponent-resource"
             title={`${resource.label}: ${resource.value}`}
           >
-            <span className="game-ui-v2-opponent-resource-icon" aria-hidden="true">
+            <span className="game-ui-v2-opponent-resource-icon game-ui-v4-opponent-resource-icon" aria-hidden="true">
               {resource.imageSrc ? <img src={resource.imageSrc} alt="" /> : resource.icon}
             </span>
             <strong>{resource.value}</strong>
@@ -219,32 +219,32 @@ export const V2OpponentsArea = (props: {
     onOpponentClick,
   } = props;
   return (
-    <div className="game-ui-v2-opponents-area">
-      <div className="game-ui-v2-opponents-side is-left">
+    <div className="game-ui-v2-opponents-area game-ui-v4-opponents-area">
+      <div className="game-ui-v2-opponents-side game-ui-v4-opponents-side is-left">
         {leftItems.map((item) => (
           <V2OpponentCard key={`v2-left-${item.id}`} item={item} handLabel={handLabel} onClick={onOpponentClick} />
         ))}
       </div>
-      <div className="game-ui-v2-center-badge">
-        <div className="game-ui-v2-center-badge-portrait">
+      <div className="game-ui-v2-center-badge game-ui-v4-center-badge">
+        <div className="game-ui-v2-center-badge-portrait game-ui-v4-center-badge-portrait">
           {centerPortraitImage ? (
             <V2PortraitImage src={centerPortraitImage} alt={centerSubtitle || centerTitle} />
           ) : (
             <span>{centerInitials}</span>
           )}
         </div>
-        <div className="game-ui-v2-center-badge-copy">
+        <div className="game-ui-v2-center-badge-copy game-ui-v4-center-badge-copy">
           <span>{centerKicker}</span>
           <strong>{centerTitle}</strong>
           <small>{centerSubtitle}</small>
-          <div className="game-ui-v2-center-badge-resources" aria-label={`${centerTitle} resources`}>
+          <div className="game-ui-v2-center-badge-resources game-ui-v4-center-badge-resources" aria-label={`${centerTitle} resources`}>
             {centerResources.map((resource) => (
               <span
                 key={`center-resource-${resource.key}`}
-                className="game-ui-v2-center-badge-resource"
+                className="game-ui-v2-center-badge-resource game-ui-v4-center-badge-resource"
                 title={`${resource.label}: ${resource.value}`}
               >
-                <span className="game-ui-v2-center-badge-resource-icon" aria-hidden="true">
+                <span className="game-ui-v2-center-badge-resource-icon game-ui-v4-center-badge-resource-icon" aria-hidden="true">
                   {resource.imageSrc ? <img src={resource.imageSrc} alt="" /> : resource.icon}
                 </span>
                 <strong>{resource.value}</strong>
@@ -253,7 +253,7 @@ export const V2OpponentsArea = (props: {
           </div>
         </div>
       </div>
-      <div className="game-ui-v2-opponents-side is-right">
+      <div className="game-ui-v2-opponents-side game-ui-v4-opponents-side is-right">
         {rightItems.map((item) => (
           <V2OpponentCard key={`v2-right-${item.id}`} item={item} handLabel={handLabel} onClick={onOpponentClick} />
         ))}
@@ -270,19 +270,19 @@ export const V2BattlefieldSection = (props: {
 }) => {
   const { title, opponentCount, opponents, boardContent } = props;
   return (
-    <section className="game-ui-v2-panel game-ui-v2-battlefield game-ui-v2-battlefield-panel">
+    <section className="game-ui-v2-panel game-ui-v4-panel game-ui-v2-battlefield game-ui-v4-battlefield game-ui-v2-battlefield-panel game-ui-v4-battlefield-panel">
       <h3>{title}</h3>
-      <div className="game-ui-v2-board-surface" aria-hidden="true">
+      <div className="game-ui-v2-board-surface game-ui-v4-board-surface" aria-hidden="true">
         <span className="game-ui-v2-board-ring game-ui-v2-board-ring-pressure" />
         <span className="game-ui-v2-board-ring game-ui-v2-board-ring-altar" />
         <span className="game-ui-v2-board-ring game-ui-v2-board-ring-tactical" />
         <span className="game-ui-v2-board-glow game-ui-v2-board-glow-left" />
         <span className="game-ui-v2-board-glow game-ui-v2-board-glow-right" />
       </div>
-      <div className={`game-ui-v2-battlefield-shell is-opponents-${opponentCount}`}>
+      <div className={`game-ui-v2-battlefield-shell game-ui-v4-battlefield-shell is-opponents-${opponentCount}`}>
         {opponents}
-        <div className="game-ui-v2-board-area">
-          <div className="game-ui-v2-altar-lane game-ui-v2-board-center">
+        <div className="game-ui-v2-board-area game-ui-v4-board-area">
+          <div className="game-ui-v2-altar-lane game-ui-v2-board-center game-ui-v4-board-center">
             {boardContent}
           </div>
         </div>
@@ -297,15 +297,15 @@ export const V2PlayerDockSection = (props: {
 }) => {
   const { mainContent, sideContent } = props;
   return (
-    <section className="game-ui-v2-panel game-ui-v2-player-dock">
-      <div className="game-ui-v2-player-dock-main game-ui-v2-hand-frame">
-        <div className="game-ui-v2-player-station" aria-hidden="true">
+    <section className="game-ui-v2-panel game-ui-v4-panel game-ui-v2-player-dock game-ui-v4-player-dock">
+      <div className="game-ui-v2-player-dock-main game-ui-v4-player-dock-main game-ui-v2-hand-frame game-ui-v4-hand-frame">
+        <div className="game-ui-v2-player-station game-ui-v4-player-station" aria-hidden="true">
           <span className="game-ui-v2-player-station-edge" />
           <span className="game-ui-v2-player-station-glow" />
         </div>
         {mainContent}
       </div>
-      <aside className="game-ui-v2-player-dock-side">
+      <aside className="game-ui-v2-player-dock-side game-ui-v4-player-dock-side">
         {sideContent}
       </aside>
     </section>
