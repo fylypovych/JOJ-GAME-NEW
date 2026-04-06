@@ -553,11 +553,11 @@ export const App = () => {
       </p>
 
       {isAdminRoute && (!adminAuthorized || adminAuthChecking) ? (
-        <section className={`admin-shell-v4 admin-panel-v4 admin-shell-v2 admin-panel-v2${adminUiVariant === 'v1' ? ' admin-shell-v1 admin-panel-v1' : ''}`}>
+        <section className={`admin-shell-v4 admin-panel-v4 admin-shell-v2 admin-panel-v2 admin-auth-shell${adminUiVariant === 'v1' ? ' admin-shell-v1 admin-panel-v1' : ''}`}>
           <h2>{t.adminTitle}</h2>
-          <p>{adminAuthChecking ? t.loading : (adminAuthError || (adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminUnauthorized))}</p>
+          <p className="admin-auth-status">{adminAuthChecking ? t.loading : (adminAuthError || (adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminUnauthorized))}</p>
           {!adminAuthChecking ? (
-            <p className="admin-controls">
+            <p className="admin-controls admin-auth-actions">
               <button type="button" onClick={() => { void verifyAdminToken(); }}>{t.refreshRooms}</button>
             </p>
           ) : null}
