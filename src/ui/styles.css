@@ -3455,6 +3455,29 @@ button:disabled {
   object-fit: cover;
 }
 
+.admin-rank-image-preview {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.admin-rank-image-preview img {
+  width: min(100%, 240px);
+  max-width: 240px;
+  max-height: 340px;
+  height: auto;
+  border: 1px solid #d0d5dd;
+  border-radius: 12px;
+  object-fit: contain;
+  background: #fff;
+}
+
+.admin-rank-image-preview code {
+  max-width: min(100%, 240px);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .admin-hover-image {
   position: relative;
   display: inline-flex;
@@ -8658,7 +8681,7 @@ button:disabled {
 .app.app-v2.is-immersive-v2-game > h1,
 .app.app-v2.is-immersive-v2-game > .app-top-toolbar.app-top-toolbar-v2,
 .app.app-v2.is-immersive-v2-game > .app-link-row {
-  width: min(1520px, calc(100% - 40px));
+  width: min(1480px, calc(100% - 40px));
   margin-left: auto;
   margin-right: auto;
 }
