@@ -3670,6 +3670,20 @@ button:disabled {
     0 10px 24px rgba(15, 23, 36, 0.12);
 }
 
+.admin-v4-workspace-body pre.admin-textarea.admin-log-viewer,
+.admin-panel-v1 .admin-v4-workspace-body pre.admin-textarea.admin-log-viewer,
+.admin-panel-v4 .admin-v4-workspace-body pre.admin-textarea.admin-log-viewer {
+  background-color: #101823 !important;
+  background-image: linear-gradient(180deg, #0f1724, #151d2b) !important;
+  color: #e7edf7 !important;
+  border-color: rgba(45, 58, 76, 0.42) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: #e7edf7 !important;
+  caret-color: #e7edf7;
+}
+
 .admin-error {
   color: #b42318;
   font-weight: 600;
@@ -5813,14 +5827,15 @@ button:disabled {
   padding: 8px 10px 10px;
   border-radius: 12px;
   background:
-    linear-gradient(180deg, rgba(247, 244, 238, 0.96), rgba(228, 225, 218, 0.94));
+    linear-gradient(180deg, rgba(58, 63, 66, 0.94), rgba(29, 33, 37, 0.98)),
+    radial-gradient(circle at 50% 0%, rgba(189, 163, 99, 0.08), transparent 54%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 6px 12px rgba(0, 0, 0, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 6px 12px rgba(0, 0, 0, 0.18);
 }
 
 .game-ui-layout-shell .game-card-body.is-v3 strong {
-  color: #2f2920;
+  color: #e7edf7;
 }
 
 .game-ui-layout-shell .game-ui-v3-resource-card strong {
@@ -5833,7 +5848,7 @@ button:disabled {
 
 .game-ui-layout-shell .game-card-body.is-v3 small,
 .game-ui-layout-shell .game-card.is-v3 .pill {
-  color: #5d5d56;
+  color: #b8c2b7;
 }
 
 .game-ui-layout-shell .game-card-inline-action,
@@ -7230,6 +7245,23 @@ button:disabled {
   box-shadow:
     0 12px 22px rgba(124, 103, 72, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-card-body.is-v3 {
+  background:
+    linear-gradient(180deg, rgba(247, 244, 238, 0.96), rgba(228, 225, 218, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-card-body.is-v3 strong {
+  color: #2f2920;
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-card-body.is-v3 small,
+.game-ui-layout-shell.is-theme-v1 .game-card.is-v3 .pill {
+  color: #5d5d56;
 }
 
 .game-ui-layout-shell.is-theme-v1 .game-ui-layout-notice {
@@ -9154,6 +9186,8 @@ button:disabled {
   background: transparent;
   box-shadow: none;
   grid-template-columns: 1fr;
+  min-width: 0;
+  max-width: 100%;
   position: relative;
   z-index: 4;
   gap: 14px;
@@ -9169,6 +9203,8 @@ button:disabled {
 
 .app.app-v2.is-immersive-v2-game .game-ui-layout-player-dock-main {
   padding: 0;
+  min-width: 0;
+  max-width: 100%;
   background: transparent;
 }
 
@@ -9182,7 +9218,10 @@ button:disabled {
 }
 
 .app.app-v2.is-immersive-v2-game .game-ui-layout-player-dock-main .game-ui-layout-hand-grid {
-  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  justify-content: flex-start;
   gap: 16px;
   padding: 0;
 }
