@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 
-export const BoardV3Header = (props: {
+export const BoardV1Header = (props: {
   title: string;
-  uiVariant?: 'v3' | 'v4';
+  uiVariant?: 'v1' | 'v2';
   roomMeta?: { matchID: string; playerID?: string | null } | null;
   playerName: string;
   spectatorLabel: string;
@@ -21,7 +21,7 @@ export const BoardV3Header = (props: {
 }) => {
   const {
     title,
-    uiVariant = 'v3',
+    uiVariant = 'v1',
     roomMeta,
     playerName,
     spectatorLabel,
@@ -39,32 +39,32 @@ export const BoardV3Header = (props: {
     sideContent,
   } = props;
   return (
-    <header className="game-ui-v3-header">
-      <div className="game-ui-v3-header-main">
-        <p className="game-ui-v3-kicker">{uiVariant === 'v4' ? 'JOJ V4 TCG' : 'JOJ V3 TCG'}</p>
+    <header className="game-ui-v1-header">
+      <div className="game-ui-v1-header-main">
+        <p className="game-ui-v1-kicker">{uiVariant === 'v2' ? 'JOJ V2 TCG' : 'JOJ V1 TCG'}</p>
         <h2>{title}</h2>
         {roomMeta ? (
-          <div className="game-ui-v3-room-meta">
-            <p className="game-ui-v3-subtle">{activeRoomLabel}: <strong>{roomMeta.matchID}</strong></p>
-            <p className="game-ui-v3-subtle">
+          <div className="game-ui-v1-room-meta">
+            <p className="game-ui-v1-subtle">{activeRoomLabel}: <strong>{roomMeta.matchID}</strong></p>
+            <p className="game-ui-v1-subtle">
               {roomMeta.playerID ? `${joinedAsLabel}: ${playerName || '-'} (#${roomMeta.playerID})` : `${spectatorModeLabel}: ${playerName || spectatorLabel}`}
             </p>
           </div>
         ) : null}
-        {stageFocus ? <p className="game-ui-v3-subtle game-ui-v3-stage-focus">{stageFocus}</p> : null}
+        {stageFocus ? <p className="game-ui-v1-subtle game-ui-v1-stage-focus">{stageFocus}</p> : null}
         {seatConnectionMissing ? <p className="admin-error">{seatConnectionMissingText}</p> : null}
       </div>
-      <div className="game-ui-v3-header-actions">
-        {sideContent ? <div className="game-ui-v3-header-tools">{sideContent}</div> : null}
-        <div className="game-ui-v3-header-button-row">
+      <div className="game-ui-v1-header-actions">
+        {sideContent ? <div className="game-ui-v1-header-tools">{sideContent}</div> : null}
+        <div className="game-ui-v1-header-button-row">
           {onLeaveRoom ? (
-            <button type="button" className="game-ui-v3-header-leave" onClick={onLeaveRoom}>
+            <button type="button" className="game-ui-v1-header-leave" onClick={onLeaveRoom}>
               {leaveRoomLabel}
             </button>
           ) : null}
           <button
             type="button"
-            className="game-ui-v3-header-leave"
+            className="game-ui-v1-header-leave"
             onClick={onRequestEndGame}
             disabled={requestEndGameDisabled}
           >
@@ -76,7 +76,7 @@ export const BoardV3Header = (props: {
   );
 };
 
-export const BoardV3EndVoteModal = (props: {
+export const BoardV1EndVoteModal = (props: {
   open: boolean;
   title: string;
   prompt: string;
@@ -90,25 +90,25 @@ export const BoardV3EndVoteModal = (props: {
 }) => {
   if (!props.open) return null;
   return (
-    <section className="game-ui-v3-vote-popup" role="dialog" aria-label={props.title}>
-      <div className="game-ui-v3-vote-popup-card">
+    <section className="game-ui-v1-vote-popup" role="dialog" aria-label={props.title}>
+      <div className="game-ui-v1-vote-popup-card">
         <h3>{props.title}</h3>
-        <p className="game-ui-v3-subtle">{props.prompt}</p>
+        <p className="game-ui-v1-subtle">{props.prompt}</p>
         {!props.hasVotedAgree ? (
-          <div className="game-ui-v3-selection-actions">
+          <div className="game-ui-v1-selection-actions">
             <button type="button" onClick={props.onAgree}>{props.agreeLabel}</button>
             <button type="button" className="ghost" onClick={props.onDecline}>{props.declineLabel}</button>
           </div>
         ) : (
-          <p className="game-ui-v3-subtle">{props.waitingLabel}</p>
+          <p className="game-ui-v1-subtle">{props.waitingLabel}</p>
         )}
-        <p className="game-ui-v3-subtle">{props.declineInfo}</p>
+        <p className="game-ui-v1-subtle">{props.declineInfo}</p>
       </div>
     </section>
   );
 };
 
-export const BoardV3GameoverModal = (props: {
+export const BoardV1GameoverModal = (props: {
   open: boolean;
   ariaLabel: string;
   title: string;
@@ -159,23 +159,23 @@ export const BoardV3GameoverModal = (props: {
 }) => {
   if (!props.open) return null;
   return (
-    <div className="game-ui-v3-gameover-modal" role="dialog" aria-label={props.ariaLabel}>
-      <div className="game-ui-v3-gameover-card">
+    <div className="game-ui-v1-gameover-modal" role="dialog" aria-label={props.ariaLabel}>
+      <div className="game-ui-v1-gameover-card">
         <h3>{props.title}</h3>
         <p>
           <strong>{props.winnerLabel}:</strong> {props.winnerName}
           {props.winnerRankName ? ` (${props.winnerRankName})` : ''}
         </p>
-        {props.autoEndedLabel ? <p className="game-ui-v3-subtle">{props.autoEndedLabel}</p> : null}
-        {props.agreedEndLabel ? <p className="game-ui-v3-subtle">{props.agreedEndLabel}</p> : null}
-        <div className="game-ui-v3-token-list">
-          <div className="game-ui-v3-token-row"><span>{props.statsLabels.totalTurns}</span><strong>{props.stats.totalTurns}</strong></div>
-          <div className="game-ui-v3-token-row"><span>{props.statsLabels.resourcesGained}</span><strong>{props.stats.resourcesGained}</strong></div>
-          <div className="game-ui-v3-token-row"><span>{props.statsLabels.resourcesLost}</span><strong>{props.stats.resourcesLost}</strong></div>
-          <div className="game-ui-v3-token-row"><span>{props.statsLabels.lyapsPlayed}</span><strong>{props.stats.lyapsPlayed}</strong></div>
-          <div className="game-ui-v3-token-row"><span>{props.statsLabels.scandalsPlayed}</span><strong>{props.stats.scandalsPlayed}</strong></div>
+        {props.autoEndedLabel ? <p className="game-ui-v1-subtle">{props.autoEndedLabel}</p> : null}
+        {props.agreedEndLabel ? <p className="game-ui-v1-subtle">{props.agreedEndLabel}</p> : null}
+        <div className="game-ui-v1-token-list">
+          <div className="game-ui-v1-token-row"><span>{props.statsLabels.totalTurns}</span><strong>{props.stats.totalTurns}</strong></div>
+          <div className="game-ui-v1-token-row"><span>{props.statsLabels.resourcesGained}</span><strong>{props.stats.resourcesGained}</strong></div>
+          <div className="game-ui-v1-token-row"><span>{props.statsLabels.resourcesLost}</span><strong>{props.stats.resourcesLost}</strong></div>
+          <div className="game-ui-v1-token-row"><span>{props.statsLabels.lyapsPlayed}</span><strong>{props.stats.lyapsPlayed}</strong></div>
+          <div className="game-ui-v1-token-row"><span>{props.statsLabels.scandalsPlayed}</span><strong>{props.stats.scandalsPlayed}</strong></div>
         </div>
-        <BoardV3StandingsSummary
+        <BoardV1StandingsSummary
           title={props.summaryTitle}
           summaryLabels={props.summaryLabels}
           playerSummaries={props.playerSummaries}
@@ -187,7 +187,7 @@ export const BoardV3GameoverModal = (props: {
   );
 };
 
-export const BoardV3StandingsSummary = (props: {
+export const BoardV1StandingsSummary = (props: {
   title: string;
   summaryLabels: {
     player: string;
@@ -210,16 +210,16 @@ export const BoardV3StandingsSummary = (props: {
     winner?: boolean;
   }>;
 }) => (
-  <div className="game-ui-v3-gameover-summary">
+  <div className="game-ui-v1-gameover-summary">
     <h4>{props.title}</h4>
-    <div className="game-ui-v3-gameover-summary-list">
+    <div className="game-ui-v1-gameover-summary-list">
       {props.playerSummaries.map((row) => (
-        <article key={`summary-${row.playerID}`} className={`game-ui-v3-gameover-summary-row${row.winner ? ' is-winner' : ''}`}>
-          <div className="game-ui-v3-gameover-summary-head">
+        <article key={`summary-${row.playerID}`} className={`game-ui-v1-gameover-summary-row${row.winner ? ' is-winner' : ''}`}>
+          <div className="game-ui-v1-gameover-summary-head">
             <strong>{row.name}</strong>
             <span>{row.rankName}</span>
           </div>
-          <div className="game-ui-v3-gameover-summary-grid">
+          <div className="game-ui-v1-gameover-summary-grid">
             <span>{props.summaryLabels.player}</span><strong>{row.name}</strong>
             <span>{props.summaryLabels.rank}</span><strong>{row.rankName}</strong>
             <span>{props.summaryLabels.resources}</span><strong>{row.resourcesText}</strong>

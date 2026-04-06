@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from '
 import { text } from '../../i18n';
 import { formatModuleDisplayName } from '../../moduleDisplay';
 import type { DeckTarget, LegendaryDeckMode } from '../../../game/jojGame';
-import { normalizeImagePath } from '../../../game/imagePaths';
+import { CARD_ASSET_BASE_PATH, normalizeImagePath } from '../../../game/imagePaths';
 import type { CardCategory, CardDefinition } from '../../../game/types';
 import { HoverImage } from '../HoverImage';
 
@@ -25,7 +25,7 @@ type ModuleDef = {
 const parseIds = (value: string): string[] =>
   Array.from(new Set(value.split(/[\s,;]+/).map((id) => id.trim()).filter(Boolean)));
 const getCardImageSrc = (card: { id: string; image?: string }) =>
-  normalizeImagePath(card.image) ?? `/cards/${card.id}.png`;
+  normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`;
 
 export const AdminDeckTab = ({
   t, lang: _lang, deckStats, sharedDeckTemplate, editTarget, editIndex, inlineEditor,
@@ -364,7 +364,7 @@ export const AdminDeckTab = ({
               </select>
             </label>
             <label>{t.moduleBackImagePathLabel}
-              <input value={moduleDraft.deckBackImage ?? ''} onChange={(e) => setModuleDraft((prev) => ({ ...prev, deckBackImage: e.target.value }))} placeholder="/cards/deck-back.webp" />
+              <input value={moduleDraft.deckBackImage ?? ''} onChange={(e) => setModuleDraft((prev) => ({ ...prev, deckBackImage: e.target.value }))} placeholder="/card-assets/deck-back.webp" />
             </label>
           </div>
           <label>{t.moduleCardIdsLabel}

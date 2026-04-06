@@ -1,5 +1,5 @@
 import type { ReactNode, RefObject, SyntheticEvent } from 'react';
-import { normalizeImagePath } from '../../game/imagePaths';
+import { CARD_ASSET_BASE_PATH, normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition, JojGameState, ResourceKey } from '../../game/types';
 import type { Language } from '../i18n';
 import { cardFlavor, cardTitleWithOverride, categoryLabel, localizeSystemMessageText } from '../i18n';
@@ -12,7 +12,7 @@ type PilePreviewProps = {
   onTogglePreview: (key: string) => void;
   onClosePreview: () => void;
   fallback?: ReactNode;
-  variant?: 'default' | 'v3';
+  variant?: 'default' | 'v1';
 };
 
 export const PilePreview = ({
@@ -27,10 +27,10 @@ export const PilePreview = ({
 }: PilePreviewProps) => {
   if (!imageSrc) return <>{fallback ?? null}</>;
   return (
-    <div className={`pile-preview${variant === 'v3' ? ' is-v3' : ''}${openPreviewKey === previewKey ? ' has-open-preview' : ''}`}>
+    <div className={`pile-preview${variant === 'v1' ? ' is-v1' : ''}${openPreviewKey === previewKey ? ' has-open-preview' : ''}`}>
       <img src={imageSrc} alt={alt} onClick={(e) => { e.stopPropagation(); onTogglePreview(previewKey); }} />
       <div
-        className={`game-card-popover${variant === 'v3' ? ' is-v3' : ''}${openPreviewKey === previewKey ? ' is-open' : ''}`}
+        className={`game-card-popover${variant === 'v1' ? ' is-v1' : ''}${openPreviewKey === previewKey ? ' is-open' : ''}`}
         aria-hidden={openPreviewKey !== previewKey}
         onClick={(e) => { e.stopPropagation(); onClosePreview(); }}
       >
@@ -68,7 +68,7 @@ type GameCardTileProps = {
   badges?: string[];
   helperText?: string;
   previewText?: string;
-  variant?: 'default' | 'v3';
+  variant?: 'default' | 'v1';
   selected?: boolean;
   onCardClick?: () => void;
 };
@@ -96,7 +96,7 @@ export const GameCardTile = ({
   selected = false,
   onCardClick,
 }: GameCardTileProps) => {
-  const imageSrc = normalizeImagePath(resolvedImage) ?? normalizeImagePath(card.image) ?? `/cards/${card.id}.png`;
+  const imageSrc = normalizeImagePath(resolvedImage) ?? normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`;
   const categoryClass = `game-card-cat-${String(card.category).toLowerCase()}`;
   const withCacheBust = (src: string) => `${src}${src.includes('?') ? '&' : '?'}v=${Date.now()}`;
   const handleCardImageError = (event: SyntheticEvent<HTMLImageElement>) => {
@@ -113,12 +113,12 @@ export const GameCardTile = ({
   const effectEntries = card.effects ?? [];
   return (
     <div
-      className={`game-card ${categoryClass}${variant === 'v3' ? ' is-v3' : ''}${selected ? ' is-selected' : ''}${actionDisabled ? ' is-disabled' : ''}${onCardClick ? ' is-clickable' : ''}${openPreviewKey === previewKey ? ' has-open-preview' : ''}`.trim()}
+      className={`game-card ${categoryClass}${variant === 'v1' ? ' is-v1' : ''}${selected ? ' is-selected' : ''}${actionDisabled ? ' is-disabled' : ''}${onCardClick ? ' is-clickable' : ''}${openPreviewKey === previewKey ? ' has-open-preview' : ''}`.trim()}
       onClick={onCardClick}
     >
       <button
         type="button"
-        className={`game-card-inline-action${variant === 'v3' ? ' is-v3' : ''}`}
+        className={`game-card-inline-action${variant === 'v1' ? ' is-v1' : ''}`}
         onClick={(e) => {
           e.stopPropagation();
           onAction();
@@ -131,7 +131,7 @@ export const GameCardTile = ({
       {extraAction ? (
         <button
           type="button"
-          className={`game-card-inline-action${variant === 'v3' ? ' is-v3' : ''} ${extraAction.className ?? ''}`.trim()}
+          className={`game-card-inline-action${variant === 'v1' ? ' is-v1' : ''} ${extraAction.className ?? ''}`.trim()}
           onClick={(e) => {
             e.stopPropagation();
             extraAction.onClick();
@@ -144,7 +144,7 @@ export const GameCardTile = ({
       {utilityAction ? (
         <button
           type="button"
-          className={`game-card-inline-action${variant === 'v3' ? ' is-v3' : ''} ${utilityAction.className ?? ''}`.trim()}
+          className={`game-card-inline-action${variant === 'v1' ? ' is-v1' : ''} ${utilityAction.className ?? ''}`.trim()}
           onClick={(e) => {
             e.stopPropagation();
             utilityAction.onClick();
@@ -153,7 +153,7 @@ export const GameCardTile = ({
           {utilityAction.label}
         </button>
       ) : null}
-      <div className={`game-card-media${variant === 'v3' ? ' is-v3' : ''}`}>
+      <div className={`game-card-media${variant === 'v1' ? ' is-v1' : ''}`}>
         <img
           src={imageSrc}
           alt={title}
@@ -165,7 +165,7 @@ export const GameCardTile = ({
         />
       </div>
       <div
-        className={`game-card-popover${variant === 'v3' ? ' is-v3' : ''}${openPreviewKey === previewKey ? ' is-open' : ''}`}
+        className={`game-card-popover${variant === 'v1' ? ' is-v1' : ''}${openPreviewKey === previewKey ? ' is-open' : ''}`}
         aria-hidden={openPreviewKey !== previewKey}
         onClick={(e) => { e.stopPropagation(); onClosePreview(); }}
       >
@@ -175,7 +175,7 @@ export const GameCardTile = ({
           onError={handleCardImageError}
         />
       </div>
-      <div className={`game-card-body${variant === 'v3' ? ' is-v3' : ''}`}>
+      <div className={`game-card-body${variant === 'v1' ? ' is-v1' : ''}`}>
         <strong>{title}</strong>
         <small>{categoryText || categoryLabel(card.category, lang)}</small>
         {badges?.length ? (

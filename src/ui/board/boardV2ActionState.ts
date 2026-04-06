@@ -8,7 +8,7 @@ type PendingSelectionLike = {
   cardId: string;
 } | null;
 
-export const buildBoardV4ActionState = (args: {
+export const buildBoardV2ActionState = (args: {
   isSpectator: boolean;
   isBotPlaybackActive: boolean;
   botThinkingPlayerName: string;

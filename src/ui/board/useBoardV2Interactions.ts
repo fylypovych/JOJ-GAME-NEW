@@ -8,7 +8,7 @@ type HandCardRow = {
   };
 };
 
-export const useBoardV4Interactions = (args: {
+export const useBoardV2Interactions = (args: {
   hand: CardDefinition[];
   handCardsView: HandCardRow[];
   selectedHandCardId: string | null;
@@ -59,7 +59,7 @@ export const useBoardV4Interactions = (args: {
     }
   }, [hand, selectedHandCardId, selectedPendingCardId, setSelectedHandCardId]);
 
-  const handleV4HandCardClick = (card: CardDefinition) => {
+  const handleV2HandCardClick = (card: CardDefinition) => {
     const allowed = handCardsView.find((row) => row.card.id === card.id)?.actionState.allowed ?? false;
     if (!allowed) return;
     if (visibleHandSelectedId === card.id) {
@@ -69,7 +69,7 @@ export const useBoardV4Interactions = (args: {
     setSelectedHandCardId(card.id);
   };
 
-  const handlePrimaryV4Action = () => {
+  const handlePrimaryV2Action = () => {
     if (blockPlayerTurnControls) return;
     if (pendingSelection) {
       confirmPendingSelection();
@@ -89,7 +89,7 @@ export const useBoardV4Interactions = (args: {
   };
 
   return {
-    handleV4HandCardClick,
-    handlePrimaryV4Action,
+    handleV2HandCardClick,
+    handlePrimaryV2Action,
   };
 };

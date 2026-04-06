@@ -4,7 +4,7 @@ import { cardTitle, rankLabel } from '../i18n';
 import { buildGameoverPlayerSummaries, buildResourceHighlightMeta } from './boardViewHelpers';
 import { getBoardPromoteReason } from './boardViewHelpers';
 import { resolvePlaybackCardMeta } from './playbackCardMeta';
-import type { V4FooterResourceItem, V4OpponentCardItem } from './v4Sections';
+import type { V2FooterResourceItem, V2OpponentCardItem } from './v2Sections';
 
 const buildOpponentLayout = (opponentIds: string[]) => {
   if (opponentIds.length <= 3) {
@@ -60,7 +60,7 @@ export const toInitials = (value: string) => value
   .map((chunk) => chunk[0]?.toUpperCase() ?? '')
   .join('') || '??';
 
-export const buildBoardV4ViewModel = (args: {
+export const buildBoardV2ViewModel = (args: {
   G: JojGameState;
   ctx: { currentPlayer?: string | null; gameover?: unknown };
   id: string;
@@ -146,8 +146,12 @@ export const buildBoardV4ViewModel = (args: {
     lastDiscard,
     lastDiscardImage,
   });
+  const actualDiscardTitle = lastDiscardTitle;
+  const actualDiscardImage = lastDiscardImage;
   const displayedDiscardTitle = botPlaybackCardTitle || playbackCardMeta.title || lastDiscardTitle;
-  const displayedDiscardImage = (botPlaybackCardTitle || playbackCardMeta.title) ? playbackCardMeta.imageSrc : lastDiscardImage;
+  const displayedDiscardImage = (botPlaybackCardTitle || playbackCardMeta.title)
+    ? (playbackCardMeta.imageSrc ?? lastDiscardImage)
+    : lastDiscardImage;
   const focusPrimaryLabel = lastDiscardTitle || activeArenaPlayerName;
   const focusSecondaryLabel = activeArenaRankName || rankName;
   const focusSupportingText = currentStageFocus;
@@ -168,7 +172,7 @@ export const buildBoardV4ViewModel = (args: {
     resolvePlayerRankImage(ctx.currentPlayer)
       ?? pickDeterministicRankCardImage(rankTrackCards, `turn:${ctx.currentPlayer}`, G.ranks?.[ctx.currentPlayer] ?? '')
   )) || rankImage || pickDeterministicRankCardImage(rankTrackCards, `self:${id}`, G.ranks?.[id] ?? '');
-  const buildOpponentCardItem = (pid: string): V4OpponentCardItem => {
+  const buildOpponentCardItem = (pid: string): V2OpponentCardItem => {
     const rankIdForPlayer = G.ranks?.[pid] ?? '';
     const opponentResources = G.resources?.[pid] ?? G.players?.[pid]?.resources ?? createBaseResourceRow();
     return {
@@ -192,7 +196,7 @@ export const buildBoardV4ViewModel = (args: {
   };
   const leftOpponentItems = topLeftOpponentIds.map(buildOpponentCardItem);
   const rightOpponentItems = topRightOpponentIds.map(buildOpponentCardItem);
-  const footerResourceItems: V4FooterResourceItem[] = sharedResourceOrder.map((key) => ({
+  const footerResourceItems: V2FooterResourceItem[] = sharedResourceOrder.map((key) => ({
     key,
     icon: sharedResourceIcons[key],
     imageSrc: sharedResourceImagePaths[key],
@@ -211,6 +215,8 @@ export const buildBoardV4ViewModel = (args: {
     activeArenaResources,
     activeArenaRankName,
     latestArenaRow,
+    actualDiscardTitle,
+    actualDiscardImage,
     displayedDiscardTitle,
     displayedDiscardImage,
     focusPrimaryLabel,

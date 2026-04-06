@@ -53,20 +53,20 @@ export const AdminCategoryButtons = ({
   activeCategoryId: AdminNavCategory['id'];
   onSelectCategory: (categoryId: AdminNavCategory['id']) => void;
 }) => (
-  <nav className="admin-v4-category-list" aria-label="Admin categories">
+  <nav className="admin-v2-category-list" aria-label="Admin categories">
     {categories.map((category) => (
       <button
         key={category.id}
         type="button"
-        className={`admin-v4-category-button${category.id === activeCategoryId ? ' is-active' : ''}`}
+        className={`admin-v2-category-button${category.id === activeCategoryId ? ' is-active' : ''}`}
         onClick={() => onSelectCategory(category.id)}
         aria-label={category.label}
         title={category.label}
       >
-        <span className={`admin-v4-category-thumb is-${category.id}`} aria-hidden="true">
+        <span className={`admin-v2-category-thumb is-${category.id}`} aria-hidden="true">
           <img src={category.iconPath} alt="" />
         </span>
-        <span className="admin-v4-category-copy" aria-hidden="true">
+        <span className="admin-v2-category-copy" aria-hidden="true">
           <strong>{category.label}</strong>
           <small>{category.description}</small>
         </span>

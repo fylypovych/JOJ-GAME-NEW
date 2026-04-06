@@ -79,6 +79,7 @@ export const registerBugReportRoutes = (args: {
     getByPath: (assetPath: string) => Promise<{ fileName: string; mime: string; deletedAt: string | null } | null>;
   } | null;
 }) => {
+  const isCardAssetPath = (value: string) => value.startsWith('/card-assets/') || value.startsWith('/cards/');
   const {
     router,
     requireAdminAuth,
@@ -126,7 +127,7 @@ export const registerBugReportRoutes = (args: {
     const requestedImagePath = typeof ctx?.query?.path === 'string' ? ctx.query.path.trim() : '';
     const config = requestedImagePath ? null : await readBugReportUiConfig();
     const imagePath = requestedImagePath || config?.imagePath || '';
-    if (!imagePath.startsWith('/cards/')) {
+    if (!isCardAssetPath(imagePath)) {
       ctx.status = 404;
       ctx.body = { ok: false, error: 'Bug report image is not configured.' };
       return;
@@ -137,7 +138,7 @@ export const registerBugReportRoutes = (args: {
       ctx.body = { ok: false, error: 'Invalid bug report image path.' };
       return;
     }
-    const assetMeta = await assetStore?.getByPath(imagePath);
+    const assetMeta = await assetStore?.getByPath(imagePath) ?? await assetStore?.getByPath(`/card-assets/${fileName}`);
     if (assetMeta?.deletedAt) {
       ctx.status = 404;
       ctx.body = { ok: false, error: 'Bug report image was deleted.' };

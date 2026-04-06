@@ -1,121 +1,12 @@
 import type { ReactNode, RefObject } from 'react';
-import type { CardDefinition, JojGameState, ResourceKey } from '../../game/types';
+import type { CardDefinition, JojGameState, ResourceKey, RankDefinition } from '../../game/types';
 import { buildReplacementSlots } from './replacement';
 import { BoardChatPanel, GameCardTile } from './components';
-import { cardTitle, localizeSystemMessageText } from '../i18n';
+import { cardTitle, localizeSystemMessageText, rankLabel } from '../i18n';
 import { BOARD_RESOURCE_ORDER } from './resourceConstants';
 import type { BoardNotice } from './useBoardUiController';
 
-export const V4Header = (props: {
-  title: string;
-  roomMeta?: { matchID: string; playerID?: string | null } | null;
-  playerName: string;
-  spectatorLabel: string;
-  activeRoomLabel: string;
-  joinedAsLabel: string;
-  spectatorModeLabel: string;
-  stageFocus?: string;
-  seatConnectionMissing: boolean;
-  seatConnectionMissingText: string;
-  onLeaveRoom?: () => void;
-  leaveRoomLabel: string;
-  requestEndGameLabel: string;
-  onRequestEndGame: () => void;
-  requestEndGameDisabled: boolean;
-  onCopyInvite?: () => void;
-  copyInviteLabel?: string;
-  onCopyInviteLink?: () => void;
-  copyInviteLinkLabel?: string;
-  sideContent?: ReactNode;
-}) => {
-  const {
-    title,
-    roomMeta,
-    playerName,
-    spectatorLabel,
-    activeRoomLabel,
-    joinedAsLabel,
-    spectatorModeLabel,
-    stageFocus,
-    seatConnectionMissing,
-    seatConnectionMissingText,
-    onLeaveRoom,
-    leaveRoomLabel,
-    requestEndGameLabel,
-    onRequestEndGame,
-    requestEndGameDisabled,
-    onCopyInvite,
-    copyInviteLabel,
-    onCopyInviteLink,
-    copyInviteLinkLabel,
-    sideContent,
-  } = props;
-  return (
-    <header className="game-ui-v4-header">
-      <div className="game-ui-v4-header-main">
-        <p className="game-ui-v4-kicker">JOJ V4 TCG</p>
-        <h2>{title}</h2>
-        {roomMeta ? (
-          <div className="game-ui-v4-room-meta">
-            <p className="game-ui-v4-subtle">{activeRoomLabel}: <strong>{roomMeta.matchID}</strong></p>
-            <p className="game-ui-v4-subtle">
-              {roomMeta.playerID ? `${joinedAsLabel}: ${playerName || '-'} (#${roomMeta.playerID})` : `${spectatorModeLabel}: ${playerName || spectatorLabel}`}
-            </p>
-          </div>
-        ) : null}
-        {stageFocus ? <p className="game-ui-v4-subtle game-ui-v4-stage-focus">{stageFocus}</p> : null}
-        {seatConnectionMissing ? <p className="admin-error">{seatConnectionMissingText}</p> : null}
-      </div>
-      <div className="game-ui-v4-header-actions">
-        {sideContent ? <div className="game-ui-v4-header-tools">{sideContent}</div> : null}
-        <div className="game-ui-v4-header-button-row">
-          {onCopyInvite && copyInviteLabel ? (
-            <button type="button" className="game-ui-v4-header-copy" onClick={onCopyInvite}>
-              {copyInviteLabel}
-            </button>
-          ) : null}
-          {onCopyInviteLink && copyInviteLinkLabel ? (
-            <button type="button" className="game-ui-v4-header-copy" onClick={onCopyInviteLink}>
-              {copyInviteLinkLabel}
-            </button>
-          ) : null}
-          {onLeaveRoom ? (
-            <button type="button" className="game-ui-v4-header-leave" onClick={onLeaveRoom}>
-              {leaveRoomLabel}
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className="game-ui-v4-header-leave"
-            onClick={onRequestEndGame}
-            disabled={requestEndGameDisabled}
-          >
-            {requestEndGameLabel}
-          </button>
-        </div>
-      </div>
-    </header>
-  );
-};
-
-export const V4NoticeStack = (props: {
-  notices: BoardNotice[];
-  dismissNotice: (noticeId: string) => void;
-}) => {
-  if (!props.notices.length) return null;
-  return (
-    <div className="game-ui-v4-notice-stack" aria-live="polite">
-      {props.notices.map((notice) => (
-        <div key={notice.id} className={`game-ui-v4-notice is-${notice.type}`}>
-          <span>{notice.text}</span>
-          <button type="button" className="ghost" onClick={() => props.dismissNotice(notice.id)}>×</button>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-export const V4SelectionPanel = (props: {
+export const BoardV1SelectionPanel = (props: {
   pendingSelection: { type: string; cardId: string } | null;
   activeSelectionNeedsTarget: boolean;
   activeSelectionNeedsReplacement: boolean;
@@ -177,32 +68,32 @@ export const V4SelectionPanel = (props: {
   } = props;
   if (!pendingSelection) return null;
   return (
-    <div className="game-ui-v4-selection-panel game-ui-v4-selection-panel-inline">
+    <div className="game-ui-v1-selection-panel game-ui-v1-selection-panel-inline">
       <div>
-        <div className="game-ui-v4-steps" aria-label={board.stepAssistant}>
+        <div className="game-ui-v1-steps" aria-label={board.stepAssistant}>
           <span className={activeSelectionNeedsTarget ? 'is-done' : ''}>{board.step1}</span>
           <span className={(!activeSelectionNeedsTarget && (activeSelectionNeedsReplacement || activeSelectionNeedsResource)) ? 'is-done' : ''}>{board.step2}</span>
           <span>{board.step3}</span>
         </div>
-        <p className="game-ui-v4-kicker">
+        <p className="game-ui-v1-kicker">
           {activeSelectionNeedsTarget
             ? board.pickTarget
             : (activeSelectionNeedsReplacement ? board.replacementSelection : board.pickResource)}
         </p>
         <h3>{currentPendingCard ? cardTitle(currentPendingCard.id, currentPendingCard.title, lang) : pendingSelection.cardId}</h3>
-        <p className="game-ui-v4-subtle">
+        <p className="game-ui-v1-subtle">
           {activeSelectionNeedsTarget
             ? board.selectableTargetHint
             : (activeSelectionNeedsReplacement ? board.replacementGuide : board.selectableResourceHint)}
         </p>
       </div>
       {activeSelectionNeedsTarget ? (
-        <div className="game-ui-v4-chip-row">
+        <div className="game-ui-v1-chip-row">
           {opponentIds.map((pid) => (
             <button
               key={`pick-target-${pid}`}
               type="button"
-              className={`game-ui-v4-pick-chip${selectedTargetId === pid ? ' is-selected' : ''}`}
+              className={`game-ui-v1-pick-chip${selectedTargetId === pid ? ' is-selected' : ''}`}
               onClick={() => {
                 setSelectedTargetId(pid);
                 pickTargetNotice(pid);
@@ -217,8 +108,8 @@ export const V4SelectionPanel = (props: {
         <>
           {replacementTargetIds.length > 0 ? (
             <>
-              <p className="game-ui-v4-subtle">{board.replacementTarget}</p>
-              <div className="game-ui-v4-chip-row">
+              <p className="game-ui-v1-subtle">{board.replacementTarget}</p>
+              <div className="game-ui-v1-chip-row">
                 {replacementTargetIds.map((pid) => {
                   const targetResources = G?.resources?.[pid] ?? null;
                   const required = targetResources && currentPendingCard
@@ -229,7 +120,7 @@ export const V4SelectionPanel = (props: {
                     <button
                       key={`replacement-target-${pid}`}
                       type="button"
-                      className={`game-ui-v4-pick-chip${replacementActiveTargetId === pid ? ' is-selected' : ''}`}
+                      className={`game-ui-v1-pick-chip${replacementActiveTargetId === pid ? ' is-selected' : ''}`}
                       onClick={() => setActiveReplacementTargetId(pid)}
                     >
                       {playerLabelById(pid)} ({selected}/{required})
@@ -239,39 +130,39 @@ export const V4SelectionPanel = (props: {
               </div>
               {replacementActiveTargetId ? (
                 <>
-                  <p className="game-ui-v4-subtle">
+                  <p className="game-ui-v1-subtle">
                     {board.replacementProgress}: {replacementActiveSelected.length}/{replacementActiveSlots.length}
                   </p>
-                  <div className="game-ui-v4-chip-row">
+                  <div className="game-ui-v1-chip-row">
                     {BOARD_RESOURCE_ORDER.map((key) => (
                       <button
                         key={`replacement-resource-${key}`}
                         type="button"
-                        className={`game-ui-v4-pick-chip${replacementActiveSlots[replacementActiveSelected.length] === key ? ' is-selected' : ''}`}
+                        className={`game-ui-v1-pick-chip${replacementActiveSlots[replacementActiveSelected.length] === key ? ' is-selected' : ''}`}
                         onClick={() => appendReplacementResource(key)}
                       >
                         {resourceLabels[key]} ({replacementActiveTargetResources?.[key] ?? 0})
                       </button>
                     ))}
                   </div>
-                  <div className="game-ui-v4-selection-actions">
+                  <div className="game-ui-v1-selection-actions">
                     <button type="button" className="ghost" onClick={undoReplacementResource}>{board.undoPick}</button>
                   </div>
                 </>
               ) : null}
             </>
           ) : (
-            <p className="game-ui-v4-subtle">{board.replacementNotRequired}</p>
+            <p className="game-ui-v1-subtle">{board.replacementNotRequired}</p>
           )}
         </>
       ) : null}
       {activeSelectionNeedsResource ? (
-        <div className="game-ui-v4-chip-row">
+        <div className="game-ui-v1-chip-row">
           {BOARD_RESOURCE_ORDER.map((key) => (
             <button
               key={`pick-resource-${key}`}
               type="button"
-              className={`game-ui-v4-pick-chip${selectedResource === key ? ' is-selected' : ''}`}
+              className={`game-ui-v1-pick-chip${selectedResource === key ? ' is-selected' : ''}`}
               onClick={() => setSelectedResource(key)}
             >
               {resourceLabels[key]} ({resources[key] ?? 0})
@@ -279,7 +170,7 @@ export const V4SelectionPanel = (props: {
           ))}
         </div>
       ) : null}
-      <div className="game-ui-v4-selection-actions">
+      <div className="game-ui-v1-selection-actions">
         <button type="button" onClick={confirmPendingSelection}>{board.confirm}</button>
         <button type="button" className="ghost" onClick={clearPendingSelection}>{board.cancel}</button>
       </div>
@@ -287,7 +178,24 @@ export const V4SelectionPanel = (props: {
   );
 };
 
-export const V4HandSection = (props: {
+export const BoardV1NoticeStack = (props: {
+  notices: BoardNotice[];
+  dismissNotice: (noticeId: string) => void;
+}) => {
+  if (!props.notices.length) return null;
+  return (
+    <div className="game-ui-v1-notice-stack" aria-live="polite">
+      {props.notices.map((notice) => (
+        <div key={notice.id} className={`game-ui-v1-notice is-${notice.type}`}>
+          <span>{notice.text}</span>
+          <button type="button" className="ghost" onClick={() => props.dismissNotice(notice.id)}>×</button>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export const BoardV1HandSection = (props: {
   title: string;
   subtitle?: string;
   headRight?: ReactNode;
@@ -312,22 +220,22 @@ export const V4HandSection = (props: {
 }) => {
   const { title, subtitle, headRight, cards, cardImageById, lang, openPreviewKey, togglePreview, closePreview, categoryText, actionLabel, onAction, actionDisabled, actionTitle, effectLabel, badges, helperText, previewText, extraAction, selected, cardClickAction } = props;
   return (
-    <section className="game-ui-v4-hand-section">
-      <div className="game-ui-v4-hand-head">
+    <section className="game-ui-v1-hand-section">
+      <div className="game-ui-v1-hand-head">
         <div>
           <h3>{title}</h3>
-          {subtitle ? <p className="game-ui-v4-subtle">{subtitle}</p> : null}
+          {subtitle ? <p className="game-ui-v1-subtle">{subtitle}</p> : null}
         </div>
         {headRight}
       </div>
-      <div className="hand game-ui-v4-hand-grid">
+      <div className="hand game-ui-v1-hand-grid">
         {cards.map((card) => (
           <GameCardTile
             key={`tile-${title}-${card.id}`}
             card={card}
             resolvedImage={cardImageById[card.id]}
             lang={lang}
-            variant="v3"
+            variant="v1"
             categoryText={categoryText(card)}
             openPreviewKey={openPreviewKey}
             previewKey={`preview-${title}-${card.id}`}
@@ -354,7 +262,7 @@ export const V4HandSection = (props: {
   );
 };
 
-export const V4SidePanel = (props: {
+export const BoardV1SidePanel = (props: {
   sidePanelTab: 'events' | 'chat' | 'help';
   setSidePanelTab: (tab: 'events' | 'chat' | 'help') => void;
   board: Record<string, string>;
@@ -391,33 +299,33 @@ export const V4SidePanel = (props: {
     helpItems,
   } = props;
   return (
-    <aside className="game-ui-v4-side">
-      <section className="game-ui-v4-events game-ui-v4-mobile-tabs">
-        <div className="game-ui-v4-tab-row">
+    <aside className="game-ui-v1-side">
+      <section className="game-ui-v1-events game-ui-v1-mobile-tabs">
+        <div className="game-ui-v1-tab-row">
           <button type="button" className={sidePanelTab === 'events' ? 'is-active' : ''} onClick={() => setSidePanelTab('events')}>{board.openEvents}</button>
           <button type="button" className={sidePanelTab === 'chat' ? 'is-active' : ''} onClick={() => setSidePanelTab('chat')}>{board.openChat}</button>
           <button type="button" className={sidePanelTab === 'help' ? 'is-active' : ''} onClick={() => setSidePanelTab('help')}>{board.openHelp}</button>
         </div>
       </section>
-      <section className={`game-ui-v4-events${sidePanelTab !== 'events' ? ' game-ui-v4-mobile-hidden' : ''}`}>
+      <section className={`game-ui-v1-events${sidePanelTab !== 'events' ? ' game-ui-v1-mobile-hidden' : ''}`}>
         <h3>{eventsTitle}</h3>
-        <div className="game-ui-v4-events-list">
+        <div className="game-ui-v1-events-list">
           {latestEvents.map((row) => {
             const author = row.type === 'system' ? t.systemTag : playerLabelById(row.playerID);
             return (
-              <div key={`v4-evt-${row.id}`} className={`game-ui-v4-event-row ${row.type === 'system' ? 'is-system' : ''} is-${row.tone}`}>
-                <div className="game-ui-v4-event-head">
+              <div key={`v1-evt-${row.id}`} className={`game-ui-v1-event-row ${row.type === 'system' ? 'is-system' : ''} is-${row.tone}`}>
+                <div className="game-ui-v1-event-head">
                   <strong>{author}</strong>
-                  <span className={`game-ui-v4-event-chip is-${row.tone}`}>{row.label}</span>
+                  <span className={`game-ui-v1-event-chip is-${row.tone}`}>{row.label}</span>
                 </div>
                 <span>{row.type === 'system' ? localizeSystemMessageText(row.text, lang) : row.text}</span>
               </div>
             );
           })}
-          {!latestEvents.length ? <p className="game-ui-v4-subtle">{board.noEventsYet}</p> : null}
+          {!latestEvents.length ? <p className="game-ui-v1-subtle">{board.noEventsYet}</p> : null}
         </div>
       </section>
-      <section className={sidePanelTab !== 'chat' ? 'game-ui-v4-mobile-hidden' : ''}>
+      <section className={sidePanelTab !== 'chat' ? 'game-ui-v1-mobile-hidden' : ''}>
         <BoardChatPanel
           chat={G.chat ?? []}
           chatInput={chatInput}
@@ -431,12 +339,12 @@ export const V4SidePanel = (props: {
           readOnly={spectatorMode}
         />
       </section>
-      <section className={sidePanelTab !== 'help' ? 'game-ui-v4-mobile-hidden' : ''}>
-        <div className="board-chat game-ui-v4-help-panel">
+      <section className={sidePanelTab !== 'help' ? 'game-ui-v1-mobile-hidden' : ''}>
+        <div className="board-chat game-ui-v1-help-panel">
           <h3>{helpTitle}</h3>
-          <div className="game-ui-v4-help-list">
+          <div className="game-ui-v1-help-list">
             {helpItems.map((item, index) => (
-              <div key={`help-${index}`} className={`game-ui-v4-help-row${item.tone ? ` is-${item.tone}` : ''}`}>
+              <div key={`help-${index}`} className={`game-ui-v1-help-row${item.tone ? ` is-${item.tone}` : ''}`}>
                 <strong>{item.label}</strong>
                 <span>{item.value}</span>
               </div>
@@ -445,6 +353,68 @@ export const V4SidePanel = (props: {
         </div>
       </section>
     </aside>
+  );
+};
+
+export const BoardV1PlayerOverview = (props: {
+  opponentIds: string[];
+  G: JojGameState;
+  sharedRanks: RankDefinition[];
+  ctxCurrentPlayer?: string;
+  lang: 'uk' | 'en';
+  selectedTargetId: string | null;
+  activeSelectionNeedsTarget: boolean;
+  setSelectedTargetId: (value: string | null) => void;
+  postTargetPick: (pid: string) => void;
+  playerLabelById: (id: string | null | undefined) => string;
+  resourceLabels: Record<ResourceKey, string>;
+  board: Record<string, string>;
+  getNextRankSeatMeta: (args: { G: JojGameState; playerID: string; sharedRanks: RankDefinition[] }) => { seatBlocked: boolean };
+  layout?: 'grid' | 'lane';
+}) => {
+  const { opponentIds, G, sharedRanks, ctxCurrentPlayer, lang, selectedTargetId, activeSelectionNeedsTarget, setSelectedTargetId, postTargetPick, playerLabelById, resourceLabels, board, getNextRankSeatMeta, layout = 'grid' } = props;
+  return (
+    <div className={layout === 'lane' ? 'game-ui-v1-player-lane' : 'game-ui-v1-players-grid'}>
+      {opponentIds.map((pid) => {
+        const pResources = G.resources?.[pid];
+        const pRankId = G.ranks?.[pid] ?? '';
+        const pRank = sharedRanks.find((r) => r.id === pRankId)?.name ?? rankLabel(pRankId, lang);
+        const active = ctxCurrentPlayer === pid;
+        const selectable = activeSelectionNeedsTarget;
+        const pMeta = getNextRankSeatMeta({ G, playerID: pid, sharedRanks });
+        return (
+          <button
+            key={`player-${pid}`}
+            type="button"
+            className={`game-ui-v1-player-card${layout === 'lane' ? ' is-lane' : ' is-grid'}${active ? ' is-active' : ''}${selectedTargetId === pid ? ' is-selected' : ''}${selectable ? ' is-selectable' : ''}${active && selectable ? ' is-priority' : ''}`}
+            onClick={() => {
+              if (!selectable) return;
+              setSelectedTargetId(pid);
+              postTargetPick(pid);
+            }}
+            disabled={!selectable}
+            title={selectable ? board.selectableTargetHint : undefined}
+          >
+            <div className="game-ui-v1-player-head">
+              <strong>{playerLabelById(pid)}</strong>
+              <span>#{pid}</span>
+            </div>
+            <div className="game-ui-v1-player-rank">{pRank}</div>
+            <div className="game-ui-v1-player-badges">
+              {active ? <span className="pill pill-badge">{board.currentTurn}</span> : null}
+              {selectable ? <span className="pill pill-badge">{board.targetableNow}</span> : null}
+              {pMeta.seatBlocked ? <span className="pill pill-badge">{board.seatBlocked}</span> : null}
+              {(G.lyapScandalShieldUntilTurn?.[pid] ?? 0) > 0 ? <span className="pill pill-badge">{board.shieldUntil}: {G.lyapScandalShieldUntilTurn?.[pid] ?? 0}</span> : null}
+            </div>
+            <div className="game-ui-v1-player-resources">
+              {BOARD_RESOURCE_ORDER.map((key) => (
+                <span key={`${pid}-${key}`}>{resourceLabels[key]}: {pResources?.[key] ?? 0}</span>
+              ))}
+            </div>
+          </button>
+        );
+      })}
+    </div>
   );
 };
 

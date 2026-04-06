@@ -1,4 +1,4 @@
-import { rulesListUk } from './i18n-rules';
+import { rulesListUk, rulesPageUk } from './i18n-rules';
 import { uiBoardUk } from './i18n-board';
 
 export const uiUkData = {
@@ -11,7 +11,7 @@ export const uiUkData = {
     langUk: 'Українська',
     langEn: 'English',
     openAdmin: 'Адмінка',
-    openGame: 'Відкрити гру',
+    openGame: 'Відкрити лобі',
     adminLoginTitle: 'Вхід в адмін-режим',
     adminLoginHint: 'Для входу потрібні: активна сесія користувача з роллю адміністратора і персональний адмін-токен.',
     adminAuthDisabledHint: 'Адмін-доступ недоступний, бо модуль користувачів не активний на сервері.',
@@ -108,6 +108,7 @@ export const uiUkData = {
     noCardsYet: 'Картки відсутні',
     rulesTitle: 'Правила гри',
     rulesList: rulesListUk,
+    rulesPage: rulesPageUk,
     lobbyTitle: 'Лобі кімнат',
     playerName: 'Ім’я гравця',
     playerNamePlaceholder: 'Введіть ім’я',
@@ -164,7 +165,7 @@ export const uiUkData = {
     roomReconnectHint: 'Сесію кімнати втрачено або місце більше недоступне. Оновіть список кімнат і приєднайтеся знову.',
     roomBlockedNeedPlayers: 'Старт ще недоступний: у кімнаті не заповнені всі потрібні місця.',
     roomSpectatorHint: 'Ви в кімнаті як глядач. Матч з’явиться автоматично, коли хост завершить набір і гра почнеться.',
-    roomInviteLinkHint: 'Цю кімнату відкрили за invite-лінком.',
+    roomInviteLinkHint: 'Цю кімнату відкрили за invite-посиланням.',
     roomDraftHint: 'Ці параметри ще не застосовані. Вони підуть лише в наступну кімнату, яку ви створите.',
     roomActivityTitle: 'Події кімнати',
     roomActivityPlayerJoined: '{name} зайшов у {seat}',
@@ -551,6 +552,15 @@ export const uiUkData = {
     ranksImportFile: 'Файл JSON звань',
     rankCostLabel: 'Вартість:',
     rankBonusLabel: 'Бонус-витрата:',
+    rankImageHelp: 'Головне зображення звання. Якщо варіантів немає, саме воно буде використовуватися в грі.',
+    rankImageVariantsHelp: 'Додавайте стільки варіантів, скільки потрібно. Кожен рядок або завантаження додає окреме зображення.',
+    rankAddVariantLabel: 'Додати варіант',
+    rankVariantsEmpty: 'Варіантів ще немає. Додайте хоча б один, якщо хочете мати галерею.',
+    rankRequirementsTitle: 'Вимоги до звання',
+    rankTransitionCostTitle: 'Вартість переходу',
+    rankBonusTitle: 'Бонус після отримання',
+    rankCreateTitle: 'Нове звання',
+    rankCreateHint: 'Спочатку заповніть основні поля, потім додайте зображення та параметри.',
     ranksJsonArrayError: 'JSON звань має бути масивом.',
     ranksSchemaError: 'Некоректна схема звань.',
     ranksImportSuccess: 'Імпорт звань успішний. Кількість:',

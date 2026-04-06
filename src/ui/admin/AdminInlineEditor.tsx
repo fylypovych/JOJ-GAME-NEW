@@ -118,8 +118,8 @@ export const AdminInlineEditor = (props: {
         ) : null}
         <label>{t.fieldQuickImagePath}
           <span className="admin-controls">
-            <button type="button" onClick={() => setEditCard((prev) => ({ ...prev, image: `/cards/${prev.id || 'card-id'}.png` }))}>/cards/&lt;id&gt;.png</button>
-            <button type="button" onClick={() => setEditCard((prev) => ({ ...prev, image: `/cards/${prev.id || 'card-id'}.webp` }))}>/cards/&lt;id&gt;.webp</button>
+            <button type="button" onClick={() => setEditCard((prev) => ({ ...prev, image: `/card-assets/${prev.id || 'card-id'}.png` }))}>/card-assets/&lt;id&gt;.png</button>
+            <button type="button" onClick={() => setEditCard((prev) => ({ ...prev, image: `/card-assets/${prev.id || 'card-id'}.webp` }))}>/card-assets/&lt;id&gt;.webp</button>
           </span>
         </label>
         <label>{t.fieldFlavor}<input value={editCard.flavor ?? ''} onChange={(e) => setEditCard((prev) => ({ ...prev, flavor: e.target.value }))} /></label>

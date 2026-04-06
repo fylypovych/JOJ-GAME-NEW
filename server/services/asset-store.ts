@@ -226,7 +226,7 @@ export const createAssetStore = (pool: Pool) => {
       const fileStat = await stat(absPath).catch(() => null);
       if (!fileStat?.isFile()) continue;
       await upsertAsset({
-        assetPath: `/cards/${entry.name}`,
+        assetPath: `/card-assets/${entry.name}`,
         fileName: entry.name,
         mime: inferMime(entry.name),
         sizeBytes: fileStat.size,

@@ -52,6 +52,9 @@ export const registerUploadRoutes = ({
   userStore,
   assetStore,
 }: UploadRoutesDeps) => {
+  const CARD_ASSET_BASE_PATH = '/card-assets/';
+  const isCardAssetPath = (value: string) => value.startsWith('/card-assets/') || value.startsWith('/cards/');
+  const toCardAssetPath = (fileName: string) => `${CARD_ASSET_BASE_PATH}${fileName}`;
   const requireAdminWriteAccess = (ctx: RouteCtx, routeLabel: string) =>
     requireAdminMutationAuth(ctx, routeLabel, requireAdminAuth);
   const parseUploadBody = async (ctx: RouteCtx, routeLabel: string) => {
@@ -128,7 +131,7 @@ export const registerUploadRoutes = ({
 
     const buffer = Buffer.from(base64, 'base64');
     await writeFile(outPath, buffer);
-    const assetPath = `/cards/${candidate}`;
+    const assetPath = toCardAssetPath(candidate);
     await assetStore?.upsertAsset({
       assetPath,
       fileName: candidate,
@@ -205,9 +208,9 @@ export const registerUploadRoutes = ({
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/delete-card-image', maxBytes: JSON_BODY_LIMIT, logLine });
     if (!body) return;
     const imagePath = typeof body.path === 'string' ? body.path.trim() : '';
-    if (!imagePath.startsWith('/cards/')) {
+    if (!isCardAssetPath(imagePath)) {
       ctx.status = 400;
-      ctx.body = { ok: false, error: 'Only /cards/* paths can be deleted' };
+      ctx.body = { ok: false, error: 'Only /card-assets/* paths can be deleted' };
       return;
     }
     const fileName = path.basename(imagePath);
@@ -225,6 +228,9 @@ export const registerUploadRoutes = ({
     try {
       await unlink(targetPath);
       await assetStore?.markDeleted(imagePath);
+      if (imagePath !== toCardAssetPath(fileName)) {
+        await assetStore?.markDeleted(toCardAssetPath(fileName));
+      }
       await logLine('INFO', `image deleted: ${fileName}`);
       ctx.body = { ok: true };
     } catch (error) {
@@ -252,7 +258,7 @@ export const registerUploadRoutes = ({
       if (!fileStat?.isFile()) return null;
       return entry.name;
     }));
-    const existingPaths = new Set(fileNames.filter((name): name is string => Boolean(name)).map((name) => `/cards/${name}`));
+    const existingPaths = new Set(fileNames.filter((name): name is string => Boolean(name)).map((name) => toCardAssetPath(name)));
 
     if (mode === 'records') {
       const cleaned = await assetStore.purgeMissingFiles(existingPaths, 'card-image');

@@ -1,4 +1,4 @@
-export const V4EndVoteModal = (props: {
+export const V2EndVoteModal = (props: {
   open: boolean;
   title: string;
   prompt: string;
@@ -12,25 +12,25 @@ export const V4EndVoteModal = (props: {
 }) => {
   if (!props.open) return null;
   return (
-    <section className="game-ui-v4-vote-popup" role="dialog" aria-label={props.title}>
-      <div className="game-ui-v4-vote-popup-card">
+    <section className="game-ui-v2-vote-popup" role="dialog" aria-label={props.title}>
+      <div className="game-ui-v2-vote-popup-card">
         <h3>{props.title}</h3>
-        <p className="game-ui-v4-subtle">{props.prompt}</p>
+        <p className="game-ui-v2-subtle">{props.prompt}</p>
         {!props.hasVotedAgree ? (
-          <div className="game-ui-v4-selection-actions">
+          <div className="game-ui-v2-selection-actions">
             <button type="button" onClick={props.onAgree}>{props.agreeLabel}</button>
             <button type="button" className="ghost" onClick={props.onDecline}>{props.declineLabel}</button>
           </div>
         ) : (
-          <p className="game-ui-v4-subtle">{props.waitingLabel}</p>
+          <p className="game-ui-v2-subtle">{props.waitingLabel}</p>
         )}
-        <p className="game-ui-v4-subtle">{props.declineInfo}</p>
+        <p className="game-ui-v2-subtle">{props.declineInfo}</p>
       </div>
     </section>
   );
 };
 
-export const V4StandingsSummary = (props: {
+export const V2StandingsSummary = (props: {
   title: string;
   summaryLabels: {
     player: string;
@@ -53,16 +53,16 @@ export const V4StandingsSummary = (props: {
     winner?: boolean;
   }>;
 }) => (
-  <div className="game-ui-v4-gameover-summary">
+  <div className="game-ui-v2-gameover-summary">
     <h4>{props.title}</h4>
-    <div className="game-ui-v4-gameover-summary-list">
+    <div className="game-ui-v2-gameover-summary-list">
       {props.playerSummaries.map((row) => (
-        <article key={`summary-${row.playerID}`} className={`game-ui-v4-gameover-summary-row${row.winner ? ' is-winner' : ''}`}>
-          <div className="game-ui-v4-gameover-summary-head">
+        <article key={`summary-${row.playerID}`} className={`game-ui-v2-gameover-summary-row${row.winner ? ' is-winner' : ''}`}>
+          <div className="game-ui-v2-gameover-summary-head">
             <strong>{row.name}</strong>
             <span>{row.rankName}</span>
           </div>
-          <div className="game-ui-v4-gameover-summary-grid">
+          <div className="game-ui-v2-gameover-summary-grid">
             <span>{props.summaryLabels.player}</span><strong>{row.name}</strong>
             <span>{props.summaryLabels.rank}</span><strong>{row.rankName}</strong>
             <span>{props.summaryLabels.resources}</span><strong>{row.resourcesText}</strong>
@@ -76,7 +76,7 @@ export const V4StandingsSummary = (props: {
   </div>
 );
 
-export const V4GameoverModal = (props: {
+export const V2GameoverModal = (props: {
   open: boolean;
   ariaLabel: string;
   title: string;
@@ -127,23 +127,23 @@ export const V4GameoverModal = (props: {
 }) => {
   if (!props.open) return null;
   return (
-    <div className="game-ui-v4-gameover-modal" role="dialog" aria-label={props.ariaLabel}>
-      <div className="game-ui-v4-gameover-card">
+    <div className="game-ui-v2-gameover-modal" role="dialog" aria-label={props.ariaLabel}>
+      <div className="game-ui-v2-gameover-card">
         <h3>{props.title}</h3>
         <p>
           <strong>{props.winnerLabel}:</strong> {props.winnerName}
           {props.winnerRankName ? ` (${props.winnerRankName})` : ''}
         </p>
-        {props.autoEndedLabel ? <p className="game-ui-v4-subtle">{props.autoEndedLabel}</p> : null}
-        {props.agreedEndLabel ? <p className="game-ui-v4-subtle">{props.agreedEndLabel}</p> : null}
-        <div className="game-ui-v4-token-list">
-          <div className="game-ui-v4-token-row"><span>{props.statsLabels.totalTurns}</span><strong>{props.stats.totalTurns}</strong></div>
-          <div className="game-ui-v4-token-row"><span>{props.statsLabels.resourcesGained}</span><strong>{props.stats.resourcesGained}</strong></div>
-          <div className="game-ui-v4-token-row"><span>{props.statsLabels.resourcesLost}</span><strong>{props.stats.resourcesLost}</strong></div>
-          <div className="game-ui-v4-token-row"><span>{props.statsLabels.lyapsPlayed}</span><strong>{props.stats.lyapsPlayed}</strong></div>
-          <div className="game-ui-v4-token-row"><span>{props.statsLabels.scandalsPlayed}</span><strong>{props.stats.scandalsPlayed}</strong></div>
+        {props.autoEndedLabel ? <p className="game-ui-v2-subtle">{props.autoEndedLabel}</p> : null}
+        {props.agreedEndLabel ? <p className="game-ui-v2-subtle">{props.agreedEndLabel}</p> : null}
+        <div className="game-ui-v2-token-list">
+          <div className="game-ui-v2-token-row"><span>{props.statsLabels.totalTurns}</span><strong>{props.stats.totalTurns}</strong></div>
+          <div className="game-ui-v2-token-row"><span>{props.statsLabels.resourcesGained}</span><strong>{props.stats.resourcesGained}</strong></div>
+          <div className="game-ui-v2-token-row"><span>{props.statsLabels.resourcesLost}</span><strong>{props.stats.resourcesLost}</strong></div>
+          <div className="game-ui-v2-token-row"><span>{props.statsLabels.lyapsPlayed}</span><strong>{props.stats.lyapsPlayed}</strong></div>
+          <div className="game-ui-v2-token-row"><span>{props.statsLabels.scandalsPlayed}</span><strong>{props.stats.scandalsPlayed}</strong></div>
         </div>
-        <V4StandingsSummary
+        <V2StandingsSummary
           title={props.summaryTitle}
           summaryLabels={props.summaryLabels}
           playerSummaries={props.playerSummaries}
