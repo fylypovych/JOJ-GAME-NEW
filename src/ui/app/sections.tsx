@@ -8,6 +8,7 @@ import { cardFlavor, cardTitleWithOverride, categoryLabel, rankLabel, text } fro
 import { formatModuleDisplayName } from '../moduleDisplay';
 import { buildRoomShareLink, copyText } from './share';
 import type { GalleryCategoryFilter, LobbyMatch, UserTab } from './model';
+import { getPublicTabPath } from './routes';
 import type { AuthUser, UserAward, UserStats } from './useUserAccount';
 import type { UserMatchHistoryItem, UserSession } from './useUserAccount';
 
@@ -125,21 +126,61 @@ type UserTabsProps = {
 
 export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v2' }: UserTabsProps) => (
   <p className={`user-tabs user-tabs-v2${uiVariant === 'v1' ? ' user-tabs-v1' : ''}`}>
-    <button type="button" onClick={() => setActiveUserTab('games')} aria-current={activeUserTab === 'games' ? 'page' : undefined} className={activeUserTab === 'games' ? 'is-active' : ''}>
+    <a
+      href={getPublicTabPath('games')}
+      onClick={(event) => {
+        event.preventDefault();
+        setActiveUserTab('games');
+      }}
+      aria-current={activeUserTab === 'games' ? 'page' : undefined}
+      className={activeUserTab === 'games' ? 'is-active' : ''}
+    >
       {t.userTabGames}
-    </button>
-    <button type="button" onClick={() => setActiveUserTab('gallery')} aria-current={activeUserTab === 'gallery' ? 'page' : undefined} className={activeUserTab === 'gallery' ? 'is-active' : ''}>
+    </a>
+    <a
+      href={getPublicTabPath('gallery')}
+      onClick={(event) => {
+        event.preventDefault();
+        setActiveUserTab('gallery');
+      }}
+      aria-current={activeUserTab === 'gallery' ? 'page' : undefined}
+      className={activeUserTab === 'gallery' ? 'is-active' : ''}
+    >
       {t.userTabGallery}
-    </button>
-    <button type="button" onClick={() => setActiveUserTab('rules')} aria-current={activeUserTab === 'rules' ? 'page' : undefined} className={activeUserTab === 'rules' ? 'is-active' : ''}>
+    </a>
+    <a
+      href={getPublicTabPath('rules')}
+      onClick={(event) => {
+        event.preventDefault();
+        setActiveUserTab('rules');
+      }}
+      aria-current={activeUserTab === 'rules' ? 'page' : undefined}
+      className={activeUserTab === 'rules' ? 'is-active' : ''}
+    >
       {t.userTabRules}
-    </button>
-    <button type="button" onClick={() => setActiveUserTab('profile')} aria-current={activeUserTab === 'profile' ? 'page' : undefined} className={activeUserTab === 'profile' ? 'is-active' : ''}>
+    </a>
+    <a
+      href={getPublicTabPath('profile')}
+      onClick={(event) => {
+        event.preventDefault();
+        setActiveUserTab('profile');
+      }}
+      aria-current={activeUserTab === 'profile' ? 'page' : undefined}
+      className={activeUserTab === 'profile' ? 'is-active' : ''}
+    >
       {t.userTabProfile}
-    </button>
-    <button type="button" onClick={() => setActiveUserTab('statistics')} aria-current={activeUserTab === 'statistics' ? 'page' : undefined} className={activeUserTab === 'statistics' ? 'is-active' : ''}>
+    </a>
+    <a
+      href={getPublicTabPath('statistics')}
+      onClick={(event) => {
+        event.preventDefault();
+        setActiveUserTab('statistics');
+      }}
+      aria-current={activeUserTab === 'statistics' ? 'page' : undefined}
+      className={activeUserTab === 'statistics' ? 'is-active' : ''}
+    >
       {t.userTabStatistics}
-    </button>
+    </a>
   </p>
 );
 

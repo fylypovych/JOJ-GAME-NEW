@@ -4,6 +4,7 @@ import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { Language } from '../i18n';
 import { defaultLanguage } from '../i18n';
 import { ADMIN_UI_VARIANT_STORAGE_KEY, GAME_UI_VARIANT_STORAGE_KEY, LEGACY_ADMIN_UI_VARIANT_STORAGE_KEY } from './clientConfig';
+import { DEFAULT_PUBLIC_TAB, getCanonicalPublicPath, getPublicTabFromPathname } from './routes';
 import {
   PLAYER_NAME_STORAGE_KEY,
   SERVER_URL_STORAGE_KEY,
@@ -25,7 +26,9 @@ export const useAppShellState = (serverUrl: string) => {
   const [botProfile, setBotProfile] = useState<BotProfile>('balanced');
   const [selectedOptionalModuleIds, setSelectedOptionalModuleIds] = useState<string[]>(['vvnz_default']);
   const [adminSelectedMatchID, setAdminSelectedMatchID] = useState<string>('');
-  const [activeUserTab, setActiveUserTab] = useState<UserTab>('games');
+  const [activeUserTab, setActiveUserTab] = useState<UserTab>(() => (
+    getPublicTabFromPathname(window.location.pathname) ?? DEFAULT_PUBLIC_TAB
+  ));
   const [profileScreen, setProfileScreen] = useState<'login' | 'register' | 'reset'>('login');
   const [authErrorModal, setAuthErrorModal] = useState('');
   const [gameUiVariant, setGameUiVariant] = useState<'v1' | 'v2'>(() => {
@@ -75,6 +78,29 @@ export const useAppShellState = (serverUrl: string) => {
     window.localStorage.setItem(ADMIN_UI_VARIANT_STORAGE_KEY, adminUiVariant);
     window.localStorage.removeItem(LEGACY_ADMIN_UI_VARIANT_STORAGE_KEY);
   }, [adminUiVariant]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const nextTab = getPublicTabFromPathname(window.location.pathname);
+      if (nextTab) {
+        setActiveUserTab(nextTab);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (window.location.pathname.startsWith('/admin')) return;
+
+    const canonicalPath = getCanonicalPublicPath(window.location.pathname, activeUserTab);
+    const nextUrl = `${canonicalPath}${window.location.search}${window.location.hash}`;
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (nextUrl !== currentUrl) {
+      window.history.replaceState(window.history.state, '', nextUrl);
+    }
+  }, [activeUserTab]);
 
   return {
     lang,
