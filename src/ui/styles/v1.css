@@ -1,0 +1,169 @@
+.app.app-v1 {
+  width: 100%;
+  min-height: 100vh;
+  color: #4b4337;
+  background:
+    radial-gradient(1200px 560px at 50% -16%, rgba(255, 255, 255, 0.92), transparent 58%),
+    radial-gradient(920px 420px at 100% 0%, rgba(221, 208, 186, 0.34), transparent 58%),
+    linear-gradient(180deg, #ece6db 0%, #e5ddd0 40%, #ddd4c5 100%);
+}
+
+
+.app.app-v1 > h1 {
+  color: #5b4e40;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.82),
+    0 8px 20px rgba(116, 98, 68, 0.16);
+}
+
+.app > h1 {
+  margin: 4px 0 8px;
+  letter-spacing: 0.2px;
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-header,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-panel,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-selection-panel,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-spectator-strip,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-vote-popup-card,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-gameover-card {
+  color: #5b4d3e;
+  border-color: rgba(168, 150, 120, 0.28);
+  background:
+    linear-gradient(180deg, rgba(248, 244, 237, 0.96), rgba(231, 222, 207, 0.98));
+  box-shadow:
+    0 18px 36px rgba(122, 104, 74, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-kicker,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-subtle,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-stage-label,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-zone-meta,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-event-row span,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-help-row {
+  color: #867562;
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-header-copy,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-header-leave,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-selection-actions button,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-hand-controls select,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-tab-row button,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-pick-chip,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-mobile-bar button {
+  border-color: rgba(165, 148, 121, 0.34);
+  background: linear-gradient(180deg, rgba(250, 247, 241, 0.98), rgba(232, 224, 211, 0.98));
+  color: #5c4f40;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 4px 10px rgba(120, 102, 72, 0.06);
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-header-copy:hover,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-header-leave:hover,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-pick-chip.is-selected,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-mobile-bar button:not(:disabled):hover {
+  border-color: rgba(90, 125, 191, 0.38);
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-battlefield-panel {
+  background:
+    linear-gradient(180deg, rgba(243, 237, 228, 0.95), rgba(224, 214, 198, 0.92)),
+    radial-gradient(900px 420px at 50% 18%, rgba(255, 255, 255, 0.5), transparent 60%);
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-board-surface {
+  opacity: 0.42;
+  filter: saturate(0.72) brightness(1.18);
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-opponent-card,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-center-badge,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-zone,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-player-dock,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-player-dock-side .game-ui-layout-legendary-frame {
+  border-color: rgba(171, 154, 126, 0.28);
+  background:
+    linear-gradient(180deg, rgba(251, 247, 241, 0.9), rgba(235, 226, 212, 0.92));
+  box-shadow:
+    0 12px 24px rgba(120, 102, 72, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-opponent-copy strong,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-center-badge-copy strong,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-focus-meta strong,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-zone-head strong {
+  color: #554636;
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-opponent-copy span,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-opponent-copy small,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-center-badge-copy span {
+  color: #7f6e5a;
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-opponent-avatar,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-center-badge-portrait {
+  border-color: rgba(173, 156, 128, 0.34);
+  background: linear-gradient(180deg, rgba(250, 246, 239, 0.98), rgba(230, 221, 207, 0.98));
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-opponent-resource,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-center-badge-resource,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-footer-resource {
+  border-color: rgba(176, 158, 126, 0.32);
+  background: rgba(243, 235, 223, 0.86);
+  color: #645543;
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-hand-rail,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-hand-head {
+  color: #7b6a58;
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-player-dock-main .game-card.is-v3,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-player-dock-side .game-card.is-v3,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-zone-card,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-focus-card {
+  box-shadow:
+    0 12px 22px rgba(124, 103, 72, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-card-body.is-v3 {
+  background:
+    linear-gradient(180deg, rgba(247, 244, 238, 0.96), rgba(228, 225, 218, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-card-body.is-v3 strong {
+  color: #2f2920;
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-card-body.is-v3 small,
+.game-ui-layout-shell.is-theme-v1 .game-card.is-v3 .pill {
+  color: #5d5d56;
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-notice {
+  border-color: rgba(140, 162, 201, 0.34);
+  background: rgba(185, 203, 230, 0.32);
+  color: #516177;
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-event-row,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-help-row {
+  border-color: rgba(175, 158, 127, 0.22);
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-mobile-bar,
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-footer-bar {
+  border-color: rgba(170, 152, 124, 0.28);
+  background:
+    linear-gradient(180deg, rgba(246, 241, 233, 0.98), rgba(228, 219, 205, 0.98));
+}
