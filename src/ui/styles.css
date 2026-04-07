@@ -9057,6 +9057,7 @@ button:disabled {
 
 .app.app-v2.is-immersive-v2-game .game-ui-layout-opponents-side {
   gap: 14px;
+  flex-wrap: wrap;
 }
 
 .app.app-v2.is-immersive-v2-game .game-ui-layout-opponent-card {
