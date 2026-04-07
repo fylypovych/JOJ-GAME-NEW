@@ -1,0 +1,84 @@
+.user-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0 14px;
+}
+
+.user-tabs-v3 button,
+.user-tabs-v3 a {
+  border-color: rgba(108, 165, 176, 0.34);
+  background: linear-gradient(180deg, #fffdf7, #edf5f4);
+  color: #25404e;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.user-tabs-v2 {
+  gap: 10px;
+}
+
+.user-tabs-v2 button,
+.user-tabs-v2 a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 8px 16px;
+  border-color: rgba(143, 157, 168, 0.34);
+  border-radius: 13px;
+  background: linear-gradient(180deg, rgba(64, 71, 74, 0.96), rgba(39, 45, 47, 0.98));
+  color: #edf1e8;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.user-tabs-v2 button:hover:not(:disabled),
+.user-tabs-v2 a:hover {
+  border-color: rgba(180, 189, 173, 0.42);
+}
+
+.user-tabs-v2 button.is-active,
+.user-tabs-v2 button[aria-current="page"],
+.user-tabs-v2 a.is-active,
+.user-tabs-v2 a[aria-current="page"] {
+  opacity: 1;
+  border-color: rgba(90, 137, 225, 0.5);
+  background: linear-gradient(180deg, #4a70d6, #294aa7);
+  color: #f7faff;
+}
+
+.user-tabs-v1 button,
+.user-tabs-v1 a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-color: rgba(157, 142, 117, 0.34);
+  background: linear-gradient(180deg, rgba(249, 245, 237, 0.98), rgba(228, 219, 205, 0.98));
+  color: #5d5142;
+  text-decoration: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    0 4px 10px rgba(120, 102, 72, 0.08);
+}
+
+.user-tabs-v1 button:hover:not(:disabled),
+.user-tabs-v1 a:hover {
+  border-color: rgba(183, 165, 136, 0.44);
+}
+
+.user-tabs-v1 button.is-active,
+.user-tabs-v1 button[aria-current="page"],
+.user-tabs-v1 a.is-active,
+.user-tabs-v1 a[aria-current="page"] {
+  opacity: 1;
+  border-color: rgba(86, 121, 187, 0.42);
+  background: linear-gradient(180deg, #5e88d6, #3d66b2);
+  color: #fffaf2;
+}
+
+.app-top-toolbar .user-tabs {
+  margin: 0;
+}

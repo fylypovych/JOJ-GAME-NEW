@@ -1040,7 +1040,7 @@ export const App = () => {
         />
       ) : null}
       <footer className="app-footer">
-        &copy; ALL RIGHTS RESERVED BY "SOHODNY LLC, <a href="mailto:zhurnal.zhurnaliv@gmail.com">zhurnal.zhurnaliv@gmail.com</a>"
+        &copy; ALL RIGHTS RESERVED BY "SOHODNY LLC, <a href="mailto:zhurnal.zhurnaliv@gmail.com">zhurnal.zhurnaliv@gmail.com</a>
         {buildLabel ? ` · ${buildLabel}` : ''}
       </footer>
     </main>
