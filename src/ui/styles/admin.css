@@ -3043,3 +3043,16 @@
   margin-bottom: 8px;
 }
 
+pre.admin-textarea,
+pre.admin-textarea.admin-log-viewer {
+  background-color: #101823 !important;
+  background-image: linear-gradient(180deg, #0f1724, #151d2b) !important;
+  color: #e7edf7 !important;
+  border-color: rgba(45, 58, 76, 0.42) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: #e7edf7 !important;
+  caret-color: #e7edf7;
+}
+
