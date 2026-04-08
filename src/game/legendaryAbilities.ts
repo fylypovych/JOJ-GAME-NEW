@@ -118,15 +118,6 @@ const legendaryAbilityRegistry: Record<string, LegendaryAbilityHandler> = {
     d.syncPlayerState(G, playerID);
     return d.legendaryTexts.churchLeadership(playerLabel);
   },
-  'legendary-09': ({ d, G, playerID, selectedResource }) => {
-    const playerLabel = d.getPlayerLabel(G, playerID);
-    if (!selectedResource || !d.resourceKeys.includes(selectedResource)) return d.INVALID_MOVE;
-    const before = G.resources[playerID][selectedResource] ?? 0;
-    const after = Math.max(before, 3);
-    G.resources[playerID][selectedResource] = after;
-    d.syncPlayerState(G, playerID);
-    return d.legendaryTexts.waterRestore(playerLabel, d.resourceLabelsUk[selectedResource], before, after);
-  },
   'legendary-13': ({ d, G, ctx, playerID }) => {
     const playerLabel = d.getPlayerLabel(G, playerID);
     const playerCount = Object.keys(G.players).length || Number(ctx.numPlayers ?? 0) || 2;

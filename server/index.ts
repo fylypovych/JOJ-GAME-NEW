@@ -177,7 +177,7 @@ const securityHeadersMiddleware = async (ctx: any, next: () => Promise<unknown>)
     ctx.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     ctx.set('Cross-Origin-Opener-Policy', 'same-origin');
     ctx.set('Cross-Origin-Resource-Policy', 'same-origin');
-    ctx.set('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+    ctx.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';");
   }
   await next();
 };

@@ -146,7 +146,7 @@ const buildLegendaryPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: st
         if (!targetPlayerID) return null;
         return { kind: 'play-legendary', cardId: card.id, targetPlayerID, score: base + 35 + profileAdjustments.aggressiveAttackBonus };
       }
-      if (card.id === 'legendary-06' || card.id === 'legendary-09') {
+      if (card.id === 'legendary-06') {
         return {
           kind: 'play-legendary',
           cardId: card.id,

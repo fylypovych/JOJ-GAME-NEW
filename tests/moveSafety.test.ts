@@ -510,6 +510,42 @@ test('playLegendaryCardHandler keeps draw stage and does not end turn when playe
   assert.equal(G.legendaryDiscard.at(-1)?.id, 'legendary-11');
 });
 
+test('playLegendaryCardHandler applies legendary-09 by card effects without resource selection', () => {
+  const G = makeState();
+  G.legendaryHands['0'] = [{
+    id: 'legendary-09',
+    title: 'Вода “ПроZORRO”',
+    category: 'LEGENDARY',
+    effects: [{ resource: 'discipline', value: 1 }],
+  }];
+  let nextStage = '';
+  const args: MoveArgs = {
+    G,
+    ctx: { currentPlayer: '0', activePlayers: { '0': 'play' }, turn: 1, numPlayers: 2 },
+    playerID: '0',
+    events: {
+      setStage: (stage: string) => { nextStage = stage; },
+    },
+  };
+
+  const result = playLegendaryCardHandler(makeDeps({
+    applyCardEffects: (state: JojGameState, playerID: string, effects) => {
+      for (const effect of effects) {
+        if (effect.resource === 'rank') continue;
+        state.resources[playerID][effect.resource] += effect.value;
+      }
+      return true;
+    },
+    snapshotResourcesForStats: () => ({ '0': { ...G.resources['0'] }, '1': { ...G.resources['1'] } }),
+  }), args, 'legendary-09');
+
+  assert.equal(result, undefined);
+  assert.equal(G.resources['0'].discipline, 2);
+  assert.equal(nextStage, 'play');
+  assert.equal(G.legendaryHands['0'].length, 0);
+  assert.equal(G.legendaryDiscard.at(-1)?.id, 'legendary-09');
+});
+
 test('promoteHandler moves player to end stage after successful promotion', () => {
   const G = makeState();
   let nextStage = '';

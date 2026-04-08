@@ -938,7 +938,7 @@ export const LegacyGameBoard = ({
                   effectLabel={effectLabel}
                   badges={(card) => [
                     ...(card.id === 'legendary-10' ? [board.requiresTarget] : []),
-                    ...((card.id === 'legendary-09' || card.id === 'legendary-06') ? [board.requiresResource] : []),
+                    ...(card.id === 'legendary-06' ? [board.requiresResource] : []),
                   ]}
                 />
               </section>
