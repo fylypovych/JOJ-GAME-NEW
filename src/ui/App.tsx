@@ -214,22 +214,12 @@ export const App = () => {
     restoreDbBackup,
     ADMIN_STORAGE_MODE_STORAGE_KEY,
     LEGACY_ADMIN_STORAGE_MODE_STORAGE_KEY,
-  } = useDbAdminTools({
-    lang,
-    adminFetch,
-    serverUrl: SERVER_URL,
-    enabled: isAdminRoute && adminAuthorized,
-  });
-
-  // NEW: useAppAdminState (parallel, not used yet)
-  // @ts-ignore - will be used in step 6
-  const _appAdminState = useAppAdminState({
+  } = useAppAdminState({
     serverUrl: SERVER_URL,
     lang,
     adminFetch,
     enabled: isAdminRoute && adminAuthorized,
   });
-  void _appAdminState;
 
   const {
     sharedDeckTemplate,
