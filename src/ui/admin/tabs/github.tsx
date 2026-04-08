@@ -149,6 +149,8 @@ export const AdminGithubTab = ({
       </div>
     ) : null}
     {gitActionMessage ? <p className="admin-success">{gitActionMessage}</p> : null}
-    {gitActionLog ? <pre className="admin-textarea admin-log-viewer">{gitActionLog}</pre> : null}
+    {gitActionLog ? (
+      <pre className="admin-textarea admin-log-viewer admin-github-log-viewer">{gitActionLog}</pre>
+    ) : null}
   </>
 );

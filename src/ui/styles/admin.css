@@ -3056,3 +3056,23 @@ pre.admin-textarea.admin-log-viewer {
   caret-color: #e7edf7;
 }
 
+.admin-panel-v4 .admin-v4-workspace-body pre.admin-github-log-viewer,
+.admin-panel-v1 .admin-v4-workspace-body pre.admin-github-log-viewer,
+pre.admin-github-log-viewer {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background-color: #101823 !important;
+  background-image: linear-gradient(180deg, #0f1724, #151d2b) !important;
+  color: #e7edf7 !important;
+  border: 1px solid rgba(45, 58, 76, 0.42) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 24px rgba(15, 23, 36, 0.12) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: #e7edf7 !important;
+  caret-color: #e7edf7;
+}
+
