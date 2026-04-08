@@ -524,7 +524,7 @@ export const App = () => {
                     aria-label={t.gameUiV1}
                     title={t.gameUiV1}
                   >
-                    <img src="/ui-theme-night.png" alt="" aria-hidden="true" />
+                    <img src="/ui-theme-day.png" alt="" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
@@ -534,7 +534,7 @@ export const App = () => {
                     aria-label={t.gameUiV2}
                     title={t.gameUiV2}
                   >
-                    <img src="/ui-theme-day.png" alt="" aria-hidden="true" />
+                    <img src="/ui-theme-night.png" alt="" aria-hidden="true" />
                   </button>
                 </div>
               </div>
