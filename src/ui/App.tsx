@@ -253,21 +253,6 @@ export const App = () => {
   });
 
   const sharedDeckStats = getSharedDeckTemplateStats();
-  const rollbackTemplate = (json: string) => {
-    const result = importSharedDeckTemplateJson(json);
-    if (result.ok) void refreshSharedDeckTemplate(false);
-  };
-  const applyTemplateChange = async (mutate: () => void, previousJson = exportSharedDeckTemplateJson()) => {
-    mutate();
-    const ok = await refreshSharedDeckTemplate();
-    if (!ok) rollbackTemplate(previousJson);
-    return ok;
-  };
-  const rollbackRanks = (previousRanks: RankDefinition[]) => {
-    if (!setSharedRanks(previousRanks)) return;
-    setSharedRanksState(getSharedRanks());
-    window.localStorage.setItem(RANKS_STORAGE_KEY, exportSharedRanksJson());
-  };
   const optionalLobbyModules = useMemo(
     () => (sharedDeckTemplate.modules ?? [])
       .filter((module) => module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
@@ -529,8 +514,6 @@ export const App = () => {
     onSetBack,
     onExportTemplate,
     onImportTemplate,
-    onExportRanks,
-    onImportRanks,
     onSetRanks,
     onResetRanks,
   } = useDeckHandlers({
