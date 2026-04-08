@@ -545,6 +545,9 @@ export const App = () => {
         activeUserTab={activeUserTab}
         setActiveUserTab={setActiveUserTab}
         gameUiVariant={gameUiVariant}
+        setGameUiVariant={setGameUiVariant}
+        adminUiVariant={adminUiVariant}
+        setAdminUiVariant={setAdminUiVariant}
         t={t}
       />
       <p className="app-link-row">
