@@ -30,12 +30,10 @@ import {
   clampBotCountToAllowed,
   clampRoomCapacityToAllowed,
   getAvailableBotCounts,
-  normalizeLobbyGameUiConfig,
 } from '../game/lobbyConfig';
 import { SERVER_URL } from './app/clientConfig';
 import {
   DEFAULT_SERVER_URL,
-  GAME_NAME,
   PLAYER_NAME_STORAGE_KEY,
   RANKS_STORAGE_KEY,
   SERVER_URL_STORAGE_KEY,
@@ -43,7 +41,6 @@ import {
   SHARED_TEMPLATE_STORAGE_KEY,
   galleryCategories,
   normalizeServerUrl,
-  parseSession,
 } from './app/model';
 import {
   AuthErrorModal,
@@ -140,7 +137,6 @@ export const App = () => {
     setServerUrlDraft,
   } = useAppShellState(SERVER_URL);
   const t = text(lang);
-  const [lobbyGameUiConfig, setLobbyGameUiConfig] = useState(DEFAULT_LOBBY_GAME_UI_CONFIG);
 
   // Consolidated user + auth state (replaces useUserAccount + useAdminAuth)
   const {
@@ -221,6 +217,7 @@ export const App = () => {
     enabled: isAdminRoute && adminAuthorized,
   });
 
+  // Consolidated game state (replaces useSharedConfigSync + useLobbySession)
   const {
     sharedDeckTemplate,
     cardCatalog,
@@ -229,22 +226,6 @@ export const App = () => {
     sharedConfigLoaded,
     refreshSharedDeckTemplate,
     syncRanksToServer,
-  } = useSharedConfigSync({
-    adminFetch,
-    templateApi: TEMPLATE_API,
-    ranksApi: RANKS_API,
-    sharedTemplateStorageKey: SHARED_TEMPLATE_STORAGE_KEY,
-    ranksStorageKey: RANKS_STORAGE_KEY,
-    getSharedDeckTemplate,
-    getCardCatalog,
-    getSharedRanks,
-    exportSharedDeckTemplateJson,
-    exportSharedRanksJson,
-    importSharedDeckTemplateJson,
-    importSharedRanksJson,
-    setSharedRanks,
-  });
-  const {
     matches,
     session,
     setSession,
@@ -258,41 +239,8 @@ export const App = () => {
     leaveRoom,
     roomPlayerNames,
     canStart,
-  } = useLobbySession({
-    lobbyClient,
-    gameName: GAME_NAME,
-    playerName,
-    fallbackPlayerName: user?.displayName?.trim() || user?.username?.trim() || '',
-    roomCapacity,
-    allowedRoomCapacities: lobbyGameUiConfig.allowedRoomCapacities,
-    gameMode,
-    selectedOptionalModuleIds,
-    createWithBots,
-    botCount,
-    allowedBotCounts: lobbyGameUiConfig.allowedBotCounts,
-    botDifficulty,
-    botProfile,
-    sessionStorageKey: SESSION_STORAGE_KEY,
-    initialSession: parseSession(window.localStorage.getItem(SESSION_STORAGE_KEY)),
-    serverUnavailableText: t.serverUnavailable,
-    enterNameText: t.enterName,
-    roomFullText: t.roomFull,
-    createFailedText: t.createFailed,
-    joinFailedText: t.joinFailed,
-    onSessionEstablished: (nextSession, nextPlayerName) => {
-      if (!nextSession.playerID || !nextSession.credentials) return;
-      void bindMatchSession({
-        matchID: nextSession.matchID,
-        playerID: nextSession.playerID,
-        credentials: nextSession.credentials,
-        playerName: nextPlayerName,
-      });
-    },
-  });
-
-  // NEW: useAppGameState (parallel, not used yet)
-  // @ts-ignore - will be used in step 6
-  const _appGameState = useAppGameState({
+    lobbyGameUiConfig,
+  } = useAppGameState({
     serverUrl: SERVER_URL,
     playerName,
     user,
@@ -313,7 +261,6 @@ export const App = () => {
     },
     bindMatchSession,
   });
-  void _appGameState;
 
   const sharedDeckStats = getSharedDeckTemplateStats();
   const rollbackTemplate = (json: string) => {
@@ -349,33 +296,6 @@ export const App = () => {
       return merged.filter((id) => allowed.has(id));
     });
   }, [optionalLobbyModules]);
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const response = await fetch(`${SERVER_URL}/api/game/ui-config`, { credentials: 'include' });
-        const payload = await response.json() as { ok?: boolean };
-        if (!response.ok || payload.ok !== true) return;
-        if (!cancelled) {
-          const normalizedConfig = normalizeLobbyGameUiConfig(payload);
-          setLobbyGameUiConfig(normalizedConfig);
-          setRoomCapacity((currentRoomCapacity) => {
-            if (!normalizedConfig.allowedRoomCapacities.includes(currentRoomCapacity as typeof normalizedConfig.allowedRoomCapacities[number])) {
-              return normalizedConfig.defaultRoomCapacity;
-            }
-            return currentRoomCapacity === DEFAULT_LOBBY_GAME_UI_CONFIG.defaultRoomCapacity
-              ? normalizedConfig.defaultRoomCapacity
-              : currentRoomCapacity;
-          });
-        }
-      } catch {
-        // keep defaults when public config is unavailable
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
   useEffect(() => {
     const nextRoomCapacity = clampRoomCapacityToAllowed(roomCapacity, lobbyGameUiConfig.allowedRoomCapacities);
     if (roomCapacity !== nextRoomCapacity) {
