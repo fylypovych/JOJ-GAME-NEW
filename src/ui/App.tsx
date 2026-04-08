@@ -1,5 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
-import { LobbyClient } from 'boardgame.io/client';
+import { Suspense, lazy, useEffect, useMemo } from 'react';
 import type { CardDefinition, RankDefinition } from '../game/types';
 import {
   addCustomCardToSharedDeckTemplate,
@@ -7,11 +6,8 @@ import {
   type DeckTarget,
   exportSharedDeckTemplateJson,
   exportSharedRanksJson,
-  getCardCatalog,
   getSharedRanks,
-  getSharedDeckTemplate,
   getSharedDeckTemplateStats,
-  importSharedRanksJson,
   importSharedDeckTemplateJson,
   removeCardAtFromSharedDeckTemplate,
   runGameSimulations,
@@ -22,11 +18,9 @@ import {
   shuffleSharedDeckTemplate,
   updateCardAtInSharedDeckTemplate,
 } from '../game/jojGame';
-import { useDbAdminTools } from './admin/useDbAdminTools';
 import { text } from './i18n';
 import { formatModuleDisplayName } from './moduleDisplay';
 import {
-  DEFAULT_LOBBY_GAME_UI_CONFIG,
   clampBotCountToAllowed,
   clampRoomCapacityToAllowed,
   getAvailableBotCounts,
@@ -38,7 +32,6 @@ import {
   RANKS_STORAGE_KEY,
   SERVER_URL_STORAGE_KEY,
   SESSION_STORAGE_KEY,
-  SHARED_TEMPLATE_STORAGE_KEY,
   galleryCategories,
   normalizeServerUrl,
 } from './app/model';
@@ -58,22 +51,13 @@ import { buildRoomShareLink } from './app/share';
 import { AppHeader } from './app/AppHeader';
 import { AppFooter } from './app/AppFooter';
 import { useAppShellState } from './app/useAppShellState';
-import { useLobbySession } from './app/useLobbySession';
-import { useSharedConfigSync } from './app/useSharedConfigSync';
-
-// NEW: Consolidated hooks (step-by-step migration)
-// @ts-ignore - will be used in step 4
 import { useAppGameState } from './app/useAppGameState';
 import { useAppUserState } from './app/useAppUserState';
-// @ts-ignore - will be used in step 3
 import { useAppAdminState } from './app/useAppAdminState';
 
-const lobbyClient = new LobbyClient({ server: SERVER_URL });
 const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
 const NetworkClientV1 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV1 })));
 const NetworkClientV2 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV2 })));
-
-const TEMPLATE_API = `${SERVER_URL}/api/shared-deck-template`;
 const RANKS_API = `${SERVER_URL}/api/shared-ranks`;
 const ADMIN_RESTART_API = `${SERVER_URL}/api/admin/restart`;
 const ADMIN_MATCH_STATE_API = `${SERVER_URL}/api/admin/match-state`;
