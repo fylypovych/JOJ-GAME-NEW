@@ -805,8 +805,7 @@ export const GameBoardV2 = ({
               />
               </>
             )}
-            sideContent={(
-              <section className="game-ui-v2-panel game-ui-layout-panel game-ui-v2-legendary-frame game-ui-layout-legendary-frame">
+            <section className="game-ui-v2-panel game-ui-layout-panel game-ui-v2-legendary-frame" style={{ marginTop: '16px' }}>
                 <V2HandSection
                   title={`${t.legendaryHand} (${legendaryHand.length})`}
                   subtitle={t.legendaryHandHint}
@@ -827,7 +826,9 @@ export const GameBoardV2 = ({
                   ]}
                 />
               </section>
+            </>
             )}
+            sideContent={null}
           />
           ) : null}
 
