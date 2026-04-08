@@ -3,7 +3,9 @@ export { ui };
 
 export const ranksById = {
   cadet: { uk: 'Кадет', en: 'Cadet' },
+  lieutenant: { uk: 'Лейтенант', en: 'Lieutenant' },
   captain: { uk: 'Капітан', en: 'Captain' },
+  major: { uk: 'Майор', en: 'Major' },
   colonel: { uk: 'Полковник', en: 'Colonel' },
   general: { uk: 'Генерал', en: 'General' },
 } as const;
@@ -18,45 +20,12 @@ export const categories = {
   RANK: { uk: 'Звання', en: 'Ranks' },
 } as const;
 
-export const cardTitlesUk: Record<string, string> = {
-  'lyap-01': 'Помилка в протоколі',
-  'scandal-01': 'Злитий меморандум',
-  'support-01': 'Тихий союзник',
-  'decision-01': 'Надзвичайний указ',
-  'vvnz-01': 'Директива ВВНЗ',
-  'lyap-02': 'Затриманий підпис',
-  'support-02': 'Польовий звіт',
-  'scandal-02': 'Викривач',
-  'decision-02': 'Кабінетне голосування',
-  'legendary-01': 'Залізний маршал',
-  'legendary-02': 'Привид архіву',
-  'legendary-03': 'Регент кризи',
-  'legendary-04': 'Кумир публіки',
-  'legendary-05': 'Архітектор системи',
-};
+// Legacy local title dictionaries were a second source of truth and caused stale names to leak into UI.
+// Card titles should now come from the actual card data loaded in shared config.
+export const cardTitlesUk: Record<string, string> = {};
 
-export const defaultCardTitlesEnById: Record<string, string> = {
-  'lyap-01': 'Protocol Slip',
-  'scandal-01': 'Leaked Memo',
-  'support-01': 'Quiet Ally',
-  'decision-01': 'Emergency Decree',
-  'vvnz-01': 'VVNZ Directive',
-  'lyap-02': 'Delayed Signature',
-  'support-02': 'Field Report',
-  'scandal-02': 'Whistleblower',
-  'decision-02': 'Cabinet Vote',
-  'legendary-01': 'Iron Marshal',
-  'legendary-02': 'Archive Ghost',
-  'legendary-03': 'Crisis Regent',
-  'legendary-04': 'Public Idol',
-  'legendary-05': 'System Architect',
-};
+export const defaultCardTitlesEnById: Record<string, string> = {};
 
-// Verified English overrides for cards whose current in-game names no longer match legacy base placeholders.
-// Keep this list curated; do not auto-spread default placeholders here.
-export const cardTitlesEnById: Record<string, string> = {
-  'legendary-02': "Budanov's Laugh",
-  'legendary-05': 'ZSU Ration Pack',
-};
+export const cardTitlesEnById: Record<string, string> = {};
 
 

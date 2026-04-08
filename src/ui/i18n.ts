@@ -49,8 +49,6 @@ export const cardFlavor = (
 };
 
 const systemMessageEnReplacements: Array<[RegExp, string]> = [
-  [/\bSystem Architect\b/g, 'ZSU Ration Pack'],
-  [/\bArchive Ghost\b/g, "Budanov's Laugh"],
   [/\bЗвання\b/g, 'Rank'],
   [/\bВартість\b/g, 'Cost'],
   [/\bБонус\b/g, 'Bonus'],

@@ -97,7 +97,7 @@ const legendaryAbilityRegistry: Record<string, LegendaryAbilityHandler> = {
     if (!selectedResource || !d.resourceKeys.includes(selectedResource)) return d.INVALID_MOVE;
     G.resources[playerID][selectedResource] = (G.resources[playerID][selectedResource] ?? 0) + 3;
     Object.keys(G.players).filter((pid) => pid !== playerID).forEach((pid) => {
-      G.resources[pid].documents = (G.resources[pid].documents ?? 0) + 1;
+      G.resources[pid].discipline = (G.resources[pid].discipline ?? 0) + 1;
       d.clampNonNegativeResources(G.resources[pid]);
       d.syncPlayerState(G, pid);
     });
