@@ -821,14 +821,7 @@ export const App = () => {
             setError('');
             void refreshMatches();
           }}
-          onRestartServer={async () => {
-            try {
-              const response = await adminFetch(ADMIN_RESTART_API, { method: 'POST' });
-              return response.ok;
-            } catch {
-              return false;
-            }
-          }}
+          onRestartServer={onRestartServer}
           onShuffleDeck={() => {
             void applyTemplateChange(() => {
               shuffleSharedDeckTemplate();
