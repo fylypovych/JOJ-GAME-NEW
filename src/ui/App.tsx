@@ -65,6 +65,13 @@ import { useLobbySession } from './app/useLobbySession';
 import { useSharedConfigSync } from './app/useSharedConfigSync';
 import { useUserAccount } from './app/useUserAccount';
 
+// NEW: Consolidated hooks (step-by-step migration)
+// @ts-ignore - will be used in step 4
+import { useAppGameState } from './app/useAppGameState';
+import { useAppUserState } from './app/useAppUserState';
+// @ts-ignore - will be used in step 3
+import { useAppAdminState } from './app/useAppAdminState';
+
 const lobbyClient = new LobbyClient({ server: SERVER_URL });
 const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
 const NetworkClientV1 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV1 })));
@@ -173,6 +180,20 @@ export const App = () => {
     unauthorizedText: t.adminUnauthorized,
     serverUnavailableText: t.serverUnavailable,
   });
+
+  // NEW: useAppUserState (parallel, not used yet)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _appUserState = useAppUserState({
+    serverUrl: SERVER_URL,
+    lang,
+    isAdminRoute,
+    t: {
+      adminUnauthorized: t.adminUnauthorized,
+      serverUnavailable: t.serverUnavailable,
+    },
+  });
+  void _appUserState; // intentionally unused during migration
+
   const {
     adminStorageMode,
     setAdminStorageMode,
@@ -212,6 +233,17 @@ export const App = () => {
     serverUrl: SERVER_URL,
     enabled: isAdminRoute && adminAuthorized,
   });
+
+  // NEW: useAppAdminState (parallel, not used yet)
+  // @ts-ignore - will be used in step 6
+  const _appAdminState = useAppAdminState({
+    serverUrl: SERVER_URL,
+    lang,
+    adminFetch,
+    enabled: isAdminRoute && adminAuthorized,
+  });
+  void _appAdminState;
+
   const {
     sharedDeckTemplate,
     cardCatalog,
@@ -280,6 +312,32 @@ export const App = () => {
       });
     },
   });
+
+  // NEW: useAppGameState (parallel, not used yet)
+  // @ts-ignore - will be used in step 6
+  const _appGameState = useAppGameState({
+    serverUrl: SERVER_URL,
+    playerName,
+    user,
+    lang,
+    gameMode,
+    roomCapacity,
+    createWithBots,
+    botCount,
+    botDifficulty,
+    botProfile,
+    selectedOptionalModuleIds,
+    t: {
+      serverUnavailable: t.serverUnavailable,
+      enterName: t.enterName,
+      roomFull: t.roomFull,
+      createFailed: t.createFailed,
+      joinFailed: t.joinFailed,
+    },
+    bindMatchSession,
+  });
+  void _appGameState;
+
   const sharedDeckStats = getSharedDeckTemplateStats();
   const rollbackTemplate = (json: string) => {
     const result = importSharedDeckTemplateJson(json);

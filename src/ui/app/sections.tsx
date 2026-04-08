@@ -827,9 +827,10 @@ export const ProfileSection = ({
                   accept="image/png,image/jpeg,image/webp,image/gif"
                   onChange={(e) => {
                     const file = e.currentTarget.files?.[0];
+                    const input = e.currentTarget;
                     if (!file) return;
                     void onUploadAvatar(file).finally(() => {
-                      e.currentTarget.value = '';
+                      input.value = '';
                     });
                   }}
                   disabled={busy}

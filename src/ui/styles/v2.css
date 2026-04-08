@@ -5523,6 +5523,26 @@
   color: #edf2f9;
 }
 
+.app.app-v2 .game-ui-v2-gameover-summary-row,
+.app.app-v2 .game-ui-v3-gameover-summary-row {
+  border-color: rgba(176, 181, 171, 0.18);
+  background:
+    linear-gradient(180deg, rgba(32, 38, 44, 0.94), rgba(20, 24, 29, 0.96));
+  color: #e7edf7;
+}
+
+.app.app-v2 .game-ui-v2-gameover-summary-row.is-winner,
+.app.app-v2 .game-ui-v3-gameover-summary-row.is-winner {
+  border-color: rgba(76, 175, 80, 0.5);
+  background:
+    linear-gradient(180deg, rgba(46, 80, 50, 0.88), rgba(30, 60, 35, 0.92));
+}
+
+.app.app-v2 .game-ui-v2-gameover-summary-grid,
+.app.app-v2 .game-ui-v3-gameover-summary-grid {
+  color: #e7edf7;
+}
+
 .app.app-v2.is-immersive-v2-game .game-ui-layout-player-dock-side .game-ui-layout-legendary-frame {
   padding: 10px 12px 12px;
   border: 1px solid rgba(189, 165, 94, 0.24);

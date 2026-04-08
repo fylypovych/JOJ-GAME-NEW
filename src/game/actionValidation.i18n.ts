@@ -43,10 +43,26 @@ export type ActionTranslator = (
   params?: Record<string, string | number>
 ) => string;
 
-// Default fallback translator (returns key if no translation found)
+// Default fallback translator (returns human-readable text for backward compatibility)
+const ukTranslations: Record<string, string> = {
+  [actionValidationKeys.promote.alreadyPromotedThisTurn]: 'Ви вже підвищувалися цього ходу.',
+  [actionValidationKeys.promote.noNextRank]: 'Немає наступного звання для підвищення.',
+  [actionValidationKeys.promote.playerResourcesUnavailable]: 'Ресурси гравця недоступні.',
+  [actionValidationKeys.promote.missingRequirements]: 'До звання «{rankName}» бракує: {missing}',
+  [actionValidationKeys.promote.missingCost]: 'Для підвищення до «{rankName}» бракує вартості: {missing}',
+  [actionValidationKeys.promote.noFreeSeat]: 'Немає вільного місця на званні «{rankName}» (ліміт: {seatLimit})',
+  [actionValidationKeys.vvnz.alreadyPromotedThisTurn]: 'Цього ходу ви вже отримували підвищення.',
+  [actionValidationKeys.vvnz.noGrantRank]: 'Для цієї ВВНЗ-карти не задано цільове звання (grantRank).',
+  [actionValidationKeys.vvnz.resourcesNotLoaded]: 'Стан ресурсів ще не завантажено.',
+  [actionValidationKeys.vvnz.unknownTargetRank]: 'Невідоме цільове звання: {rankId}',
+  [actionValidationKeys.vvnz.rankNotLower]: 'Карта дає звання «{rankName}», але ваше поточне звання вже не нижче.',
+  [actionValidationKeys.handCard.cannotPlayNow]: 'Цю карту зараз не можна розіграти.',
+};
+
 export const defaultTranslator: ActionTranslator = (key, params) => {
+  // Get translation or fallback to key
+  let result = ukTranslations[key] ?? key;
   // Simple interpolation: replace {paramName} with value
-  let result = key;
   if (params) {
     Object.entries(params).forEach(([paramKey, value]) => {
       result = result.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(value));

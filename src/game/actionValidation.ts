@@ -1,7 +1,7 @@
 import { getCardPlayBehavior, type CardPlayBehavior } from './cardRules';
 import { rankSeatLimitForRank } from './rankEngine';
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from './types';
-import { actionValidationKeys, type ActionTranslator } from './actionValidation.i18n';
+import { actionValidationKeys, type ActionTranslator, defaultTranslator } from './actionValidation.i18n';
 
 export type ResourceLabels = Record<ResourceKey, string>;
 export type ActionAvailability = { allowed: boolean; reason: string | null };
@@ -34,16 +34,7 @@ export const getPromoteBlockedReason = (args: {
   translator?: ActionTranslator;
 }): string | null => {
   const { G, playerID, ranks, resourceLabels, translator } = args;
-  const t = translator ?? ((key: string, params?: Record<string, string | number>) => {
-    // Fallback: return key with simple param interpolation
-    let result = key;
-    if (params) {
-      Object.entries(params).forEach(([k, v]) => {
-        result = result.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
-      });
-    }
-    return result;
-  });
+  const t = translator ?? defaultTranslator;
   const currentRankId = G.ranks[playerID];
   if (G.promotedThisTurn?.[playerID]) {
     return t(actionValidationKeys.promote.alreadyPromotedThisTurn);
@@ -101,15 +92,7 @@ export const getVvnzPlayBlockedReason = (args: {
   translator?: ActionTranslator;
 }): string | null => {
   const { card, G, playerID, ranks, resourceLabels, translator } = args;
-  const t = translator ?? ((key: string, params?: Record<string, string | number>) => {
-    let result = key;
-    if (params) {
-      Object.entries(params).forEach(([k, v]) => {
-        result = result.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
-      });
-    }
-    return result;
-  });
+  const t = translator ?? defaultTranslator;
   if (card.category !== 'VVNZ') return null;
   if (G.promotedThisTurn?.[playerID]) {
     return t(actionValidationKeys.vvnz.alreadyPromotedThisTurn);
@@ -157,16 +140,8 @@ export const getHandCardActionState = (args: {
   lang?: 'uk' | 'en';
   translator?: ActionTranslator;
 }): ActionAvailability & { behavior: CardPlayBehavior } => {
-  const { card, G, playerID, ranks, resourceLabels, canPlayHandCard = true, translator, lang } = args;
-  const t = translator ?? ((key: string, params?: Record<string, string | number>) => {
-    let result = key;
-    if (params) {
-      Object.entries(params).forEach(([k, v]) => {
-        result = result.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
-      });
-    }
-    return result;
-  });
+  const { card, G, playerID, ranks, resourceLabels, canPlayHandCard = true, translator } = args;
+  const t = translator ?? defaultTranslator;
   const behavior = getCardPlayBehavior(card);
   if (!canPlayHandCard) {
     return {
@@ -176,7 +151,7 @@ export const getHandCardActionState = (args: {
     };
   }
   if (behavior === 'vvnz') {
-    const reason = getVvnzPlayBlockedReason({ card, G, playerID, ranks, resourceLabels, translator, lang });
+    const reason = getVvnzPlayBlockedReason({ card, G, playerID, ranks, resourceLabels, translator });
     return { allowed: !reason, reason, behavior };
   }
   return { allowed: true, reason: null, behavior };
