@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { text } from '../../i18n';
 import type { RankDefinition, ResourceKey } from '../../../game/types';
 
@@ -183,115 +184,147 @@ export const AdminRanksTab = ({
   attachRankVariantImageFile: (index: number, rankId: string, file: File | null) => Promise<void> | void;
   rankResourceKeys: ResourceKey[]; removeRankAt: (index: number) => void; rankDraft: RankDraft; setRankDraft: (updater: (prev: RankDraft) => RankDraft) => void;
   attachRankDraftImageFile: (file: File | null) => Promise<void> | void; attachRankDraftVariantImageFile: (file: File | null) => Promise<void> | void; saveRanks: () => void; addRank: () => void; onResetRanks: () => void;
-}) => (
-  <>
-    <h3>{t.ranksTitle}</h3>
-    <p>{t.ranksHint}</p>
+}) => {
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-    <div className="admin-ranks-toolbar">
-      <button type="button" onClick={saveRanks}>{t.saveRanks}</button>
-      <button type="button" onClick={addRank}>{t.addRank}</button>
-      <button type="button" onClick={onResetRanks}>{t.resetRanks}</button>
-    </div>
+  return (
+    <>
+      <h3>{t.ranksTitle}</h3>
+      <p>{t.ranksHint}</p>
 
-    <div className="admin-deck-list admin-rank-list"><ul>
-      {editableRanks.map((rank, index) => (
-        <li key={`rank-${rank.id}-${index}`}>
-          <article className="admin-inline-editor admin-rank-editor">
-            <div className="admin-rank-header">
-              <div>
-                <span className="admin-rank-order">#{index + 1}</span>
-                <h4>{rank.name || t.rankNameLabel}</h4>
-                <p>{rank.id || 'rank-id'}</p>
-              </div>
-              <button type="button" onClick={() => removeRankAt(index)} disabled={editableRanks.length <= 1}>{t.removeCard}</button>
-            </div>
-
-            <div className="admin-editor-grid">
-              <label>
-                ID
-                <input value={rank.id} onChange={(e) => updateRankAt(index, (row) => ({ ...row, id: e.target.value }))} />
-              </label>
-              <label>
-                {t.rankNameLabel}
-                <input value={rank.name} onChange={(e) => updateRankAt(index, (row) => ({ ...row, name: e.target.value }))} />
-              </label>
-            </div>
-
-            <RankImageManager
-              t={t}
-              image={rank.image}
-              imageVariants={rank.imageVariants}
-              onImageChange={(value) => updateRankAt(index, (row) => ({ ...row, image: value }))}
-              onImageUpload={(file) => { void attachRankImageFile(index, rank.id, file); }}
-              onVariantsChange={(next) => updateRankAt(index, (row) => ({ ...row, imageVariants: next.map((value) => value.trim()).filter(Boolean) }))}
-              onVariantUpload={(file) => { void attachRankVariantImageFile(index, rank.id, file); }}
-            />
-
-            <RankResourcesEditor
-              t={t}
-              rank={rank}
-              rankResourceKeys={rankResourceKeys}
-              onChange={(next) => updateRankAt(index, () => next)}
-            />
-          </article>
-        </li>
-      ))}
-    </ul></div>
-
-    <h4>{t.addRank}</h4>
-    <article className="admin-inline-editor admin-rank-editor admin-rank-editor-draft">
-      <div className="admin-rank-header">
-        <div>
-          <span className="admin-rank-order">+</span>
-          <h4>{t.rankCreateTitle}</h4>
-          <p>{t.rankCreateHint}</p>
-        </div>
-      </div>
-
-      <div className="admin-editor-grid">
-        <label>
-          ID
-          <input value={rankDraft.id} onChange={(e) => setRankDraft((prev) => ({ ...prev, id: e.target.value }))} />
-        </label>
-        <label>
-          {t.rankNameLabel}
-          <input value={rankDraft.name} onChange={(e) => setRankDraft((prev) => ({ ...prev, name: e.target.value }))} />
-        </label>
-      </div>
-
-      <RankImageManager
-        t={t}
-        image={rankDraft.image}
-        imageVariants={rankDraft.imageVariants}
-        onImageChange={(value) => setRankDraft((prev) => ({ ...prev, image: value }))}
-        onImageUpload={(file) => { void attachRankDraftImageFile(file); }}
-        onVariantsChange={(next) => setRankDraft((prev) => ({ ...prev, imageVariants: next.map((value) => value.trim()).filter(Boolean) }))}
-        onVariantUpload={(file) => { void attachRankDraftVariantImageFile(file); }}
-      />
-
-      <RankResourcesEditor
-        t={t}
-        rank={rankDraft}
-        rankResourceKeys={rankResourceKeys}
-        onChange={(next) => setRankDraft(() => next)}
-      />
-
-      <p className="admin-controls">
-        <button type="button" onClick={addRank}>{t.addRank}</button>
+      <div className="admin-ranks-toolbar">
         <button type="button" onClick={saveRanks}>{t.saveRanks}</button>
+        <button type="button" onClick={addRank}>{t.addRank}</button>
         <button type="button" onClick={onResetRanks}>{t.resetRanks}</button>
-      </p>
-    </article>
+      </div>
 
-    <h4>{t.ranksImportExportTitle}</h4>
-    <p className="admin-controls">
-      <button type="button" onClick={exportRanksToFile}>{t.ranksExportJson}</button>
-      <button type="button" onClick={importRanks}>{t.ranksImportJson}</button>
-      <label>{t.ranksImportFile}<input type="file" accept="application/json,.json" onChange={(e) => importRanksFromFile(e.target.files?.[0] ?? null)} /></label>
-    </p>
-    {ranksImportError ? <p className="admin-error">{ranksImportError}</p> : null}
-    {ranksImportStatus ? <p className="admin-success">{ranksImportStatus}</p> : null}
-    <textarea className="admin-textarea" value={ranksJson} onChange={(e) => { setRanksJson(e.target.value); setRanksImportError(''); setRanksImportStatus(''); }} />
-  </>
-);
+      <div className="admin-deck-list admin-rank-list"><ul>
+        {editableRanks.map((rank, index) => {
+          const isEditing = editingIndex === index;
+          return (
+            <li key={`rank-${rank.id}-${index}`} className={`admin-rank-list-item${isEditing ? ' is-editing' : ''}`}>
+              <div className="admin-rank-list-row">
+                <div className="admin-rank-list-meta">
+                  <span className="admin-rank-order">#{index + 1}</span>
+                  <div>
+                    <strong>{rank.name || t.rankNameLabel}</strong>
+                    <p>{rank.id || 'rank-id'}</p>
+                  </div>
+                </div>
+                <div className="admin-controls admin-rank-list-actions">
+                  <button type="button" onClick={() => setEditingIndex(isEditing ? null : index)}>
+                    {t.editItemShort}
+                  </button>
+                  <button type="button" onClick={() => { saveRanks(); setEditingIndex(null); }}>
+                    {t.saveItemShort}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      removeRankAt(index);
+                      if (editingIndex === index) setEditingIndex(null);
+                    }}
+                    disabled={editableRanks.length <= 1}
+                  >
+                    {t.deleteItemShort}
+                  </button>
+                </div>
+              </div>
+
+              {isEditing ? (
+                <article className="admin-inline-editor admin-rank-editor">
+                  <div className="admin-editor-grid">
+                    <label>
+                      ID
+                      <input value={rank.id} onChange={(e) => updateRankAt(index, (row) => ({ ...row, id: e.target.value }))} />
+                    </label>
+                    <label>
+                      {t.rankNameLabel}
+                      <input value={rank.name} onChange={(e) => updateRankAt(index, (row) => ({ ...row, name: e.target.value }))} />
+                    </label>
+                  </div>
+
+                  <RankImageManager
+                    t={t}
+                    image={rank.image}
+                    imageVariants={rank.imageVariants}
+                    onImageChange={(value) => updateRankAt(index, (row) => ({ ...row, image: value }))}
+                    onImageUpload={(file) => { void attachRankImageFile(index, rank.id, file); }}
+                    onVariantsChange={(next) => updateRankAt(index, (row) => ({ ...row, imageVariants: next.map((value) => value.trim()).filter(Boolean) }))}
+                    onVariantUpload={(file) => { void attachRankVariantImageFile(index, rank.id, file); }}
+                  />
+
+                  <RankResourcesEditor
+                    t={t}
+                    rank={rank}
+                    rankResourceKeys={rankResourceKeys}
+                    onChange={(next) => updateRankAt(index, () => next)}
+                  />
+
+                  <p className="admin-controls">
+                    <button type="button" onClick={() => { saveRanks(); setEditingIndex(null); }}>{t.saveItemShort}</button>
+                  </p>
+                </article>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul></div>
+
+      <h4>{t.addRank}</h4>
+      <article className="admin-inline-editor admin-rank-editor admin-rank-editor-draft">
+        <div className="admin-rank-header">
+          <div>
+            <span className="admin-rank-order">+</span>
+            <h4>{t.rankCreateTitle}</h4>
+            <p>{t.rankCreateHint}</p>
+          </div>
+        </div>
+
+        <div className="admin-editor-grid">
+          <label>
+            ID
+            <input value={rankDraft.id} onChange={(e) => setRankDraft((prev) => ({ ...prev, id: e.target.value }))} />
+          </label>
+          <label>
+            {t.rankNameLabel}
+            <input value={rankDraft.name} onChange={(e) => setRankDraft((prev) => ({ ...prev, name: e.target.value }))} />
+          </label>
+        </div>
+
+        <RankImageManager
+          t={t}
+          image={rankDraft.image}
+          imageVariants={rankDraft.imageVariants}
+          onImageChange={(value) => setRankDraft((prev) => ({ ...prev, image: value }))}
+          onImageUpload={(file) => { void attachRankDraftImageFile(file); }}
+          onVariantsChange={(next) => setRankDraft((prev) => ({ ...prev, imageVariants: next.map((value) => value.trim()).filter(Boolean) }))}
+          onVariantUpload={(file) => { void attachRankDraftVariantImageFile(file); }}
+        />
+
+        <RankResourcesEditor
+          t={t}
+          rank={rankDraft}
+          rankResourceKeys={rankResourceKeys}
+          onChange={(next) => setRankDraft(() => next)}
+        />
+
+        <p className="admin-controls">
+          <button type="button" onClick={addRank}>{t.addRank}</button>
+          <button type="button" onClick={saveRanks}>{t.saveRanks}</button>
+          <button type="button" onClick={onResetRanks}>{t.resetRanks}</button>
+        </p>
+      </article>
+
+      <h4>{t.ranksImportExportTitle}</h4>
+      <p className="admin-controls">
+        <button type="button" onClick={exportRanksToFile}>{t.ranksExportJson}</button>
+        <button type="button" onClick={importRanks}>{t.ranksImportJson}</button>
+        <label>{t.ranksImportFile}<input type="file" accept="application/json,.json" onChange={(e) => importRanksFromFile(e.target.files?.[0] ?? null)} /></label>
+      </p>
+      {ranksImportError ? <p className="admin-error">{ranksImportError}</p> : null}
+      {ranksImportStatus ? <p className="admin-success">{ranksImportStatus}</p> : null}
+      <textarea className="admin-textarea" value={ranksJson} onChange={(e) => { setRanksJson(e.target.value); setRanksImportError(''); setRanksImportStatus(''); }} />
+    </>
+  );
+};

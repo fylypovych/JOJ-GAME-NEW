@@ -2918,6 +2918,51 @@
   background: #f8fafc;
 }
 
+.admin-rank-list-item {
+  border: 1px solid rgba(208, 213, 221, 0.9);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.04);
+}
+
+.admin-rank-list-item + .admin-rank-list-item {
+  margin-top: 10px;
+}
+
+.admin-rank-list-item.is-editing {
+  border-color: rgba(93, 135, 214, 0.42);
+  box-shadow: 0 10px 24px rgba(48, 84, 160, 0.08);
+}
+
+.admin-rank-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-rank-list-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin-rank-list-meta strong {
+  display: block;
+}
+
+.admin-rank-list-meta p {
+  margin: 2px 0 0;
+  color: #667085;
+}
+
+.admin-rank-list-actions {
+  margin-left: auto;
+}
+
 .admin-thumb {
   width: 28px;
   height: 20px;
