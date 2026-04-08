@@ -795,23 +795,7 @@ export const App = () => {
               }
             })();
           }}
-          onDeleteMatch={() => {
-            if (!adminMatchID || deletingAdminMatch) return;
-            void (async () => {
-              setDeletingAdminMatch(true);
-              try {
-                const response = await adminFetch(`${ADMIN_MATCH_DELETE_API}?matchID=${encodeURIComponent(adminMatchID)}`, { method: 'POST' });
-                if (!response.ok) return;
-                setSnapshot(null);
-                setAdminSelectedMatchID('');
-                await refreshMatches();
-              } catch {
-                // ignore UI toast for now
-              } finally {
-                setDeletingAdminMatch(false);
-              }
-            })();
-          }}
+          onDeleteMatch={onDeleteMatch}
           deletingMatch={deletingAdminMatch}
           onResetAll={() => {
             window.localStorage.removeItem(SESSION_STORAGE_KEY);
