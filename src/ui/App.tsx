@@ -251,7 +251,7 @@ export const App = () => {
   const sharedDeckStats = getSharedDeckTemplateStats();
   const optionalLobbyModules = useMemo(
     () => (sharedDeckTemplate.modules ?? [])
-      .filter((module) => module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
+      .filter((module) => module.enabled && module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
       .map((module) => ({
         id: module.id,
         name: formatModuleDisplayName(module.name, module.id),
