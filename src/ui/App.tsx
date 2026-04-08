@@ -54,6 +54,9 @@ import { useAppShellState } from './app/useAppShellState';
 import { useAppGameState } from './app/useAppGameState';
 import { useAppUserState } from './app/useAppUserState';
 import { useAppAdminState } from './app/useAppAdminState';
+import { useProfileHandlers } from './app/useProfileHandlers';
+import { useAuthHandlers } from './app/useAuthHandlers';
+import { useGameSessionHandlers } from './app/useGameSessionHandlers';
 
 const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
 const NetworkClientV1 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV1 })));
@@ -428,6 +431,70 @@ export const App = () => {
     window.localStorage.removeItem(LEGACY_ADMIN_STORAGE_MODE_STORAGE_KEY);
   }, [adminStorageMode]);
 
+  // Profile handlers
+  const {
+    onLogin,
+    onLogout,
+    onSaveProfile,
+    onChangePassword,
+    onUploadAvatar,
+    onRefreshSessions,
+    onLogoutAllSessions,
+    onLogoutSession,
+    onOpenRegister,
+  } = useProfileHandlers({
+    user,
+    lang,
+    loginDraft,
+    profileDraft,
+    passwordDraft,
+    loginUser,
+    logoutUser,
+    updateUserProfile,
+    changePassword,
+    uploadAvatar,
+    refreshSessions,
+    logoutAllSessions,
+    logoutSession,
+    setPlayerName,
+    setAuthErrorModal,
+    setProfileScreen,
+    setProfileNotice,
+    setLoginDraft,
+    setProfileDraft,
+    setPasswordDraft,
+    setUserError,
+    t,
+  });
+
+  // Auth handlers
+  const {
+    onRegister,
+    onBackToLogin,
+    onRequestPasswordReset,
+    onResetPassword,
+  } = useAuthHandlers({
+    registerDraft,
+    resetRequestDraft,
+    resetPasswordDraft,
+    registerUser,
+    requestPasswordReset,
+    resetPassword,
+    setProfileScreen,
+    setUserError,
+  });
+
+  // Game session handlers (effects only)
+  useGameSessionHandlers({
+    user,
+    playerName,
+    session,
+    matches,
+    adminSelectedMatchID,
+    bindMatchSession,
+    setAdminSelectedMatchID,
+  });
+
   const shellUiVariant = isAdminRoute ? adminUiVariant : gameUiVariant;
 
   return (
@@ -543,75 +610,23 @@ export const App = () => {
           notice={profileNotice}
           loginDraft={loginDraft}
           setLoginDraft={setLoginDraft}
-          onLogin={() => {
-            setProfileNotice('');
-            void loginUser(loginDraft)
-              .then(() => {
-                setPlayerName((prev) => prev.trim() ? prev : loginDraft.login.trim());
-                setAuthErrorModal('');
-                setProfileNotice(t.userLoginSuccess);
-              })
-              .catch((error) => {
-                const message = String(error instanceof Error ? error.message : error);
-                setUserError(message);
-                setAuthErrorModal(message);
-              });
-          }}
-          onLogout={() => {
-            setProfileNotice('');
-            void logoutUser()
-              .then(() => {
-                setProfileScreen('login');
-                setAuthErrorModal('');
-                setLoginDraft({ login: '', password: '' });
-                setProfileNotice(t.userLogoutSuccess ?? '');
-              })
-              .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
-          }}
+          onLogin={onLogin}
+          onLogout={onLogout}
           profileDraft={profileDraft}
           setProfileDraft={setProfileDraft}
-          onSaveProfile={() => {
-            setProfileNotice('');
-            void updateUserProfile({ ...profileDraft, preferredLang: lang })
-              .then(() => {
-                const nextPlayerName = profileDraft.displayName.trim() || user?.username?.trim() || '';
-                if (nextPlayerName) setPlayerName(nextPlayerName);
-                setProfileNotice(t.userProfileSaved);
-              })
-              .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
-          }}
+          onSaveProfile={onSaveProfile}
           passwordDraft={passwordDraft}
           setPasswordDraft={setPasswordDraft}
-          onChangePassword={() => {
-            setProfileNotice('');
-            void changePassword(passwordDraft)
-              .then(() => {
-                setPasswordDraft({ currentPassword: '', nextPassword: '' });
-                setProfileNotice(t.userPasswordChanged);
-              })
-              .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
-          }}
+          onChangePassword={onChangePassword}
           stats={userStats}
           awards={userAwards}
           matchHistory={matchHistory}
           sessions={userSessions}
-          onRefreshSessions={() => { void refreshSessions().catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
-          onLogoutAllSessions={() => { void logoutAllSessions().catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
-          onLogoutSession={(sessionId) => { void logoutSession(sessionId).catch((error) => setUserError(String(error instanceof Error ? error.message : error))); }}
-          onOpenRegister={() => setProfileScreen('register')}
-          onUploadAvatar={async (file) => {
-            setProfileNotice('');
-            setUserError('');
-            try {
-              const nextAvatarUrl = await uploadAvatar(file);
-              const nextDraft = { ...profileDraft, avatarUrl: nextAvatarUrl };
-              setProfileDraft(nextDraft);
-              await updateUserProfile({ ...nextDraft, preferredLang: lang });
-              setProfileNotice(t.userAvatarUploaded);
-            } catch (error) {
-              setUserError(String(error instanceof Error ? error.message : error));
-            }
-          }}
+          onRefreshSessions={onRefreshSessions}
+          onLogoutAllSessions={onLogoutAllSessions}
+          onLogoutSession={onLogoutSession}
+          onOpenRegister={onOpenRegister}
+          onUploadAvatar={onUploadAvatar}
           uiVariant={gameUiVariant}
         />
       ) : null}
@@ -623,12 +638,8 @@ export const App = () => {
           error={userError}
           registerDraft={registerDraft}
           setRegisterDraft={setRegisterDraft}
-          onRegister={() => {
-            void registerUser(registerDraft)
-              .then(() => setProfileScreen('login'))
-              .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
-          }}
-          onBackToLogin={() => setProfileScreen('login')}
+          onRegister={onRegister}
+          onBackToLogin={onBackToLogin}
           uiVariant={gameUiVariant}
         />
       ) : null}
@@ -640,18 +651,11 @@ export const App = () => {
           error={userError}
           resetRequestDraft={resetRequestDraft}
           setResetRequestDraft={setResetRequestDraft}
-          onRequestPasswordReset={() => {
-            void requestPasswordReset(resetRequestDraft.login)
-              .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
-          }}
+          onRequestPasswordReset={onRequestPasswordReset}
           resetPasswordDraft={resetPasswordDraft}
           setResetPasswordDraft={setResetPasswordDraft}
-          onResetPassword={() => {
-            void resetPassword(resetPasswordDraft)
-              .then(() => setResetPasswordDraft({ token: '', nextPassword: '' }))
-              .catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
-          }}
-          onBackToLogin={() => setProfileScreen('login')}
+          onResetPassword={onResetPassword}
+          onBackToLogin={onBackToLogin}
           uiVariant={gameUiVariant}
         />
       ) : null}
