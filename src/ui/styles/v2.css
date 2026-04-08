@@ -374,6 +374,10 @@
   align-content: start;
 }
 
+.game-ui-layout-side {
+  max-width: 15%;
+}
+
 .game-ui-layout-command {
   position: sticky;
   top: 12px;
