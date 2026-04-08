@@ -104,7 +104,6 @@ export const LegacyGameBoard = ({
   const seatConnectionMissing = Boolean(roomMeta?.playerID) && !playerID;
   const resourceLabels: Record<ResourceKey, string> = t.resources;
   const {
-    isSimplifiedMode,
     hand,
     legendaryHand,
     legendaryDraftPool,
@@ -922,29 +921,27 @@ export const LegacyGameBoard = ({
               />
             </div>
             <aside className="game-ui-v1-player-dock-side">
-              {!isSimplifiedMode ? (
-                <section className="game-ui-v1-panel game-ui-v1-legendary-frame">
-                  <BoardV1HandSection
-                    title={`${t.legendaryHand} (${legendaryHand.length})`}
-                    subtitle={t.legendaryHandHint}
-                    cards={legendaryHand}
-                    cardImageById={cardImageById}
-                    lang={lang}
-                    openPreviewKey={openPreviewKey}
-                    togglePreview={togglePreview}
-                    closePreview={() => setOpenPreviewKey(null)}
-                    categoryText={() => t.legendaryDeckLabel}
-                    actionLabel={board.playLegendary}
-                    onAction={(card) => handleLegendaryCardAction(card, requestPlayLegendaryCard)}
-                    actionDisabled={() => typeof moves.playLegendaryCard !== 'function'}
-                    effectLabel={effectLabel}
-                    badges={(card) => [
-                      ...(card.id === 'legendary-10' ? [board.requiresTarget] : []),
-                      ...((card.id === 'legendary-09' || card.id === 'legendary-06') ? [board.requiresResource] : []),
-                    ]}
-                  />
-                </section>
-              ) : null}
+              <section className="game-ui-v1-panel game-ui-v1-legendary-frame">
+                <BoardV1HandSection
+                  title={`${t.legendaryHand} (${legendaryHand.length})`}
+                  subtitle={t.legendaryHandHint}
+                  cards={legendaryHand}
+                  cardImageById={cardImageById}
+                  lang={lang}
+                  openPreviewKey={openPreviewKey}
+                  togglePreview={togglePreview}
+                  closePreview={() => setOpenPreviewKey(null)}
+                  categoryText={() => t.legendaryDeckLabel}
+                  actionLabel={board.playLegendary}
+                  onAction={(card) => handleLegendaryCardAction(card, requestPlayLegendaryCard)}
+                  actionDisabled={() => typeof moves.playLegendaryCard !== 'function'}
+                  effectLabel={effectLabel}
+                  badges={(card) => [
+                    ...(card.id === 'legendary-10' ? [board.requiresTarget] : []),
+                    ...((card.id === 'legendary-09' || card.id === 'legendary-06') ? [board.requiresResource] : []),
+                  ]}
+                />
+              </section>
             </aside>
           </section>
           ) : null}

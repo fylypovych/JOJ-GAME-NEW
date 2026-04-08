@@ -80,7 +80,6 @@ export const GameBoardV2 = ({
   const seatConnectionMissing = Boolean(roomMeta?.playerID) && !playerID;
   const resourceLabels: Record<ResourceKey, string> = t.resources;
   const {
-    isSimplifiedMode,
     hand,
     legendaryHand,
     legendaryDraftPool,
@@ -806,7 +805,7 @@ export const GameBoardV2 = ({
               />
               </>
             )}
-            sideContent={!isSimplifiedMode ? (
+            sideContent={(
               <section className="game-ui-v2-panel game-ui-layout-panel game-ui-v2-legendary-frame game-ui-layout-legendary-frame">
                 <V2HandSection
                   title={`${t.legendaryHand} (${legendaryHand.length})`}
@@ -828,7 +827,7 @@ export const GameBoardV2 = ({
                   ]}
                 />
               </section>
-            ) : undefined}
+            )}
           />
           ) : null}
 

@@ -2160,6 +2160,23 @@
     0 6px 12px rgba(0, 0, 0, 0.18);
 }
 
+.game-ui-layout-shell .game-ui-layout-player-dock-main .game-card.is-v1,
+.game-ui-layout-shell .game-ui-layout-legendary-frame .game-card.is-v1 {
+  border-color: rgba(171, 175, 162, 0.18);
+  background:
+    linear-gradient(180deg, rgba(58, 63, 66, 0.98), rgba(27, 31, 35, 0.98));
+  box-shadow:
+    0 20px 34px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -20px 24px rgba(0, 0, 0, 0.12);
+}
+
+.game-ui-layout-shell .game-ui-layout-player-dock-main .game-card-media.is-v1,
+.game-ui-layout-shell .game-ui-layout-legendary-frame .game-card-media.is-v1 {
+  border-color: rgba(171, 175, 162, 0.18);
+  background: rgba(26, 30, 33, 0.92);
+}
+
 .game-ui-layout-shell .game-ui-layout-player-dock-main .game-card-body.is-v1 strong,
 .game-ui-layout-shell .game-ui-layout-legendary-frame .game-card-body.is-v1 strong {
   color: #e7edf7;

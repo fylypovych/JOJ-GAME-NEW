@@ -13,7 +13,7 @@ export const useBoardStageState = (args: {
   const viewPlayerID = playerID || ctx?.currentPlayer || Object.keys(G?.players ?? {})[0] || '';
   const isSimplifiedMode = G?.gameMode === 'simplified';
   const hand = G?.hands?.[viewPlayerID] ?? [];
-  const legendaryHand = isSimplifiedMode ? [] : (G?.legendaryHands?.[viewPlayerID] ?? []);
+  const legendaryHand = G?.legendaryHands?.[viewPlayerID] ?? [];
   const legendaryDraftPool = G?.legendaryDeck ?? [];
   const draftPending = G?.gameMode === 'standard_plus'
     && Object.keys(G?.players ?? {}).some((pid) => G?.legendaryDraftCompleted?.[pid] !== true);

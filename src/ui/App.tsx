@@ -515,12 +515,26 @@ export const App = () => {
               </div>
               <div className="app-toolbar-group">
                 <span className="app-toolbar-label">{t.gameUiLabel}:</span>
-                <div className="app-toolbar-button-row">
-                  <button type="button" onClick={() => setGameUiVariant('v1')} disabled={gameUiVariant === 'v1'}>
-                    {t.gameUiV1}
+                <div className="app-toolbar-button-row app-toolbar-theme-switch" role="group" aria-label={t.gameUiLabel}>
+                  <button
+                    type="button"
+                    className={`app-theme-icon-button${gameUiVariant === 'v1' ? ' is-active' : ''}`}
+                    onClick={() => setGameUiVariant('v1')}
+                    disabled={gameUiVariant === 'v1'}
+                    aria-label={t.gameUiV1}
+                    title={t.gameUiV1}
+                  >
+                    <img src="/ui-theme-night.png" alt="" aria-hidden="true" />
                   </button>
-                  <button type="button" onClick={() => setGameUiVariant('v2')} disabled={gameUiVariant === 'v2'}>
-                    {t.gameUiV2}
+                  <button
+                    type="button"
+                    className={`app-theme-icon-button${gameUiVariant === 'v2' ? ' is-active' : ''}`}
+                    onClick={() => setGameUiVariant('v2')}
+                    disabled={gameUiVariant === 'v2'}
+                    aria-label={t.gameUiV2}
+                    title={t.gameUiV2}
+                  >
+                    <img src="/ui-theme-day.png" alt="" aria-hidden="true" />
                   </button>
                 </div>
               </div>
