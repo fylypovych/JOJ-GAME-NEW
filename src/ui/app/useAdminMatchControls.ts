@@ -17,9 +17,9 @@ export interface UseAdminMatchControlsArgs {
 
 export interface UseAdminMatchControlsResult {
   onRestartServer: () => Promise<boolean>;
-  onResetGame: () => Promise<void>;
+  onResetMatch: () => Promise<void>;
   onDeleteMatch: () => Promise<void>;
-  onStopGame: (matchID: string) => Promise<void>;
+  onStopGame: (matchID: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   onGetMatchState: () => Promise<Snapshot | null>;
 }
 
@@ -62,7 +62,7 @@ export const useAdminMatchControls = (args: UseAdminMatchControlsArgs): UseAdmin
     }
   }, [adminMatchID, adminFetch, ADMIN_MATCH_STATE_API]);
 
-  const onResetGame = useCallback(async () => {
+  const onResetMatch = useCallback(async () => {
     if (!adminMatchID) return;
     try {
       const response = await adminFetch(
@@ -96,7 +96,7 @@ export const useAdminMatchControls = (args: UseAdminMatchControlsArgs): UseAdmin
     }
   }, [adminMatchID, adminFetch, setSnapshot, setAdminSelectedMatchID, refreshMatches, setDeletingAdminMatch, ADMIN_MATCH_DELETE_API]);
 
-  const onStopGame = useCallback(async (matchID: string) => {
+  const onStopGame = useCallback(async (matchID: string): Promise<{ ok: true } | { ok: false; error: string }> => {
     try {
       const response = await adminFetch(
         `${ADMIN_MATCH_STOP_API}?matchID=${encodeURIComponent(matchID)}`,
@@ -110,16 +110,17 @@ export const useAdminMatchControls = (args: UseAdminMatchControlsArgs): UseAdmin
         } catch {
           // ignore JSON parse error
         }
-        throw new Error(error);
+        return { ok: false, error };
       }
-    } catch (error) {
-      throw error;
+      return { ok: true };
+    } catch {
+      return { ok: false, error: 'Failed to stop game' };
     }
   }, [adminFetch, ADMIN_MATCH_STOP_API]);
 
   return {
     onRestartServer,
-    onResetGame,
+    onResetMatch,
     onDeleteMatch,
     onStopGame,
     onGetMatchState,

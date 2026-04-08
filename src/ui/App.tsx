@@ -499,7 +499,7 @@ export const App = () => {
   // Admin match controls
   const {
     onRestartServer,
-    onResetGame,
+    onResetMatch,
     onDeleteMatch,
     onStopGame,
   } = useAdminMatchControls({
@@ -773,28 +773,7 @@ export const App = () => {
           sharedRanks={sharedRanks}
           sharedConfigLoaded={sharedConfigLoaded}
           onCreateMatch={createRoom}
-          onResetMatch={() => {
-            if (!adminMatchID) return;
-            void (async () => {
-              try {
-                const response = await adminFetch(`${ADMIN_MATCH_RESET_API}?matchID=${encodeURIComponent(adminMatchID)}`, { method: 'POST' });
-                if (!response.ok) return;
-                const payload = (await response.json()) as {
-                  snapshot?: { G: unknown; ctx: unknown; updatedAt?: number };
-                };
-                if (payload.snapshot) {
-                  setSnapshot({
-                    G: payload.snapshot.G,
-                    ctx: payload.snapshot.ctx,
-                    updatedAt: payload.snapshot.updatedAt ?? Date.now(),
-                  });
-                }
-                await refreshMatches();
-              } catch {
-                // ignore UI toast for now
-              }
-            })();
-          }}
+          onResetMatch={onResetMatch}
           onDeleteMatch={onDeleteMatch}
           deletingMatch={deletingAdminMatch}
           onResetAll={() => {
@@ -878,34 +857,7 @@ export const App = () => {
               rollbackRanks(previousRanks);
             });
           }}
-          onStopGame={async (matchID: string) => {
-            try {
-              const response = await adminFetch(`${ADMIN_MATCH_STOP_API}?matchID=${encodeURIComponent(matchID)}`, { method: 'POST' });
-              if (!response.ok) {
-                let error = 'Failed to stop game';
-                try {
-                  const payload = (await response.json()) as { error?: string };
-                  if (typeof payload.error === 'string' && payload.error.trim()) error = payload.error;
-                } catch {
-                  // ignore json parse failure
-                }
-                return { ok: false, error };
-              }
-              const payload = (await response.json()) as {
-                snapshot?: { G: unknown; ctx: unknown; updatedAt?: number };
-              };
-              if (payload.snapshot) {
-                setSnapshot({
-                  G: payload.snapshot.G,
-                  ctx: payload.snapshot.ctx,
-                  updatedAt: payload.snapshot.updatedAt ?? Date.now(),
-                });
-              }
-              return { ok: true };
-            } catch {
-              return { ok: false, error: 'Failed to stop game' };
-            }
-          }}
+          onStopGame={onStopGame}
           onRunSimulations={(players: number, simulations: number, options) =>
             runGameSimulations(players, simulations, 0, options)
           }
