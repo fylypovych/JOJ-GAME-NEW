@@ -47,6 +47,7 @@ export const GameBoardV2 = ({
   sharedRanks = [],
   rankTrackCards = [],
   cardImageById = {},
+  resourceImagePaths = BOARD_RESOURCE_IMAGE_PATHS,
   roomMeta,
   inviteText,
   shareLink,
@@ -352,7 +353,7 @@ export const GameBoardV2 = ({
     latestEvents,
     sharedResourceOrder: BOARD_RESOURCE_ORDER,
     sharedResourceIcons: BOARD_RESOURCE_ICONS,
-    sharedResourceImagePaths: BOARD_RESOURCE_IMAGE_PATHS,
+    sharedResourceImagePaths: resourceImagePaths,
     rankTrackCards,
   });
   const { handleV2HandCardClick } = useBoardV2Interactions({
@@ -638,7 +639,7 @@ export const GameBoardV2 = ({
                 centerResources={BOARD_RESOURCE_ORDER.map((key) => ({
                   key,
                   icon: BOARD_RESOURCE_ICONS[key],
-                  imageSrc: BOARD_RESOURCE_IMAGE_PATHS[key],
+                  imageSrc: resourceImagePaths[key],
                   label: resourceLabels[key],
                   value: activeArenaResources?.[key] ?? 0,
                 }))}

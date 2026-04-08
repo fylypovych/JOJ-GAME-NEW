@@ -4,8 +4,10 @@ import {
   DEFAULT_LOBBY_GAME_UI_CONFIG,
   normalizeLobbyGameUiConfig,
   type LobbyBotCountOption,
+  type LobbyGameUiConfig,
   type LobbyRoomCapacityOption,
 } from '../../game/lobbyConfig';
+import type { ResourceKey } from '../../game/types';
 
 type AdminJsonFetch = (url: string, init?: RequestInit) => Promise<Response>;
 
@@ -26,6 +28,7 @@ export const useGameUiConfig = (args: {
   const [defaultRoomCapacity, setDefaultRoomCapacity] = useState<LobbyRoomCapacityOption>(DEFAULT_LOBBY_GAME_UI_CONFIG.defaultRoomCapacity);
   const [allowedBotCounts, setAllowedBotCounts] = useState<LobbyBotCountOption[]>(DEFAULT_LOBBY_GAME_UI_CONFIG.allowedBotCounts);
   const [defaultBotCount, setDefaultBotCount] = useState<LobbyBotCountOption>(DEFAULT_LOBBY_GAME_UI_CONFIG.defaultBotCount);
+  const [resourceImagePaths, setResourceImagePaths] = useState<Record<ResourceKey, string>>(DEFAULT_LOBBY_GAME_UI_CONFIG.resourceImagePaths);
   const [gameUiConfigLoading, setGameUiConfigLoading] = useState(false);
   const [gameUiConfigError, setGameUiConfigError] = useState('');
   const [gameUiConfigStatus, setGameUiConfigStatus] = useState('');
@@ -36,6 +39,7 @@ export const useGameUiConfig = (args: {
     setDefaultRoomCapacity(normalized.defaultRoomCapacity);
     setAllowedBotCounts(normalized.allowedBotCounts);
     setDefaultBotCount(normalized.defaultBotCount);
+    setResourceImagePaths(normalized.resourceImagePaths);
     return normalized;
   };
 
@@ -54,20 +58,23 @@ export const useGameUiConfig = (args: {
     }
   };
 
-  const saveGameUiConfig = async () => {
+  const saveGameUiConfig = async (nextValue?: Partial<LobbyGameUiConfig>) => {
     setGameUiConfigLoading(true);
     setGameUiConfigError('');
     setGameUiConfigStatus('');
     try {
+      const payloadValue = normalizeLobbyGameUiConfig({
+        allowedRoomCapacities,
+        defaultRoomCapacity,
+        allowedBotCounts,
+        defaultBotCount,
+        resourceImagePaths,
+        ...(nextValue ?? {}),
+      });
       const response = await adminJsonFetch(`${serverUrl}/api/admin/game/ui-config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          allowedRoomCapacities,
-          defaultRoomCapacity,
-          allowedBotCounts,
-          defaultBotCount,
-        }),
+        body: JSON.stringify(payloadValue),
       });
       const payload = await response.json() as { ok?: boolean; error?: string };
       if (!response.ok || !payload.ok) throw new Error(payload.error || errors.save);
@@ -89,6 +96,8 @@ export const useGameUiConfig = (args: {
     setAllowedBotCounts,
     defaultBotCount,
     setDefaultBotCount,
+    resourceImagePaths,
+    setResourceImagePaths,
     gameUiConfigLoading,
     gameUiConfigError,
     gameUiConfigStatus,

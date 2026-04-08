@@ -36,6 +36,7 @@ export type LocalizedBoardProps = Omit<BoardProps<JojGameState>, 'moves'> & {
   sharedRanks?: RankDefinition[];
   rankTrackCards?: CardDefinition[];
   cardImageById?: Record<string, string>;
+  resourceImagePaths?: Record<ResourceKey, string>;
   roomMeta?: {
     matchID: string;
     playerID?: string;

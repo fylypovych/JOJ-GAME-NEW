@@ -1,3 +1,7 @@
+import { normalizeImagePath } from './imagePaths';
+import { defaultResourceImagePaths } from './resourceMeta';
+import type { ResourceKey } from './types';
+
 export const LOBBY_BOT_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const;
 export const LOBBY_ROOM_CAPACITY_OPTIONS = [2, 3, 4, 5, 6] as const;
 
@@ -9,6 +13,7 @@ export type LobbyGameUiConfig = {
   defaultRoomCapacity: LobbyRoomCapacityOption;
   allowedBotCounts: LobbyBotCountOption[];
   defaultBotCount: LobbyBotCountOption;
+  resourceImagePaths: Record<ResourceKey, string>;
 };
 
 export const DEFAULT_LOBBY_GAME_UI_CONFIG: LobbyGameUiConfig = {
@@ -16,6 +21,7 @@ export const DEFAULT_LOBBY_GAME_UI_CONFIG: LobbyGameUiConfig = {
   defaultRoomCapacity: 4,
   allowedBotCounts: [...LOBBY_BOT_COUNT_OPTIONS],
   defaultBotCount: 3,
+  resourceImagePaths: { ...defaultResourceImagePaths },
 };
 
 const normalizeAllowedRoomCapacities = (value: unknown): LobbyRoomCapacityOption[] => {
@@ -38,6 +44,17 @@ const normalizeAllowedBotCounts = (value: unknown): LobbyBotCountOption[] => {
   return unique.length > 0 ? unique : [...DEFAULT_LOBBY_GAME_UI_CONFIG.allowedBotCounts];
 };
 
+const normalizeResourceImagePaths = (value: unknown): Record<ResourceKey, string> => {
+  const raw = value && typeof value === 'object' ? value as Partial<Record<ResourceKey, unknown>> : {};
+  return {
+    time: normalizeImagePath(typeof raw.time === 'string' ? raw.time : undefined) ?? defaultResourceImagePaths.time,
+    reputation: normalizeImagePath(typeof raw.reputation === 'string' ? raw.reputation : undefined) ?? defaultResourceImagePaths.reputation,
+    discipline: normalizeImagePath(typeof raw.discipline === 'string' ? raw.discipline : undefined) ?? defaultResourceImagePaths.discipline,
+    documents: normalizeImagePath(typeof raw.documents === 'string' ? raw.documents : undefined) ?? defaultResourceImagePaths.documents,
+    tech: normalizeImagePath(typeof raw.tech === 'string' ? raw.tech : undefined) ?? defaultResourceImagePaths.tech,
+  };
+};
+
 export const normalizeLobbyGameUiConfig = (value: unknown): LobbyGameUiConfig => {
   const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {};
   const allowedRoomCapacities = normalizeAllowedRoomCapacities(raw.allowedRoomCapacities);
@@ -50,11 +67,13 @@ export const normalizeLobbyGameUiConfig = (value: unknown): LobbyGameUiConfig =>
   const defaultBotCount = allowedBotCounts.includes(requestedDefault as LobbyBotCountOption)
     ? requestedDefault as LobbyBotCountOption
     : allowedBotCounts[0];
+  const resourceImagePaths = normalizeResourceImagePaths(raw.resourceImagePaths);
   return {
     allowedRoomCapacities,
     defaultRoomCapacity,
     allowedBotCounts,
     defaultBotCount,
+    resourceImagePaths,
   };
 };
 

@@ -613,6 +613,7 @@ export const App = () => {
               sharedRanks={sharedRanks}
               rankTrackCards={sharedDeckTemplate.rankTrack}
               cardImageById={cardImageById}
+              resourceImagePaths={lobbyGameUiConfig.resourceImagePaths}
               roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
               inviteText={activeSessionInviteText}
               shareLink={activeSessionShareLink}
@@ -628,6 +629,7 @@ export const App = () => {
               sharedRanks={sharedRanks}
               rankTrackCards={sharedDeckTemplate.rankTrack}
               cardImageById={cardImageById}
+              resourceImagePaths={lobbyGameUiConfig.resourceImagePaths}
               roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
               inviteText={activeSessionInviteText}
               shareLink={activeSessionShareLink}

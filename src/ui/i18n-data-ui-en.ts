@@ -343,6 +343,9 @@ export const uiEnData = {
     bugReportIconSettingsHint: 'Image path for the floating bug-report button. You can enter a path manually or upload a file.',
     bugReportIconPathLabel: 'Image path',
     bugReportIconUploadLabel: 'Upload image',
+    resourceIconsSettingsTitle: 'Resource icons',
+    resourceIconsSettingsHint: 'Set or upload a separate icon for each resource. After saving, the game UI will use these images.',
+    resourceIconUploadLabel: 'Upload resource icon',
     serverSettingsTitle: 'Server address',
     serverUrlLabel: 'Server URL',
     saveServerUrl: 'Save address',
@@ -647,11 +650,11 @@ export const uiEnData = {
     githubDeployTooltip: 'Git pull + npm install + tsc + vite build + pm2 restart',
     board: uiBoardEn,
     resources: {
-      time: '🕓 Time',
-      reputation: '⭐ Authority',
-      discipline: '⚖️ Discipline',
-      documents: '📂 Documents',
-      tech: '💻 Tech',
+      time: 'Time',
+      reputation: 'Authority',
+      discipline: 'Discipline',
+      documents: 'Documents',
+      tech: 'Tech',
     },
   } as const;
 

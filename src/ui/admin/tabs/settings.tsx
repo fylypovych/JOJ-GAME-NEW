@@ -5,6 +5,8 @@ import {
   type LobbyBotCountOption,
   type LobbyRoomCapacityOption,
 } from '../../../game/lobbyConfig';
+import { resourceKeys } from '../../../game/resourceMeta';
+import type { ResourceKey } from '../../../game/types';
 
 type T = ReturnType<typeof text>;
 
@@ -39,6 +41,9 @@ export const AdminSettingsTab = ({
   onToggleAllowedBotCount,
   defaultBotCount,
   onDefaultBotCountChange,
+  resourceImagePaths,
+  onResourceIconPathChange,
+  onUploadResourceIcon,
   onSaveGameUiConfig,
   gameUiConfigLoading,
   gameUiConfigError,
@@ -82,6 +87,9 @@ export const AdminSettingsTab = ({
   onToggleAllowedBotCount: (count: LobbyBotCountOption) => void;
   defaultBotCount: LobbyBotCountOption;
   onDefaultBotCountChange: (count: LobbyBotCountOption) => void;
+  resourceImagePaths: Record<ResourceKey, string>;
+  onResourceIconPathChange: (key: ResourceKey, value: string) => void;
+  onUploadResourceIcon: (key: ResourceKey, file: File | null) => Promise<void> | void;
   onSaveGameUiConfig: () => Promise<void> | void;
   gameUiConfigLoading: boolean;
   gameUiConfigError: string;
@@ -141,6 +149,42 @@ export const AdminSettingsTab = ({
     ) : null}
     {bugReportUiConfigStatus ? <p className="admin-success">{bugReportUiConfigStatus}</p> : null}
     {bugReportUiConfigError ? <p className="admin-error">{bugReportUiConfigError}</p> : null}
+    <h4>{t.resourceIconsSettingsTitle}</h4>
+    <p>{t.resourceIconsSettingsHint}</p>
+    <div className="admin-json-preview">
+      {resourceKeys.map((key) => (
+        <div key={`resource-icon-${key}`} className="admin-editor-grid">
+          <label>
+            {t.resources[key]}
+            <input
+              value={resourceImagePaths[key] ?? ''}
+              onChange={(e) => onResourceIconPathChange(key, e.target.value)}
+              placeholder={`/resource-icons/${key}.png`}
+            />
+          </label>
+          <label>
+            {t.resourceIconUploadLabel}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                void onUploadResourceIcon(key, e.target.files?.[0] ?? null);
+                e.currentTarget.value = '';
+              }}
+            />
+          </label>
+          {resourceImagePaths[key] ? (
+            <p>
+              <img
+                className="admin-bug-report-icon-preview"
+                src={resourceImagePaths[key]}
+                alt={t.resources[key]}
+              />
+            </p>
+          ) : null}
+        </div>
+      ))}
+    </div>
     <h4>{t.botSettingsTitle}</h4>
     <p>{t.botSettingsHint}</p>
     <p>{t.botSettingsRoomCapacitiesLabel}:</p>

@@ -343,6 +343,9 @@ export const uiUkData = {
     bugReportIconSettingsHint: 'Шлях до картинки для плаваючої кнопки баг-репорту. Можна ввести вручну або завантажити файл.',
     bugReportIconPathLabel: 'Шлях до зображення',
     bugReportIconUploadLabel: 'Завантажити зображення',
+    resourceIconsSettingsTitle: 'Іконки ресурсів',
+    resourceIconsSettingsHint: 'Вкажіть або завантажте окрему іконку для кожного ресурсу. Після збереження гра використає ці зображення в UI.',
+    resourceIconUploadLabel: 'Завантажити іконку ресурсу',
     serverSettingsTitle: 'Адреса сервера',
     serverUrlLabel: 'Адреса сервера',
     saveServerUrl: 'Зберегти адресу',
@@ -647,11 +650,11 @@ export const uiUkData = {
     githubDeployTooltip: 'Git pull + npm install + tsc + vite build + pm2 restart',
     board: uiBoardUk,
     resources: {
-      time: '🕓 Час',
-      reputation: '⭐ Авторитет',
-      discipline: '⚖️ Дисципліна',
-      documents: '📂 Документи',
-      tech: '💻 Технології',
+      time: 'Час',
+      reputation: 'Авторитет',
+      discipline: 'Дисципліна',
+      documents: 'Документи',
+      tech: 'Технології',
     },
   } as const;
 

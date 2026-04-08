@@ -310,6 +310,8 @@ export const AdminPage = ({
     setAllowedBotCounts,
     defaultBotCount,
     setDefaultBotCount,
+    resourceImagePaths,
+    setResourceImagePaths,
     gameUiConfigLoading,
     gameUiConfigError,
     gameUiConfigStatus,
@@ -942,6 +944,40 @@ export const AdminPage = ({
           }}
           defaultBotCount={defaultBotCount}
           onDefaultBotCountChange={setDefaultBotCount}
+          resourceImagePaths={resourceImagePaths}
+          onResourceIconPathChange={(key, value) => {
+            setResourceImagePaths((prev) => ({ ...prev, [key]: value }));
+          }}
+          onUploadResourceIcon={async (key, file) => {
+            if (!file) return;
+            const optimized = await optimizeBlobForUpload(file, file.name, {
+              maxWidth: 256,
+              maxHeight: 256,
+              quality: 0.92,
+            });
+            if (!optimized) {
+              setAdminActionError(t.uploadFailedGeneric);
+              return;
+            }
+            const uploaded = await uploadDataUrl(`resource-icon-${key}-${Date.now()}`, optimized.dataUrl);
+            if (!uploaded) return;
+            const next = normalizeLobbyGameUiConfig({
+              allowedRoomCapacities,
+              defaultRoomCapacity,
+              allowedBotCounts,
+              defaultBotCount,
+              resourceImagePaths: {
+                ...resourceImagePaths,
+                [key]: uploaded,
+              },
+            });
+            setAllowedRoomCapacities(next.allowedRoomCapacities);
+            setDefaultRoomCapacity(next.defaultRoomCapacity);
+            setAllowedBotCounts(next.allowedBotCounts);
+            setDefaultBotCount(next.defaultBotCount);
+            setResourceImagePaths(next.resourceImagePaths);
+            await saveGameUiConfig(next);
+          }}
           onSaveGameUiConfig={() => { void saveGameUiConfig(); }}
           gameUiConfigLoading={gameUiConfigLoading}
           gameUiConfigError={gameUiConfigError}
