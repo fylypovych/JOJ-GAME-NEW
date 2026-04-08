@@ -104,8 +104,17 @@ export const useBoardUiController = (args: {
 
   const sendChatMessage = () => {
     const msg = chatInput.trim();
-    if (!msg) return;
-    if (typeof moves.sendChat === 'function') moves.sendChat(msg);
+    console.log('[DEBUG] sendChatMessage called, msg:', msg, 'chatInput:', chatInput);
+    if (!msg) {
+      console.log('[DEBUG] Empty message, returning');
+      return;
+    }
+    if (typeof moves.sendChat === 'function') {
+      console.log('[DEBUG] Calling moves.sendChat with:', msg);
+      moves.sendChat(msg);
+    } else {
+      console.log('[DEBUG] moves.sendChat is not a function:', moves.sendChat);
+    }
     setChatInput('');
   };
 
