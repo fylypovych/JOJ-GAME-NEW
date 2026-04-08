@@ -9,6 +9,7 @@ import {
   getSharedRanks,
   getSharedDeckTemplateStats,
   importSharedDeckTemplateJson,
+  importSharedRanksJson,
   removeCardAtFromSharedDeckTemplate,
   runGameSimulations,
   setSharedRanks,
@@ -58,6 +59,7 @@ import { useProfileHandlers } from './app/useProfileHandlers';
 import { useAuthHandlers } from './app/useAuthHandlers';
 import { useGameSessionHandlers } from './app/useGameSessionHandlers';
 import { useAdminMatchControls } from './app/useAdminMatchControls';
+import { useDeckHandlers } from './app/useDeckHandlers';
 
 const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
 const NetworkClientV1 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV1 })));
@@ -516,6 +518,43 @@ export const App = () => {
     ADMIN_MATCH_DELETE_API,
   });
 
+  // Deck handlers
+  const {
+    onShuffleDeck,
+    onAddCard,
+    onAddCustomCard,
+    onUpdateCard,
+    onRemoveCard,
+    onResetDeck,
+    onSetBack,
+    onExportTemplate,
+    onImportTemplate,
+    onExportRanks,
+    onImportRanks,
+    onSetRanks,
+    onResetRanks,
+  } = useDeckHandlers({
+    sharedRanks,
+    refreshSharedDeckTemplate,
+    exportSharedDeckTemplateJson,
+    importSharedDeckTemplateJson,
+    shuffleSharedDeckTemplate,
+    addCardToSharedDeckTemplate,
+    addCustomCardToSharedDeckTemplate,
+    updateCardAtInSharedDeckTemplate,
+    removeCardAtFromSharedDeckTemplate,
+    resetSharedDeckTemplate,
+    setSharedDeckBackImage,
+    setSharedRanksState,
+    exportSharedRanksJson,
+    getSharedRanks,
+    importSharedRanksJson,
+    setSharedRanks,
+    resetSharedRanks,
+    RANKS_API,
+    adminFetch,
+  });
+
   const shellUiVariant = isAdminRoute ? adminUiVariant : gameUiVariant;
 
   return (
@@ -785,78 +824,17 @@ export const App = () => {
             void refreshMatches();
           }}
           onRestartServer={onRestartServer}
-          onShuffleDeck={() => {
-            void applyTemplateChange(() => {
-              shuffleSharedDeckTemplate();
-            });
-          }}
-          onAddCard={(target: DeckTarget, cardId: string) => {
-            const previousJson = exportSharedDeckTemplateJson();
-            const added = addCardToSharedDeckTemplate(target, cardId);
-            if (added) void refreshSharedDeckTemplate().then((ok) => {
-              if (!ok) rollbackTemplate(previousJson);
-            });
-            return added;
-          }}
-          onAddCustomCard={(target: DeckTarget, card: CardDefinition) => {
-            void applyTemplateChange(() => {
-              addCustomCardToSharedDeckTemplate(target, card);
-            });
-          }}
-          onUpdateCard={(target: DeckTarget, index: number, card: CardDefinition) => {
-            void applyTemplateChange(() => {
-              updateCardAtInSharedDeckTemplate(target, index, card);
-            });
-          }}
-          onRemoveCard={(target: DeckTarget, index: number) => {
-            void applyTemplateChange(() => {
-              removeCardAtFromSharedDeckTemplate(target, index);
-            });
-          }}
-          onResetTemplate={() => {
-            void applyTemplateChange(() => {
-              resetSharedDeckTemplate();
-            });
-          }}
-          onSetDeckBackImage={(path?: string) => {
-            void applyTemplateChange(() => {
-              setSharedDeckBackImage(path);
-            });
-          }}
-          onExportTemplate={() => exportSharedDeckTemplateJson()}
-          onImportTemplate={(json: string) => {
-            const previousJson = exportSharedDeckTemplateJson();
-            const result = importSharedDeckTemplateJson(json);
-            if (!result.ok) return result.error;
-            void refreshSharedDeckTemplate().then((ok) => {
-              if (!ok) rollbackTemplate(previousJson);
-            });
-            return null;
-          }}
-          onUpdateRanks={(nextRanks: RankDefinition[]) => {
-            const previousRanks = sharedRanks.map((rank) => ({ ...rank }));
-            const ok = setSharedRanks(nextRanks);
-            if (!ok) return false;
-            const normalized = getSharedRanks();
-            setSharedRanksState(normalized);
-            window.localStorage.setItem(RANKS_STORAGE_KEY, exportSharedRanksJson());
-            void syncRanksToServer(normalized).then((saved) => {
-              if (!saved) rollbackRanks(previousRanks);
-            });
-            return true;
-          }}
-          onResetRanks={() => {
-            const previousRanks = sharedRanks.map((rank) => ({ ...rank }));
-            resetSharedRanks();
-            const normalized = getSharedRanks();
-            setSharedRanksState(normalized);
-            window.localStorage.setItem(RANKS_STORAGE_KEY, exportSharedRanksJson());
-            void adminFetch(`${RANKS_API}/reset`, { method: 'POST' }).then((response) => {
-              if (!response.ok) rollbackRanks(previousRanks);
-            }).catch(() => {
-              rollbackRanks(previousRanks);
-            });
-          }}
+          onShuffleDeck={onShuffleDeck}
+          onAddCard={onAddCard}
+          onAddCustomCard={onAddCustomCard}
+          onUpdateCard={onUpdateCard}
+          onRemoveCard={onRemoveCard}
+          onResetTemplate={onResetDeck}
+          onSetDeckBackImage={onSetBack}
+          onExportTemplate={onExportTemplate}
+          onImportTemplate={onImportTemplate}
+          onUpdateRanks={onSetRanks}
+          onResetRanks={onResetRanks}
           onStopGame={onStopGame}
           onRunSimulations={(players: number, simulations: number, options) =>
             runGameSimulations(players, simulations, 0, options)
