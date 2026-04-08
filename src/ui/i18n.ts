@@ -74,16 +74,40 @@ const systemMessageEnReplacements: Array<[RegExp, string]> = [
   [/\bмісця зайняті\b/g, 'seat blocked'],
 ];
 
+const systemMessageUkReplacements: Array<[RegExp, string]> = [
+  [/\bLYAP\b/g, 'ЛЯП'],
+  [/\bSCANDAL\b/g, 'СКАНДАЛ'],
+  [/\bSUPPORT\b/g, 'ПІДТРИМКА'],
+  [/\bCOMMAND\b/g, 'РІШЕННЯ'],
+  [/\bVVNZ\b/g, 'ВВНЗ'],
+  [/\bLEGENDARY\b/g, 'ЛЕГЕНДАРНА'],
+  [/\bRank\b/g, 'Звання'],
+  [/\bCost\b/g, 'Вартість'],
+  [/\bBonus\b/g, 'Бонус'],
+  [/\bTotal\b/g, 'Підсумок'],
+  [/\bEffect\b/g, 'Ефект'],
+];
+
 export const localizeSystemMessageText = (value: string, lang: Language): string => {
-  if (lang !== 'en' || !value) return value;
-  let next = value;
+  if (!value) return value;
 
-  // Card titles are not force-translated by dictionary here because stale ID maps can produce incorrect names.
-  // Accurate card title translation should come from card data (titleEn) rendered in UI, not regex replacement.
-
-  for (const [pattern, replacement] of systemMessageEnReplacements) {
-    next = next.replace(pattern, replacement);
+  // For Ukrainian language, translate English categories to Ukrainian
+  if (lang === 'uk') {
+    let next = value;
+    for (const [pattern, replacement] of systemMessageUkReplacements) {
+      next = next.replace(pattern, replacement);
+    }
+    return next;
   }
 
-  return next;
+  // For English language, translate Ukrainian to English
+  if (lang === 'en') {
+    let next = value;
+    for (const [pattern, replacement] of systemMessageEnReplacements) {
+      next = next.replace(pattern, replacement);
+    }
+    return next;
+  }
+
+  return value;
 };
