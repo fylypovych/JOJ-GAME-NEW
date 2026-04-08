@@ -1031,14 +1031,16 @@ export const StatisticsSection = ({
       <h2>{t.userTabStatistics}</h2>
       {!user ? <p>{t.statisticsLoginRequired}</p> : (
         <>
-          <p className="admin-controls">
-            <button type="button" onClick={() => setActiveCategory('general')} disabled={activeCategory === 'general'}>{t.statisticsCategoryGeneral}</button>
-            <button type="button" onClick={() => setActiveCategory('resources')} disabled={activeCategory === 'resources'}>{t.statisticsCategoryResources}</button>
-            <button type="button" onClick={() => setActiveCategory('actions')} disabled={activeCategory === 'actions'}>{t.statisticsCategoryActions}</button>
-            <button type="button" onClick={() => setActiveCategory('achievements')} disabled={activeCategory === 'achievements'}>{t.statisticsCategoryAchievements}</button>
-            <button type="button" onClick={() => setActiveCategory('history')} disabled={activeCategory === 'history'}>{t.statisticsCategoryHistory}</button>
-            <button type="button" onClick={() => setActiveCategory('sessions')} disabled={activeCategory === 'sessions'}>{t.statisticsCategorySessions}</button>
-          </p>
+          <nav className="statistics-nav" style={{ position: 'sticky', top: 0, zIndex: 10, background: 'inherit', padding: '8px 0' }}>
+            <p className="admin-controls">
+              <button type="button" onClick={() => setActiveCategory('general')} disabled={activeCategory === 'general'}>{t.statisticsCategoryGeneral}</button>
+              <button type="button" onClick={() => setActiveCategory('resources')} disabled={activeCategory === 'resources'}>{t.statisticsCategoryResources}</button>
+              <button type="button" onClick={() => setActiveCategory('actions')} disabled={activeCategory === 'actions'}>{t.statisticsCategoryActions}</button>
+              <button type="button" onClick={() => setActiveCategory('achievements')} disabled={activeCategory === 'achievements'}>{t.statisticsCategoryAchievements}</button>
+              <button type="button" onClick={() => setActiveCategory('history')} disabled={activeCategory === 'history'}>{t.statisticsCategoryHistory}</button>
+              <button type="button" onClick={() => setActiveCategory('sessions')} disabled={activeCategory === 'sessions'}>{t.statisticsCategorySessions}</button>
+            </p>
+          </nav>
           {!stats ? <p>{t.simulationNoData}</p> : null}
           {stats && activeCategory === 'general' ? (
             <ul>
