@@ -14,20 +14,20 @@ export interface UseAppUserStateArgs {
 }
 
 export interface UseAppUserStateResult {
-  // User account
+  // User account (names match useUserAccount for drop-in replacement)
   user: ReturnType<typeof useUserAccount>['user'];
-  userStats: ReturnType<typeof useUserAccount>['stats'];
-  userAwards: ReturnType<typeof useUserAccount>['awards'];
+  stats: ReturnType<typeof useUserAccount>['stats'];
+  awards: ReturnType<typeof useUserAccount>['awards'];
   matchHistory: ReturnType<typeof useUserAccount>['matchHistory'];
-  userSessions: ReturnType<typeof useUserAccount>['sessions'];
-  userLoading: ReturnType<typeof useUserAccount>['loading'];
-  userBusy: ReturnType<typeof useUserAccount>['busy'];
-  userError: ReturnType<typeof useUserAccount>['error'];
-  setUserError: ReturnType<typeof useUserAccount>['setError'];
-  registerUser: ReturnType<typeof useUserAccount>['register'];
-  loginUser: ReturnType<typeof useUserAccount>['login'];
-  logoutUser: ReturnType<typeof useUserAccount>['logout'];
-  updateUserProfile: ReturnType<typeof useUserAccount>['updateProfile'];
+  sessions: ReturnType<typeof useUserAccount>['sessions'];
+  loading: ReturnType<typeof useUserAccount>['loading'];
+  busy: ReturnType<typeof useUserAccount>['busy'];
+  error: ReturnType<typeof useUserAccount>['error'];
+  setError: ReturnType<typeof useUserAccount>['setError'];
+  register: ReturnType<typeof useUserAccount>['register'];
+  login: ReturnType<typeof useUserAccount>['login'];
+  logout: ReturnType<typeof useUserAccount>['logout'];
+  updateProfile: ReturnType<typeof useUserAccount>['updateProfile'];
   uploadAvatar: ReturnType<typeof useUserAccount>['uploadAvatar'];
   changePassword: ReturnType<typeof useUserAccount>['changePassword'];
   requestPasswordReset: ReturnType<typeof useUserAccount>['requestPasswordReset'];
@@ -91,18 +91,18 @@ export const useAppUserState = (args: UseAppUserStateArgs): UseAppUserStateResul
 
   return {
     user,
-    userStats,
-    userAwards,
+    stats: userStats,
+    awards: userAwards,
     matchHistory,
-    userSessions,
-    userLoading,
-    userBusy,
-    userError,
-    setUserError,
-    registerUser,
-    loginUser,
-    logoutUser,
-    updateUserProfile,
+    sessions: userSessions,
+    loading: userLoading,
+    busy: userBusy,
+    error: userError,
+    setError: setUserError,
+    register: registerUser,
+    login: loginUser,
+    logout: logoutUser,
+    updateProfile: updateUserProfile,
     uploadAvatar,
     changePassword,
     requestPasswordReset,

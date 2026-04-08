@@ -55,7 +55,6 @@ import {
   RulesSection,
   StatisticsSection,
 } from './app/sections';
-import { useAdminAuth } from './app/useAdminAuth';
 import { useAdminSnapshot } from './app/useAdminSnapshot';
 import { BugReportWidget } from './app/BugReportWidget';
 import { buildRoomShareLink } from './app/share';
@@ -64,7 +63,6 @@ import { AppFooter } from './app/AppFooter';
 import { useAppShellState } from './app/useAppShellState';
 import { useLobbySession } from './app/useLobbySession';
 import { useSharedConfigSync } from './app/useSharedConfigSync';
-import { useUserAccount } from './app/useUserAccount';
 
 // NEW: Consolidated hooks (step-by-step migration)
 // @ts-ignore - will be used in step 4
@@ -143,6 +141,8 @@ export const App = () => {
   } = useAppShellState(SERVER_URL);
   const t = text(lang);
   const [lobbyGameUiConfig, setLobbyGameUiConfig] = useState(DEFAULT_LOBBY_GAME_UI_CONFIG);
+
+  // Consolidated user + auth state (replaces useUserAccount + useAdminAuth)
   const {
     user,
     stats: userStats,
@@ -165,26 +165,13 @@ export const App = () => {
     logoutAllSessions,
     logoutSession,
     bindMatchSession,
-  } = useUserAccount({ serverUrl: SERVER_URL, lang });
-  const {
     adminAuthChecking,
     adminAuthorized,
     adminAuthEnabled,
     adminAuthError,
     adminFetch,
     verifyAdminToken,
-  } = useAdminAuth({
-    isAdminRoute,
-    serverUrl: SERVER_URL,
-    defaultServerUrl: DEFAULT_SERVER_URL,
-    serverUrlStorageKey: SERVER_URL_STORAGE_KEY,
-    unauthorizedText: t.adminUnauthorized,
-    serverUnavailableText: t.serverUnavailable,
-  });
-
-  // NEW: useAppUserState (parallel, not used yet)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _appUserState = useAppUserState({
+  } = useAppUserState({
     serverUrl: SERVER_URL,
     lang,
     isAdminRoute,
@@ -193,7 +180,6 @@ export const App = () => {
       serverUnavailable: t.serverUnavailable,
     },
   });
-  void _appUserState; // intentionally unused during migration
 
   const {
     adminStorageMode,
