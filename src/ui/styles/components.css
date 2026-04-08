@@ -1,0 +1,49 @@
+a {
+  color: #1d4ed8;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  color: var(--text);
+  border-radius: 10px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: 0.16s ease;
+  text-align: center;
+}
+
+button:hover:not(:disabled) {
+  border-color: #6e88b8;
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  display: none;
+}
+
+.app {
+  width: 95%;
+  max-width: none;
+  margin: 0 auto;
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+.app.app-v3 {
+  font-family: "Bahnschrift", "Trebuchet MS", "Segoe UI", sans-serif;
+  color: #233240;
+  background:
+    radial-gradient(1200px 520px at 50% -16%, rgba(90, 148, 184, 0.18), transparent 58%),
+    radial-gradient(900px 420px at 0% 0%, rgba(74, 174, 156, 0.14), transparent 60%),
+    linear-gradient(180deg, #fbf5e8, #f2efe6 42%, #eef4f6 100%);
+}
