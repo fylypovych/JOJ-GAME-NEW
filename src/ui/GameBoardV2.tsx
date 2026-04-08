@@ -233,7 +233,8 @@ export const GameBoardV2 = ({
 
   const endGameVote = G?.endGameVote;
   const endGameVoteActive = Boolean(endGameVote?.active) && !ctx?.gameover;
-  const showTopCommandPanel = !isSpectator && (Boolean(pendingSelection) || notices.length > 0);
+  const targetSelectionModalOpen = !isSpectator && Boolean(pendingSelection && activeSelectionNeedsTarget);
+  const showTopCommandPanel = !isSpectator && (Boolean((pendingSelection && !activeSelectionNeedsTarget)) || notices.length > 0);
   const requestedByLabel = endGameVote?.requestedBy ? playerLabelById(endGameVote.requestedBy) : '';
   const hasVotedAgree = Boolean(endGameVote?.votes?.[id]);
   const {
@@ -505,6 +506,43 @@ export const GameBoardV2 = ({
         onAgree={() => handleRespondEndGameVote(true)}
         onDecline={() => handleRespondEndGameVote(false)}
       />
+
+      {targetSelectionModalOpen ? (
+        <section className="game-ui-v2-vote-popup game-ui-layout-vote-popup" role="dialog" aria-label={board.pickTarget}>
+          <div className="game-ui-v2-vote-popup-card game-ui-layout-vote-popup-card">
+            <V2SelectionPanel
+              pendingSelection={pendingSelection}
+              activeSelectionNeedsTarget={activeSelectionNeedsTarget}
+              activeSelectionNeedsReplacement={activeSelectionNeedsReplacement}
+              activeSelectionNeedsResource={activeSelectionNeedsResource}
+              currentPendingCard={currentPendingCard}
+              selectedTargetId={selectedTargetId}
+              setSelectedTargetId={setSelectedTargetId}
+              opponentIds={opponentIds}
+              playerLabelById={playerLabelById}
+              board={board}
+              lang={lang}
+              replacementTargetIds={replacementTargetIds}
+              G={G}
+              replacementSelectionsByTarget={replacementSelectionsByTarget}
+              replacementActiveTargetId={replacementActiveTargetId}
+              setActiveReplacementTargetId={setActiveReplacementTargetId}
+              replacementActiveSelected={replacementActiveSelected}
+              replacementActiveSlots={replacementActiveSlots}
+              replacementActiveTargetResources={replacementActiveTargetResources}
+              resourceLabels={resourceLabels}
+              appendReplacementResource={appendReplacementResource}
+              undoReplacementResource={undoReplacementResource}
+              selectedResource={selectedResource}
+              setSelectedResource={setSelectedResource}
+              resources={resources}
+              confirmPendingSelection={confirmPendingSelection}
+              clearPendingSelection={clearPendingSelection}
+              pickTargetNotice={pickTargetNotice}
+            />
+          </div>
+        </section>
+      ) : null}
 
       {isSpectator ? (
         <section className="game-ui-v2-spectator-strip game-ui-layout-spectator-strip">
