@@ -258,6 +258,12 @@ export const BoardChatPanel = ({
       <input
         value={chatInput}
         onChange={(e) => setChatInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey && !readOnly) {
+            e.preventDefault();
+            onSend();
+          }
+        }}
         placeholder={t.chatPlaceholder}
         disabled={readOnly}
       />
