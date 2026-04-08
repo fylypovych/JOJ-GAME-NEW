@@ -784,6 +784,9 @@ export const ProfileSection = ({
           <h3>{t.userLoginTitle}</h3>
           <p>
             <input
+              id="login-username"
+              name="username"
+              autoComplete="username"
               value={loginDraft.login}
               onChange={(e) => setLoginDraft({ ...loginDraft, login: e.target.value })}
               placeholder={t.userLoginPlaceholder}
@@ -791,7 +794,10 @@ export const ProfileSection = ({
           </p>
           <p>
             <input
+              id="login-password"
+              name="password"
               type="password"
+              autoComplete="current-password"
               value={loginDraft.password}
               onChange={(e) => setLoginDraft({ ...loginDraft, password: e.target.value })}
               placeholder={t.userPasswordLabel}
@@ -838,16 +844,16 @@ export const ProfileSection = ({
               </label>
               <small>{t.userAvatarUploadHint}</small>
             </div>
-            <p><input value={profileDraft.displayName} onChange={(e) => setProfileDraft({ ...profileDraft, displayName: e.target.value })} placeholder={t.userDisplayNameLabel} /></p>
-            <p><input value={profileDraft.email} onChange={(e) => setProfileDraft({ ...profileDraft, email: e.target.value })} placeholder={t.userEmailLabel} /></p>
-            <p><input value={profileDraft.avatarUrl} onChange={(e) => setProfileDraft({ ...profileDraft, avatarUrl: e.target.value })} placeholder={t.userAvatarUrlLabel} /></p>
-            <p><textarea className="admin-textarea" value={profileDraft.bio} onChange={(e) => setProfileDraft({ ...profileDraft, bio: e.target.value })} /></p>
+            <p><input id="profile-displayName" name="displayName" autoComplete="name" value={profileDraft.displayName} onChange={(e) => setProfileDraft({ ...profileDraft, displayName: e.target.value })} placeholder={t.userDisplayNameLabel} /></p>
+            <p><input id="profile-email" name="email" type="email" autoComplete="email" value={profileDraft.email} onChange={(e) => setProfileDraft({ ...profileDraft, email: e.target.value })} placeholder={t.userEmailLabel} /></p>
+            <p><input id="profile-avatarUrl" name="avatarUrl" value={profileDraft.avatarUrl} onChange={(e) => setProfileDraft({ ...profileDraft, avatarUrl: e.target.value })} placeholder={t.userAvatarUrlLabel} /></p>
+            <p><textarea id="profile-bio" name="bio" className="admin-textarea" value={profileDraft.bio} onChange={(e) => setProfileDraft({ ...profileDraft, bio: e.target.value })} /></p>
             <p><label><input type="checkbox" checked={profileDraft.profilePublic} onChange={(e) => setProfileDraft({ ...profileDraft, profilePublic: e.target.checked })} /> {t.userProfilePublicLabel}</label></p>
             <p><label><input type="checkbox" checked={profileDraft.showStatsPublic} onChange={(e) => setProfileDraft({ ...profileDraft, showStatsPublic: e.target.checked })} /> {t.userShowStatsPublicLabel}</label></p>
             <p><label><input type="checkbox" checked={profileDraft.showRecentMatchesPublic} onChange={(e) => setProfileDraft({ ...profileDraft, showRecentMatchesPublic: e.target.checked })} /> {t.userShowRecentMatchesPublicLabel}</label></p>
             <h3>{t.userChangePasswordTitle}</h3>
-            <p><input type="password" value={passwordDraft.currentPassword} onChange={(e) => setPasswordDraft({ ...passwordDraft, currentPassword: e.target.value })} placeholder={t.userCurrentPasswordLabel} /></p>
-            <p><input type="password" value={passwordDraft.nextPassword} onChange={(e) => setPasswordDraft({ ...passwordDraft, nextPassword: e.target.value })} placeholder={t.userNewPasswordLabel} /></p>
+            <p><input id="password-current" name="currentPassword" type="password" autoComplete="current-password" value={passwordDraft.currentPassword} onChange={(e) => setPasswordDraft({ ...passwordDraft, currentPassword: e.target.value })} placeholder={t.userCurrentPasswordLabel} /></p>
+            <p><input id="password-new" name="newPassword" type="password" autoComplete="new-password" value={passwordDraft.nextPassword} onChange={(e) => setPasswordDraft({ ...passwordDraft, nextPassword: e.target.value })} placeholder={t.userNewPasswordLabel} /></p>
             <p><button type="button" onClick={onChangePassword} disabled={busy}>{t.userChangePasswordButton}</button></p>
             <h3>{t.userSessionsTitle}</h3>
             <p className="admin-controls">

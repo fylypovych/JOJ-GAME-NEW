@@ -1,9 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo } from 'react';
-import type { CardDefinition, RankDefinition } from '../game/types';
 import {
   addCustomCardToSharedDeckTemplate,
   addCardToSharedDeckTemplate,
-  type DeckTarget,
   exportSharedDeckTemplateJson,
   exportSharedRanksJson,
   getSharedRanks,
@@ -30,7 +28,6 @@ import { SERVER_URL } from './app/clientConfig';
 import {
   DEFAULT_SERVER_URL,
   PLAYER_NAME_STORAGE_KEY,
-  RANKS_STORAGE_KEY,
   SERVER_URL_STORAGE_KEY,
   SESSION_STORAGE_KEY,
   galleryCategories,
@@ -215,7 +212,6 @@ export const App = () => {
     setSharedRanksState,
     sharedConfigLoaded,
     refreshSharedDeckTemplate,
-    syncRanksToServer,
     matches,
     session,
     setSession,

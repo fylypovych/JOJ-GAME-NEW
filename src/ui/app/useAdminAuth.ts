@@ -31,7 +31,7 @@ export const useAdminAuth = ({
   const adminFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const headers = new Headers(init?.headers ?? undefined);
     const csrfToken = getAdminCsrfToken();
-    if (csrfToken && !headers.has('x-csrf-token')) headers.set('x-csrf-token', csrfToken);
+    if (csrfToken && !headers.has('X-CSRF-Token')) headers.set('X-CSRF-Token', csrfToken);
     const response = await fetch(input, { ...init, headers, credentials: 'include' });
     if (response.status === 401) {
       setAdminAuthorized(false);

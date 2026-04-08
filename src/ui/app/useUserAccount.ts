@@ -151,7 +151,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { 'x-csrf-token': token } : {}),
+        ...(token ? { 'X-CSRF-Token': token } : {}),
       },
       body: body ? JSON.stringify(body) : '{}',
     });
