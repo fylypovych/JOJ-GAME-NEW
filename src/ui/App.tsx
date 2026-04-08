@@ -54,12 +54,13 @@ import {
   RegisterSection,
   RulesSection,
   StatisticsSection,
-  UserTabs,
 } from './app/sections';
 import { useAdminAuth } from './app/useAdminAuth';
 import { useAdminSnapshot } from './app/useAdminSnapshot';
 import { BugReportWidget } from './app/BugReportWidget';
 import { buildRoomShareLink } from './app/share';
+import { AppHeader } from './app/AppHeader';
+import { AppFooter } from './app/AppFooter';
 import { useAppShellState } from './app/useAppShellState';
 import { useLobbySession } from './app/useLobbySession';
 import { useSharedConfigSync } from './app/useSharedConfigSync';
@@ -116,9 +117,9 @@ export const App = () => {
     authErrorModal,
     setAuthErrorModal,
     gameUiVariant,
-    setGameUiVariant,
+    // setGameUiVariant, // moved to AppHeader
     adminUiVariant,
-    setAdminUiVariant,
+    // setAdminUiVariant, // moved to AppHeader
     galleryCategoryFilter,
     setGalleryCategoryFilter,
     deletingAdminMatch,
@@ -551,74 +552,15 @@ export const App = () => {
 
   return (
     <main className={`app app-${shellUiVariant}${shellUiVariant === 'v1' ? ' app-v1' : ' app-v2'}`} data-bug-report-capture-root="true">
-      <h1>{isAdminRoute ? t.adminTitle : t.gameTitle}</h1>
-      {!isAdminRoute ? (
-        <section className={`app-top-toolbar app-top-toolbar-v2${shellUiVariant === 'v1' ? ' app-top-toolbar-v1' : ''}`}>
-          <div className="app-top-toolbar-left">
-            <UserTabs t={t} activeUserTab={activeUserTab} setActiveUserTab={setActiveUserTab} uiVariant={gameUiVariant} />
-          </div>
-          <div className="app-top-toolbar-right">
-            <div className="app-top-row app-toolbar-controls">
-              <div className="app-toolbar-group">
-                <span className="app-toolbar-label">{t.language}:</span>
-                <div className="app-toolbar-button-row">
-                  <button type="button" onClick={() => setLang('uk')} disabled={lang === 'uk'}>
-                    {t.langUk}
-                  </button>
-                  <button type="button" onClick={() => setLang('en')} disabled={lang === 'en'}>
-                    {t.langEn}
-                  </button>
-                </div>
-              </div>
-              <div className="app-toolbar-group">
-                <span className="app-toolbar-label">{t.gameUiLabel}:</span>
-                <div className="app-toolbar-button-row app-toolbar-theme-switch" role="group" aria-label={t.gameUiLabel}>
-                  <button
-                    type="button"
-                    className={`app-theme-icon-button${gameUiVariant === 'v1' ? ' is-active' : ''}`}
-                    onClick={() => setGameUiVariant('v1')}
-                    disabled={gameUiVariant === 'v1'}
-                    aria-label={t.gameUiV1}
-                    title={t.gameUiV1}
-                  >
-                    <img src="/ui-theme-day.png" alt="" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    className={`app-theme-icon-button${gameUiVariant === 'v2' ? ' is-active' : ''}`}
-                    onClick={() => setGameUiVariant('v2')}
-                    disabled={gameUiVariant === 'v2'}
-                    aria-label={t.gameUiV2}
-                    title={t.gameUiV2}
-                  >
-                    <img src="/ui-theme-night.png" alt="" aria-hidden="true" />
-                  </button>
-                </div>
-              </div>
-              <a className="app-toolbar-link-button" href="/admin">{t.openAdmin}</a>
-            </div>
-          </div>
-        </section>
-      ) : (
-        <p className="app-top-row">
-          {t.language}:{' '}
-          <button type="button" onClick={() => setLang('uk')} disabled={lang === 'uk'}>
-            {t.langUk}
-          </button>{' '}
-          <button type="button" onClick={() => setLang('en')} disabled={lang === 'en'}>
-            {t.langEn}
-          </button>
-          {' | '}
-          {t.gameUiLabel}:{' '}
-          <button type="button" onClick={() => setAdminUiVariant('v1')} disabled={adminUiVariant === 'v1'}>
-            {t.gameUiV1}
-          </button>
-          {' '}
-          <button type="button" onClick={() => setAdminUiVariant('v2')} disabled={adminUiVariant === 'v2'}>
-            {t.gameUiV2}
-          </button>
-        </p>
-      )}
+      <AppHeader
+        isAdminRoute={isAdminRoute}
+        lang={lang}
+        setLang={setLang}
+        activeUserTab={activeUserTab}
+        setActiveUserTab={setActiveUserTab}
+        gameUiVariant={gameUiVariant}
+        t={t}
+      />
       <p className="app-link-row">
         {isAdminRoute ? <a href="/">{t.openGame}</a> : null}
       </p>
@@ -1112,10 +1054,7 @@ export const App = () => {
           gameUiVariant={gameUiVariant}
         />
       ) : null}
-      <footer className="app-footer">
-        &copy; ALL RIGHTS RESERVED BY "SOHODNY LLC, <a href="mailto:zhurnal.zhurnaliv@gmail.com">zhurnal.zhurnaliv@gmail.com</a>
-        {buildLabel ? ` · ${buildLabel}` : ''}
-      </footer>
+      <AppFooter buildLabel={buildLabel} />
     </main>
   );
 };
