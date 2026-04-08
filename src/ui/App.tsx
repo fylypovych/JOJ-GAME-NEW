@@ -490,11 +490,9 @@ export const App = () => {
   }, [adminStorageMode]);
 
   const shellUiVariant = isAdminRoute ? adminUiVariant : gameUiVariant;
-  const shouldRenderActiveGame = !isAdminRoute && activeUserTab === 'games' && Boolean(session) && Boolean(activeSessionMatch) && canStart;
-  const isImmersiveModernGame = shouldRenderActiveGame;
 
   return (
-    <main className={`app app-${shellUiVariant}${shellUiVariant === 'v1' ? ' app-v1' : ' app-v2'}${isImmersiveModernGame && gameUiVariant === 'v2' ? ' is-immersive-v2-game' : ''}${isImmersiveModernGame && gameUiVariant === 'v1' ? ' is-immersive-v1-game' : ''}`} data-bug-report-capture-root="true">
+    <main className={`app app-${shellUiVariant}${shellUiVariant === 'v1' ? ' app-v1' : ' app-v2'}`} data-bug-report-capture-root="true">
       <h1>{isAdminRoute ? t.adminTitle : t.gameTitle}</h1>
       {!isAdminRoute ? (
         <section className={`app-top-toolbar app-top-toolbar-v2${shellUiVariant === 'v1' ? ' app-top-toolbar-v1' : ''}`}>
@@ -614,7 +612,7 @@ export const App = () => {
         />
       ) : null}
 
-      <div style={{ display: shouldRenderActiveGame ? 'block' : 'none' }}>
+      <div style={{ display: (!isAdminRoute && activeUserTab === 'games' && Boolean(session) && Boolean(activeSessionMatch) && canStart) ? 'block' : 'none' }}>
         {session ? (
           <Suspense fallback={<p>{t.loading}</p>}>
             {gameUiVariant === 'v1' ? <NetworkClientV1

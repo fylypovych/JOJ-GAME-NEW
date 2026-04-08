@@ -68,7 +68,7 @@ import {
   resetSharedRanks,
   resetSharedDeckTemplate,
   setSharedRanks,
-} from '../src/game/jojGame';
+} from './game/game-adapter';
 
 const require = createRequire(import.meta.url);
 const { Server, FlatFile } = require('boardgame.io/server') as {

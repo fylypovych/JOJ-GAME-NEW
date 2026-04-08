@@ -10,14 +10,12 @@ export const getBoardPromoteReason = (args: {
   playerID: string;
   sharedRanks: RankDefinition[];
   resourceLabels: Record<ResourceKey, string>;
-  lang: Language;
 }) =>
   getPromoteActionState({
     G: args.G,
     playerID: args.playerID,
     ranks: args.sharedRanks,
     resourceLabels: args.resourceLabels,
-    lang: args.lang,
   }).reason;
 
 export const buildGameoverPlayerSummaries = (args: {

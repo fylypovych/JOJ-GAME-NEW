@@ -1,6 +1,7 @@
 import { getCardPlayBehavior, type CardPlayBehavior } from './cardRules';
 import { rankSeatLimitForRank } from './rankEngine';
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from './types';
+import { actionValidationKeys, type ActionTranslator } from './actionValidation.i18n';
 
 export type ResourceLabels = Record<ResourceKey, string>;
 export type ActionAvailability = { allowed: boolean; reason: string | null };
@@ -30,33 +31,38 @@ export const getPromoteBlockedReason = (args: {
   ranks: RankDefinition[];
   resourceLabels: ResourceLabels;
   lang?: 'uk' | 'en';
+  translator?: ActionTranslator;
 }): string | null => {
-  const { G, playerID, ranks, resourceLabels, lang = 'uk' } = args;
+  const { G, playerID, ranks, resourceLabels, translator } = args;
+  const t = translator ?? ((key: string, params?: Record<string, string | number>) => {
+    // Fallback: return key with simple param interpolation
+    let result = key;
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        result = result.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+      });
+    }
+    return result;
+  });
   const currentRankId = G.ranks[playerID];
   if (G.promotedThisTurn?.[playerID]) {
-    return lang === 'uk'
-      ? 'Ви вже підвищувалися цього ходу.'
-      : 'You have already promoted this turn.';
+    return t(actionValidationKeys.promote.alreadyPromotedThisTurn);
   }
   const currentIdx = ranks.findIndex((r) => r.id === currentRankId);
   const nextRank = currentIdx >= 0 ? ranks[currentIdx + 1] : undefined;
   if (!nextRank) {
-    return lang === 'uk' ? 'Немає наступного звання для підвищення.' : 'No next rank to promote to.';
+    return t(actionValidationKeys.promote.noNextRank);
   }
   const row = G.resources[playerID];
-  if (!row) return lang === 'uk' ? 'Ресурси гравця недоступні.' : 'Player resources are unavailable.';
+  if (!row) return t(actionValidationKeys.promote.playerResourcesUnavailable);
 
   const missingReq = getMissingResourceParts(nextRank.requirement, row, resourceLabels);
   if (missingReq.length > 0) {
-    return lang === 'uk'
-      ? `До звання «${nextRank.name}» бракує: ${missingReq.join(', ')}`
-      : `Missing for rank "${nextRank.name}": ${missingReq.join(', ')}`;
+    return t(actionValidationKeys.promote.missingRequirements, { rankName: nextRank.name, missing: missingReq.join(', ') });
   }
   const missingCost = getMissingResourceParts(nextRank.cost, row, resourceLabels);
   if (missingCost.length > 0) {
-    return lang === 'uk'
-      ? `Для підвищення до «${nextRank.name}» бракує вартості: ${missingCost.join(', ')}`
-      : `Missing promotion cost for "${nextRank.name}": ${missingCost.join(', ')}`;
+    return t(actionValidationKeys.promote.missingCost, { rankName: nextRank.name, missing: missingCost.join(', ') });
   }
   const playerCount = Object.keys(G.players ?? {}).length;
   const seatLimit = rankSeatLimitForRank(playerCount, nextRank.id, ranks);
@@ -64,9 +70,7 @@ export const getPromoteBlockedReason = (args: {
     .filter(([pid, rid]) => pid !== playerID && rid === nextRank.id)
     .length;
   if (occupied >= seatLimit) {
-    return lang === 'uk'
-      ? `Немає вільного місця на званні «${nextRank.name}» (ліміт: ${seatLimit})`
-      : `No free seat for rank "${nextRank.name}" (limit: ${seatLimit})`;
+    return t(actionValidationKeys.promote.noFreeSeat, { rankName: nextRank.name, seatLimit });
   }
   return null;
 };
@@ -76,7 +80,7 @@ export const getPromoteActionState = (args: {
   playerID: string;
   ranks: RankDefinition[];
   resourceLabels: ResourceLabels;
-  lang?: 'uk' | 'en';
+  translator?: ActionTranslator;
 }): ActionAvailability & { nextRank?: RankDefinition } => {
   const nextRank = findNextRank(args.ranks, args.G.ranks[args.playerID]);
   const reason = getPromoteBlockedReason(args);
@@ -94,43 +98,43 @@ export const getVvnzPlayBlockedReason = (args: {
   ranks: RankDefinition[];
   resourceLabels: ResourceLabels;
   lang?: 'uk' | 'en';
+  translator?: ActionTranslator;
 }): string | null => {
-  const { card, G, playerID, ranks, resourceLabels, lang = 'uk' } = args;
+  const { card, G, playerID, ranks, resourceLabels, translator } = args;
+  const t = translator ?? ((key: string, params?: Record<string, string | number>) => {
+    let result = key;
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        result = result.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+      });
+    }
+    return result;
+  });
   if (card.category !== 'VVNZ') return null;
   if (G.promotedThisTurn?.[playerID]) {
-    return lang === 'uk'
-      ? 'Цього ходу ви вже отримували підвищення.'
-      : 'You have already received a promotion this turn.';
+    return t(actionValidationKeys.vvnz.alreadyPromotedThisTurn);
   }
   if (!card.grantRank) {
-    return lang === 'uk'
-      ? 'Для цієї ВВНЗ-карти не задано цільове звання (grantRank).'
-      : 'This VVNZ card has no target rank (grantRank).';
+    return t(actionValidationKeys.vvnz.noGrantRank);
   }
   const row = G.resources[playerID];
-  if (!row) return lang === 'uk' ? 'Стан ресурсів ще не завантажено.' : 'Resources are not loaded yet.';
+  if (!row) return t(actionValidationKeys.vvnz.resourcesNotLoaded);
   const currentIdx = ranks.findIndex((r) => r.id === (G.ranks[playerID] ?? ''));
   const targetRank = ranks.find((r) => r.id === card.grantRank);
   const targetIdx = ranks.findIndex((r) => r.id === card.grantRank);
   if (!targetRank || targetIdx < 0) {
-    return lang === 'uk' ? `Невідоме цільове звання: ${card.grantRank}` : `Unknown target rank: ${card.grantRank}`;
+    return t(actionValidationKeys.vvnz.unknownTargetRank, { rankId: card.grantRank });
   }
   if (targetIdx <= currentIdx) {
-    return lang === 'uk'
-      ? `Карта дає звання «${targetRank.name}», але ваше поточне звання вже не нижче.`
-      : `Card grants "${targetRank.name}", but your current rank is already not lower.`;
+    return t(actionValidationKeys.vvnz.rankNotLower, { rankName: targetRank.name });
   }
   const missingReq = getMissingResourceParts(targetRank.requirement, row, resourceLabels);
   if (missingReq.length > 0) {
-    return lang === 'uk'
-      ? `Не вистачає вимог для «${targetRank.name}»: ${missingReq.join(', ')}`
-      : `Missing requirements for "${targetRank.name}": ${missingReq.join(', ')}`;
+    return t(actionValidationKeys.vvnz.missingRequirements, { rankName: targetRank.name, missing: missingReq.join(', ') });
   }
   const missingCost = getMissingResourceParts(targetRank.cost, row, resourceLabels);
   if (missingCost.length > 0) {
-    return lang === 'uk'
-      ? `Не вистачає вартості підвищення до «${targetRank.name}»: ${missingCost.join(', ')}`
-      : `Missing promotion cost for "${targetRank.name}": ${missingCost.join(', ')}`;
+    return t(actionValidationKeys.vvnz.missingCost, { rankName: targetRank.name, missing: missingCost.join(', ') });
   }
   const playerCount = Object.keys(G.players ?? {}).length;
   const seatLimit = rankSeatLimitForRank(playerCount, targetRank.id, ranks);
@@ -138,9 +142,7 @@ export const getVvnzPlayBlockedReason = (args: {
     .filter(([pid, rid]) => pid !== playerID && rid === targetRank.id)
     .length;
   if (occupied >= seatLimit) {
-    return lang === 'uk'
-      ? `Немає вільного місця на званні «${targetRank.name}» (ліміт ${seatLimit}).`
-      : `No free seat for rank "${targetRank.name}" (limit ${seatLimit}).`;
+    return t(actionValidationKeys.vvnz.noFreeSeat, { rankName: targetRank.name, seatLimit });
   }
   return null;
 };
@@ -153,18 +155,28 @@ export const getHandCardActionState = (args: {
   resourceLabels: ResourceLabels;
   canPlayHandCard?: boolean;
   lang?: 'uk' | 'en';
+  translator?: ActionTranslator;
 }): ActionAvailability & { behavior: CardPlayBehavior } => {
-  const { card, G, playerID, ranks, resourceLabels, canPlayHandCard = true, lang = 'uk' } = args;
+  const { card, G, playerID, ranks, resourceLabels, canPlayHandCard = true, translator, lang } = args;
+  const t = translator ?? ((key: string, params?: Record<string, string | number>) => {
+    let result = key;
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        result = result.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+      });
+    }
+    return result;
+  });
   const behavior = getCardPlayBehavior(card);
   if (!canPlayHandCard) {
     return {
       allowed: false,
-      reason: lang === 'uk' ? 'Цю карту зараз не можна розіграти.' : 'This card cannot be played right now.',
+      reason: t(actionValidationKeys.handCard.cannotPlayNow),
       behavior,
     };
   }
   if (behavior === 'vvnz') {
-    const reason = getVvnzPlayBlockedReason({ card, G, playerID, ranks, resourceLabels, lang });
+    const reason = getVvnzPlayBlockedReason({ card, G, playerID, ranks, resourceLabels, translator, lang });
     return { allowed: !reason, reason, behavior };
   }
   return { allowed: true, reason: null, behavior };

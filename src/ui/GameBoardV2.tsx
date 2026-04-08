@@ -276,7 +276,7 @@ export const GameBoardV2 = ({
     );
   }
 
-  const promoteReason = getBoardPromoteReason({ G, playerID: id, sharedRanks, resourceLabels, lang });
+  const promoteReason = getBoardPromoteReason({ G, playerID: id, sharedRanks, resourceLabels });
   const {
     botPlaybackControlLabel,
     blockPlayerTurnControls,

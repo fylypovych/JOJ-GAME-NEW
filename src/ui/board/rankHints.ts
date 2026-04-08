@@ -18,7 +18,7 @@ export const buildNextRankHint = (args: {
   lang: Lang;
 }): string | null => {
   const { G, playerID, sharedRanks, resourceLabels, promoteLabel, lang } = args;
-  const promoteState = getPromoteActionState({ G, playerID, ranks: sharedRanks, resourceLabels, lang });
+  const promoteState = getPromoteActionState({ G, playerID, ranks: sharedRanks, resourceLabels });
   const nextRank = promoteState.nextRank ?? findNextRank(sharedRanks, G.ranks[playerID]);
   if (!nextRank) return null;
   if (promoteState.allowed) {

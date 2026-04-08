@@ -300,7 +300,7 @@ export const LegacyGameBoard = ({
     );
   }
 
-  const promoteReason = getBoardPromoteReason({ G, playerID: id, sharedRanks, resourceLabels, lang });
+  const promoteReason = getBoardPromoteReason({ G, playerID: id, sharedRanks, resourceLabels });
   const gameoverPlayerSummaries = buildGameoverPlayerSummaries({
     G,
     winnerPlayerID,
