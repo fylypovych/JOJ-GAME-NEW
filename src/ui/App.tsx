@@ -1,22 +1,4 @@
 import { Suspense, lazy, useEffect, useMemo } from 'react';
-import {
-  addCustomCardToSharedDeckTemplate,
-  addCardToSharedDeckTemplate,
-  exportSharedDeckTemplateJson,
-  exportSharedRanksJson,
-  getSharedRanks,
-  getSharedDeckTemplateStats,
-  importSharedDeckTemplateJson,
-  importSharedRanksJson,
-  removeCardAtFromSharedDeckTemplate,
-  runGameSimulations,
-  setSharedRanks,
-  resetSharedRanks,
-  resetSharedDeckTemplate,
-  setSharedDeckBackImage,
-  shuffleSharedDeckTemplate,
-  updateCardAtInSharedDeckTemplate,
-} from '../game/jojGame';
 import { text } from './i18n';
 import { formatModuleDisplayName } from './moduleDisplay';
 import {
