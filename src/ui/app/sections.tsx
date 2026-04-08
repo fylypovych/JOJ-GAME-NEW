@@ -1193,7 +1193,7 @@ export const GallerySection = ({
     <section className={`board board-v2-panel board-v2-gallery${uiVariant === 'v1' ? ' board-v1-panel board-v1-gallery' : ''}`}>
       <h2>{t.galleryTitle}</h2>
       <p>{t.galleryDescription}</p>
-      <p className="gallery-category-tabs">
+      <nav className="gallery-category-tabs" style={{ position: 'sticky', top: 0, zIndex: 10, background: 'inherit', padding: '8px 0' }}>
       <button
         type="button"
         onClick={() => setGalleryCategoryFilter('ALL')}
@@ -1211,7 +1211,7 @@ export const GallerySection = ({
           {categoryLabel(cat, lang)}
         </button>
       ))}
-      </p>
+      </nav>
       {galleryCards.length === 0 ? <p>{t.noCardsYet}</p> : null}
       <div className="gallery-grid">
         {galleryCards.map((card) => {
