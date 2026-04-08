@@ -793,8 +793,6 @@ export const GameBoardV2 = ({
                 cardClickAction={handleV2HandCardClick}
                 effectLabel={effectLabel}
                 badges={(card) => handCardsView.find((row) => row.card.id === card.id)?.badges}
-                helperText={(card) => handCardsView.find((row) => row.card.id === card.id)?.helperText}
-                previewText={(card) => handCardsView.find((row) => row.card.id === card.id)?.previewText}
                 actionTitle={(card) => handCardsView.find((row) => row.card.id === card.id)?.actionState.reason ?? board.play}
                 extraAction={(card) => {
                   const canDiscardThisCard = mustDiscardOverflow && card.category !== 'LYAP' && card.category !== 'SCANDAL';
@@ -828,7 +826,6 @@ export const GameBoardV2 = ({
                     ...(card.id === 'legendary-10' ? [board.requiresTarget] : []),
                     ...((card.id === 'legendary-09' || card.id === 'legendary-06') ? [board.requiresResource] : []),
                   ]}
-                  previewText={(card) => handCardsView.find((row) => row.card.id === card.id)?.previewText}
                 />
               </section>
             ) : undefined}

@@ -2172,6 +2172,18 @@
   color: #b8c2b7;
 }
 
+.game-ui-layout-shell .game-ui-layout-player-dock-main .game-card.is-v1 .pill-effect,
+.game-ui-layout-shell .game-ui-layout-legendary-frame .game-card.is-v1 .pill-effect {
+  background: rgba(214, 236, 223, 0.9);
+  color: #1d4d34;
+}
+
+.game-ui-layout-shell .game-ui-layout-player-dock-main .game-card.is-v1 .pill-badge,
+.game-ui-layout-shell .game-ui-layout-legendary-frame .game-card.is-v1 .pill-badge {
+  background: rgba(230, 235, 226, 0.92);
+  color: #49564c;
+}
+
 .game-ui-layout-shell .game-card-inline-action,
 .game-ui-layout-shell .game-card-inline-discard,
 .game-ui-layout-shell .game-ui-layout-header-leave,
@@ -5377,8 +5389,12 @@
   margin-top: -126px;
   padding: 0 18px;
   border: 0;
-  background: transparent;
-  box-shadow: none;
+  background:
+    linear-gradient(180deg, rgba(58, 61, 60, 0.96), rgba(37, 42, 40, 0.94) 18%, rgba(28, 33, 32, 0.92)),
+    radial-gradient(circle at 50% 0%, rgba(198, 189, 151, 0.08), transparent 22%);
+  box-shadow:
+    0 24px 44px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
   grid-template-columns: 1fr;
   min-width: 0;
   max-width: 100%;
@@ -5400,6 +5416,14 @@
   min-width: 0;
   max-width: 100%;
   background: transparent;
+}
+
+.app.app-v2.is-immersive-v2-game .game-ui-v2-hand-section,
+.app.app-v2.is-immersive-v2-game .game-ui-layout-hand-section {
+  border-color: rgba(178, 181, 170, 0.12);
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
 }
 
 .app.app-v2.is-immersive-v2-game .game-ui-layout-player-station {

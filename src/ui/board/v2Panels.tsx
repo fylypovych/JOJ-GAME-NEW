@@ -324,16 +324,16 @@ export const V2HandSection = (props: {
         {headRight}
       </div>
       <div className="hand game-ui-v2-hand-grid game-ui-layout-hand-grid">
-        {cards.map((card) => (
+        {cards.map((card, index) => (
           <GameCardTile
-            key={`tile-${title}-${card.id}`}
+            key={`tile-${title}-${card.id}-${index}`}
             card={card}
             resolvedImage={cardImageById[card.id]}
             lang={lang}
             variant="v1"
             categoryText={categoryText(card)}
             openPreviewKey={openPreviewKey}
-            previewKey={`preview-${title}-${card.id}`}
+            previewKey={`preview-${title}-${card.id}-${index}`}
             onTogglePreview={togglePreview}
             onClosePreview={closePreview}
             actionLabel={actionLabel}
