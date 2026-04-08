@@ -57,6 +57,7 @@ import { useAppAdminState } from './app/useAppAdminState';
 import { useProfileHandlers } from './app/useProfileHandlers';
 import { useAuthHandlers } from './app/useAuthHandlers';
 import { useGameSessionHandlers } from './app/useGameSessionHandlers';
+import { useAdminMatchControls } from './app/useAdminMatchControls';
 
 const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
 const NetworkClientV1 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV1 })));
@@ -493,6 +494,26 @@ export const App = () => {
     adminSelectedMatchID,
     bindMatchSession,
     setAdminSelectedMatchID,
+  });
+
+  // Admin match controls
+  const {
+    onRestartServer,
+    onResetGame,
+    onDeleteMatch,
+    onStopGame,
+  } = useAdminMatchControls({
+    adminMatchID,
+    adminFetch,
+    setSnapshot,
+    setAdminSelectedMatchID,
+    refreshMatches,
+    setDeletingAdminMatch,
+    ADMIN_RESTART_API,
+    ADMIN_MATCH_STATE_API,
+    ADMIN_MATCH_STOP_API,
+    ADMIN_MATCH_RESET_API,
+    ADMIN_MATCH_DELETE_API,
   });
 
   const shellUiVariant = isAdminRoute ? adminUiVariant : gameUiVariant;
