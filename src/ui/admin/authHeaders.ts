@@ -10,10 +10,11 @@ const readCookie = (name: string) => {
 };
 
 export const getAdminCsrfToken = () => readCookie('joj_user_csrf');
+export const getCsrfToken = () => readCookie('csrf-token');
 
 export const buildAdminHeaders = (): Record<string, string> => {
   const headers: Record<string, string> = {};
   const csrfToken = getAdminCsrfToken();
-  if (csrfToken) headers['x-csrf-token'] = csrfToken;
+  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
   return headers;
 };

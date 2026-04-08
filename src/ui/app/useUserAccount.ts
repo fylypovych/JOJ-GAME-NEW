@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { optimizeBlobForUpload } from '../admin/imageUpload';
+import { getCsrfToken } from '../admin/authHeaders';
 
 export type AuthUser = {
   id: string;
@@ -116,7 +117,6 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [csrfToken, setCsrfToken] = useState('');
   const [sessions, setSessions] = useState<UserSession[]>([]);
   const [awards, setAwards] = useState<UserAward[]>([]);
   const [matchHistory, setMatchHistory] = useState<UserMatchHistoryItem[]>([]);
@@ -125,22 +125,19 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
   const profileBase = `${serverUrl}/api/profile`;
   const userLobbyBase = `${serverUrl}/api/user-lobby`;
 
-  const applyPayloadCsrf = (payload: unknown) => {
-    const nextCsrf = (payload as { csrfToken?: string })?.csrfToken;
-    if (typeof nextCsrf === 'string' && nextCsrf.trim()) setCsrfToken(nextCsrf);
-  };
-
   const ensureCsrfToken = async () => {
-    if (csrfToken.trim()) return csrfToken;
+    // First check cookie
+    const cookieToken = getCsrfToken();
+    if (cookieToken) return cookieToken;
+    
+    // If no cookie, fetch /me to get CSRF token set in cookie
     const response = await fetch(`${authBase}/me`, { credentials: 'include' });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new Error(String((payload as { error?: string }).error ?? USER_ACCOUNT_ERRORS.genericRequest));
     }
-    applyPayloadCsrf(payload);
-    const nextCsrf = typeof (payload as { csrfToken?: string }).csrfToken === 'string'
-      ? String((payload as { csrfToken?: string }).csrfToken)
-      : '';
+    // Read CSRF token from cookie after fetch
+    const nextCsrf = getCsrfToken();
     return nextCsrf;
   };
 
@@ -159,14 +156,12 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     if (!response.ok) {
       throw new Error(String((payload as { error?: string }).error ?? USER_ACCOUNT_ERRORS.genericRequest));
     }
-    applyPayloadCsrf(payload);
     return payload as Record<string, unknown>;
   };
 
   const fetchJson = async (url: string) => {
     const response = await fetch(url, { credentials: 'include' });
     const payload = await response.json().catch(() => ({}));
-    applyPayloadCsrf(payload);
     if (!response.ok) {
       throw new Error(String((payload as { error?: string }).error ?? USER_ACCOUNT_ERRORS.genericRequest));
     }
@@ -239,7 +234,6 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
       setAwards([]);
       setMatchHistory([]);
       setError('');
-      setCsrfToken('');
       await refreshUser();
     } finally {
       setBusy(false);
@@ -348,7 +342,6 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
       setAwards([]);
       setMatchHistory([]);
       setError('');
-      setCsrfToken('');
     } finally {
       setBusy(false);
     }

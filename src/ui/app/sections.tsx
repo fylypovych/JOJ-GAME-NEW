@@ -829,8 +829,11 @@ export const ProfileSection = ({
               <label className={`profile-avatar-upload profile-avatar-upload-v2${uiVariant === 'v1' ? ' profile-avatar-upload-v1' : ''}`}>
                 <span>{t.userAvatarUploadButton}</span>
                 <input
+                  id="profile-avatar-upload"
+                  name="avatarUpload"
                   type="file"
                   accept="image/png,image/jpeg,image/webp,image/gif"
+                  autoComplete="off"
                   onChange={(e) => {
                     const file = e.currentTarget.files?.[0];
                     const input = e.currentTarget;
