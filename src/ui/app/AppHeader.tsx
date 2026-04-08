@@ -11,11 +11,14 @@ interface AppHeaderProps {
   activeUserTab: UserTab;
   setActiveUserTab: (tab: UserTab) => void;
   gameUiVariant: 'v1' | 'v2';
+  setGameUiVariant: (variant: 'v1' | 'v2') => void;
+  adminUiVariant?: 'v1' | 'v2';
+  setAdminUiVariant?: (variant: 'v1' | 'v2') => void;
   t: T;
 }
 
 export const AppHeader = (props: AppHeaderProps) => {
-  const { isAdminRoute, lang, setLang, activeUserTab, setActiveUserTab, gameUiVariant, t } = props;
+  const { isAdminRoute, lang, setLang, activeUserTab, setActiveUserTab, gameUiVariant, setGameUiVariant, adminUiVariant, setAdminUiVariant, t } = props;
 
   if (isAdminRoute) {
     return (
@@ -42,6 +45,30 @@ export const AppHeader = (props: AppHeaderProps) => {
                 {t.langEn}
               </button>
             </div>
+          </div>
+          <div className="app-toolbar-group">
+            <span className="app-toolbar-label">Тема:</span>
+            <div className="app-toolbar-button-row">
+              <button
+                type="button"
+                onClick={() => setGameUiVariant('v1')}
+                disabled={gameUiVariant === 'v1'}
+              >
+                Світла
+              </button>
+              <button
+                type="button"
+                onClick={() => setGameUiVariant('v2')}
+                disabled={gameUiVariant === 'v2'}
+              >
+                Темна
+              </button>
+            </div>
+          </div>
+          <div className="app-toolbar-group">
+            <a href="/admin" className="app-toolbar-button">
+              Адмін-панель
+            </a>
           </div>
         </div>
       </div>
