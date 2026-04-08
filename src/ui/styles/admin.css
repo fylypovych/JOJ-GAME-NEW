@@ -1575,8 +1575,8 @@
   z-index: 5000;
   display: none;
   width: auto;
-  max-width: min(620px, 46vw);
-  max-height: 92vh;
+  max-width: min(800px, 90vw);
+  max-height: 95vh;
   padding: 12px;
   border: 1px solid rgba(173, 180, 190, 0.64);
   border-radius: 14px;
@@ -1593,8 +1593,8 @@
   display: block;
   width: auto;
   height: auto;
-  max-width: min(620px, calc(46vw - 12px));
-  max-height: calc(92vh - 12px);
+  max-width: min(800px, calc(90vw - 12px));
+  max-height: calc(95vh - 12px);
   object-fit: contain;
   opacity: 1 !important;
   background: transparent;
