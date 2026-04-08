@@ -68,7 +68,7 @@ type GameCardTileProps = {
   badges?: string[];
   helperText?: string;
   previewText?: string;
-  variant?: 'default' | 'v1';
+  variant?: 'default' | 'v1' | 'v3';
   selected?: boolean;
   onCardClick?: () => void;
 };
@@ -111,14 +111,15 @@ export const GameCardTile = ({
   const title = cardTitleWithOverride(card.id, card.title, lang, card.titleEn);
   const flavorText = cardFlavor(card.flavor, lang, card.flavorEn);
   const effectEntries = card.effects ?? [];
+  const variantClass = variant === 'v1' ? ' is-v1' : ' is-v3';
   return (
     <div
-      className={`game-card ${categoryClass}${variant === 'v1' ? ' is-v1' : ''}${selected ? ' is-selected' : ''}${actionDisabled ? ' is-disabled' : ''}${onCardClick ? ' is-clickable' : ''}${openPreviewKey === previewKey ? ' has-open-preview' : ''}`.trim()}
+      className={`game-card ${categoryClass}${variantClass}${selected ? ' is-selected' : ''}${actionDisabled ? ' is-disabled' : ''}${onCardClick ? ' is-clickable' : ''}${openPreviewKey === previewKey ? ' has-open-preview' : ''}`.trim()}
       onClick={onCardClick}
     >
       <button
         type="button"
-        className={`game-card-inline-action${variant === 'v1' ? ' is-v1' : ''}`}
+        className={`game-card-inline-action${variantClass}`}
         onClick={(e) => {
           e.stopPropagation();
           onAction();
@@ -131,7 +132,7 @@ export const GameCardTile = ({
       {extraAction ? (
         <button
           type="button"
-          className={`game-card-inline-action${variant === 'v1' ? ' is-v1' : ''} ${extraAction.className ?? ''}`.trim()}
+          className={`game-card-inline-action${variantClass} ${extraAction.className ?? ''}`.trim()}
           onClick={(e) => {
             e.stopPropagation();
             extraAction.onClick();
@@ -144,7 +145,7 @@ export const GameCardTile = ({
       {utilityAction ? (
         <button
           type="button"
-          className={`game-card-inline-action${variant === 'v1' ? ' is-v1' : ''} ${utilityAction.className ?? ''}`.trim()}
+          className={`game-card-inline-action${variantClass} ${utilityAction.className ?? ''}`.trim()}
           onClick={(e) => {
             e.stopPropagation();
             utilityAction.onClick();
@@ -153,7 +154,7 @@ export const GameCardTile = ({
           {utilityAction.label}
         </button>
       ) : null}
-      <div className={`game-card-media${variant === 'v1' ? ' is-v1' : ''}`}>
+      <div className={`game-card-media${variantClass}`}>
         <img
           src={imageSrc}
           alt={title}
@@ -165,7 +166,7 @@ export const GameCardTile = ({
         />
       </div>
       <div
-        className={`game-card-popover${variant === 'v1' ? ' is-v1' : ''}${openPreviewKey === previewKey ? ' is-open' : ''}`}
+        className={`game-card-popover${variantClass}${openPreviewKey === previewKey ? ' is-open' : ''}`}
         aria-hidden={openPreviewKey !== previewKey}
         onClick={(e) => { e.stopPropagation(); onClosePreview(); }}
       >
@@ -175,7 +176,7 @@ export const GameCardTile = ({
           onError={handleCardImageError}
         />
       </div>
-      <div className={`game-card-body${variant === 'v1' ? ' is-v1' : ''}`}>
+      <div className={`game-card-body${variantClass}`}>
         <strong>{title}</strong>
         <small>{categoryText || categoryLabel(card.category, lang)}</small>
         {badges?.length ? (

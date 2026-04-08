@@ -806,33 +806,32 @@ export const GameBoardV2 = ({
                   } : undefined;
                 }}
               />
-              {!isSimplifiedMode ? (
-                <section className="game-ui-v2-panel game-ui-layout-panel game-ui-v2-legendary-frame game-ui-layout-legendary-frame">
-                  <V2HandSection
-                    title={`${t.legendaryHand} (${legendaryHand.length})`}
-                    subtitle={t.legendaryHandHint}
-                    cards={legendaryHand}
-                    cardImageById={cardImageById}
-                    lang={lang}
-                    openPreviewKey={openPreviewKey}
-                    togglePreview={togglePreview}
-                    closePreview={() => setOpenPreviewKey(null)}
-                    categoryText={() => t.legendaryDeckLabel}
-                    actionLabel={board.playLegendary}
-                    onAction={(card) => handleLegendaryCardAction(card, requestPlayLegendaryCard)}
-                    actionDisabled={() => typeof moves.playLegendaryCard !== 'function'}
-                    effectLabel={effectLabel}
-                    badges={(card) => [
-                      ...(card.id === 'legendary-10' ? [board.requiresTarget] : []),
-                      ...((card.id === 'legendary-09' || card.id === 'legendary-06') ? [board.requiresResource] : []),
-                    ]}
-                    previewText={(card) => handCardsView.find((row) => row.card.id === card.id)?.previewText}
-                  />
-                </section>
-              ) : null}
               </>
             )}
-            sideContent={undefined}
+            sideContent={!isSimplifiedMode ? (
+              <section className="game-ui-v2-panel game-ui-layout-panel game-ui-v2-legendary-frame game-ui-layout-legendary-frame">
+                <V2HandSection
+                  title={`${t.legendaryHand} (${legendaryHand.length})`}
+                  subtitle={t.legendaryHandHint}
+                  cards={legendaryHand}
+                  cardImageById={cardImageById}
+                  lang={lang}
+                  openPreviewKey={openPreviewKey}
+                  togglePreview={togglePreview}
+                  closePreview={() => setOpenPreviewKey(null)}
+                  categoryText={() => t.legendaryDeckLabel}
+                  actionLabel={board.playLegendary}
+                  onAction={(card) => handleLegendaryCardAction(card, requestPlayLegendaryCard)}
+                  actionDisabled={() => typeof moves.playLegendaryCard !== 'function'}
+                  effectLabel={effectLabel}
+                  badges={(card) => [
+                    ...(card.id === 'legendary-10' ? [board.requiresTarget] : []),
+                    ...((card.id === 'legendary-09' || card.id === 'legendary-06') ? [board.requiresResource] : []),
+                  ]}
+                  previewText={(card) => handCardsView.find((row) => row.card.id === card.id)?.previewText}
+                />
+              </section>
+            ) : undefined}
           />
           ) : null}
 
