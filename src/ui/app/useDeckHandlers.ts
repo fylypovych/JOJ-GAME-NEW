@@ -1,27 +1,35 @@
 import { useCallback } from 'react';
 import type { CardDefinition, RankDefinition } from '../../game/types';
 import type { DeckTarget } from '../../game/jojGame';
+import {
+  exportSharedDeckTemplateJson,
+  importSharedDeckTemplateJson,
+  shuffleSharedDeckTemplate,
+  addCardToSharedDeckTemplate,
+  addCustomCardToSharedDeckTemplate,
+  updateCardAtInSharedDeckTemplate,
+  removeCardAtFromSharedDeckTemplate,
+  resetSharedDeckTemplate,
+  setSharedDeckBackImage,
+  exportSharedRanksJson,
+  getSharedRanks,
+  importSharedRanksJson,
+  setSharedRanks,
+  resetSharedRanks,
+} from '../../game/sharedConfig';
+import { SERVER_URL } from './clientConfig';
+
+const RANKS_API = `${SERVER_URL}/api/shared-ranks`;
+
+// Simple admin fetch - can be enhanced later
+const adminFetch = async (input: string | URL | Request, init?: RequestInit) => {
+  return fetch(input, { ...init, credentials: 'include' });
+};
 
 export interface UseDeckHandlersArgs {
-  sharedRanks: RankDefinition[];
   refreshSharedDeckTemplate: (force?: boolean) => Promise<boolean>;
-  exportSharedDeckTemplateJson: () => string;
-  importSharedDeckTemplateJson: (json: string) => { ok: true } | { ok: false; error: string };
-  shuffleSharedDeckTemplate: () => void;
-  addCardToSharedDeckTemplate: (target: DeckTarget, cardId: string) => boolean;
-  addCustomCardToSharedDeckTemplate: (target: DeckTarget, card: CardDefinition) => void;
-  updateCardAtInSharedDeckTemplate: (target: DeckTarget, index: number, card: CardDefinition) => void;
-  removeCardAtFromSharedDeckTemplate: (target: DeckTarget, index: number) => void;
-  resetSharedDeckTemplate: () => void;
-  setSharedDeckBackImage: (path: string) => void;
   setSharedRanksState: (ranks: RankDefinition[]) => void;
-  exportSharedRanksJson: () => string;
-  getSharedRanks: () => RankDefinition[];
-  importSharedRanksJson: (json: string) => { ok: true } | { ok: false; error: string };
-  setSharedRanks: (ranks: RankDefinition[]) => boolean;
-  resetSharedRanks: () => void;
-  RANKS_API: string;
-  adminFetch: (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
+  sharedRanks: RankDefinition[];
 }
 
 export interface UseDeckHandlersResult {
@@ -44,45 +52,25 @@ export interface UseDeckHandlersResult {
 }
 
 export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResult => {
-  const {
-    sharedRanks,
-    refreshSharedDeckTemplate,
-    exportSharedDeckTemplateJson,
-    importSharedDeckTemplateJson,
-    shuffleSharedDeckTemplate,
-    addCardToSharedDeckTemplate,
-    addCustomCardToSharedDeckTemplate,
-    updateCardAtInSharedDeckTemplate,
-    removeCardAtFromSharedDeckTemplate,
-    resetSharedDeckTemplate,
-    setSharedDeckBackImage,
-    setSharedRanksState,
-    exportSharedRanksJson,
-    getSharedRanks,
-    importSharedRanksJson,
-    setSharedRanks,
-    resetSharedRanks,
-    RANKS_API,
-    adminFetch,
-  } = args;
+  const { refreshSharedDeckTemplate, setSharedRanksState, sharedRanks } = args;
 
   const rollbackTemplate = useCallback((json: string) => {
     const result = importSharedDeckTemplateJson(json);
     if (result.ok) void refreshSharedDeckTemplate(false);
-  }, [importSharedDeckTemplateJson, refreshSharedDeckTemplate]);
+  }, []);
 
   const applyTemplateChange = useCallback(async (mutate: () => void, previousJson = exportSharedDeckTemplateJson()) => {
     mutate();
     const ok = await refreshSharedDeckTemplate();
     if (!ok) rollbackTemplate(previousJson);
     return ok;
-  }, [exportSharedDeckTemplateJson, refreshSharedDeckTemplate, rollbackTemplate]);
+  }, [rollbackTemplate]);
 
   const onShuffleDeck = useCallback(() => {
     void applyTemplateChange(() => {
       shuffleSharedDeckTemplate();
     });
-  }, [applyTemplateChange, shuffleSharedDeckTemplate]);
+  }, [applyTemplateChange]);
 
   const onAddCard = useCallback((target: DeckTarget, cardId: string): boolean => {
     const previousJson = exportSharedDeckTemplateJson();
@@ -91,41 +79,41 @@ export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResul
       if (!ok) rollbackTemplate(previousJson);
     });
     return added;
-  }, [exportSharedDeckTemplateJson, addCardToSharedDeckTemplate, refreshSharedDeckTemplate, rollbackTemplate]);
+  }, [rollbackTemplate]);
 
   const onAddCustomCard = useCallback((target: DeckTarget, card: CardDefinition) => {
     void applyTemplateChange(() => {
       addCustomCardToSharedDeckTemplate(target, card);
     });
-  }, [applyTemplateChange, addCustomCardToSharedDeckTemplate]);
+  }, [applyTemplateChange]);
 
   const onUpdateCard = useCallback((target: DeckTarget, index: number, card: CardDefinition) => {
     void applyTemplateChange(() => {
       updateCardAtInSharedDeckTemplate(target, index, card);
     });
-  }, [applyTemplateChange, updateCardAtInSharedDeckTemplate]);
+  }, [applyTemplateChange]);
 
   const onRemoveCard = useCallback((target: DeckTarget, index: number) => {
     void applyTemplateChange(() => {
       removeCardAtFromSharedDeckTemplate(target, index);
     });
-  }, [applyTemplateChange, removeCardAtFromSharedDeckTemplate]);
+  }, [applyTemplateChange]);
 
   const onResetDeck = useCallback(() => {
     void applyTemplateChange(() => {
       resetSharedDeckTemplate();
     });
-  }, [applyTemplateChange, resetSharedDeckTemplate]);
+  }, [applyTemplateChange]);
 
   const onSetBack = useCallback((path?: string) => {
     void applyTemplateChange(() => {
       setSharedDeckBackImage(path ?? '');
     });
-  }, [applyTemplateChange, setSharedDeckBackImage]);
+  }, [applyTemplateChange]);
 
   const onExportTemplate = useCallback(() => {
     return exportSharedDeckTemplateJson();
-  }, [exportSharedDeckTemplateJson]);
+  }, []);
 
   const onImportTemplate = useCallback((json: string): string | null => {
     const previousJson = exportSharedDeckTemplateJson();
@@ -135,19 +123,19 @@ export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResul
       if (!ok) rollbackTemplate(previousJson);
     });
     return null;
-  }, [exportSharedDeckTemplateJson, importSharedDeckTemplateJson, refreshSharedDeckTemplate, rollbackTemplate]);
+  }, [rollbackTemplate]);
 
   const rollbackRanks = useCallback((previousRanks: RankDefinition[]) => {
     if (!setSharedRanks(previousRanks)) return;
     setSharedRanksState(getSharedRanks());
-  }, [setSharedRanks, setSharedRanksState, getSharedRanks]);
+  }, [setSharedRanksState]);
 
   const onExportRanks = useCallback(() => {
     return exportSharedRanksJson();
-  }, [exportSharedRanksJson]);
+  }, []);
 
   const onImportRanks = useCallback((json: string): string | null => {
-    const previousRanks = sharedRanks.map((rank) => ({ ...rank }));
+    const previousRanks = (sharedRanks ?? []).map((rank) => ({ ...rank }));
     const result = importSharedRanksJson(json);
     if (!result.ok) return result.error;
     const normalized = getSharedRanks();
@@ -162,10 +150,10 @@ export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResul
       rollbackRanks(previousRanks);
     });
     return null;
-  }, [sharedRanks, importSharedRanksJson, getSharedRanks, setSharedRanksState, adminFetch, RANKS_API, rollbackRanks]);
+  }, [sharedRanks, setSharedRanksState, rollbackRanks, RANKS_API]);
 
   const onSetRanks = useCallback((nextRanks: RankDefinition[]): boolean => {
-    const previousRanks = sharedRanks.map((rank) => ({ ...rank }));
+    const previousRanks = (sharedRanks ?? []).map((rank) => ({ ...rank }));
     if (!setSharedRanks(nextRanks)) return false;
     const normalized = getSharedRanks();
     setSharedRanksState(normalized);
@@ -179,10 +167,10 @@ export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResul
       rollbackRanks(previousRanks);
     });
     return true;
-  }, [sharedRanks, setSharedRanks, getSharedRanks, setSharedRanksState, adminFetch, RANKS_API, rollbackRanks]);
+  }, [sharedRanks, setSharedRanksState, rollbackRanks, RANKS_API]);
 
   const onResetRanks = useCallback(() => {
-    const previousRanks = sharedRanks.map((rank) => ({ ...rank }));
+    const previousRanks = (sharedRanks ?? []).map((rank) => ({ ...rank }));
     resetSharedRanks();
     const normalized = getSharedRanks();
     setSharedRanksState(normalized);
@@ -191,7 +179,7 @@ export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResul
     }).catch(() => {
       rollbackRanks(previousRanks);
     });
-  }, [sharedRanks, resetSharedRanks, getSharedRanks, setSharedRanksState, adminFetch, RANKS_API, rollbackRanks]);
+  }, [sharedRanks, setSharedRanksState, rollbackRanks, RANKS_API]);
 
   return {
     rollbackTemplate,

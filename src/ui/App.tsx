@@ -40,20 +40,6 @@ import { useGameSessionHandlers } from './app/useGameSessionHandlers';
 import { useAdminMatchControls } from './app/useAdminMatchControls';
 import { useDeckHandlers } from './app/useDeckHandlers';
 import { runGameSimulations } from '../game/jojGame';
-import {
-  resetSharedDeckTemplate,
-  setSharedDeckBackImage,
-  shuffleSharedDeckTemplate,
-  addCardToSharedDeckTemplate,
-  addCustomCardToSharedDeckTemplate,
-  updateCardAtInSharedDeckTemplate,
-  removeCardAtFromSharedDeckTemplate,
-  exportSharedDeckTemplateJson,
-  importSharedDeckTemplateJson,
-  getSharedRanks,
-  setSharedRanks,
-  resetSharedRanks,
-} from '../game/sharedConfig';
 
 const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
 const NetworkClientV1 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV1 })));
@@ -496,7 +482,7 @@ export const App = () => {
     ADMIN_MATCH_DELETE_API,
   });
 
-  // Deck handlers
+  // Deck handlers (simplified - imports directly from sharedConfig)
   const {
     onShuffleDeck,
     onAddCard,
@@ -512,23 +498,7 @@ export const App = () => {
   } = useDeckHandlers({
     sharedRanks,
     refreshSharedDeckTemplate,
-    exportSharedDeckTemplateJson,
-    importSharedDeckTemplateJson,
-    shuffleSharedDeckTemplate,
-    addCardToSharedDeckTemplate,
-    addCustomCardToSharedDeckTemplate,
-    updateCardAtInSharedDeckTemplate,
-    removeCardAtFromSharedDeckTemplate,
-    resetSharedDeckTemplate,
-    setSharedDeckBackImage,
     setSharedRanksState,
-    exportSharedRanksJson,
-    getSharedRanks,
-    importSharedRanksJson,
-    setSharedRanks,
-    resetSharedRanks,
-    RANKS_API,
-    adminFetch,
   });
 
   const shellUiVariant = isAdminRoute ? adminUiVariant : gameUiVariant;
