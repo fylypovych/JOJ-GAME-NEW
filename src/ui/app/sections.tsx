@@ -58,7 +58,7 @@ const formatMatchOutcomeLabel = (t: T, item: UserMatchHistoryItem) => {
 };
 
 const localizeRankValue = (value: string | null | undefined, lang: Language) => {
-  const safeValue = String(value ?? '').trim();
+  const safeValue = String(value ?? '').trim().toLowerCase();
   if (!safeValue) return '-';
   return rankLabel(safeValue.replace(/\s+/g, '_'), lang);
 };
