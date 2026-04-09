@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
+import { LobbyClient } from 'boardgame.io/client';
 import type { BotDifficulty, BotProfile } from '../../game/types';
 import type { AuthUser } from './useUserAccount';
-import type { Language } from '../i18n';
 import {
   DEFAULT_LOBBY_GAME_UI_CONFIG,
   normalizeLobbyGameUiConfig,
 } from '../../game/lobbyConfig';
 import { useLobbySession } from './useLobbySession';
 import { buildRoomShareLink } from './share';
+import { GAME_NAME, SESSION_STORAGE_KEY } from './model';
 
 export interface UseLobbyDataArgs {
   serverUrl: string;
   playerName: string;
   user: AuthUser | null;
-  lang: Language;
   gameMode: 'standard' | 'standard_plus' | 'simplified';
   roomCapacity: number;
   createWithBots: boolean;
@@ -75,7 +75,6 @@ export const useLobbyData = (args: UseLobbyDataArgs): UseLobbyDataResult => {
     serverUrl,
     playerName,
     user,
-    lang,
     gameMode,
     roomCapacity,
     createWithBots,
@@ -87,6 +86,12 @@ export const useLobbyData = (args: UseLobbyDataArgs): UseLobbyDataResult => {
     t,
     bindMatchSession,
   } = args;
+
+  // Lobby client
+  const lobbyClient = useMemo(() => new LobbyClient({ server: serverUrl }), [serverUrl]);
+
+  // Lobby UI config
+  const [lobbyGameUiConfig, setLobbyGameUiConfig] = useState(DEFAULT_LOBBY_GAME_UI_CONFIG);
 
   // Lobby session hook
   const {
@@ -104,36 +109,38 @@ export const useLobbyData = (args: UseLobbyDataArgs): UseLobbyDataResult => {
     roomPlayerNames,
     canStart,
   } = useLobbySession({
-    serverUrl,
+    lobbyClient,
+    gameName: GAME_NAME,
     playerName,
-    user,
-    gameMode,
+    fallbackPlayerName: user?.displayName?.trim() || user?.username?.trim() || '',
     roomCapacity,
+    allowedRoomCapacities: lobbyGameUiConfig.allowedRoomCapacities,
+    gameMode,
+    selectedOptionalModuleIds,
     createWithBots,
     botCount,
+    allowedBotCounts: lobbyGameUiConfig.allowedBotCounts,
     botDifficulty,
     botProfile,
-    moduleIds: selectedOptionalModuleIds,
-    t: {
-      serverUnavailable: t.serverUnavailable,
-      enterName: t.enterName,
-      roomFull: t.roomFull,
-      createFailed: t.createFailed,
-      joinFailed: t.joinFailed,
-    },
-    onSessionEstablished: (nextSession) => {
+    sessionStorageKey: SESSION_STORAGE_KEY,
+    initialSession: null,
+    serverUnavailableText: t.serverUnavailable,
+    enterNameText: t.enterName,
+    roomFullText: t.roomFull,
+    createFailedText: t.createFailed,
+    joinFailedText: t.joinFailed,
+    onSessionEstablished: (nextSession, nextPlayerName) => {
       if (!nextSession.playerID || !nextSession.credentials) return;
       void bindMatchSession({
         matchID: nextSession.matchID,
         playerID: nextSession.playerID,
         credentials: nextSession.credentials,
+        playerName: nextPlayerName || playerName,
       });
     },
   });
 
-  // Lobby UI config
-  const [lobbyGameUiConfig, setLobbyGameUiConfig] = useState(DEFAULT_LOBBY_GAME_UI_CONFIG);
-
+  // Load lobby UI config from server
   useEffect(() => {
     let cancelled = false;
     (async () => {

@@ -1,4 +1,5 @@
-import { Suspense, lazy, useEffect, useMemo } from 'react';
+import { Suspense, lazy } from 'react';
+import { useEffect, useState } from 'react';
 import { text } from './i18n';
 import {
   clampBotCountToAllowed,
@@ -38,6 +39,9 @@ import { useGameSessionHandlers } from './app/useGameSessionHandlers';
 import { useAdminMatchControls } from './app/useAdminMatchControls';
 import { useDeckHandlers } from './app/useDeckHandlers';
 import { runGameSimulations } from '../game/jojGame';
+import { LobbyProvider } from './providers/LobbyContext';
+import { DeckProvider } from './providers/DeckContext';
+import { GalleryProvider } from './providers/GalleryContext';
 
 const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
 const NetworkClientV1 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV1 })));
@@ -191,7 +195,11 @@ export const App = () => {
     setSharedRanksState,
     sharedConfigLoaded,
     refreshSharedDeckTemplate,
+    syncRanksToServer,
     sharedDeckStats,
+    rollbackTemplate,
+    applyTemplateChange,
+    rollbackRanks,
     matches,
     session,
     setSession,
@@ -218,7 +226,6 @@ export const App = () => {
     serverUrl: SERVER_URL,
     playerName,
     user,
-    lang,
     gameMode,
     roomCapacity,
     createWithBots,
@@ -467,8 +474,54 @@ export const App = () => {
 
   const shellUiVariant = isAdminRoute ? adminUiVariant : gameUiVariant;
 
+  // Prepare context values
+  const lobbyContextValue = {
+    matches,
+    session,
+    setSession,
+    loading,
+    error,
+    setError,
+    refreshMatches,
+    createRoom,
+    joinRoom,
+    spectateRoom,
+    leaveRoom,
+    roomPlayerNames,
+    canStart,
+    lobbyGameUiConfig,
+    adminMatchID,
+    activeSessionMatch,
+    activeSessionShareLink,
+    activeSessionGameModeLabel,
+    activeSessionInviteText,
+  };
+
+  const deckContextValue = {
+    sharedDeckTemplate,
+    cardCatalog,
+    sharedRanks,
+    setSharedRanksState,
+    sharedConfigLoaded,
+    refreshSharedDeckTemplate,
+    syncRanksToServer,
+    sharedDeckStats,
+    rollbackTemplate,
+    applyTemplateChange,
+    rollbackRanks,
+  };
+
+  const galleryContextValue = {
+    optionalLobbyModules,
+    galleryCards,
+    cardImageById,
+  };
+
   return (
-    <main className={`app app-${shellUiVariant}${shellUiVariant === 'v1' ? ' app-v1' : ' app-v2'}`} data-bug-report-capture-root="true">
+    <LobbyProvider value={lobbyContextValue}>
+      <DeckProvider value={deckContextValue}>
+        <GalleryProvider value={galleryContextValue}>
+          <main className={`app app-${shellUiVariant}${shellUiVariant === 'v1' ? ' app-v1' : ' app-v2'}`} data-bug-report-capture-root="true">
       <AppHeader
         isAdminRoute={isAdminRoute}
         lang={lang}
@@ -778,6 +831,9 @@ export const App = () => {
         />
       ) : null}
       <AppFooter buildLabel={buildLabel} />
-    </main>
+          </main>
+        </GalleryProvider>
+      </DeckProvider>
+    </LobbyProvider>
   );
 };

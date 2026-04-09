@@ -1,37 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
-import { LobbyClient } from 'boardgame.io/client';
 import type { BotDifficulty, BotProfile, CardDefinition, RankDefinition } from '../../game/types';
 import type { AuthUser } from './useUserAccount';
-import {
-  exportSharedDeckTemplateJson,
-  exportSharedRanksJson,
-  getCardCatalog,
-  getSharedRanks,
-  getSharedDeckTemplate,
-  getSharedDeckTemplateStats,
-  importSharedRanksJson,
-  importSharedDeckTemplateJson,
-  setSharedRanks,
-} from '../../game/jojGame';
-import { formatModuleDisplayName } from '../moduleDisplay';
-import {
-  DEFAULT_LOBBY_GAME_UI_CONFIG,
-  normalizeLobbyGameUiConfig,
-} from '../../game/lobbyConfig';
-import { GAME_NAME, RANKS_STORAGE_KEY, SESSION_STORAGE_KEY, SHARED_TEMPLATE_STORAGE_KEY } from './model';
-import { useLobbySession } from './useLobbySession';
-import { useSharedConfigSync } from './useSharedConfigSync';
-import { buildRoomShareLink } from './share';
-import type { Language } from '../i18n';
-
-const TEMPLATE_API = (serverUrl: string) => `${serverUrl}/api/shared-deck-template`;
-const RANKS_API = (serverUrl: string) => `${serverUrl}/api/shared-ranks`;
+import { getSharedDeckTemplateStats } from '../../game/jojGame';
+import { DEFAULT_LOBBY_GAME_UI_CONFIG } from '../../game/lobbyConfig';
+import { useLobbyData } from './useLobbyData';
+import { useDeckData } from './useDeckData';
+import { useGalleryData } from './useGalleryData';
+import { RANKS_STORAGE_KEY, SHARED_TEMPLATE_STORAGE_KEY } from './model';
 
 export interface UseAppGameStateArgs {
   serverUrl: string;
   playerName: string;
   user: AuthUser | null;
-  lang: Language;
   gameMode: 'standard' | 'standard_plus' | 'simplified';
   roomCapacity: number;
   createWithBots: boolean;
@@ -63,29 +42,29 @@ export interface UseAppGameStateArgs {
 
 export interface UseAppGameStateResult {
   // Lobby
-  matches: ReturnType<typeof useLobbySession>['matches'];
-  session: ReturnType<typeof useLobbySession>['session'];
-  setSession: ReturnType<typeof useLobbySession>['setSession'];
-  loading: ReturnType<typeof useLobbySession>['loading'];
-  error: ReturnType<typeof useLobbySession>['error'];
-  setError: ReturnType<typeof useLobbySession>['setError'];
-  refreshMatches: ReturnType<typeof useLobbySession>['refreshMatches'];
-  createRoom: ReturnType<typeof useLobbySession>['createRoom'];
-  joinRoom: ReturnType<typeof useLobbySession>['joinRoom'];
-  spectateRoom: ReturnType<typeof useLobbySession>['spectateRoom'];
-  leaveRoom: ReturnType<typeof useLobbySession>['leaveRoom'];
-  roomPlayerNames: ReturnType<typeof useLobbySession>['roomPlayerNames'];
-  canStart: ReturnType<typeof useLobbySession>['canStart'];
+  matches: ReturnType<typeof import('./useLobbyData')['useLobbyData']>['matches'];
+  session: ReturnType<typeof import('./useLobbyData')['useLobbyData']>['session'];
+  setSession: ReturnType<typeof import('./useLobbyData')['useLobbyData']>['setSession'];
+  loading: ReturnType<typeof import('./useLobbyData')['useLobbyData']>['loading'];
+  error: ReturnType<typeof import('./useLobbyData')['useLobbyData']>['error'];
+  setError: ReturnType<typeof import('./useLobbyData')['useLobbyData']>['setError'];
+  refreshMatches: ReturnType<typeof import('./useLobbyData')['useLobbyData']>['refreshMatches'];
+  createRoom: ReturnType<typeof import('./useLobbyData')['useLobbyData']>['createRoom'];
+  joinRoom: ReturnType<typeof import('./useLobbyData')['useLobbyData']>['joinRoom'];
+  spectateRoom: ReturnType<typeof import('./useLobbyData')['useLobbyData']>['spectateRoom'];
+  leaveRoom: ReturnType<typeof import('./useLobbyData')['useLobbyData']>['leaveRoom'];
+  roomPlayerNames: ReturnType<typeof import('./useLobbyData')['useLobbyData']>['roomPlayerNames'];
+  canStart: ReturnType<typeof import('./useLobbyData')['useLobbyData']>['canStart'];
   lobbyGameUiConfig: typeof DEFAULT_LOBBY_GAME_UI_CONFIG;
   
   // Shared Config
-  sharedDeckTemplate: ReturnType<typeof useSharedConfigSync>['sharedDeckTemplate'];
-  cardCatalog: ReturnType<typeof useSharedConfigSync>['cardCatalog'];
-  sharedRanks: ReturnType<typeof useSharedConfigSync>['sharedRanks'];
-  setSharedRanksState: ReturnType<typeof useSharedConfigSync>['setSharedRanksState'];
-  sharedConfigLoaded: ReturnType<typeof useSharedConfigSync>['sharedConfigLoaded'];
-  refreshSharedDeckTemplate: ReturnType<typeof useSharedConfigSync>['refreshSharedDeckTemplate'];
-  syncRanksToServer: ReturnType<typeof useSharedConfigSync>['syncRanksToServer'];
+  sharedDeckTemplate: ReturnType<typeof import('./useDeckData')['useDeckData']>['sharedDeckTemplate'];
+  cardCatalog: ReturnType<typeof import('./useDeckData')['useDeckData']>['cardCatalog'];
+  sharedRanks: ReturnType<typeof import('./useDeckData')['useDeckData']>['sharedRanks'];
+  setSharedRanksState: ReturnType<typeof import('./useDeckData')['useDeckData']>['setSharedRanksState'];
+  sharedConfigLoaded: ReturnType<typeof import('./useDeckData')['useDeckData']>['sharedConfigLoaded'];
+  refreshSharedDeckTemplate: ReturnType<typeof import('./useDeckData')['useDeckData']>['refreshSharedDeckTemplate'];
+  syncRanksToServer: ReturnType<typeof import('./useDeckData')['useDeckData']>['syncRanksToServer'];
   
   // Derived
   sharedDeckStats: ReturnType<typeof getSharedDeckTemplateStats>;
@@ -97,7 +76,7 @@ export interface UseAppGameStateResult {
   adminMatchID: string;
   
   // Session-related
-  activeSessionMatch: ReturnType<typeof useLobbySession>['matches'][number] | null;
+  activeSessionMatch: ReturnType<typeof import('./useLobbyData')['useLobbyData']>['activeSessionMatch'];
   activeSessionShareLink: string;
   activeSessionGameModeLabel: string;
   activeSessionInviteText: string;
@@ -125,214 +104,75 @@ export const useAppGameState = (args: UseAppGameStateArgs): UseAppGameStateResul
     bindMatchSession,
   } = args;
 
-  const lobbyClient = useMemo(() => new LobbyClient({ server: serverUrl }), [serverUrl]);
-  const [lobbyGameUiConfig, setLobbyGameUiConfig] = useState(DEFAULT_LOBBY_GAME_UI_CONFIG);
-
-  const {
-    matches,
-    session,
-    setSession,
-    loading,
-    error,
-    setError,
-    refreshMatches,
-    createRoom,
-    joinRoom,
-    spectateRoom,
-    leaveRoom,
-    roomPlayerNames,
-    canStart,
-  } = useLobbySession({
-    lobbyClient,
-    gameName: GAME_NAME,
+  // Use the smaller hooks
+  const lobbyData = useLobbyData({
+    serverUrl,
     playerName,
-    fallbackPlayerName: user?.displayName?.trim() || user?.username?.trim() || '',
-    roomCapacity,
-    allowedRoomCapacities: lobbyGameUiConfig.allowedRoomCapacities,
+    user,
     gameMode,
-    selectedOptionalModuleIds,
+    roomCapacity,
     createWithBots,
     botCount,
-    allowedBotCounts: lobbyGameUiConfig.allowedBotCounts,
     botDifficulty,
     botProfile,
-    sessionStorageKey: SESSION_STORAGE_KEY,
-    initialSession: null, // Will be loaded by useLobbySession
-    serverUnavailableText: t.serverUnavailable,
-    enterNameText: t.enterName,
-    roomFullText: t.roomFull,
-    createFailedText: t.createFailed,
-    joinFailedText: t.joinFailed,
-    onSessionEstablished: (nextSession, nextPlayerName) => {
-      if (!nextSession.playerID || !nextSession.credentials) return;
-      void bindMatchSession({
-        matchID: nextSession.matchID,
-        playerID: nextSession.playerID,
-        credentials: nextSession.credentials,
-        playerName: nextPlayerName,
-      });
-    },
+    selectedOptionalModuleIds,
+    adminSelectedMatchID,
+    t,
+    bindMatchSession,
   });
 
-  // Admin fetch placeholder - will be replaced during migration
-  const adminFetch = useMemo(() => {
-    return async (input: string | URL | Request, init?: RequestInit) => {
-      return fetch(input, init);
-    };
-  }, []);
-
-  const {
-    sharedDeckTemplate,
-    cardCatalog,
-    sharedRanks,
-    setSharedRanksState,
-    sharedConfigLoaded,
-    refreshSharedDeckTemplate,
-    syncRanksToServer,
-  } = useSharedConfigSync({
-    adminFetch,
-    templateApi: TEMPLATE_API(serverUrl),
-    ranksApi: RANKS_API(serverUrl),
+  const deckData = useDeckData({
+    serverUrl,
     sharedTemplateStorageKey: SHARED_TEMPLATE_STORAGE_KEY,
     ranksStorageKey: RANKS_STORAGE_KEY,
-    getSharedDeckTemplate,
-    getCardCatalog,
-    getSharedRanks,
-    exportSharedDeckTemplateJson,
-    exportSharedRanksJson,
-    importSharedDeckTemplateJson,
-    importSharedRanksJson,
-    setSharedRanks,
   });
 
-  // Load lobby config from server
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const response = await fetch(`${serverUrl}/api/game/ui-config`, { credentials: 'include' });
-        const payload = await response.json() as { ok?: boolean };
-        if (!response.ok || payload.ok !== true) return;
-        if (!cancelled) {
-          const normalizedConfig = normalizeLobbyGameUiConfig(payload);
-          setLobbyGameUiConfig(normalizedConfig);
-        }
-      } catch {
-        // keep defaults
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [serverUrl]);
+  const galleryData = useGalleryData({
+    cardCatalog: deckData.cardCatalog,
+    sharedDeckTemplate: deckData.sharedDeckTemplate,
+  });
 
-  const sharedDeckStats = useMemo(() => getSharedDeckTemplateStats(), []);
-
-  const rollbackTemplate = (json: string) => {
-    const result = importSharedDeckTemplateJson(json);
-    if (result.ok) void refreshSharedDeckTemplate(false);
-  };
-
-  const applyTemplateChange = async (mutate: () => void, previousJson = exportSharedDeckTemplateJson()) => {
-    mutate();
-    const ok = await refreshSharedDeckTemplate();
-    if (!ok) rollbackTemplate(previousJson);
-    return ok;
-  };
-
-  const rollbackRanks = (previousRanks: RankDefinition[]) => {
-    if (!setSharedRanks(previousRanks)) return;
-    setSharedRanksState(getSharedRanks());
-    window.localStorage.setItem(RANKS_STORAGE_KEY, exportSharedRanksJson());
-  };
-
-  const optionalLobbyModules = useMemo(
-    () => (sharedDeckTemplate.modules ?? [])
-      .filter((module) => module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
-      .map((module) => ({
-        id: module.id,
-        name: formatModuleDisplayName(module.name, module.id),
-        alwaysOn: module.category === 'VVNZ',
-      })),
-    [sharedDeckTemplate.modules],
-  );
-
-  const galleryCards = useMemo(() => {
-    const rankTrackIds = new Set(sharedDeckTemplate.rankTrack.map((card) => card.id));
-    return [...cardCatalog]
-      .filter((card) => !rankTrackIds.has(card.id))
-      .sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
-  }, [cardCatalog, sharedDeckTemplate.rankTrack]);
-
-  const cardImageById = useMemo<Record<string, string>>(
-    () =>
-      cardCatalog.reduce<Record<string, string>>((acc, card) => {
-        if (typeof card.image === 'string' && card.image.trim()) acc[card.id] = card.image;
-        return acc;
-      }, {}),
-    [cardCatalog],
-  );
-
-  const adminMatchID = useMemo(() => {
-    if (session?.matchID) return session.matchID;
-    if (adminSelectedMatchID && matches.some((m) => m.matchID === adminSelectedMatchID)) return adminSelectedMatchID;
-    return matches[0]?.matchID ?? '';
-  }, [adminSelectedMatchID, matches, session?.matchID]);
-
-  // Session-related computed values
-  const activeSessionMatch = useMemo(() =>
-    session ? matches.find((match) => match.matchID === session.matchID) ?? null : null,
-  [session, matches]);
-
-  const activeSessionShareLink = useMemo(() =>
-    session ? buildRoomShareLink(session.matchID) : '',
-  [session]);
-
-  const activeSessionGameModeLabel = useMemo(() => {
-    if (activeSessionMatch?.setupData?.gameMode === 'standard_plus') return t.gameModeStandardPlus;
-    if (activeSessionMatch?.setupData?.gameMode === 'simplified') return t.gameModeSimplified;
-    return t.gameModeStandard;
-  }, [activeSessionMatch, t.gameModeStandardPlus, t.gameModeSimplified, t.gameModeStandard]);
-
-  const activeSessionInviteText = useMemo(() => {
-    if (!session) return '';
-    const playerCount = activeSessionMatch
-      ? `${activeSessionMatch.players.filter((p) => Boolean(p.name?.trim())).length}/${activeSessionMatch.players.length}`
-      : '-';
-    return `${t.activeRoom}: ${session.matchID}\n${t.gameModeLabel}: ${activeSessionGameModeLabel}\n${t.roomSummaryPlayers}: ${playerCount}\n${activeSessionShareLink}`;
-  }, [session, activeSessionMatch, activeSessionGameModeLabel, activeSessionShareLink, t]);
+  // Combine sharedDeckStats from separate calculation
+  const sharedDeckStats = getSharedDeckTemplateStats();
 
   return {
-    matches,
-    session,
-    setSession,
-    loading,
-    error,
-    setError,
-    refreshMatches,
-    createRoom,
-    joinRoom,
-    spectateRoom,
-    leaveRoom,
-    roomPlayerNames,
-    canStart,
-    lobbyGameUiConfig,
-    sharedDeckTemplate,
-    cardCatalog,
-    sharedRanks,
-    setSharedRanksState,
-    sharedConfigLoaded,
-    refreshSharedDeckTemplate,
-    syncRanksToServer,
+    // Lobby data
+    matches: lobbyData.matches,
+    session: lobbyData.session,
+    setSession: lobbyData.setSession,
+    loading: lobbyData.loading,
+    error: lobbyData.error,
+    setError: lobbyData.setError,
+    refreshMatches: lobbyData.refreshMatches,
+    createRoom: lobbyData.createRoom,
+    joinRoom: lobbyData.joinRoom,
+    spectateRoom: lobbyData.spectateRoom,
+    leaveRoom: lobbyData.leaveRoom,
+    roomPlayerNames: lobbyData.roomPlayerNames,
+    canStart: lobbyData.canStart,
+    lobbyGameUiConfig: lobbyData.lobbyGameUiConfig,
+    adminMatchID: lobbyData.adminMatchID,
+    activeSessionMatch: lobbyData.activeSessionMatch,
+    activeSessionShareLink: lobbyData.activeSessionShareLink,
+    activeSessionGameModeLabel: lobbyData.activeSessionGameModeLabel,
+    activeSessionInviteText: lobbyData.activeSessionInviteText,
+    
+    // Deck data
+    sharedDeckTemplate: deckData.sharedDeckTemplate,
+    cardCatalog: deckData.cardCatalog,
+    sharedRanks: deckData.sharedRanks,
+    setSharedRanksState: deckData.setSharedRanksState,
+    sharedConfigLoaded: deckData.sharedConfigLoaded,
+    refreshSharedDeckTemplate: deckData.refreshSharedDeckTemplate,
+    syncRanksToServer: deckData.syncRanksToServer,
     sharedDeckStats,
-    optionalLobbyModules,
-    galleryCards,
-    cardImageById,
-    adminMatchID,
-    activeSessionMatch,
-    activeSessionShareLink,
-    activeSessionGameModeLabel,
-    activeSessionInviteText,
-    rollbackTemplate,
-    applyTemplateChange,
-    rollbackRanks,
+    rollbackTemplate: deckData.rollbackTemplate,
+    applyTemplateChange: deckData.applyTemplateChange,
+    rollbackRanks: deckData.rollbackRanks,
+    
+    // Gallery data
+    optionalLobbyModules: galleryData.optionalLobbyModules,
+    galleryCards: galleryData.galleryCards,
+    cardImageById: galleryData.cardImageById,
   };
 };

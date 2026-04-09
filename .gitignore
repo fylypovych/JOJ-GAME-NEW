@@ -14,3 +14,4 @@ pnpm-debug.log*
 /database/bug-report-images/
 .env.save
 /database/admin-db-ui-config.json
+/.continue
