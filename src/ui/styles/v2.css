@@ -59,6 +59,11 @@
   padding: 14px;
 }
 
+.game-ui-v1-shell .game-ui-v1-events,
+.game-ui-v1-shell .board-chat {
+  background: linear-gradient(180deg, rgba(30, 34, 36, 0.98), rgba(18, 21, 23, 0.98));
+}
+
 .game-ui-v1-shell.is-spectator .game-ui-v1-battlefield,
 .game-ui-v1-shell.is-spectator .game-ui-v2-events,
 .game-ui-v1-shell.is-spectator .game-ui-v1-events,
@@ -3674,7 +3679,7 @@
   overflow: hidden;
   border-color: rgba(144, 104, 206, 0.34);
   background:
-    linear-gradient(180deg, rgba(253, 249, 255, 0.98), rgba(242, 238, 250, 0.98)),
+    linear-gradient(180deg, rgba(45, 49, 62, 0.98), rgba(27, 30, 42, 0.98)),
     radial-gradient(320px 140px at 100% 0%, rgba(149, 103, 214, 0.14), transparent 58%);
 }
 
@@ -4646,6 +4651,10 @@
   padding: 6px 10px;
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(24, 42, 74, 0.05);
+}
+
+.game-ui-v1-shell .hand {
+  background: linear-gradient(180deg, rgba(30, 34, 36, 0.98), rgba(18, 21, 23, 0.98));
 }
 
 .game-ui-v2-shell .hand {

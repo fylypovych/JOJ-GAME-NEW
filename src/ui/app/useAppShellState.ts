@@ -42,7 +42,13 @@ export const useAppShellState = (serverUrl: string) => {
     if (raw === 'v1' || raw === 'v5') return 'v1';
     return 'v2';
   });
-  const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>('ALL');
+  const GALLERY_CATEGORY_FILTER_STORAGE_KEY = 'joj-gallery-category-filter';
+  const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>(() => (
+    (window.localStorage.getItem(GALLERY_CATEGORY_FILTER_STORAGE_KEY) as GalleryCategoryFilter | null) ?? 'ALL'
+  ));
+  useEffect(() => {
+    window.localStorage.setItem(GALLERY_CATEGORY_FILTER_STORAGE_KEY, galleryCategoryFilter);
+  }, [galleryCategoryFilter]);
   const [deletingAdminMatch, setDeletingAdminMatch] = useState(false);
   const [loginDraft, setLoginDraft] = useState({ login: '', password: '' });
   const [registerDraft, setRegisterDraft] = useState({ username: '', email: '', password: '', displayName: '' });
