@@ -44,7 +44,6 @@ import { runGameSimulations } from '../game/jojGame';
 const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
 const NetworkClientV1 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV1 })));
 const NetworkClientV2 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV2 })));
-const RANKS_API = `${SERVER_URL}/api/shared-ranks`;
 const ADMIN_RESTART_API = `${SERVER_URL}/api/admin/restart`;
 const ADMIN_MATCH_STATE_API = `${SERVER_URL}/api/admin/match-state`;
 const ADMIN_MATCH_STOP_API = `${SERVER_URL}/api/admin/match-stop`;
@@ -84,7 +83,6 @@ export const App = () => {
     gameUiVariant,
     setGameUiVariant,
     adminUiVariant,
-    setAdminUiVariant,
     galleryCategoryFilter,
     setGalleryCategoryFilter,
     deletingAdminMatch,

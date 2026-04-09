@@ -45,27 +45,27 @@ export const AppHeader = (props: AppHeaderProps) => {
             </div>
           </div>
           <div className="app-toolbar-group">
-            <span className="app-toolbar-label">Тема:</span>
-            <div className="app-toolbar-button-row">
+            <span className="app-toolbar-label">{t.gameUiLabel}:</span>
+            <div className="app-toolbar-button-row app-toolbar-theme-switch">
               <button
                 type="button"
                 onClick={() => setGameUiVariant('v1')}
                 disabled={gameUiVariant === 'v1'}
               >
-                Світла
+                {t.gameUiV1}
               </button>
               <button
                 type="button"
                 onClick={() => setGameUiVariant('v2')}
                 disabled={gameUiVariant === 'v2'}
               >
-                Темна
+                {t.gameUiV2}
               </button>
             </div>
           </div>
           <div className="app-toolbar-group">
-            <a href="/admin" className="app-toolbar-button">
-              Адмін-панель
+            <a href="/admin" className="app-toolbar-link-button">
+              {t.openAdmin}
             </a>
           </div>
         </div>
