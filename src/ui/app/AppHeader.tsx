@@ -12,13 +12,11 @@ interface AppHeaderProps {
   setActiveUserTab: (tab: UserTab) => void;
   gameUiVariant: 'v1' | 'v2';
   setGameUiVariant: (variant: 'v1' | 'v2') => void;
-  adminUiVariant?: 'v1' | 'v2';
-  setAdminUiVariant?: (variant: 'v1' | 'v2') => void;
   t: T;
 }
 
 export const AppHeader = (props: AppHeaderProps) => {
-  const { isAdminRoute, lang, setLang, activeUserTab, setActiveUserTab, gameUiVariant, setGameUiVariant, adminUiVariant, setAdminUiVariant, t } = props;
+  const { isAdminRoute, lang, setLang, activeUserTab, setActiveUserTab, gameUiVariant, setGameUiVariant, t } = props;
 
   if (isAdminRoute) {
     return (

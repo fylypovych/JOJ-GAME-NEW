@@ -39,6 +39,21 @@ import { useAuthHandlers } from './app/useAuthHandlers';
 import { useGameSessionHandlers } from './app/useGameSessionHandlers';
 import { useAdminMatchControls } from './app/useAdminMatchControls';
 import { useDeckHandlers } from './app/useDeckHandlers';
+import { runGameSimulations } from '../game/jojGame';
+import {
+  resetSharedDeckTemplate,
+  setSharedDeckBackImage,
+  shuffleSharedDeckTemplate,
+  addCardToSharedDeckTemplate,
+  addCustomCardToSharedDeckTemplate,
+  updateCardAtInSharedDeckTemplate,
+  removeCardAtFromSharedDeckTemplate,
+  exportSharedDeckTemplateJson,
+  importSharedDeckTemplateJson,
+  getSharedRanks,
+  setSharedRanks,
+  resetSharedRanks,
+} from '../game/sharedConfig';
 
 const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
 const NetworkClientV1 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV1 })));
@@ -81,9 +96,9 @@ export const App = () => {
     authErrorModal,
     setAuthErrorModal,
     gameUiVariant,
-    // setGameUiVariant, // moved to AppHeader
+    setGameUiVariant,
     adminUiVariant,
-    // setAdminUiVariant, // moved to AppHeader
+    setAdminUiVariant,
     galleryCategoryFilter,
     setGalleryCategoryFilter,
     deletingAdminMatch,
@@ -194,6 +209,7 @@ export const App = () => {
     setSharedRanksState,
     sharedConfigLoaded,
     refreshSharedDeckTemplate,
+    sharedDeckStats,
     matches,
     session,
     setSession,
@@ -230,7 +246,6 @@ export const App = () => {
     bindMatchSession,
   });
 
-  const sharedDeckStats = getSharedDeckTemplateStats();
   const optionalLobbyModules = useMemo(
     () => (sharedDeckTemplate.modules ?? [])
       .filter((module) => module.enabled && module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
@@ -528,8 +543,6 @@ export const App = () => {
         setActiveUserTab={setActiveUserTab}
         gameUiVariant={gameUiVariant}
         setGameUiVariant={setGameUiVariant}
-        adminUiVariant={adminUiVariant}
-        setAdminUiVariant={setAdminUiVariant}
         t={t}
       />
       <p className="app-link-row">
