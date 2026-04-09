@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { text } from './i18n';
 import {
   clampBotCountToAllowed,
