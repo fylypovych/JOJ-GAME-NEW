@@ -72,11 +72,17 @@ set FRONTEND_ORIGIN=http://192.168.0.25:5173 && npm run dev:server
 npm run dev:full
 npm run dev:web
 npm run dev:server
+npm run lint
+npm run format:check
 npm run typecheck
 npm test
 npm run test:invariants
 npm run test:config
 npm run test:simulation
+npm run coverage
+npm run check:shared-config
+npm run check:assets
+npm run check:runtime-data
 npm run build
 npm run preview
 ```
@@ -122,8 +128,10 @@ ADMIN_TOKEN=change-me-strong-token
 
 - shared deck template: `database/shared-deck-template.json`
 - shared ranks: `database/shared-ranks.json`
-- bug reports: `database/bug-reports.json`
-- bug report images: `database/bug-report-images/`
+- simulation baselines: `database/simulation-baselines.json`
+- game UI config: `database/game-ui-config.json`
+- bug report UI config: `database/bug-report-ui-config.json`
+- admin DB UI config: `database/admin-db-ui-config.json`
 - boardgame.io match data: `database/matches/`
 - server logs: `logs/server.log`
 
@@ -146,6 +154,8 @@ ADMIN_TOKEN=change-me-strong-token
 - проганяє SQL migrations
 - за потреби мігрує FlatFile match storage в PostgreSQL backend
 - залишає file mirrors для shared config сумісності / backup-сценаріїв
+
+Політика runtime data і file mirrors: [docs/ops/runtime-data-policy.md](docs/ops/runtime-data-policy.md)
 
 ## PostgreSQL setup
 
@@ -202,6 +212,7 @@ Admin UI доступний за адресою `/admin`.
 - `ADMIN_TOKEN` повинен бути заданий у production
 
 Детальніше: [docs/ops/runtime-config-policy.md](docs/ops/runtime-config-policy.md)
+Архітектурний зріз: [docs/dev/architecture.md](docs/dev/architecture.md)
 
 ## Bug reports
 

@@ -6,6 +6,13 @@ import { loadEnvFile } from './env';
 
 const serverDir = path.dirname(fileURLToPath(import.meta.url));
 export const appRootDir = path.resolve(serverDir, '..');
+const parseCsvEnv = (value: string | undefined, fallback: string[]) => {
+  const items = (value ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  return Array.from(new Set(items.length > 0 ? items : fallback));
+};
 
 export const logsPath = path.resolve(appRootDir, 'logs', 'server.log');
 export const matchesDbDir = path.resolve(appRootDir, 'database', 'matches');
@@ -31,18 +38,43 @@ export const IMAGE_UPLOAD_BODY_LIMIT = 16 * 1024 * 1024;
 loadEnvFile(envPath);
 
 export const isAdminAuthEnabled = true;
-export const requestedSharedConfigStorageMode = 'postgres';
+export const sharedConfigPrimarySource = 'postgres' as const;
+export const requestedSharedConfigStorageMode = sharedConfigPrimarySource;
 export const databaseUrl = (process.env.DATABASE_URL ?? '').trim();
 export const nodeEnv = (process.env.NODE_ENV ?? '').trim().toLowerCase();
 export const allowInMemoryUserStore = /^(1|true|yes)$/i.test((process.env.ALLOW_IN_MEMORY_USER_STORE ?? '').trim());
+export const matchDbCutoverMode = ((): 'auto' | 'skip' => {
+  const raw = (process.env.MATCH_DB_CUTOVER_MODE ?? '').trim().toLowerCase();
+  return raw === 'skip' ? 'skip' : 'auto';
+})();
 export const port = Number(process.env.PORT ?? 8000);
 
-export const allowedFrontendOrigins = Array.from(new Set([
+export const allowedFrontendOrigins = parseCsvEnv(process.env.FRONTEND_ORIGIN, [
   process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:4173',
   'http://127.0.0.1:4173',
-]));
+]);
+export const corsAllowedMethods = parseCsvEnv(process.env.CORS_ALLOWED_METHODS, [
+  'GET',
+  'HEAD',
+  'PUT',
+  'POST',
+  'DELETE',
+  'PATCH',
+  'OPTIONS',
+]);
+export const corsAllowedHeaders = parseCsvEnv(process.env.CORS_ALLOWED_HEADERS, [
+  'content-type',
+  'x-csrf-token',
+  'x-admin-token',
+  'authorization',
+]);
+export const cspConnectSrcExtras = parseCsvEnv(process.env.CSP_CONNECT_SRC_EXTRA, []);
+export const cspScriptSrc = parseCsvEnv(process.env.CSP_SCRIPT_SRC, ["'self'", "'unsafe-inline'"]);
+export const cspStyleSrc = parseCsvEnv(process.env.CSP_STYLE_SRC, ["'self'", "'unsafe-inline'"]);
+export const cspImgSrc = parseCsvEnv(process.env.CSP_IMG_SRC, ["'self'", 'data:', 'blob:']);
+export const cspFontSrc = parseCsvEnv(process.env.CSP_FONT_SRC, ["'self'"]);
 
 export const hasPsqlCli = () => {
   const probe = spawnSync('psql', ['--version'], { stdio: 'ignore', windowsHide: true });

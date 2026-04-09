@@ -1,7 +1,4 @@
 import { execFile, spawn } from 'node:child_process';
-import { chmod, readFile, writeFile } from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
 import type { LogLine } from './file-logger';
 
 type CmdResult = { ok: true; stdout: string; stderr: string } | { ok: false; error: string };
@@ -102,18 +99,6 @@ export const getGitUpdateStatus = async (runGit: (args: string[]) => Promise<Cmd
   return { ok: true as const, branch, remote, upstream, ahead: Number.isFinite(ahead) ? ahead : 0, behind: Number.isFinite(behind) ? behind : 0, dirty, dirtyFiles: meaningfulDirtyEntries.map((r) => r.path), ignoredRuntimeDirtyFiles: runtimeOnlyDirtyEntries.map((r) => r.path), canUpdate: !dirty && (Number.isFinite(behind) ? behind : 0) > 0, head, note: dirty ? 'Working tree has local changes' : undefined };
 };
 
-const getCredentialsPath = () => path.join(os.homedir(), '.git-credentials');
-
-const parseGithubCredentialEntry = (line: string): { username: string } | null => {
-  try {
-    const parsed = new URL(line.trim());
-    if (parsed.protocol !== 'https:' || parsed.hostname !== 'github.com') return null;
-    return { username: decodeURIComponent(parsed.username || '') };
-  } catch {
-    return null;
-  }
-};
-
 const detectRemoteAuthMode = (remote: string): GitAuthStatus['remoteAuthMode'] => {
   if (/^https:\/\//i.test(remote)) return 'https';
   if (/^(ssh:\/\/|git@)/i.test(remote)) return 'ssh';
@@ -123,74 +108,17 @@ const detectRemoteAuthMode = (remote: string): GitAuthStatus['remoteAuthMode'] =
 export const getGitAuthStatus = async (runGit: (args: string[]) => Promise<CmdResult>): Promise<GitAuthStatus> => {
   const helperRes = await runGit(['config', '--global', '--get', 'credential.helper']);
   const remoteRes = await runGit(['remote', 'get-url', 'origin']);
-  const credentialsPath = getCredentialsPath();
-  let fileContents = '';
-  try {
-    fileContents = await readFile(credentialsPath, 'utf8');
-  } catch {
-    fileContents = '';
-  }
-  const githubEntry = fileContents
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map(parseGithubCredentialEntry)
-    .find(Boolean) ?? null;
   const helper = helperRes.ok ? helperRes.stdout.trim() : '';
+  const remoteAuthMode = detectRemoteAuthMode(remoteRes.ok ? remoteRes.stdout.trim() : '');
+  const envToken = String(process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? '').trim();
+  const envUsername = String(process.env.GITHUB_USER ?? process.env.GH_USER ?? '').trim();
   return {
     helper,
-    helperConfigured: helper === 'store',
-    hasGithubCredentials: Boolean(githubEntry),
-    savedUsername: githubEntry?.username ?? '',
-    credentialsPath,
-    remoteAuthMode: detectRemoteAuthMode(remoteRes.ok ? remoteRes.stdout.trim() : ''),
+    helperConfigured: Boolean(helper) && helper !== 'store',
+    hasGithubCredentials: Boolean(envToken) || remoteAuthMode === 'ssh',
+    savedUsername: envUsername,
+    credentialsPath: '',
+    remoteAuthMode,
   };
-};
-
-export const saveGithubHttpsCredentials = async (args: {
-  runGit: (input: string[]) => Promise<CmdResult>;
-  username: string;
-  token: string;
-}) => {
-  const username = args.username.trim();
-  const token = args.token.trim();
-  if (!username) return { ok: false as const, error: 'Missing GitHub username.' };
-  if (!token) return { ok: false as const, error: 'Missing GitHub token.' };
-  const helperRes = await args.runGit(['config', '--global', 'credential.helper', 'store']);
-  if (!helperRes.ok) return { ok: false as const, error: helperRes.error };
-  const credentialsPath = getCredentialsPath();
-  let existingLines: string[] = [];
-  try {
-    existingLines = (await readFile(credentialsPath, 'utf8')).split(/\r?\n/);
-  } catch {
-    existingLines = [];
-  }
-  const preservedLines = existingLines.filter((line) => !parseGithubCredentialEntry(line));
-  preservedLines.push(`https://${encodeURIComponent(username)}:${encodeURIComponent(token)}@github.com`);
-  await writeFile(credentialsPath, `${preservedLines.filter(Boolean).join('\n')}\n`, 'utf8');
-  try {
-    await chmod(credentialsPath, 0o600);
-  } catch {
-    // Best effort only; some platforms may not support POSIX file modes.
-  }
-  return { ok: true as const };
-};
-
-export const clearGithubHttpsCredentials = async () => {
-  const credentialsPath = getCredentialsPath();
-  let existingLines: string[] = [];
-  try {
-    existingLines = (await readFile(credentialsPath, 'utf8')).split(/\r?\n/);
-  } catch {
-    existingLines = [];
-  }
-  const nextLines = existingLines.filter((line) => !parseGithubCredentialEntry(line)).filter(Boolean);
-  await writeFile(credentialsPath, nextLines.length > 0 ? `${nextLines.join('\n')}\n` : '', 'utf8');
-  try {
-    await chmod(credentialsPath, 0o600);
-  } catch {
-    // Best effort only; some platforms may not support POSIX file modes.
-  }
-  return { ok: true as const };
 };
 

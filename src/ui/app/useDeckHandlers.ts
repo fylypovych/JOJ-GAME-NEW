@@ -18,13 +18,9 @@ import {
   resetSharedRanks,
 } from '../../game/sharedConfig';
 import { SERVER_URL } from './clientConfig';
+import { createBrowserApiClient } from './httpClient';
 
 const RANKS_API = `${SERVER_URL}/api/shared-ranks`;
-
-// Simple admin fetch - can be enhanced later
-const adminFetch = async (input: string | URL | Request, init?: RequestInit) => {
-  return fetch(input, { ...init, credentials: 'include' });
-};
 
 export interface UseDeckHandlersArgs {
   refreshSharedDeckTemplate: (force?: boolean) => Promise<boolean>;
@@ -53,6 +49,7 @@ export interface UseDeckHandlersResult {
 
 export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResult => {
   const { refreshSharedDeckTemplate, setSharedRanksState, sharedRanks } = args;
+  const api = createBrowserApiClient(SERVER_URL);
 
   const rollbackTemplate = useCallback((json: string) => {
     const result = importSharedDeckTemplateJson(json);
@@ -140,46 +137,32 @@ export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResul
     if (!result.ok) return result.error;
     const normalized = getSharedRanks();
     setSharedRanksState(normalized);
-    void adminFetch(`${RANKS_API}/import`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ranks: normalized }),
-    }).then((response) => {
-      if (!response.ok) rollbackRanks(previousRanks);
-    }).catch(() => {
+    void api.postJson(RANKS_API, { ranks: normalized }, { csrf: 'admin' }).catch(() => {
       rollbackRanks(previousRanks);
     });
     return null;
-  }, [sharedRanks, setSharedRanksState, rollbackRanks, RANKS_API]);
+  }, [sharedRanks, setSharedRanksState, rollbackRanks, api]);
 
   const onSetRanks = useCallback((nextRanks: RankDefinition[]): boolean => {
     const previousRanks = (sharedRanks ?? []).map((rank) => ({ ...rank }));
     if (!setSharedRanks(nextRanks)) return false;
     const normalized = getSharedRanks();
     setSharedRanksState(normalized);
-    void adminFetch(`${RANKS_API}/import`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ranks: normalized }),
-    }).then((response) => {
-      if (!response.ok) rollbackRanks(previousRanks);
-    }).catch(() => {
+    void api.postJson(RANKS_API, { ranks: normalized }, { csrf: 'admin' }).catch(() => {
       rollbackRanks(previousRanks);
     });
     return true;
-  }, [sharedRanks, setSharedRanksState, rollbackRanks, RANKS_API]);
+  }, [sharedRanks, setSharedRanksState, rollbackRanks, api]);
 
   const onResetRanks = useCallback(() => {
     const previousRanks = (sharedRanks ?? []).map((rank) => ({ ...rank }));
     resetSharedRanks();
     const normalized = getSharedRanks();
     setSharedRanksState(normalized);
-    void adminFetch(`${RANKS_API}/reset`, { method: 'POST' }).then((response) => {
-      if (!response.ok) rollbackRanks(previousRanks);
-    }).catch(() => {
+    void api.postJson(`${RANKS_API}/reset`, {}, { csrf: 'admin' }).catch(() => {
       rollbackRanks(previousRanks);
     });
-  }, [sharedRanks, setSharedRanksState, rollbackRanks, RANKS_API]);
+  }, [sharedRanks, setSharedRanksState, rollbackRanks, api]);
 
   return {
     rollbackTemplate,

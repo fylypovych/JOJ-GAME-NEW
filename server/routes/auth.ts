@@ -12,6 +12,7 @@ import {
 } from '../services/user-auth';
 import { deliverPasswordReset } from '../services/user-recovery';
 import { markPasswordResetDeliveryDegraded, markPasswordResetDeliveryHealthy } from '../services/password-reset-health';
+import { routeError, routeOk } from './response';
 
 type MatchDbStateLike = {
   G?: {
@@ -46,8 +47,7 @@ const getVerifiedMatchParticipant = async (ctx: RouteCtx, matchId: string, playe
   const dbCandidate = ctx?.db ?? ctx?.app?.context?.db;
   const dbFetch = (dbCandidate as { fetch?: unknown } | undefined)?.fetch;
   if (!dbCandidate || typeof dbFetch !== 'function') {
-    ctx.status = 400;
-    ctx.body = { ok: false, error: 'Match database is unavailable for verification.' };
+    routeError(ctx, 400, 'Match database is unavailable for verification.');
     return null;
   }
   const db = dbCandidate as MatchDbLike;
@@ -57,8 +57,7 @@ const getVerifiedMatchParticipant = async (ctx: RouteCtx, matchId: string, playe
   const knownPlayerName = String(state?.G?.playerNames?.[playerId] ?? metadata?.players?.[playerId]?.name ?? '');
   const playerExists = Boolean(state?.G?.ranks?.[playerId] || metadata?.players?.[playerId]);
   if (!playerExists) {
-    ctx.status = 404;
-    ctx.body = { ok: false, error: 'Player not found in match.' };
+    routeError(ctx, 404, 'Player not found in match.');
     return null;
   }
   return {
@@ -103,8 +102,7 @@ export const registerAuthRoutes = (args: {
 
   const requireUserStore = (ctx: RouteCtx): boolean => {
     if (userStore) return true;
-    ctx.status = 503;
-    ctx.body = { ok: false, error: 'User module is unavailable. Configure DATABASE_URL first.' };
+    routeError(ctx, 503, 'User module is unavailable. Configure DATABASE_URL first.');
     return false;
   };
 
@@ -118,10 +116,10 @@ export const registerAuthRoutes = (args: {
     const store = getStore();
     const user = await getCurrentUserFromRequest(ctx, store);
     if (!user) {
-      ctx.body = { ok: true, user: null, csrfToken: issueUserCsrfToken(ctx) };
+      routeOk(ctx, { user: null, csrfToken: issueUserCsrfToken(ctx) });
       return;
     }
-    ctx.body = { ok: true, user, csrfToken: issueUserCsrfToken(ctx) };
+    routeOk(ctx, { user, csrfToken: issueUserCsrfToken(ctx) });
   });
 
   router.post('/api/auth/register', async (ctx: RouteCtx) => {
@@ -147,10 +145,9 @@ export const registerAuthRoutes = (args: {
         userAgent: typeof ctx?.request?.headers?.['user-agent'] === 'string' ? ctx.request.headers['user-agent'] : undefined,
       });
       setCookieHeader(ctx, USER_SESSION_COOKIE, session.token, { maxAgeSec: 60 * 60 * 24 * 30, httpOnly: true, sameSite: 'Lax' });
-      ctx.body = { ok: true, user, csrfToken: issueUserCsrfToken(ctx) };
+      routeOk(ctx, { user, csrfToken: issueUserCsrfToken(ctx) });
     } catch (error) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: String(error instanceof Error ? error.message : error) };
+      routeError(ctx, 400, String(error instanceof Error ? error.message : error));
     }
   });
 
@@ -164,8 +161,7 @@ export const registerAuthRoutes = (args: {
     if (!body) return;
     const user = await store.authenticateUser(String(body.login ?? ''), String(body.password ?? ''));
     if (!user) {
-      ctx.status = 401;
-      ctx.body = { ok: false, error: 'Invalid credentials.' };
+      routeError(ctx, 401, 'Invalid credentials.');
       return;
     }
     const session = await store.createSession({
@@ -174,7 +170,7 @@ export const registerAuthRoutes = (args: {
       userAgent: typeof ctx?.request?.headers?.['user-agent'] === 'string' ? ctx.request.headers['user-agent'] : undefined,
     });
     setCookieHeader(ctx, USER_SESSION_COOKIE, session.token, { maxAgeSec: 60 * 60 * 24 * 30, httpOnly: true, sameSite: 'Lax' });
-    ctx.body = { ok: true, user, csrfToken: issueUserCsrfToken(ctx) };
+    routeOk(ctx, { user, csrfToken: issueUserCsrfToken(ctx) });
   });
 
   router.post('/api/auth/logout', async (ctx: RouteCtx) => {
@@ -187,7 +183,7 @@ export const registerAuthRoutes = (args: {
     }
     clearUserSessionCookie(ctx);
     clearUserCsrfCookie(ctx);
-    ctx.body = { ok: true };
+    routeOk(ctx);
   });
 
   router.post('/api/auth/change-password', async (ctx: RouteCtx) => {
@@ -212,10 +208,9 @@ export const registerAuthRoutes = (args: {
         userAgent: typeof ctx?.request?.headers?.['user-agent'] === 'string' ? ctx.request.headers['user-agent'] : undefined,
       });
       setCookieHeader(ctx, USER_SESSION_COOKIE, session.token, { maxAgeSec: 60 * 60 * 24 * 30, httpOnly: true, sameSite: 'Lax' });
-      ctx.body = { ok: true, csrfToken: issueUserCsrfToken(ctx) };
+      routeOk(ctx, { csrfToken: issueUserCsrfToken(ctx) });
     } catch (error) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: String(error instanceof Error ? error.message : error) };
+      routeError(ctx, 400, String(error instanceof Error ? error.message : error));
     }
   });
 
@@ -255,10 +250,7 @@ export const registerAuthRoutes = (args: {
         );
       }
     }
-    ctx.body = {
-      ok: true,
-      csrfToken: issueUserCsrfToken(ctx),
-    };
+    routeOk(ctx, { csrfToken: issueUserCsrfToken(ctx) });
   });
 
   router.post('/api/auth/reset-password', async (ctx: RouteCtx) => {
@@ -274,10 +266,9 @@ export const registerAuthRoutes = (args: {
         nextPassword: String(body.nextPassword ?? ''),
       });
       clearUserSessionCookie(ctx);
-      ctx.body = { ok: true, csrfToken: issueUserCsrfToken(ctx) };
+      routeOk(ctx, { csrfToken: issueUserCsrfToken(ctx) });
     } catch (error) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: String(error instanceof Error ? error.message : error) };
+      routeError(ctx, 400, String(error instanceof Error ? error.message : error));
     }
   });
 
@@ -286,14 +277,13 @@ export const registerAuthRoutes = (args: {
     const store = getStore();
     const user = await requireUserAuth(ctx, store);
     if (!user) return;
-    ctx.body = {
-      ok: true,
+    routeOk(ctx, {
       user,
       stats: (await persistFinishedLinkedMatches(ctx, store, user.id), await store.getUserStatsSummary(user.id)),
       awards: await store.evaluateUserAwards(user.id),
       matchHistory: await store.listUserMatchHistory(user.id, 20),
       csrfToken: issueUserCsrfToken(ctx),
-    };
+    });
   });
 
   router.post('/api/profile/me', async (ctx: RouteCtx) => {
@@ -315,7 +305,7 @@ export const registerAuthRoutes = (args: {
       showStatsPublic: body.showStatsPublic !== false,
       showRecentMatchesPublic: body.showRecentMatchesPublic === true,
     });
-    ctx.body = { ok: true, user: updated, csrfToken: issueUserCsrfToken(ctx) };
+    routeOk(ctx, { user: updated, csrfToken: issueUserCsrfToken(ctx) });
   });
 
   router.get('/api/profile/sessions', async (ctx: RouteCtx) => {
@@ -323,11 +313,10 @@ export const registerAuthRoutes = (args: {
     const store = getStore();
     const user = await requireUserAuth(ctx, store);
     if (!user) return;
-    ctx.body = {
-      ok: true,
+    routeOk(ctx, {
       sessions: await store.listUserSessions(user.id),
       csrfToken: issueUserCsrfToken(ctx),
-    };
+    });
   });
 
   router.post('/api/profile/logout-all', async (ctx: RouteCtx) => {
@@ -339,7 +328,7 @@ export const registerAuthRoutes = (args: {
     await store.deleteAllSessionsForUser(user.id);
     clearUserSessionCookie(ctx);
     clearUserCsrfCookie(ctx);
-    ctx.body = { ok: true };
+    routeOk(ctx);
   });
 
   router.post('/api/profile/logout-session', async (ctx: RouteCtx) => {
@@ -352,12 +341,11 @@ export const registerAuthRoutes = (args: {
     if (!body) return;
     const sessionId = String(body.sessionId ?? '').trim();
     if (!sessionId) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: 'Missing sessionId.' };
+      routeError(ctx, 400, 'Missing sessionId.');
       return;
     }
     await store.deleteSessionByIdForUser(user.id, sessionId);
-    ctx.body = { ok: true, csrfToken: issueUserCsrfToken(ctx) };
+    routeOk(ctx, { csrfToken: issueUserCsrfToken(ctx) });
   });
 
   router.post('/api/profile/bind-session-match', async (ctx: RouteCtx) => {
@@ -373,16 +361,14 @@ export const registerAuthRoutes = (args: {
     const credentials = String(body.credentials ?? '').trim();
     const playerName = typeof body.playerName === 'string' ? body.playerName.trim() : '';
     if (!matchId || !playerId || !credentials) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: 'Missing matchID, playerID or credentials.' };
+      routeError(ctx, 400, 'Missing matchID, playerID or credentials.');
       return;
     }
     const verified = await getVerifiedMatchParticipant(ctx, matchId, playerId);
     if (!verified) return;
     const { state, knownPlayerName, metadataPlayer } = verified;
     if (!metadataPlayer?.credentials || metadataPlayer.credentials !== credentials) {
-      ctx.status = 403;
-      ctx.body = { ok: false, error: 'Invalid match credentials.' };
+      routeError(ctx, 403, 'Invalid match credentials.');
       return;
     }
     await store.linkUserToMatch({
@@ -392,7 +378,7 @@ export const registerAuthRoutes = (args: {
       playerName: knownPlayerName || playerName || undefined,
     });
     await store.persistMatchResultIfFinished(matchId, state ?? null);
-    ctx.body = { ok: true };
+    routeOk(ctx);
   });
 
   router.get('/api/users/profile', async (ctx: RouteCtx) => {
@@ -400,16 +386,14 @@ export const registerAuthRoutes = (args: {
     const store = getStore();
     const username = typeof ctx?.query?.username === 'string' ? ctx.query.username.trim() : '';
     if (!username) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: 'Missing username.' };
+      routeError(ctx, 400, 'Missing username.');
       return;
     }
     const profile = await store.getPublicProfileByUsername(username);
     if (!profile) {
-      ctx.status = 404;
-      ctx.body = { ok: false, error: 'User not found.' };
+      routeError(ctx, 404, 'User not found.');
       return;
     }
-    ctx.body = { ok: true, ...profile };
+    routeOk(ctx, profile);
   });
 };

@@ -17,9 +17,7 @@ export interface UseGameSessionHandlersArgs {
   setAdminSelectedMatchID: (value: string) => void;
 }
 
-export interface UseGameSessionHandlersResult {
-  // effects are applied internally
-}
+export type UseGameSessionHandlersResult = Record<string, never>;
 
 export const useGameSessionHandlers = (args: UseGameSessionHandlersArgs): UseGameSessionHandlersResult => {
   const {

@@ -6,10 +6,12 @@ test('production requires ADMIN_TOKEN', () => {
   const policy = getAdminRuntimePolicy({
     NODE_ENV: 'production',
     ADMIN_TOKEN: '',
+    DATABASE_URL: 'postgresql://user:pass@localhost/db',
+    FRONTEND_ORIGIN: 'https://joj.example',
   });
 
   assert.match(policy.startupError, /without ADMIN_TOKEN/);
-  assert.deepEqual(policy.warnings, []);
+  assert.ok(policy.warnings.some((warning) => warning.includes('TRUST_PROXY')));
 });
 
 test('production error explains deprecated admin override flags are ignored', () => {
@@ -18,6 +20,8 @@ test('production error explains deprecated admin override flags are ignored', ()
     ADMIN_TOKEN: '',
     ALLOW_INSECURE_ADMIN: '1',
     DISABLE_ADMIN_AUTH: 'true',
+    DATABASE_URL: 'postgresql://user:pass@localhost/db',
+    FRONTEND_ORIGIN: 'https://joj.example',
   });
 
   assert.match(policy.startupError, /cannot bypass this requirement/);
@@ -29,10 +33,13 @@ test('deprecated admin override flags produce warnings but do not block valid st
     NODE_ENV: 'production',
     ADMIN_TOKEN: 'secret',
     ALLOW_INSECURE_ADMIN: '1',
+    DATABASE_URL: 'postgresql://user:pass@localhost/db',
+    FRONTEND_ORIGIN: 'https://joj.example',
   });
 
   assert.equal(policy.startupError, '');
-  assert.deepEqual(policy.warnings, ['Deprecated admin auth env vars are ignored: ALLOW_INSECURE_ADMIN.']);
+  assert.ok(policy.warnings.includes('Deprecated admin auth env vars are ignored: ALLOW_INSECURE_ADMIN.'));
+  assert.ok(policy.warnings.some((warning) => warning.includes('TRUST_PROXY')));
 });
 
 test('deprecated admin override helper returns only populated flags', () => {
@@ -42,4 +49,27 @@ test('deprecated admin override helper returns only populated flags', () => {
   });
 
   assert.deepEqual(names, ['ALLOW_INSECURE_ADMIN']);
+});
+
+test('production requires DATABASE_URL', () => {
+  const policy = getAdminRuntimePolicy({
+    NODE_ENV: 'production',
+    ADMIN_TOKEN: 'secret',
+    DATABASE_URL: '',
+    FRONTEND_ORIGIN: 'https://joj.example',
+  });
+
+  assert.match(policy.startupError, /without DATABASE_URL/);
+});
+
+test('production requires FRONTEND_ORIGIN and warns about TRUST_PROXY', () => {
+  const policy = getAdminRuntimePolicy({
+    NODE_ENV: 'production',
+    ADMIN_TOKEN: 'secret',
+    DATABASE_URL: 'postgresql://user:pass@localhost/db',
+    FRONTEND_ORIGIN: '',
+  });
+
+  assert.match(policy.startupError, /without FRONTEND_ORIGIN/);
+  assert.ok(policy.warnings.some((warning) => warning.includes('TRUST_PROXY')));
 });

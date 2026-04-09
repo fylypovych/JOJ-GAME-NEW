@@ -11,7 +11,5 @@ export const createFileLogger = (logsPath: string): LogLine => async (level, mes
   } catch {
     // ignore logging failures
   }
-  // eslint-disable-next-line no-console
   console.log(line.trimEnd());
 };
-

@@ -29,6 +29,7 @@ import { useAdminSnapshot } from './app/useAdminSnapshot';
 import { BugReportWidget } from './app/BugReportWidget';
 import { AppHeader } from './app/AppHeader';
 import { AppFooter } from './app/AppFooter';
+import { AdminPageContainer } from './app/AdminPageContainer';
 import { useAppShellState } from './app/useAppShellState';
 import { useAppGameState } from './app/useAppGameState';
 import { useAppUserState } from './app/useAppUserState';
@@ -714,98 +715,85 @@ export const App = () => {
         <RulesSection t={t} rules={rules} uiVariant={gameUiVariant} />
       ) : null}
 
-      {isAdminRoute && adminAuthorized ? (
-        <Suspense fallback={<p>{t.loading}</p>}>
-          <AdminPage
-          uiVariant={adminUiVariant}
-          lang={lang}
-          serverUrl={SERVER_URL}
-          serverUrlDraft={serverUrlDraft}
-          onServerUrlDraftChange={setServerUrlDraft}
-          onSaveServerUrl={saveServerUrl}
-          onResetServerUrl={resetServerUrl}
-          storageMode={adminStorageMode}
-          onStorageModeChange={setAdminStorageMode}
-          dbConfigDraft={adminDbConfigDraft}
-          onDbConfigDraftChange={setAdminDbConfigDraft}
-          onSaveDbConfigDraft={saveDbConfigDraft}
-          onTestDbConnection={testDbConnection}
-          onExportDbSchema={exportDbSchema}
-          onImportDbSchema={importDbSchema}
-          onImportJsonConfigToDb={importJsonConfigToDb}
-          onExportDbBackup={exportDbBackup}
-          onRestoreDbBackup={restoreDbBackup}
-          dbConfigSaveStatus={dbConfigSaveStatus}
-          dbConnectionTestStatus={dbConnectionTestStatus}
-          dbConnectionTestError={dbConnectionTestError}
-          dbConnectionTestRunning={dbConnectionTestRunning}
-          dbExportSchemaStatus={dbExportSchemaStatus}
-          dbExportSchemaError={dbExportSchemaError}
-          dbExportSchemaRunning={dbExportSchemaRunning}
-          dbImportSchemaStatus={dbImportSchemaStatus}
-          dbImportSchemaError={dbImportSchemaError}
-          dbImportSchemaRunning={dbImportSchemaRunning}
-          dbImportJsonConfigStatus={dbImportJsonConfigStatus}
-          dbImportJsonConfigError={dbImportJsonConfigError}
-          dbImportJsonConfigRunning={dbImportJsonConfigRunning}
-          dbExportBackupStatus={dbExportBackupStatus}
-          dbExportBackupError={dbExportBackupError}
-          dbExportBackupRunning={dbExportBackupRunning}
-          dbRestoreBackupStatus={dbRestoreBackupStatus}
-          dbRestoreBackupError={dbRestoreBackupError}
-          dbRestoreBackupRunning={dbRestoreBackupRunning}
-          matches={matches.map((m) => ({
-            id: m.matchID,
-            createdAt: typeof m.createdAt === 'number'
-              ? m.createdAt
-              : typeof m.createdAt === 'string'
-                ? (Date.parse(m.createdAt) || 0)
-                : 0,
-          }))}
-          activeMatchId={adminMatchID}
-          onActiveMatchIdChange={setAdminSelectedMatchID}
-          snapshot={snapshot}
-          deckStats={{
-            deck: sharedDeckStats.deck,
-            discard: 0,
-            legendary: sharedDeckStats.legendary,
-            rankTrack: sharedDeckStats.rankTrack,
-          }}
-          sharedDeckTemplate={sharedDeckTemplate}
-          cardCatalog={cardCatalog}
-          sharedRanks={sharedRanks}
-          sharedConfigLoaded={sharedConfigLoaded}
-          onCreateMatch={createRoom}
-          onResetMatch={onResetMatch}
-          onDeleteMatch={onDeleteMatch}
-          deletingMatch={deletingAdminMatch}
-          onResetAll={() => {
-            window.localStorage.removeItem(SESSION_STORAGE_KEY);
-            window.localStorage.removeItem(PLAYER_NAME_STORAGE_KEY);
-            setSession(null);
-            setPlayerName('');
-            setError('');
-            void refreshMatches();
-          }}
-          onRestartServer={onRestartServer}
-          onShuffleDeck={onShuffleDeck}
-          onAddCard={onAddCard}
-          onAddCustomCard={onAddCustomCard}
-          onUpdateCard={onUpdateCard}
-          onRemoveCard={onRemoveCard}
-          onResetTemplate={onResetDeck}
-          onSetDeckBackImage={onSetBack}
-          onExportTemplate={onExportTemplate}
-          onImportTemplate={onImportTemplate}
-          onUpdateRanks={onSetRanks}
-          onResetRanks={onResetRanks}
-          onStopGame={onStopGame}
-          onRunSimulations={(players: number, simulations: number, options) =>
-            runGameSimulations(players, simulations, 0, options)
-          }
-          />
-        </Suspense>
-      ) : null}
+      <AdminPageContainer
+        enabled={isAdminRoute && adminAuthorized}
+        loadingLabel={t.loading}
+        uiVariant={adminUiVariant}
+        lang={lang}
+        serverUrl={SERVER_URL}
+        serverUrlDraft={serverUrlDraft}
+        setServerUrlDraft={setServerUrlDraft}
+        saveServerUrl={saveServerUrl}
+        resetServerUrl={resetServerUrl}
+        adminStorageMode={adminStorageMode}
+        setAdminStorageMode={setAdminStorageMode}
+        adminDbConfigDraft={adminDbConfigDraft}
+        setAdminDbConfigDraft={setAdminDbConfigDraft}
+        saveDbConfigDraft={saveDbConfigDraft}
+        testDbConnection={testDbConnection}
+        exportDbSchema={exportDbSchema}
+        importDbSchema={importDbSchema}
+        importJsonConfigToDb={importJsonConfigToDb}
+        exportDbBackup={exportDbBackup}
+        restoreDbBackup={restoreDbBackup}
+        dbConfigSaveStatus={dbConfigSaveStatus}
+        dbConnectionTestStatus={dbConnectionTestStatus}
+        dbConnectionTestError={dbConnectionTestError}
+        dbConnectionTestRunning={dbConnectionTestRunning}
+        dbExportSchemaStatus={dbExportSchemaStatus}
+        dbExportSchemaError={dbExportSchemaError}
+        dbExportSchemaRunning={dbExportSchemaRunning}
+        dbImportSchemaStatus={dbImportSchemaStatus}
+        dbImportSchemaError={dbImportSchemaError}
+        dbImportSchemaRunning={dbImportSchemaRunning}
+        dbImportJsonConfigStatus={dbImportJsonConfigStatus}
+        dbImportJsonConfigError={dbImportJsonConfigError}
+        dbImportJsonConfigRunning={dbImportJsonConfigRunning}
+        dbExportBackupStatus={dbExportBackupStatus}
+        dbExportBackupError={dbExportBackupError}
+        dbExportBackupRunning={dbExportBackupRunning}
+        dbRestoreBackupStatus={dbRestoreBackupStatus}
+        dbRestoreBackupError={dbRestoreBackupError}
+        dbRestoreBackupRunning={dbRestoreBackupRunning}
+        matches={matches}
+        adminMatchID={adminMatchID}
+        setAdminSelectedMatchID={setAdminSelectedMatchID}
+        snapshot={snapshot}
+        sharedDeckStats={sharedDeckStats}
+        sharedDeckTemplate={sharedDeckTemplate}
+        cardCatalog={cardCatalog}
+        sharedRanks={sharedRanks}
+        sharedConfigLoaded={sharedConfigLoaded}
+        createRoom={createRoom}
+        onResetMatch={onResetMatch}
+        onDeleteMatch={onDeleteMatch}
+        deletingAdminMatch={deletingAdminMatch}
+        clearSessionState={() => {
+          window.localStorage.removeItem(SESSION_STORAGE_KEY);
+          window.localStorage.removeItem(PLAYER_NAME_STORAGE_KEY);
+          setSession(null);
+          setPlayerName('');
+          setError('');
+          void refreshMatches();
+        }}
+        onRestartServer={onRestartServer}
+        onShuffleDeck={onShuffleDeck}
+        onAddCard={onAddCard}
+        onAddCustomCard={onAddCustomCard}
+        onUpdateCard={onUpdateCard}
+        onRemoveCard={onRemoveCard}
+        onResetDeck={onResetDeck}
+        onSetBack={onSetBack}
+        onExportTemplate={onExportTemplate}
+        onImportTemplate={onImportTemplate}
+        onSetRanks={onSetRanks}
+        onResetRanks={onResetRanks}
+        onStopGame={onStopGame}
+        runGameSimulations={(players, simulations, options) =>
+          runGameSimulations(players, simulations, 0, options)
+        }
+        Component={AdminPage}
+      />
 
       {!isAdminRoute ? (
         <AuthErrorModal

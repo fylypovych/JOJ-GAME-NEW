@@ -1,0 +1,31 @@
+export const uiSimulationEn = {
+  simulationScoreWinsLabel: 'score wins',
+  simulationTopReachedByPctLabel: 'Top-3 most reached ranks by percentage',
+  simulationTopHighestRanksLabel: 'Top-3 highest ranks by hierarchy',
+  simulationAccumulatedResourcesLabel: 'Resources',
+  simulationTurnsInMatchLabel: 'Turns in simulation',
+  simulationBlockedByConfig:
+    'Simulation will be available after deck template and ranks are loaded.',
+  importSuccessAddedPrefix: 'Import successful: added',
+  importSuccessInto: 'to',
+  importSuccessCategory: 'category',
+  importSuccessCardsWord: 'cards',
+  uploadFailedGeneric: 'Upload failed',
+  regenLogHeader: 'Regeneration log (first errors):',
+  regenMoreErrors: 'more errors',
+  regenDonePrefix: 'Regeneration complete',
+  regenScannedLabel: 'scanned',
+  regenUpdatedLabel: 'updated',
+  regenSkippedWebpLabel: 'skipped webp',
+  regenDeletedOriginalsLabel: 'deleted originals',
+  regenFailedLabel: 'failed',
+  githubDeployTooltip:
+    'Git pull + npm install + tsc + vite build + pm2 restart',
+  resources: {
+    time: 'Time',
+    reputation: 'Authority',
+    discipline: 'Discipline',
+    documents: 'Documents',
+    tech: 'Tech',
+  },
+} as const;

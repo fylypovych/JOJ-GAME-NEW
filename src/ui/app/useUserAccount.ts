@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { optimizeBlobForUpload } from '../admin/imageUpload';
-import { getCsrfToken } from '../admin/authHeaders';
+import { createBrowserApiClient } from './httpClient';
 
 export type AuthUser = {
   id: string;
@@ -124,49 +124,10 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
   const authBase = `${serverUrl}/api/auth`;
   const profileBase = `${serverUrl}/api/profile`;
   const userLobbyBase = `${serverUrl}/api/user-lobby`;
-
-  const ensureCsrfToken = async () => {
-    // First check cookie
-    const cookieToken = getCsrfToken();
-    if (cookieToken) return cookieToken;
-    
-    // If no cookie, fetch /me to get CSRF token set in cookie
-    const response = await fetch(`${authBase}/me`, { credentials: 'include' });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(String((payload as { error?: string }).error ?? USER_ACCOUNT_ERRORS.genericRequest));
-    }
-    // Read CSRF token from cookie after fetch
-    const nextCsrf = getCsrfToken();
-    return nextCsrf;
-  };
-
-  const postJsonWithCsrf = async (url: string, body?: unknown) => {
-    const token = await ensureCsrfToken();
-    const response = await fetch(url, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'X-CSRF-Token': token } : {}),
-      },
-      body: body ? JSON.stringify(body) : '{}',
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(String((payload as { error?: string }).error ?? USER_ACCOUNT_ERRORS.genericRequest));
-    }
-    return payload as Record<string, unknown>;
-  };
-
-  const fetchJson = async (url: string) => {
-    const response = await fetch(url, { credentials: 'include' });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(String((payload as { error?: string }).error ?? USER_ACCOUNT_ERRORS.genericRequest));
-    }
-    return payload as Record<string, unknown>;
-  };
+  const api = createBrowserApiClient(serverUrl);
+  const postJsonWithCsrf = async (url: string, body?: unknown) =>
+    api.postJson<Record<string, unknown>>(url, body ?? {}, { csrf: 'user' });
+  const fetchJson = async (url: string) => api.getJson<Record<string, unknown>>(url);
 
   const refreshUser = async () => {
     setLoading(true);

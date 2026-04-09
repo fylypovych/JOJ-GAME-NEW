@@ -1,67 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { clampBotCountToAllowed, getAvailableBotCounts } from '../../game/lobbyConfig';
-import { CARD_ASSET_BASE_PATH, normalizeImagePath } from '../../game/imagePaths';
-import type { CardDefinition } from '../../game/types';
 import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { Language } from '../i18n';
-import { cardFlavor, cardTitleWithOverride, categoryLabel, rankLabel, text } from '../i18n';
-import { formatModuleDisplayName } from '../moduleDisplay';
+import { text } from '../i18n';
 import { buildRoomShareLink, copyText } from './share';
-import type { GalleryCategoryFilter, LobbyMatch, UserTab } from './model';
+import type { LobbyMatch, UserTab } from './model';
 import { getPublicTabPath } from './routes';
 import type { AuthUser, UserAward, UserStats } from './useUserAccount';
 import type { UserMatchHistoryItem, UserSession } from './useUserAccount';
+import {
+  estimateRoomDurationLabel,
+  formatBotDifficultyLabel,
+  formatGameModeLabel,
+  formatMatchOutcomeLabel,
+  formatModuleList,
+  localizeRankValue,
+} from './section-helpers';
 
 type T = ReturnType<typeof text>;
-
-const formatGameModeLabel = (t: T, gameMode: GameMode) => {
-  if (gameMode === 'standard_plus') return t.gameModeStandardPlus;
-  if (gameMode === 'simplified') return t.gameModeSimplified;
-  return t.gameModeStandard;
-};
-
-const formatBotDifficultyLabel = (t: T, difficulty: BotDifficulty | null) => {
-  if (difficulty === 'easy') return t.botDifficultyEasy;
-  if (difficulty === 'normal') return t.botDifficultyNormal;
-  if (difficulty === 'hard') return t.botDifficultyHard;
-  return '-';
-};
-
-const estimateRoomDurationLabel = (t: T, players: number, gameMode: GameMode) => {
-  if (gameMode === 'standard_plus' || players >= 5) return t.roomDurationLong;
-  if (gameMode === 'simplified' || players <= 3) return t.roomDurationShort;
-  return t.roomDurationMedium;
-};
-
-const formatModuleName = (
-  moduleId: string,
-  moduleNameById: Map<string, string>,
-) => {
-  const known = moduleNameById.get(moduleId);
-  if (known) return formatModuleDisplayName(known, moduleId);
-  const normalized = moduleId
-    .replace(/[_-]+/g, ' ')
-    .trim();
-  if (!normalized) return moduleId;
-  return normalized.replace(/\b\w/g, (char) => char.toUpperCase());
-};
-
-const formatModuleList = (
-  moduleIds: string[],
-  moduleNameById: Map<string, string>,
-) => moduleIds.length ? moduleIds.map((id) => formatModuleName(id, moduleNameById)).join(', ') : '-';
-
-const formatMatchOutcomeLabel = (t: T, item: UserMatchHistoryItem) => {
-  if (item.winnerPlayerId && item.winnerPlayerId === item.playerId) return t.userMatchHistoryOutcomeWin;
-  if (item.endReason === 'stalled-no-cards') return t.userMatchHistoryOutcomeStalled;
-  return t.userMatchHistoryOutcomeLoss;
-};
-
-const localizeRankValue = (value: string | null | undefined, lang: Language) => {
-  const safeValue = String(value ?? '').trim().toLowerCase();
-  if (!safeValue) return '-';
-  return rankLabel(safeValue.replace(/\s+/g, '_'), lang);
-};
 
 type AdminAuthCardProps = {
   t: T;
@@ -1168,126 +1124,4 @@ export const AuthErrorModal = ({
   );
 };
 
-type GallerySectionProps = {
-  t: T;
-  lang: Language;
-  galleryCategoryFilter: GalleryCategoryFilter;
-  setGalleryCategoryFilter: (value: GalleryCategoryFilter) => void;
-  galleryCards: CardDefinition[];
-  galleryCategories: GalleryCategoryFilter[];
-  effectLabel: (resource: 'time' | 'reputation' | 'discipline' | 'documents' | 'tech' | 'rank') => string;
-  uiVariant?: 'v1' | 'v2';
-};
-
-export const GallerySection = ({
-  t,
-  lang,
-  galleryCategoryFilter,
-  setGalleryCategoryFilter,
-  galleryCards,
-  galleryCategories,
-  effectLabel,
-  uiVariant = 'v2',
-}: GallerySectionProps) => {
-  const [openPreviewKey, setOpenPreviewKey] = useState<string | null>(null);
-  const togglePreview = (key: string) => setOpenPreviewKey((prev) => (prev === key ? null : key));
-
-  return (
-    <section className={`board board-v2-panel board-v2-gallery${uiVariant === 'v1' ? ' board-v1-panel board-v1-gallery' : ''}`}>
-      <h2>{t.galleryTitle}</h2>
-      <p>{t.galleryDescription}</p>
-      <nav className="gallery-category-tabs" style={{ position: 'sticky', top: 0, zIndex: 10, background: 'inherit', padding: '8px 0' }}>
-      <button
-        type="button"
-        onClick={() => setGalleryCategoryFilter('ALL')}
-        disabled={galleryCategoryFilter === 'ALL'}
-      >
-        {t.allCategories}
-      </button>
-      {galleryCategories.map((cat) => (
-        <button
-          type="button"
-          key={`gallery-filter-${cat}`}
-          onClick={() => setGalleryCategoryFilter(cat)}
-          disabled={galleryCategoryFilter === cat}
-        >
-          {categoryLabel(cat, lang)}
-        </button>
-      ))}
-      </nav>
-      {galleryCards.length === 0 ? <p>{t.noCardsYet}</p> : null}
-      <div className="gallery-grid">
-        {galleryCards.map((card) => {
-          const previewKey = `gallery-${card.id}`;
-          const isOpen = openPreviewKey === previewKey;
-          return (
-            <article key={card.id} className="gallery-card">
-              <div
-                className={`gallery-card-image${isOpen ? ' is-open' : ''}`}
-                role="button"
-                tabIndex={0}
-                onClick={() => togglePreview(previewKey)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    togglePreview(previewKey);
-                  }
-                  if (e.key === 'Escape') {
-                    setOpenPreviewKey(null);
-                  }
-                }}
-              >
-            <img
-              src={normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`}
-              alt={cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = 'none';
-              }}
-            />
-                <div
-                  className={`gallery-card-popover${isOpen ? ' is-open' : ''}`}
-                  aria-hidden={!isOpen}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenPreviewKey(null);
-                  }}
-                >
-              <img
-                src={normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`}
-                  alt={cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}
-              />
-                </div>
-              </div>
-              <h3>{cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}</h3>
-              <p>{cardFlavor(card.flavor, lang, card.flavorEn)}</p>
-              <div className="gallery-effects">
-                {(card.effects ?? []).length === 0 ? (
-                  <span className="pill pill-cost">0</span>
-                ) : (card.effects ?? []).map((effect, idx) => (
-                  <span key={`${card.id}-effect-${idx}`} className="pill pill-effect">
-                    {effectLabel(effect.resource)}: {effect.value > 0 ? `+${effect.value}` : effect.value}
-                  </span>
-                ))}
-              </div>
-            </article>
-          );
-        })}
-      </div>
-    </section>
-  );
-};
-
-export const RulesSection = ({
-  t,
-  rules,
-  uiVariant = 'v2',
-}: { t: T; rules: readonly string[]; uiVariant?: 'v1' | 'v2' }) => (
-    <section className={`board board-v2-panel board-v2-rules${uiVariant === 'v1' ? ' board-v1-panel board-v1-rules' : ''}`}>
-    <h2>{t.rulesTitle}</h2>
-    <ol className="rules-list">
-      {rules.map((rule, index) => (
-        <li key={`rule-${index}`}>{rule}</li>
-      ))}
-    </ol>
-  </section>
-);
+export { GallerySection, RulesSection } from './sections-gallery-rules';

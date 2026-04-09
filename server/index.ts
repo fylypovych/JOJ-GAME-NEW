@@ -4,11 +4,9 @@ import { runSqlMigrations } from './db/migrations';
 import { createFileLogger } from './file-logger';
 import {
   autoStashRuntimeNoise,
-  clearGithubHttpsCredentials,
   createCommandRunners,
   getGitAuthStatus,
   getGitUpdateStatus,
-  saveGithubHttpsCredentials,
 } from './git-utils';
 import { createRateLimiter, createRequireAdminAuth, readJsonBodySafe } from './request-utils';
 import { registerAdminRoutes } from './routes/admin';
@@ -22,15 +20,25 @@ import { createBoardgamePostgresDb } from './services/boardgame-postgres-db';
 import { createBugReportStore } from './services/bug-report-store';
 import { createMatchStateStore } from './services/match-state-store';
 import { createUserStore } from './services/user-store';
+import { createAdminAuditLogger } from './services/admin-audit';
+import { createMatchRuntimeSync, type MatchDbBackend } from './services/match-runtime-sync';
+import { createCorsMiddleware, createSecurityHeadersMiddleware } from './services/http-security';
 import { createSharedConfigStore } from './storage/shared-config';
 import { getAdminRuntimePolicy } from './runtime-policy';
 import {
   adminDbUiConfigPath,
   allowInMemoryUserStore,
   allowedFrontendOrigins,
+  corsAllowedHeaders,
+  corsAllowedMethods,
   bugReportImagesDir,
   bugReportUiConfigPath,
   bugReportsPath,
+  cspConnectSrcExtras,
+  cspFontSrc,
+  cspImgSrc,
+  cspScriptSrc,
+  cspStyleSrc,
   databaseUrl,
   dbMigrationsDir,
   dbSchemaPath,
@@ -43,6 +51,7 @@ import {
   JSON_BODY_LIMIT,
   LARGE_JSON_BODY_LIMIT,
   logsPath,
+  matchDbCutoverMode,
   matchesDbDir,
   nodeEnv,
   passwordResetHealthPath,
@@ -69,6 +78,7 @@ import {
   resetSharedDeckTemplate,
   setSharedRanks,
 } from './game/game-adapter';
+import type { RouteCtx, RouterLike } from './routes/types';
 
 const require = createRequire(import.meta.url);
 const { Server, FlatFile } = require('boardgame.io/server') as {
@@ -94,37 +104,18 @@ if (adminRuntimePolicy.startupError) {
   throw new Error(adminRuntimePolicy.startupError);
 }
 
-type MatchDbBackend = {
-  type?: () => number;
-  connect?: () => Promise<void>;
-  createMatch?: (matchID: string, opts: { initialState: unknown; metadata: Record<string, unknown> | null }) => Promise<void>;
-  setState?: (matchID: string, state: unknown, deltalog?: unknown[]) => Promise<void>;
-  setMetadata?: (matchID: string, metadata: unknown) => Promise<void>;
-  fetch?: (matchID: string, opts: { state?: boolean; metadata?: boolean; initialState?: boolean; log?: boolean }) => Promise<Record<string, unknown>>;
-  wipe?: (matchID: string) => Promise<void>;
-  listMatches?: (opts?: { gameName?: string; where?: { isGameover?: boolean; updatedBefore?: number; updatedAfter?: number } }) => Promise<string[]>;
-};
-
 const flatFileMatchDb = new FlatFile({ dir: matchesDbDir, logging: false }) as MatchDbBackend;
 let currentMatchDbBackend: MatchDbBackend = flatFileMatchDb;
 let liveMirrorUserStore: ReturnType<typeof createUserStore> | null = null;
 let liveMirrorMatchStateStore: ReturnType<typeof createMatchStateStore> | null = null;
-
-const persistMatchMirrorById = async (matchId: string) => {
-  if (!liveMirrorMatchStateStore || !liveMirrorUserStore || typeof currentMatchDbBackend.fetch !== 'function') return;
-  const fetched = await currentMatchDbBackend.fetch(matchId, { state: true, metadata: true });
-  const state = (fetched?.state as Record<string, unknown> | null | undefined) ?? null;
-  const metadata = (fetched?.metadata as Record<string, unknown> | null | undefined) ?? undefined;
-  if (state) {
-    await liveMirrorMatchStateStore.persistMatchSnapshot({
-      matchId,
-      state,
-      metadata,
-      snapshotKind: ((state as { ctx?: { gameover?: unknown } }).ctx?.gameover ? 'final' : 'autosave'),
-    });
-  }
-  await liveMirrorUserStore.persistMatchResultIfFinished(matchId, state as never);
-};
+const matchRuntimeSync = createMatchRuntimeSync({
+  flatFileMatchDb,
+  getCurrentBackend: () => currentMatchDbBackend,
+  setCurrentBackend: (backend) => { currentMatchDbBackend = backend; },
+  getUserStore: () => liveMirrorUserStore,
+  getMatchStateStore: () => liveMirrorMatchStateStore,
+  logLine,
+});
 
 const matchDb = {
   type: () => currentMatchDbBackend.type?.() ?? 1,
@@ -133,15 +124,15 @@ const matchDb = {
   },
   createMatch: async (matchID: string, opts: { initialState: unknown; metadata: Record<string, unknown> | null }) => {
     await currentMatchDbBackend.createMatch?.(matchID, opts);
-    await persistMatchMirrorById(matchID);
+    await matchRuntimeSync.persistMatchMirrorById(matchID);
   },
   setState: async (matchID: string, state: unknown, deltalog?: unknown[]) => {
     await currentMatchDbBackend.setState?.(matchID, state, deltalog);
-    await persistMatchMirrorById(matchID);
+    await matchRuntimeSync.persistMatchMirrorById(matchID);
   },
   setMetadata: async (matchID: string, metadata: unknown) => {
     await currentMatchDbBackend.setMetadata?.(matchID, metadata);
-    await persistMatchMirrorById(matchID);
+    await matchRuntimeSync.persistMatchMirrorById(matchID);
   },
   fetch: async (matchID: string, opts: { state?: boolean; metadata?: boolean; initialState?: boolean; log?: boolean }) =>
     currentMatchDbBackend.fetch?.(matchID, opts) ?? {},
@@ -167,40 +158,24 @@ const server = Server({
   origins: allowedFrontendOrigins,
   db: matchDb,
 });
-const router = (server as { router?: any }).router;
-const app = (server as { app?: { middleware?: Array<(ctx: any, next: () => Promise<unknown>) => Promise<unknown>> } }).app;
-const securityHeadersMiddleware = async (ctx: any, next: () => Promise<unknown>) => {
-  if (typeof ctx?.set === 'function') {
-    ctx.set('X-Frame-Options', 'DENY');
-    ctx.set('X-Content-Type-Options', 'nosniff');
-    ctx.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    ctx.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-    ctx.set('Cross-Origin-Opener-Policy', 'same-origin');
-    ctx.set('Cross-Origin-Resource-Policy', 'same-origin');
-    ctx.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';");
-  }
-  await next();
-};
-const corsMiddleware = async (ctx: any, next: () => Promise<unknown>) => {
-    const origin = typeof ctx?.request?.headers?.origin === 'string' ? String(ctx.request.headers.origin) : '';
-    if (origin && allowedFrontendOrigins.includes(origin)) {
-      if (typeof ctx.set === 'function') {
-        ctx.set('Access-Control-Allow-Origin', origin);
-        ctx.set('Access-Control-Allow-Credentials', 'true');
-        ctx.set('Vary', 'Origin');
-      }
-      if (String(ctx.method || '').toUpperCase() === 'OPTIONS') {
-        if (typeof ctx.set === 'function') {
-          ctx.set('Access-Control-Allow-Methods', 'GET,HEAD,PUT,POST,DELETE,PATCH,OPTIONS');
-          ctx.set('Access-Control-Allow-Headers', 'content-type,x-csrf-token,x-admin-token,authorization');
-        }
-        ctx.status = 204;
-        return;
-      }
-    }
-    await next();
-  };
-const publicGamesRouteCompatibilityMiddleware = async (ctx: any, next: () => Promise<unknown>) => {
+const router = (server as { router?: RouterLike }).router;
+const app = (server as { app?: { middleware?: Array<(ctx: RouteCtx, next: () => Promise<unknown>) => Promise<unknown>> } }).app;
+const securityHeadersMiddleware = createSecurityHeadersMiddleware({
+  allowedOrigins: allowedFrontendOrigins,
+  corsAllowedHeaders,
+  corsAllowedMethods,
+  connectSrcExtras: cspConnectSrcExtras,
+  scriptSrc: cspScriptSrc,
+  styleSrc: cspStyleSrc,
+  imgSrc: cspImgSrc,
+  fontSrc: cspFontSrc,
+});
+const corsMiddleware = createCorsMiddleware({
+  allowedOrigins: allowedFrontendOrigins,
+  corsAllowedHeaders,
+  corsAllowedMethods,
+});
+const publicGamesRouteCompatibilityMiddleware = async (ctx: RouteCtx, next: () => Promise<unknown>) => {
   const method = String(ctx?.method ?? '').toUpperCase();
   const path = typeof ctx?.path === 'string' ? ctx.path.replace(/\/+$/, '') || '/' : '';
   const accept = typeof ctx?.request?.headers?.accept === 'string' ? String(ctx.request.headers.accept) : '';
@@ -233,18 +208,13 @@ if (app && Array.isArray(app.middleware)) {
 const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });
 const { runGit, runShellCommand, spawnDetachedShell } = createCommandRunners(repoDir);
 
-type MatchFetchForMirror = {
-  state?: Record<string, unknown> | null;
-  metadata?: Record<string, unknown> | null;
-};
-
 void (async () => {
   await flatFileMatchDb.connect?.();
   for (const warning of adminRuntimePolicy.warnings) {
     await logLine('WARN', warning);
   }
   await initializePasswordResetDeliveryHealth({ statePath: passwordResetHealthPath });
-  let sharedConfigStorageMode: 'file' | 'postgres' = requestedSharedConfigStorageMode;
+  const sharedConfigStorageMode: 'postgres' = requestedSharedConfigStorageMode;
   let userPool = null as ReturnType<typeof createPostgresPool> | null;
   let userStore = null as ReturnType<typeof createUserStore> | null;
   let matchStateStore = null as ReturnType<typeof createMatchStateStore> | null;
@@ -255,51 +225,17 @@ void (async () => {
     pool: null,
   });
   let postgresAvailableForApp = false;
+  let matchDbCutoverSummary: { mode: 'auto' | 'skip'; migratedMatches: number } = { mode: matchDbCutoverMode, migratedMatches: 0 };
+  const backgroundHealth = {
+    assetSync: { ok: true, lastRunAt: null as string | null, mode: 'pending' as 'pending' | 'ok' | 'error', details: '' },
+    matchMirror: { ok: true, lastRunAt: null as string | null, mode: 'pending' as 'pending' | 'ok' | 'error', details: '' },
+  };
   const requireAdminAuth = createRequireAdminAuth({
     isAdminAuthEnabled,
     logLine,
     getUserStore: () => userStore,
   });
-  const syncMatchStateMirror = async () => {
-    if (!matchStateStore) return;
-    const matchIds = (await matchDb.listMatches()).filter((matchId): matchId is string => typeof matchId === 'string' && matchId.length > 0);
-    for (const matchId of matchIds) {
-      const fetched = await matchDb.fetch(matchId, {
-        state: true,
-        metadata: true,
-      }) as MatchFetchForMirror | null;
-      if (fetched?.state) {
-        await matchStateStore.persistMatchSnapshot({
-          matchId,
-          state: fetched.state,
-          metadata: fetched.metadata ?? undefined,
-          snapshotKind: ((fetched.state as { ctx?: { gameover?: unknown } }).ctx?.gameover ? 'final' : 'autosave'),
-        });
-      }
-      if (userStore) {
-        await userStore.persistMatchResultIfFinished(matchId, (fetched?.state ?? null) as never);
-      }
-    }
-  };
-  const migrateFlatFileMatchesToPostgres = async (postgresMatchDb: MatchDbBackend) => {
-    const matchIds = await flatFileMatchDb.listMatches?.() ?? [];
-    for (const matchId of matchIds) {
-      const fetched = await flatFileMatchDb.fetch?.(matchId, {
-        state: true,
-        metadata: true,
-        initialState: true,
-        log: true,
-      });
-      const initialState = fetched?.initialState;
-      const metadata = (fetched?.metadata as Record<string, unknown> | null | undefined) ?? null;
-      if (!initialState || !metadata) continue;
-      await postgresMatchDb.createMatch?.(matchId, { initialState, metadata });
-      if (typeof fetched?.state !== 'undefined') {
-        await postgresMatchDb.setState?.(matchId, fetched.state, Array.isArray(fetched.log) ? fetched.log : []);
-      }
-      await postgresMatchDb.setMetadata?.(matchId, metadata);
-    }
-  };
+  const adminAudit = createAdminAuditLogger({ getPool: () => userPool, logLine });
 
   if (databaseUrl) {
     try {
@@ -311,14 +247,14 @@ void (async () => {
       assetStore = createAssetStore(userPool);
       await assetStore.ensureSchema();
       await assetStore.syncDirectory(uploadsDir);
+      backgroundHealth.assetSync = { ok: true, lastRunAt: new Date().toISOString(), mode: 'ok', details: 'initial sync complete' };
       matchStateStore = createMatchStateStore(userPool);
       await matchStateStore.ensureSchema();
       liveMirrorUserStore = userStore;
       liveMirrorMatchStateStore = matchStateStore;
       const postgresMatchDb = createBoardgamePostgresDb(userPool) as MatchDbBackend & { ensureSchema?: () => Promise<void> };
       await postgresMatchDb.ensureSchema?.();
-      await migrateFlatFileMatchesToPostgres(postgresMatchDb);
-      currentMatchDbBackend = postgresMatchDb;
+      matchDbCutoverSummary = await matchRuntimeSync.cutoverToPostgres(postgresMatchDb, matchDbCutoverMode);
       bugReportStore = createBugReportStore({
         storePath: bugReportsPath,
         imagesDir: bugReportImagesDir,
@@ -327,11 +263,19 @@ void (async () => {
       await bugReportStore.ensureSchema();
       postgresAvailableForApp = true;
       await logLine('INFO', 'user auth/profile schema ready');
-      await syncMatchStateMirror();
+      await matchRuntimeSync.syncMatchStateMirror();
+      backgroundHealth.matchMirror = { ok: true, lastRunAt: new Date().toISOString(), mode: 'ok', details: 'initial sync complete' };
       setInterval(async () => {
         try {
-          await syncMatchStateMirror();
+          await matchRuntimeSync.syncMatchStateMirror();
+          backgroundHealth.matchMirror = { ok: true, lastRunAt: new Date().toISOString(), mode: 'ok', details: 'scheduled sync complete' };
         } catch (error) {
+          backgroundHealth.matchMirror = {
+            ok: false,
+            lastRunAt: new Date().toISOString(),
+            mode: 'error',
+            details: String(error instanceof Error ? error.message : error),
+          };
           await logLine('WARN', `user match persistence sweep failed: ${String(error instanceof Error ? error.message : error)}`);
         }
       }, 60_000).unref?.();
@@ -353,21 +297,22 @@ void (async () => {
       assetStore = createAssetStore(userPool);
       await assetStore.ensureSchema();
       await assetStore.syncDirectory(uploadsDir);
+      backgroundHealth.assetSync = { ok: true, lastRunAt: new Date().toISOString(), mode: 'ok', details: 'memory fallback sync complete' };
       matchStateStore = createMatchStateStore(userPool);
       await matchStateStore.ensureSchema();
       liveMirrorUserStore = userStore;
       liveMirrorMatchStateStore = matchStateStore;
       const postgresMatchDb = createBoardgamePostgresDb(userPool) as MatchDbBackend & { ensureSchema?: () => Promise<void> };
       await postgresMatchDb.ensureSchema?.();
-      await migrateFlatFileMatchesToPostgres(postgresMatchDb);
-      currentMatchDbBackend = postgresMatchDb;
+      matchDbCutoverSummary = await matchRuntimeSync.cutoverToPostgres(postgresMatchDb, matchDbCutoverMode);
       bugReportStore = createBugReportStore({
         storePath: bugReportsPath,
         imagesDir: bugReportImagesDir,
         pool: userPool,
       });
       await bugReportStore.ensureSchema();
-      await syncMatchStateMirror();
+      await matchRuntimeSync.syncMatchStateMirror();
+      backgroundHealth.matchMirror = { ok: true, lastRunAt: new Date().toISOString(), mode: 'ok', details: 'memory fallback sync complete' };
       await logLine('WARN', 'user auth/profile module running on in-memory fallback for local/dev mode');
     } catch (error) {
       userPool = null;
@@ -434,8 +379,6 @@ void (async () => {
       JSON_BODY_LIMIT,
       getGitUpdateStatus,
       getGitAuthStatus,
-      saveGithubHttpsCredentials,
-      clearGithubHttpsCredentials,
       autoStashRuntimeNoise,
       runGit,
       runShellCommand,
@@ -447,7 +390,7 @@ void (async () => {
       importJsonConfigToDb: syncCurrentJsonToPostgres,
       userStore,
       pool: userPool,
-      prepareBackupSnapshot: syncMatchStateMirror,
+      prepareBackupSnapshot: matchRuntimeSync.syncMatchStateMirror,
       backupRootDir: repoDir,
       backupAssetDirs: [uploadsDir],
       persistMatchSnapshot: async (args) => Boolean(await matchStateStore?.persistMatchSnapshot({
@@ -460,6 +403,26 @@ void (async () => {
         await matchStateStore?.markMatchDeleted(matchId);
       },
       deliverPasswordResetFn: deliverPasswordReset,
+      getServiceHealth: () => ({
+        database: { ok: Boolean(userPool), mode: userPool ? 'connected' : 'unavailable' },
+        userModule: { ok: Boolean(userStore) },
+        sharedConfig: {
+          ok: postgresAvailableForApp,
+          mode: sharedConfigStorageMode,
+          primarySource: 'postgres',
+          fallbackEnabled: false,
+        },
+        matchDb: {
+          ok: true,
+          backend: currentMatchDbBackend === flatFileMatchDb ? 'flatfile' : 'postgres',
+          cutoverMode: matchDbCutoverSummary.mode,
+          migratedMatches: matchDbCutoverSummary.migratedMatches,
+        },
+        assetSync: backgroundHealth.assetSync,
+        matchMirror: backgroundHealth.matchMirror,
+        bugReports: { ok: true, storage: userPool ? 'postgres+files' : 'files' },
+      }),
+      auditAdminAction: adminAudit,
     });
     registerBugReportRoutes({
       router,
@@ -475,6 +438,7 @@ void (async () => {
       userStore,
       pool: userPool,
       assetStore,
+      auditAdminAction: adminAudit,
     });
     registerSharedRoutes({
       router,
@@ -493,6 +457,7 @@ void (async () => {
       resetSharedDeckTemplate,
       saveRanksToDisk: saveRanks,
       saveTemplateToDisk: saveTemplate,
+      auditAdminAction: adminAudit,
     });
     registerUploadRoutes({
       router,
@@ -505,6 +470,7 @@ void (async () => {
       uploadsDir,
       userStore,
       assetStore,
+      auditAdminAction: adminAudit,
     });
   }
   await loadTemplate();

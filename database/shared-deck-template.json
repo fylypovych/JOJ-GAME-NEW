@@ -828,7 +828,7 @@
       "id": "support-01",
       "title": "Моральна підтримка",
       "category": "SUPPORT",
-      "image": "/cards/_.webp",
+      "image": "/cards/support-01.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -841,7 +841,7 @@
       "id": "support-02",
       "title": "Кавопауза",
       "category": "SUPPORT",
-      "image": "/cards/_-1772714492058.webp",
+      "image": "/cards/support-02.webp",
       "effects": [
         {
           "resource": "time",
@@ -858,7 +858,7 @@
       "id": "support-03",
       "title": "Психологічний тренінг",
       "category": "SUPPORT",
-      "image": "/cards/_-1772714539592.webp",
+      "image": "/cards/support-03.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2726,7 +2726,7 @@
       "id": "support-01",
       "title": "Моральна підтримка",
       "category": "SUPPORT",
-      "image": "/cards/_.webp",
+      "image": "/cards/support-01.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -2739,7 +2739,7 @@
       "id": "support-02",
       "title": "Кавопауза",
       "category": "SUPPORT",
-      "image": "/cards/_-1772714492058.webp",
+      "image": "/cards/support-02.webp",
       "effects": [
         {
           "resource": "time",
@@ -2756,7 +2756,7 @@
       "id": "support-03",
       "title": "Психологічний тренінг",
       "category": "SUPPORT",
-      "image": "/cards/_-1772714539592.webp",
+      "image": "/cards/support-03.webp",
       "effects": [
         {
           "resource": "reputation",

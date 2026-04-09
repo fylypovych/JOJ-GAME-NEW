@@ -1,18 +1,31 @@
 import type { LogLine as FileLogLine } from '../file-logger';
 
+export type RouteHeaders = Record<string, unknown>;
+export type RouteResponseHeaders = Record<string, string | string[]>;
+export type RouteSetHeader = (name: string, value: string | string[]) => void;
+
 export type RouteCtx = {
   query?: Record<string, unknown>;
-  request?: { body?: unknown; headers?: Record<string, unknown> };
-  headers?: Record<string, unknown>;
-  app?: { context?: { db?: unknown } };
+  path?: string;
+  method?: string;
+  ip?: string;
+  req?: { socket?: { remoteAddress?: string | null }; on?: (...args: unknown[]) => void; destroy?: () => void };
+  request?: { body?: unknown; headers?: RouteHeaders; ip?: string };
+  response?: { headers?: RouteResponseHeaders };
+  headers?: RouteHeaders;
+  app?: { context?: { db?: unknown; lobbyApi?: unknown } };
   db?: unknown;
   status?: number;
   body?: unknown;
+  set?: RouteSetHeader;
+  append?: RouteSetHeader;
+  redirect?: (location: string) => void;
 };
 
 export type RouterLike = {
   get: (path: string, handler: (ctx: RouteCtx) => unknown) => void;
   post: (path: string, handler: (ctx: RouteCtx) => unknown) => void;
+  use?: (handler: (ctx: RouteCtx, next: () => Promise<unknown>) => Promise<unknown>) => void;
 };
 
 export type RequireAdminAuth = (ctx: RouteCtx, routeLabel: string) => Promise<boolean>;

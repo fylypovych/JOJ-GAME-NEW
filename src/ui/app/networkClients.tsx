@@ -1,8 +1,7 @@
 import { Client } from 'boardgame.io/react';
 import { SocketIO } from 'boardgame.io/multiplayer';
 import { jojGame } from '../../game/jojGame';
-import { GameBoardV1 } from '../GameBoardV1';
-import { GameBoardV2 } from '../GameBoardV2';
+import { GameBoardV1, GameBoardV2 } from '../board';
 import { SERVER_URL } from './clientConfig';
 
 export const NetworkClientV2 = Client({

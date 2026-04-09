@@ -1,5 +1,6 @@
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from './types';
 import { requireAdminMutationAuth } from '../admin-auth';
+import type { RankDefinition } from '../../src/game/types';
 
 type SharedRoutesDeps = {
   router: RouterLike;
@@ -12,12 +13,18 @@ type SharedRoutesDeps = {
   exportSharedDeckTemplateJson: () => string;
   getSharedDeckTemplateStats: () => unknown;
   getSharedRanks: () => unknown;
-  setSharedRanks: (value: any) => boolean;
+  setSharedRanks: (value: RankDefinition[]) => boolean;
   resetSharedRanks: () => void;
   importSharedDeckTemplateJson: (json: string) => { ok: true } | { ok: false; error: string };
   resetSharedDeckTemplate: () => void;
   saveRanksToDisk: () => Promise<void>;
   saveTemplateToDisk: () => Promise<void>;
+  auditAdminAction?: (input: {
+    action: string;
+    ctx: RouteCtx;
+    success: boolean;
+    details?: Record<string, unknown>;
+  }) => Promise<void>;
 };
 
 export const registerSharedRoutes = ({
@@ -37,6 +44,7 @@ export const registerSharedRoutes = ({
   resetSharedDeckTemplate,
   saveRanksToDisk,
   saveTemplateToDisk,
+  auditAdminAction,
 }: SharedRoutesDeps) => {
   const requireAdminWriteAccess = (ctx: RouteCtx, routeLabel: string) =>
     requireAdminMutationAuth(ctx, routeLabel, requireAdminAuth);
@@ -65,12 +73,14 @@ export const registerSharedRoutes = ({
     }
     const ok = setSharedRanks(ranks);
     if (!ok) {
+      await auditAdminAction?.({ action: 'shared.ranks.update', ctx, success: false, details: { reason: 'invalid-ranks-schema' } });
       ctx.status = 400;
       ctx.body = { ok: false, error: 'Invalid ranks schema' };
       return;
     }
     await saveRanksToDisk();
     await logLine('INFO', `shared-ranks updated (${ranks.length} rows)`);
+    await auditAdminAction?.({ action: 'shared.ranks.update', ctx, success: true, details: { count: ranks.length } });
     ctx.body = { ok: true, ranks: getSharedRanks() };
   });
 
@@ -80,6 +90,7 @@ export const registerSharedRoutes = ({
     resetSharedRanks();
     await saveRanksToDisk();
     await logLine('INFO', 'shared-ranks reset to default');
+    await auditAdminAction?.({ action: 'shared.ranks.reset', ctx, success: true });
     ctx.body = { ok: true, ranks: getSharedRanks() };
   });
 
@@ -96,12 +107,14 @@ export const registerSharedRoutes = ({
     }
     const result = importSharedDeckTemplateJson(json);
     if (!result.ok) {
+      await auditAdminAction?.({ action: 'shared.template.import', ctx, success: false, details: { error: result.error } });
       ctx.status = 400;
       ctx.body = result;
       return;
     }
     await saveTemplateToDisk();
     await logLine('INFO', 'shared-deck-template imported');
+    await auditAdminAction?.({ action: 'shared.template.import', ctx, success: true });
     ctx.body = { ok: true, stats: getSharedDeckTemplateStats() };
   });
 
@@ -111,6 +124,7 @@ export const registerSharedRoutes = ({
     resetSharedDeckTemplate();
     await saveTemplateToDisk();
     await logLine('INFO', 'shared-deck-template reset to default');
+    await auditAdminAction?.({ action: 'shared.template.reset', ctx, success: true });
     ctx.body = { ok: true, stats: getSharedDeckTemplateStats() };
   });
 };

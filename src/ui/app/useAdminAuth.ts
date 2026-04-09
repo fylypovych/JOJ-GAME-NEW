@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createBrowserApiClient } from './httpClient';
 import { getAdminCsrfToken } from '../admin/authHeaders';
 
 type Params = {
@@ -22,25 +23,28 @@ export const useAdminAuth = ({
   const [adminAuthorized, setAdminAuthorized] = useState<boolean>(!isAdminRoute);
   const [adminAuthEnabled, setAdminAuthEnabled] = useState<boolean | null>(null);
   const [adminAuthError, setAdminAuthError] = useState<string>('');
+  const api = useMemo(() => createBrowserApiClient(serverUrl), [serverUrl]);
 
-  const tryVerify = async (targetServerUrl: string) => {
+  const tryVerify = useCallback(async (targetServerUrl: string) => {
     const response = await fetch(`${targetServerUrl}/api/admin/verify`, { credentials: 'include' });
     return response;
-  };
+  }, []);
 
-  const adminFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  const adminFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
     const headers = new Headers(init?.headers ?? undefined);
-    const csrfToken = getAdminCsrfToken();
-    if (csrfToken && !headers.has('X-CSRF-Token')) headers.set('X-CSRF-Token', csrfToken);
-    const response = await fetch(input, { ...init, headers, credentials: 'include' });
+    if (String(init?.method ?? 'GET').toUpperCase() !== 'GET') {
+      const csrfToken = getAdminCsrfToken();
+      if (csrfToken && !headers.has('X-CSRF-Token')) headers.set('X-CSRF-Token', csrfToken);
+    }
+    const response = await api.fetchWithCredentials(input, { ...init, headers });
     if (response.status === 401) {
       setAdminAuthorized(false);
       setAdminAuthError(unauthorizedText);
     }
     return response;
-  };
+  }, [api, unauthorizedText]);
 
-  const verifyAdminToken = async (): Promise<boolean> => {
+  const verifyAdminToken = useCallback(async (): Promise<boolean> => {
     setAdminAuthChecking(true);
     setAdminAuthError('');
     try {
@@ -91,7 +95,7 @@ export const useAdminAuth = ({
     } finally {
       setAdminAuthChecking(false);
     }
-  };
+  }, [defaultServerUrl, serverUnavailableText, serverUrl, serverUrlStorageKey, tryVerify, unauthorizedText]);
 
   useEffect(() => {
     if (!isAdminRoute) {
@@ -119,7 +123,7 @@ export const useAdminAuth = ({
     return () => {
       cancelled = true;
     };
-  }, [isAdminRoute]);
+  }, [isAdminRoute, serverUrl, defaultServerUrl, verifyAdminToken]);
 
   return {
     adminAuthChecking,

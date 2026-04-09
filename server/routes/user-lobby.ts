@@ -7,6 +7,7 @@ import type { LogLine, RouteCtx, RouterLike } from './types';
 import type { UserStore } from '../services/user-store';
 import { requireUserAuth, requireUserCsrf } from '../services/user-auth';
 import { loadLobbyGameUiConfig } from '../services/game-ui-config';
+import { routeError, routeOk } from './response';
 
 type MatchDbStateLike = {
   G?: {
@@ -228,8 +229,7 @@ export const registerUserLobbyRoutes = (args: {
 
   router.post('/api/user-lobby/create-and-join', async (ctx: RouteCtx) => {
     if (!userStore) {
-      ctx.status = 503;
-      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      routeError(ctx, 503, 'User module is unavailable.');
       return;
     }
     if (!requireUserCsrf(ctx)) return;
@@ -242,8 +242,7 @@ export const registerUserLobbyRoutes = (args: {
     const numPlayers = Number(body.numPlayers ?? 0);
     const setupData = body.setupData;
     if (!gameName || !playerName || Number.isNaN(numPlayers) || numPlayers < 2) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: 'Invalid create-and-join payload.' };
+      routeError(ctx, 400, 'Invalid create-and-join payload.');
       return;
     }
     try {
@@ -288,17 +287,15 @@ export const registerUserLobbyRoutes = (args: {
         credentials,
         playerName,
       });
-      ctx.body = { ok: true, session: { matchID, playerID, credentials } };
+      routeOk(ctx, { session: { matchID, playerID, credentials } });
     } catch (error) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: String(error instanceof Error ? error.message : error) };
+      routeError(ctx, 400, String(error instanceof Error ? error.message : error));
     }
   });
 
   router.post('/api/user-lobby/join', async (ctx: RouteCtx) => {
     if (!userStore) {
-      ctx.status = 503;
-      ctx.body = { ok: false, error: 'User module is unavailable.' };
+      routeError(ctx, 503, 'User module is unavailable.');
       return;
     }
     if (!requireUserCsrf(ctx)) return;
@@ -311,8 +308,7 @@ export const registerUserLobbyRoutes = (args: {
     const playerID = String(body.playerID ?? '').trim();
     const playerName = String(body.playerName ?? '').trim();
     if (!gameName || !matchID || !playerID || !playerName) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: 'Invalid join payload.' };
+      routeError(ctx, 400, 'Invalid join payload.');
       return;
     }
     try {
@@ -329,10 +325,9 @@ export const registerUserLobbyRoutes = (args: {
         credentials,
         playerName,
       });
-      ctx.body = { ok: true, session: { matchID, playerID: resolvedPlayerID, credentials } };
+      routeOk(ctx, { session: { matchID, playerID: resolvedPlayerID, credentials } });
     } catch (error) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: String(error instanceof Error ? error.message : error) };
+      routeError(ctx, 400, String(error instanceof Error ? error.message : error));
     }
   });
 };

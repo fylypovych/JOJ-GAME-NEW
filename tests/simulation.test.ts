@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { executeSimulationHandPlan, executeSimulationLegendaryPlan, runGameSimulationsWithDeps } from '../src/game/simulation';
 import { calculateSimulationTurnLimit } from '../src/game/simulationSetup';
 import type { SimulationDeps } from '../src/game/simulation';
-import { playCardHandler, playLegendaryCardHandler } from '../src/game/moveHandlers';
+import { playCardHandler, playLegendaryCardHandler, promoteHandler } from '../src/game/moveHandlers';
 import type { JojMovesDeps, MoveArgs } from '../src/game/moveTypes';
 import type { CardDefinition, JojGameState, ResourceKey } from '../src/game/types';
 
@@ -431,4 +431,42 @@ test('simulation legendary execution stays in parity with live handler', () => {
   assert.equal(liveResult, undefined);
   assert.equal(simResult, true);
   assert.deepEqual(comparableState(sim), comparableState(live));
+});
+
+test('simulation promote flow stays in parity with live handler end-stage behavior', () => {
+  const live = makeParityState();
+  const sim = makeParityState();
+  let nextStage = '';
+
+  const liveDeps = createParityMoveDeps();
+  liveDeps.promoteRank = (G, playerID) => {
+    G.ranks[playerID] = 'soldier';
+    G.promotedThisTurn[playerID] = true;
+    syncParityPlayerState(G, playerID);
+    return true;
+  };
+  liveDeps.getActiveRanks = () => [{ id: 'recruit' }, { id: 'soldier', cost: {}, bonus: {} }];
+  const liveArgs: MoveArgs = {
+    G: live,
+    ctx: { currentPlayer: '0', activePlayers: { '0': 'play' }, turn: 1, numPlayers: 2 },
+    playerID: '0',
+    events: { setStage: (stage: string) => { nextStage = stage; } },
+  };
+
+  const simDeps = createParitySimulationDeps();
+  simDeps.promoteRank = (G, playerID) => {
+    G.ranks[playerID] = 'soldier';
+    G.promotedThisTurn[playerID] = true;
+    syncParityPlayerState(G, playerID);
+    return true;
+  };
+
+  const liveResult = promoteHandler(liveDeps, liveArgs);
+  const simResult = simDeps.promoteRank(sim, '0', 2);
+
+  assert.equal(liveResult, undefined);
+  assert.equal(simResult, true);
+  assert.equal(nextStage, 'end');
+  assert.equal(live.ranks['0'], sim.ranks['0']);
+  assert.equal(live.promotedThisTurn['0'], sim.promotedThisTurn['0']);
 });

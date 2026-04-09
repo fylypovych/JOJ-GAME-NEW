@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { jojGame } from '../src/game/jojGame';
 import { createBotEngine } from '../src/game/bot-engine/engine';
-import type { CardDefinition, JojGameState } from '../src/game/types';
-import type { JojMovesDeps, MoveArgs } from '../src/game/moveTypes';
+import type { JojGameState } from '../src/game/types';
+import type { JojMovesDeps } from '../src/game/moveTypes';
 import {
   drawCardHandler,
   passHandler,

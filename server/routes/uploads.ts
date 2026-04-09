@@ -38,6 +38,12 @@ type UploadRoutesDeps = {
     purgeMissingFiles: (existingAssetPaths: Set<string>, kind?: string) => Promise<number>;
     listKnownPaths: (kind?: string) => Promise<Set<string>>;
   } | null;
+  auditAdminAction?: (input: {
+    action: string;
+    ctx: RouteCtx;
+    success: boolean;
+    details?: Record<string, unknown>;
+  }) => Promise<void>;
 };
 
 export const registerUploadRoutes = ({
@@ -51,6 +57,7 @@ export const registerUploadRoutes = ({
   uploadsDir,
   userStore,
   assetStore,
+  auditAdminAction,
 }: UploadRoutesDeps) => {
   const CARD_ASSET_BASE_PATH = '/card-assets/';
   const isCardAssetPath = (value: string) => value.startsWith('/card-assets/') || value.startsWith('/cards/');
@@ -166,8 +173,10 @@ export const registerUploadRoutes = ({
         fallbackBaseName: parsed.cardId || `card-${Date.now()}`,
         assetKind: 'card-image',
       });
+      await auditAdminAction?.({ action: 'uploads.card-image.upload', ctx, success: true, details: { path: assetPath } });
       ctx.body = { ok: true, path: assetPath };
     } catch (error) {
+      await auditAdminAction?.({ action: 'uploads.card-image.upload', ctx, success: false, details: { error: String(error) } });
       await logLine('ERROR', `image upload failed: ${String(error)}`);
       ctx.status = 500;
       ctx.body = { ok: false, error: 'Failed to save image' };
@@ -232,8 +241,10 @@ export const registerUploadRoutes = ({
         await assetStore?.markDeleted(toCardAssetPath(fileName));
       }
       await logLine('INFO', `image deleted: ${fileName}`);
+      await auditAdminAction?.({ action: 'uploads.card-image.delete', ctx, success: true, details: { fileName } });
       ctx.body = { ok: true };
     } catch (error) {
+      await auditAdminAction?.({ action: 'uploads.card-image.delete', ctx, success: false, details: { fileName, error: String(error) } });
       ctx.status = 500;
       ctx.body = { ok: false, error: 'Failed to delete image' };
       await logLine('ERROR', `image delete failed (${fileName}): ${String(error)}`);
@@ -262,6 +273,7 @@ export const registerUploadRoutes = ({
 
     if (mode === 'records') {
       const cleaned = await assetStore.purgeMissingFiles(existingPaths, 'card-image');
+      await auditAdminAction?.({ action: 'uploads.assets.cleanup', ctx, success: true, details: { mode, cleaned } });
       ctx.body = { ok: true, mode, cleaned };
       return;
     }
@@ -279,6 +291,7 @@ export const registerUploadRoutes = ({
         // ignore missing/locked file and continue cleanup
       }
     }
+    await auditAdminAction?.({ action: 'uploads.assets.cleanup', ctx, success: true, details: { mode, cleaned } });
     ctx.body = { ok: true, mode, cleaned };
   });
 };

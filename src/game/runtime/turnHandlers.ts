@@ -56,6 +56,7 @@ export const promoteHandler = (d: JojMovesDeps, args: MoveArgs) => {
   d.recordResourceFlowStats(args.G, beforeResourcesGlobal);
   d.resetNoPlayablePassStreak(args.G);
   d.resetEndGameVote(args.G);
+  args.events?.setStage?.(d.END_STAGE);
   return undefined;
 };
 

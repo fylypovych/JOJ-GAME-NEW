@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createEffectsEngine } from '../src/game/effectsEngine';
 import { appendAppliedEffectLog } from '../src/game/effectLog';
-import type { JojGameState, ResourceKey } from '../src/game/types';
+import type { JojGameState } from '../src/game/types';
 
 const makeState = (): JojGameState => ({
   gameMode: 'standard',

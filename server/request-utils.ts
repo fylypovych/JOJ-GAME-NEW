@@ -1,4 +1,5 @@
 import type { LogLine } from './file-logger';
+import type { RouteCtx } from './routes/types';
 
 export class BodyTooLargeError extends Error {
   readonly code = 'BODY_TOO_LARGE';
@@ -8,7 +9,11 @@ export class BodyTooLargeError extends Error {
   }
 }
 
-export const getClientIp = (ctx: any): string => {
+type CookieWritableCtx = RouteCtx & {
+  response?: { headers?: Record<string, string | string[]> };
+};
+
+export const getClientIp = (ctx: RouteCtx): string => {
   const trustProxy = /^(1|true|yes)$/i.test((process.env.TRUST_PROXY ?? '').trim());
   const forwarded = ctx?.request?.headers?.['x-forwarded-for'];
   if (trustProxy && typeof forwarded === 'string' && forwarded.trim()) {
@@ -22,7 +27,7 @@ export const getClientIp = (ctx: any): string => {
   );
 };
 
-export const getCookieValue = (ctx: any, name: string): string => {
+export const getCookieValue = (ctx: RouteCtx, name: string): string => {
   const raw = ctx?.request?.headers?.cookie;
   if (typeof raw !== 'string' || !raw.trim()) return '';
   const match = raw
@@ -38,7 +43,7 @@ export const getCookieValue = (ctx: any, name: string): string => {
 };
 
 export const setCookieHeader = (
-  ctx: any,
+  ctx: CookieWritableCtx,
   name: string,
   value: string,
   options: {
@@ -70,7 +75,8 @@ export const setCookieHeader = (
   }
   if (typeof ctx?.set === 'function') {
     appendCookie();
-    ctx.set('Set-Cookie', ctx.response.headers['Set-Cookie']);
+    const setCookieHeader = ctx.response?.headers?.['Set-Cookie'] ?? [];
+    ctx.set('Set-Cookie', setCookieHeader);
     return;
   }
   appendCookie();
@@ -86,7 +92,7 @@ export const createRequireAdminAuth = ({
   getUserStore?: () => {
     getUserBySessionToken: (token: string) => Promise<{ id?: string; role?: string } | null>;
   } | null;
-}) => async (ctx: any, routeLabel: string): Promise<boolean> => {
+}) => async (ctx: RouteCtx, routeLabel: string): Promise<boolean> => {
   const userStore = getUserStore?.() ?? null;
   if (userStore) {
     const sessionToken = getCookieValue(ctx, 'joj_user_session');
@@ -107,16 +113,29 @@ export const createRateLimiter = ({
 }: {
   rateLimitState: Map<string, { count: number; resetAt: number }>;
   logLine: LogLine;
-}) => async (ctx: any, bucket: string, limit: number, windowMs: number): Promise<boolean> => {
+}) => async (ctx: RouteCtx, bucket: string, limit: number, windowMs: number): Promise<boolean> => {
   const now = Date.now();
+  if (rateLimitState.size > 5000) {
+    for (const [entryKey, entry] of rateLimitState.entries()) {
+      if (entry.resetAt <= now) rateLimitState.delete(entryKey);
+    }
+  }
   const key = `${bucket}:${getClientIp(ctx)}`;
   const current = rateLimitState.get(key);
   if (!current || current.resetAt <= now) {
     rateLimitState.set(key, { count: 1, resetAt: now + windowMs });
+    if (typeof ctx?.set === 'function') {
+      ctx.set('X-RateLimit-Limit', String(limit));
+      ctx.set('X-RateLimit-Remaining', String(Math.max(0, limit - 1)));
+    }
     return true;
   }
 
   current.count += 1;
+  if (typeof ctx?.set === 'function') {
+    ctx.set('X-RateLimit-Limit', String(limit));
+    ctx.set('X-RateLimit-Remaining', String(Math.max(0, limit - current.count)));
+  }
   if (current.count <= limit) return true;
 
   const retryAfterSec = Math.max(1, Math.ceil((current.resetAt - now) / 1000));
@@ -127,7 +146,7 @@ export const createRateLimiter = ({
   return false;
 };
 
-export const readJsonBody = async (ctx: any, maxBytes: number): Promise<Record<string, unknown>> => {
+export const readJsonBody = async (ctx: RouteCtx, maxBytes: number): Promise<Record<string, unknown>> => {
   const existingBody = ctx?.request?.body;
   if (existingBody && typeof existingBody === 'object') {
     return existingBody as Record<string, unknown>;
@@ -135,6 +154,7 @@ export const readJsonBody = async (ctx: any, maxBytes: number): Promise<Record<s
 
   const req = ctx?.req;
   if (!req || typeof req.on !== 'function') return {};
+  const on = req.on.bind(req);
 
   const raw = await new Promise<string>((resolve, reject) => {
     let data = '';
@@ -150,7 +170,7 @@ export const readJsonBody = async (ctx: any, maxBytes: number): Promise<Record<s
       done = true;
       resolve(value);
     };
-    req.on('data', (chunk: Buffer | string) => {
+    on('data', (chunk: Buffer | string) => {
       const chunkText = typeof chunk === 'string' ? chunk : chunk.toString('utf8');
       size += Buffer.byteLength(chunkText, 'utf8');
       if (size > maxBytes) {
@@ -160,8 +180,8 @@ export const readJsonBody = async (ctx: any, maxBytes: number): Promise<Record<s
       }
       data += chunkText;
     });
-    req.on('end', () => succeed(data));
-    req.on('error', (error: Error) => fail(error));
+    on('end', () => succeed(data));
+    on('error', (error: Error) => fail(error));
   });
 
   if (!raw.trim()) return {};
@@ -179,7 +199,7 @@ export const readJsonBodySafe = async ({
   maxBytes,
   logLine,
 }: {
-  ctx: any;
+  ctx: RouteCtx;
   routeLabel: string;
   maxBytes: number;
   logLine: LogLine;

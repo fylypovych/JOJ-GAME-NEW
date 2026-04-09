@@ -9,6 +9,7 @@ import {
 import { useLobbySession } from './useLobbySession';
 import { buildRoomShareLink } from './share';
 import { GAME_NAME, SESSION_STORAGE_KEY } from './model';
+import { createBrowserApiClient } from './httpClient';
 
 export interface UseLobbyDataArgs {
   serverUrl: string;
@@ -89,6 +90,7 @@ export const useLobbyData = (args: UseLobbyDataArgs): UseLobbyDataResult => {
 
   // Lobby client
   const lobbyClient = useMemo(() => new LobbyClient({ server: serverUrl }), [serverUrl]);
+  const api = useMemo(() => createBrowserApiClient(serverUrl), [serverUrl]);
 
   // Lobby UI config
   const [lobbyGameUiConfig, setLobbyGameUiConfig] = useState(DEFAULT_LOBBY_GAME_UI_CONFIG);
@@ -145,9 +147,8 @@ export const useLobbyData = (args: UseLobbyDataArgs): UseLobbyDataResult => {
     let cancelled = false;
     (async () => {
       try {
-        const response = await fetch(`${serverUrl}/api/game/ui-config`, { credentials: 'include' });
-        const payload = await response.json() as { ok?: boolean };
-        if (!response.ok || payload.ok !== true) return;
+        const payload = await api.getJson<{ ok?: boolean }>(`${serverUrl}/api/game/ui-config`);
+        if (payload.ok !== true) return;
         if (!cancelled) {
           const normalized = normalizeLobbyGameUiConfig(payload);
           setLobbyGameUiConfig(normalized);
@@ -157,7 +158,7 @@ export const useLobbyData = (args: UseLobbyDataArgs): UseLobbyDataResult => {
       }
     })();
     return () => { cancelled = true; };
-  }, [serverUrl]);
+  }, [api, serverUrl]);
 
   // Computed values
   const adminMatchID = useMemo(() => {
