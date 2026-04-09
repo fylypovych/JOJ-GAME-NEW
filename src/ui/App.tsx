@@ -1,6 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo } from 'react';
 import { text } from './i18n';
-import { formatModuleDisplayName } from './moduleDisplay';
 import {
   clampBotCountToAllowed,
   clampRoomCapacityToAllowed,
@@ -27,7 +26,6 @@ import {
 } from './app/sections';
 import { useAdminSnapshot } from './app/useAdminSnapshot';
 import { BugReportWidget } from './app/BugReportWidget';
-import { buildRoomShareLink } from './app/share';
 import { AppHeader } from './app/AppHeader';
 import { AppFooter } from './app/AppFooter';
 import { useAppShellState } from './app/useAppShellState';
@@ -208,6 +206,14 @@ export const App = () => {
     roomPlayerNames,
     canStart,
     lobbyGameUiConfig,
+    optionalLobbyModules,
+    galleryCards,
+    cardImageById,
+    adminMatchID,
+    activeSessionMatch,
+    activeSessionShareLink,
+    activeSessionGameModeLabel,
+    activeSessionInviteText,
   } = useAppGameState({
     serverUrl: SERVER_URL,
     playerName,
@@ -220,26 +226,23 @@ export const App = () => {
     botDifficulty,
     botProfile,
     selectedOptionalModuleIds,
+    adminSelectedMatchID,
     t: {
       serverUnavailable: t.serverUnavailable,
       enterName: t.enterName,
       roomFull: t.roomFull,
       createFailed: t.createFailed,
       joinFailed: t.joinFailed,
+      gameModeStandardPlus: t.gameModeStandardPlus,
+      gameModeSimplified: t.gameModeSimplified,
+      gameModeStandard: t.gameModeStandard,
+      activeRoom: t.activeRoom,
+      gameModeLabel: t.gameModeLabel,
+      roomSummaryPlayers: t.roomSummaryPlayers,
     },
     bindMatchSession,
   });
 
-  const optionalLobbyModules = useMemo(
-    () => (sharedDeckTemplate.modules ?? [])
-      .filter((module) => module.enabled && module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
-      .map((module) => ({
-        id: module.id,
-        name: formatModuleDisplayName(module.name, module.id),
-        alwaysOn: module.category === 'VVNZ',
-      })),
-    [sharedDeckTemplate.modules],
-  );
   useEffect(() => {
     const alwaysOn = optionalLobbyModules.filter((module) => module.alwaysOn).map((module) => module.id);
     setSelectedOptionalModuleIds((prev) => {
@@ -277,38 +280,6 @@ export const App = () => {
       if (fallbackBotCount > 0 && botCount !== fallbackBotCount) setBotCount(fallbackBotCount);
     }
   }, [lobbyGameUiConfig, roomCapacity, createWithBots, botCount]);
-  const galleryCards = useMemo(() => {
-    const rankTrackIds = new Set(sharedDeckTemplate.rankTrack.map((card) => card.id));
-    if (galleryCategoryFilter === 'RANK') {
-      return [...sharedDeckTemplate.rankTrack]
-        .sort((a, b) => a.title.localeCompare(b.title));
-    }
-    return [...cardCatalog]
-      .filter((card) => galleryCategoryFilter === 'ALL'
-        ? !rankTrackIds.has(card.id)
-        : card.category === galleryCategoryFilter && !rankTrackIds.has(card.id))
-      .sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
-  }, [cardCatalog, galleryCategoryFilter, sharedDeckTemplate.rankTrack]);
-  const cardImageById = useMemo<Record<string, string>>(
-    () =>
-      cardCatalog.reduce<Record<string, string>>((acc, card) => {
-        if (typeof card.image === 'string' && card.image.trim()) acc[card.id] = card.image;
-        return acc;
-      }, {}),
-    [cardCatalog],
-  );
-  const activeSessionMatch = session
-    ? matches.find((match) => match.matchID === session.matchID) ?? null
-    : null;
-  const activeSessionShareLink = session ? buildRoomShareLink(session.matchID) : '';
-  const activeSessionGameModeLabel = activeSessionMatch?.setupData?.gameMode === 'standard_plus'
-    ? t.gameModeStandardPlus
-    : activeSessionMatch?.setupData?.gameMode === 'simplified'
-      ? t.gameModeSimplified
-      : t.gameModeStandard;
-  const activeSessionInviteText = session
-    ? `${t.activeRoom}: ${session.matchID}\n${t.gameModeLabel}: ${activeSessionGameModeLabel}\n${t.roomSummaryPlayers}: ${activeSessionMatch ? `${activeSessionMatch.players.filter((player) => Boolean(player.name?.trim())).length}/${activeSessionMatch.players.length}` : '-'}\n${activeSessionShareLink}`
-    : '';
   const effectLabel = (resource: 'time' | 'reputation' | 'discipline' | 'documents' | 'tech' | 'rank') =>
     resource === 'rank' ? t.rankResource : t.resources[resource];
   const rules = t.rulesList;
@@ -323,11 +294,6 @@ export const App = () => {
     setServerUrlDraft(DEFAULT_SERVER_URL);
     window.location.reload();
   };
-  const adminMatchID = useMemo(() => {
-    if (session?.matchID) return session.matchID;
-    if (adminSelectedMatchID && matches.some((m) => m.matchID === adminSelectedMatchID)) return adminSelectedMatchID;
-    return matches[0]?.matchID ?? '';
-  }, [adminSelectedMatchID, matches, session?.matchID]);
   const { snapshot, setSnapshot } = useAdminSnapshot({
     isAdminRoute,
     adminAuthorized,

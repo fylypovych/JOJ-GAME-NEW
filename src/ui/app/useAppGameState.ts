@@ -21,6 +21,7 @@ import {
 import { GAME_NAME, RANKS_STORAGE_KEY, SESSION_STORAGE_KEY, SHARED_TEMPLATE_STORAGE_KEY } from './model';
 import { useLobbySession } from './useLobbySession';
 import { useSharedConfigSync } from './useSharedConfigSync';
+import { buildRoomShareLink } from './share';
 import type { Language } from '../i18n';
 
 const TEMPLATE_API = (serverUrl: string) => `${serverUrl}/api/shared-deck-template`;
@@ -38,12 +39,19 @@ export interface UseAppGameStateArgs {
   botDifficulty: BotDifficulty;
   botProfile: BotProfile;
   selectedOptionalModuleIds: string[];
+  adminSelectedMatchID: string;
   t: {
     serverUnavailable: string;
     enterName: string;
     roomFull: string;
     createFailed: string;
     joinFailed: string;
+    gameModeStandardPlus: string;
+    gameModeSimplified: string;
+    gameModeStandard: string;
+    activeRoom: string;
+    gameModeLabel: string;
+    roomSummaryPlayers: string;
   };
   bindMatchSession: (args: {
     matchID: string;
@@ -85,6 +93,15 @@ export interface UseAppGameStateResult {
   galleryCards: CardDefinition[];
   cardImageById: Record<string, string>;
   
+  // Admin
+  adminMatchID: string;
+  
+  // Session-related
+  activeSessionMatch: ReturnType<typeof useLobbySession>['matches'][number] | null;
+  activeSessionShareLink: string;
+  activeSessionGameModeLabel: string;
+  activeSessionInviteText: string;
+  
   // Helpers
   rollbackTemplate: (json: string) => void;
   applyTemplateChange: (mutate: () => void, previousJson?: string) => Promise<boolean>;
@@ -103,6 +120,7 @@ export const useAppGameState = (args: UseAppGameStateArgs): UseAppGameStateResul
     botDifficulty,
     botProfile,
     selectedOptionalModuleIds,
+    adminSelectedMatchID,
     t,
     bindMatchSession,
   } = args;
@@ -253,6 +271,35 @@ export const useAppGameState = (args: UseAppGameStateArgs): UseAppGameStateResul
     [cardCatalog],
   );
 
+  const adminMatchID = useMemo(() => {
+    if (session?.matchID) return session.matchID;
+    if (adminSelectedMatchID && matches.some((m) => m.matchID === adminSelectedMatchID)) return adminSelectedMatchID;
+    return matches[0]?.matchID ?? '';
+  }, [adminSelectedMatchID, matches, session?.matchID]);
+
+  // Session-related computed values
+  const activeSessionMatch = useMemo(() =>
+    session ? matches.find((match) => match.matchID === session.matchID) ?? null : null,
+  [session, matches]);
+
+  const activeSessionShareLink = useMemo(() =>
+    session ? buildRoomShareLink(session.matchID) : '',
+  [session]);
+
+  const activeSessionGameModeLabel = useMemo(() => {
+    if (activeSessionMatch?.setupData?.gameMode === 'standard_plus') return t.gameModeStandardPlus;
+    if (activeSessionMatch?.setupData?.gameMode === 'simplified') return t.gameModeSimplified;
+    return t.gameModeStandard;
+  }, [activeSessionMatch, t.gameModeStandardPlus, t.gameModeSimplified, t.gameModeStandard]);
+
+  const activeSessionInviteText = useMemo(() => {
+    if (!session) return '';
+    const playerCount = activeSessionMatch
+      ? `${activeSessionMatch.players.filter((p) => Boolean(p.name?.trim())).length}/${activeSessionMatch.players.length}`
+      : '-';
+    return `${t.activeRoom}: ${session.matchID}\n${t.gameModeLabel}: ${activeSessionGameModeLabel}\n${t.roomSummaryPlayers}: ${playerCount}\n${activeSessionShareLink}`;
+  }, [session, activeSessionMatch, activeSessionGameModeLabel, activeSessionShareLink, t]);
+
   return {
     matches,
     session,
@@ -279,6 +326,11 @@ export const useAppGameState = (args: UseAppGameStateArgs): UseAppGameStateResul
     optionalLobbyModules,
     galleryCards,
     cardImageById,
+    adminMatchID,
+    activeSessionMatch,
+    activeSessionShareLink,
+    activeSessionGameModeLabel,
+    activeSessionInviteText,
     rollbackTemplate,
     applyTemplateChange,
     rollbackRanks,
