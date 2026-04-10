@@ -14,7 +14,7 @@ import {
   ProfileSection,
   RulesSection,
   StatisticsSection,
-} from './sections';
+} from './sections/index';
 
 type LobbyFeatureProps = {
   visible: boolean;

@@ -18,7 +18,6 @@ import {
   AdminAnalyticsTab,
   AdminAwardsTab,
   AdminBugReportsTab,
-  AdminCategoryButtons,
   AdminDatabaseTab,
   AdminDeckTab,
   AdminGithubTab,
@@ -28,7 +27,6 @@ import {
   AdminSettingsTab,
   AdminSimulationTab,
   AdminStateTab,
-  AdminTabButtons,
   AdminUsersTab,
   categories,
   rankResourceKeys,
@@ -52,6 +50,9 @@ import {
   useAdminUsers,
   useBugReportUiConfig,
   useGameUiConfig,
+  AdminShell,
+  AdminNavigation,
+  AdminOverview,
 } from './admin';
 
 export const AdminPage = ({
@@ -488,84 +489,6 @@ export const AdminPage = ({
     void loadGitAuthStatus({ preserveMessages: true });
     void checkGitUpdates({ preserveMessages: true });
   }, [isV4, v4Prefetched]);
-  const v4Text =
-    lang === 'uk'
-      ? {
-          runtimeTitle: 'Стан системи',
-          runtimeMeta: 'live',
-          storageLabel: 'Сховище',
-          serverLabel: 'Сервер',
-          configLabel: 'Shared config',
-          gitTitle: 'GitHub та деплой',
-          gitMeta: 'repo',
-          authLabel: 'Доступ',
-          repoLabel: 'Гілка',
-          syncLabel: 'Синхронізація',
-          moderationTitle: 'Модерація',
-          moderationMeta: 'reports',
-          newReportsLabel: 'Нові',
-          resolvedReportsLabel: 'Вирішено',
-          latestReporterLabel: 'Останній автор',
-          usersAssetsTitle: 'Користувачі та assets',
-          usersAssetsMeta: 'library',
-          usersLabel: 'Користувачі',
-          adminsLabel: 'Адміни',
-          assetsLabel: 'Assets',
-          latestAssetLabel: 'Останній файл',
-          analyticsTitle: 'Пульс матчів',
-          analyticsMeta: 'telemetry',
-          finishedLabel: 'Завершено',
-          avgTurnsLabel: 'Сер. ходів',
-          topModeLabel: 'Топ-режим',
-          topRankLabel: 'Топ-звання',
-          connected: 'підключено',
-          notConnected: 'не підключено',
-          ready: 'готово',
-          loading: 'завантаження',
-          clean: 'чисто',
-          dirty: 'локальні зміни',
-          upToDate: 'актуально',
-          noData: 'ще немає даних',
-          unknownUser: 'невідомо',
-        }
-      : {
-          runtimeTitle: 'System status',
-          runtimeMeta: 'live',
-          storageLabel: 'Storage',
-          serverLabel: 'Server',
-          configLabel: 'Shared config',
-          gitTitle: 'GitHub and deploy',
-          gitMeta: 'repo',
-          authLabel: 'Access',
-          repoLabel: 'Branch',
-          syncLabel: 'Sync',
-          moderationTitle: 'Moderation',
-          moderationMeta: 'reports',
-          newReportsLabel: 'New',
-          resolvedReportsLabel: 'Resolved',
-          latestReporterLabel: 'Latest reporter',
-          usersAssetsTitle: 'Users and assets',
-          usersAssetsMeta: 'library',
-          usersLabel: 'Users',
-          adminsLabel: 'Admins',
-          assetsLabel: 'Assets',
-          latestAssetLabel: 'Latest file',
-          analyticsTitle: 'Match pulse',
-          analyticsMeta: 'telemetry',
-          finishedLabel: 'Finished',
-          avgTurnsLabel: 'Avg turns',
-          topModeLabel: 'Top mode',
-          topRankLabel: 'Top rank',
-          connected: 'connected',
-          notConnected: 'not connected',
-          ready: 'ready',
-          loading: 'loading',
-          clean: 'clean',
-          dirty: 'local changes',
-          upToDate: 'up to date',
-          noData: 'no data yet',
-          unknownUser: 'unknown',
-        };
   const activeTabLabelMap = buildAdminTabLabelMap(t);
   const adminTabMeta: Record<AdminTab, AdminNavTab> = {
     start: {
@@ -654,34 +577,6 @@ export const AdminPage = ({
     },
   };
   const activeTabLabel = activeTabLabelMap[activeTab];
-  const v4StatCards = [
-    { label: t.matches, value: String(matches.length), tone: 'teal' },
-    { label: t.deckCount, value: String(cardCatalog.length), tone: 'mint' },
-    { label: t.ranksTitle, value: String(sharedRanks.length), tone: 'blue' },
-    {
-      label: t.roomModulesLabel,
-      value: String(sharedDeckTemplate.modules.length),
-      tone: 'sand',
-    },
-  ];
-  const adminCount = adminUsers.filter(
-    (user) => user.role === 'administrator',
-  ).length;
-  const unresolvedBugReports = bugReports.filter(
-    (report) => report.status === 'new',
-  ).length;
-  const resolvedBugReports = bugReports.filter(
-    (report) => report.status === 'resolved',
-  ).length;
-  const latestBugReport = bugReports[0] ?? null;
-  const latestAsset =
-    assets.find((asset) => !asset.deletedAt) ?? assets[0] ?? null;
-  const topMode = adminAnalytics?.byMode
-    ? [...adminAnalytics.byMode].sort(
-        (left, right) => right.matchesFinished - left.matchesFinished,
-      )[0]
-    : null;
-  const topWinningRank = adminAnalytics?.topWinningRanks?.[0] ?? null;
   const activeTabDescriptionMap = buildActiveTabDescriptionMap(lang);
   const adminCategories: AdminNavCategory[] =
     lang === 'uk'
@@ -827,709 +722,468 @@ export const AdminPage = ({
     adminCategories.find((category) =>
       category.tabs.some((tab) => tab.id === activeTab),
     ) ?? adminCategories[0];
-  const activeCategoryId = activeCategory.id;
-  const v4OverviewPanel = (
-    <>
-      <section className="admin-v4-hero">
-        <div>
-          <p className="admin-v4-kicker">GreenDesk Control Surface</p>
-          <h3>{t.tabStart}</h3>
-          <p className="admin-v4-subtitle">
-            {sharedConfigLoaded
-              ? `PostgreSQL online. Active match: ${activeMatchId || t.notSelected}.`
-              : 'Loading shared config, runtime controls and telemetry.'}
-          </p>
-        </div>
-        <div className="admin-v4-hero-actions">
-          <button type="button" onClick={() => setActiveTab('matches')}>
-            {t.tabMatches}
-          </button>
-          <button type="button" onClick={() => setActiveTab('settings')}>
-            {t.tabSettings}
-          </button>
-          <button type="button" onClick={() => setActiveTab('github')}>
-            {t.tabGithub}
-          </button>
-        </div>
-      </section>
-      <section className="admin-v4-stats">
-        {v4StatCards.map((card) => (
-          <article
-            key={card.label}
-            className={`admin-v4-stat-card tone-${card.tone}`}
-          >
-            <span>{card.label}</span>
-            <strong>{card.value}</strong>
-          </article>
-        ))}
-      </section>
-      <section className="admin-v4-overview-grid">
-        <article className="admin-v4-panel">
-          <header className="admin-v4-panel-head">
-            <div>
-              <p>{v4Text.runtimeMeta}</p>
-              <h4>{v4Text.runtimeTitle}</h4>
-            </div>
-            <span
-              className={`admin-v4-badge ${sharedConfigLoaded ? 'is-good' : 'is-warn'}`}
-            >
-              {sharedConfigLoaded ? v4Text.ready : v4Text.loading}
-            </span>
-          </header>
-          <div className="admin-v4-status-stack">
-            <div>
-              <span>{v4Text.storageLabel}</span>
-              <strong>
-                {storageMode === 'db' ? t.storageModeDb : t.storageModeFiles}
-              </strong>
-            </div>
-            <div>
-              <span>{v4Text.serverLabel}</span>
-              <strong>{serverUrl || t.notSelected}</strong>
-            </div>
-            <div>
-              <span>{v4Text.configLabel}</span>
-              <strong>
-                {sharedConfigLoaded ? v4Text.ready : v4Text.loading}
-              </strong>
-            </div>
-          </div>
-        </article>
-        <article className="admin-v4-panel">
-          <header className="admin-v4-panel-head">
-            <div>
-              <p>{v4Text.gitMeta}</p>
-              <h4>{v4Text.gitTitle}</h4>
-            </div>
-            <span
-              className={`admin-v4-badge ${gitAuthStatus?.hasGithubCredentials ? 'is-good' : 'is-muted'}`}
-            >
-              {gitAuthStatus?.hasGithubCredentials
-                ? v4Text.connected
-                : v4Text.notConnected}
-            </span>
-          </header>
-          <div className="admin-v4-status-stack">
-            <div>
-              <span>{v4Text.authLabel}</span>
-              <strong>
-                {gitAuthStatus?.savedUsername || v4Text.notConnected}
-              </strong>
-            </div>
-            <div>
-              <span>{v4Text.repoLabel}</span>
-              <strong>{gitStatus?.branch || t.notSelected}</strong>
-            </div>
-            <div>
-              <span>{v4Text.syncLabel}</span>
-              <strong>
-                {gitStatus
-                  ? gitStatus.dirty
-                    ? v4Text.dirty
-                    : gitStatus.behind > 0
-                      ? `${gitStatus.behind} behind`
-                      : v4Text.upToDate
-                  : v4Text.loading}
-              </strong>
-            </div>
-          </div>
-          {gitActionMessage ? (
-            <p className="admin-v4-note">{gitActionMessage}</p>
-          ) : null}
-        </article>
-        <article className="admin-v4-panel">
-          <header className="admin-v4-panel-head">
-            <div>
-              <p>{v4Text.moderationMeta}</p>
-              <h4>{v4Text.moderationTitle}</h4>
-            </div>
-            <span
-              className={`admin-v4-badge ${unresolvedBugReports > 0 ? 'is-warn' : 'is-good'}`}
-            >
-              {unresolvedBugReports > 0
-                ? `${unresolvedBugReports}`
-                : v4Text.clean}
-            </span>
-          </header>
-          <div className="admin-v4-status-stack">
-            <div>
-              <span>{v4Text.newReportsLabel}</span>
-              <strong>{String(unresolvedBugReports)}</strong>
-            </div>
-            <div>
-              <span>{v4Text.resolvedReportsLabel}</span>
-              <strong>{String(resolvedBugReports)}</strong>
-            </div>
-            <div>
-              <span>{v4Text.latestReporterLabel}</span>
-              <strong>
-                {latestBugReport?.submittedBy.displayName ||
-                  latestBugReport?.submittedBy.username ||
-                  v4Text.unknownUser}
-              </strong>
-            </div>
-          </div>
-          <p className="admin-v4-note">
-            {latestBugReport?.descriptionPreview || v4Text.noData}
-          </p>
-        </article>
-        <article className="admin-v4-panel">
-          <header className="admin-v4-panel-head">
-            <div>
-              <p>{v4Text.usersAssetsMeta}</p>
-              <h4>{v4Text.usersAssetsTitle}</h4>
-            </div>
-            <span className="admin-v4-badge is-muted">
-              {assetsLoading || adminUsersLoading
-                ? v4Text.loading
-                : v4Text.ready}
-            </span>
-          </header>
-          <div className="admin-v4-status-stack">
-            <div>
-              <span>{v4Text.usersLabel}</span>
-              <strong>{String(adminUsers.length)}</strong>
-            </div>
-            <div>
-              <span>{v4Text.adminsLabel}</span>
-              <strong>{String(adminCount)}</strong>
-            </div>
-            <div>
-              <span>{v4Text.assetsLabel}</span>
-              <strong>{String(assets.length)}</strong>
-            </div>
-          </div>
-          <p className="admin-v4-note">
-            {v4Text.latestAssetLabel}: {latestAsset?.fileName || v4Text.noData}
-          </p>
-        </article>
-        <article className="admin-v4-panel admin-v4-panel-wide">
-          <header className="admin-v4-panel-head">
-            <div>
-              <p>{v4Text.analyticsMeta}</p>
-              <h4>{v4Text.analyticsTitle}</h4>
-            </div>
-            <span
-              className={`admin-v4-badge ${adminAnalytics ? 'is-good' : 'is-muted'}`}
-            >
-              {adminAnalytics
-                ? `${adminAnalytics.matchesFinished}`
-                : v4Text.loading}
-            </span>
-          </header>
-          <div className="admin-v4-metric-row">
-            <div>
-              <span>{v4Text.finishedLabel}</span>
-              <strong>{String(adminAnalytics?.matchesFinished ?? 0)}</strong>
-            </div>
-            <div>
-              <span>{v4Text.avgTurnsLabel}</span>
-              <strong>{String(adminAnalytics?.avgTurns ?? 0)}</strong>
-            </div>
-            <div>
-              <span>{v4Text.topModeLabel}</span>
-              <strong>
-                {topMode
-                  ? `${topMode.mode} · ${topMode.matchesFinished}`
-                  : v4Text.noData}
-              </strong>
-            </div>
-            <div>
-              <span>{v4Text.topRankLabel}</span>
-              <strong>
-                {topWinningRank
-                  ? `${localizedRankName(topWinningRank.rankId)} · ${topWinningRank.count}`
-                  : v4Text.noData}
-              </strong>
-            </div>
-          </div>
-        </article>
-      </section>
-    </>
-  );
-  const activeTabPanel = (
-    <>
-      {activeTab === 'start' ? v4OverviewPanel : null}
-      {activeTab === 'matches' ? (
-        <AdminMatchesTab
-          t={t}
-          matchIds={matches.map((m) => m.id)}
-          matchesCount={matches.length}
-          activeMatchId={activeMatchId}
-          onActiveMatchIdChange={onActiveMatchIdChange}
-          activeMatchCreatedAt={activeMatch?.createdAt}
-          onCreateMatch={onCreateMatch}
-          onResetMatch={onResetMatch}
-          onDeleteMatch={onDeleteMatch}
-          canDelete={matches.length > 0}
-          deletingMatch={deletingMatch}
-        />
-      ) : null}
-
-      {activeTab === 'settings' ? (
-        <AdminSettingsTab
-          t={t}
-          lang={lang}
-          serverUrlDraft={serverUrlDraft}
-          onServerUrlDraftChange={onServerUrlDraftChange}
-          onSaveServerUrl={onSaveServerUrl}
-          onResetServerUrl={onResetServerUrl}
-          serverUrl={serverUrl}
-          onResetAll={onResetAll}
-          regenerateAllTemplateImages={regenerateAllTemplateImages}
-          imageRegenRunning={regenRunning}
-          restartingServer={restartingServer}
-          setAdminActionError={setAdminActionError}
-          setRestartingServer={setRestartingServer}
-          onRestartServer={onRestartServer}
-          adminActionError={adminActionError}
-          bugReportImagePath={bugReportImagePath}
-          onBugReportImagePathChange={setBugReportImagePath}
-          onSaveBugReportImagePath={() =>
-            saveBugReportUiConfig(bugReportImagePath)
-          }
-          onUploadBugReportImage={async (file) => {
-            if (!file) return;
-            const optimized = await optimizeBlobForUpload(file, file.name, {
-              maxWidth: 100,
-              maxHeight: 100,
-              quality: 0.92,
-            });
-            if (!optimized) {
-              setAdminActionError(t.uploadFailedGeneric);
-              return;
-            }
-            const uploaded = await uploadDataUrl(
-              `bug-report-icon-${Date.now()}`,
-              optimized.dataUrl,
-            );
-            if (!uploaded) return;
-            setBugReportImagePath(uploaded);
-            await saveBugReportUiConfig(uploaded);
-          }}
-          bugReportUiConfigLoading={bugReportUiConfigLoading}
-          bugReportUiConfigError={bugReportUiConfigError}
-          bugReportUiConfigStatus={bugReportUiConfigStatus}
-          allowedRoomCapacities={allowedRoomCapacities}
-          onToggleAllowedRoomCapacity={(capacity) => {
-            const next = normalizeLobbyGameUiConfig({
-              allowedRoomCapacities: allowedRoomCapacities.includes(capacity)
-                ? allowedRoomCapacities.filter((item) => item !== capacity)
-                : [...allowedRoomCapacities, capacity],
-              defaultRoomCapacity,
-              allowedBotCounts,
-              defaultBotCount,
-            });
-            setAllowedRoomCapacities(next.allowedRoomCapacities);
-            setDefaultRoomCapacity(next.defaultRoomCapacity);
-            setAllowedBotCounts(next.allowedBotCounts);
-            setDefaultBotCount(next.defaultBotCount);
-          }}
-          defaultRoomCapacity={defaultRoomCapacity}
-          onDefaultRoomCapacityChange={setDefaultRoomCapacity}
-          allowedBotCounts={allowedBotCounts}
-          onToggleAllowedBotCount={(count) => {
-            const next = normalizeLobbyGameUiConfig({
-              allowedRoomCapacities,
-              defaultRoomCapacity,
-              allowedBotCounts: allowedBotCounts.includes(count)
-                ? allowedBotCounts.filter((item) => item !== count)
-                : [...allowedBotCounts, count],
-              defaultBotCount,
-            });
-            setAllowedBotCounts(next.allowedBotCounts);
-            setDefaultBotCount(next.defaultBotCount);
-          }}
-          defaultBotCount={defaultBotCount}
-          onDefaultBotCountChange={setDefaultBotCount}
-          resourceImagePaths={resourceImagePaths}
-          onResourceIconPathChange={(key, value) => {
-            setResourceImagePaths((prev) => ({ ...prev, [key]: value }));
-          }}
-          onUploadResourceIcon={async (key, file) => {
-            if (!file) return;
-            const optimized = await optimizeBlobForUpload(file, file.name, {
-              maxWidth: 256,
-              maxHeight: 256,
-              quality: 0.92,
-            });
-            if (!optimized) {
-              setAdminActionError(t.uploadFailedGeneric);
-              return;
-            }
-            const uploaded = await uploadDataUrl(
-              `resource-icon-${key}-${Date.now()}`,
-              optimized.dataUrl,
-            );
-            if (!uploaded) return;
-            const next = normalizeLobbyGameUiConfig({
-              allowedRoomCapacities,
-              defaultRoomCapacity,
-              allowedBotCounts,
-              defaultBotCount,
-              resourceImagePaths: {
-                ...resourceImagePaths,
-                [key]: uploaded,
-              },
-            });
-            setAllowedRoomCapacities(next.allowedRoomCapacities);
-            setDefaultRoomCapacity(next.defaultRoomCapacity);
-            setAllowedBotCounts(next.allowedBotCounts);
-            setDefaultBotCount(next.defaultBotCount);
-            setResourceImagePaths(next.resourceImagePaths);
-            await saveGameUiConfig(next);
-          }}
-          onSaveGameUiConfig={() => {
-            void saveGameUiConfig();
-          }}
-          gameUiConfigLoading={gameUiConfigLoading}
-          gameUiConfigError={gameUiConfigError}
-          gameUiConfigStatus={gameUiConfigStatus}
-          assets={assets}
-          assetsLoading={assetsLoading}
-          assetsError={assetsError}
-          assetsStatus={assetsStatus}
-          assetsCleanupRunning={assetsCleanupRunning}
-          onRefreshAssets={() => {
-            void loadAssets();
-          }}
-          onCleanupOrphanedFiles={() => {
-            void cleanupOrphanedFiles();
-          }}
-          onCleanupOrphanedRecords={() => {
-            void cleanupOrphanedRecords();
-          }}
-        />
-      ) : null}
-      {activeTab === 'github' ? (
-        <AdminGithubTab
-          t={t}
-          gitAuthStatus={gitAuthStatus}
-          gitAuthStatusLoading={gitAuthStatusLoading}
-          gitAuthSaving={gitAuthSaving}
-          gitAuthUsernameDraft={gitAuthUsernameDraft}
-          setGitAuthUsernameDraft={setGitAuthUsernameDraft}
-          gitAuthTokenDraft={gitAuthTokenDraft}
-          setGitAuthTokenDraft={setGitAuthTokenDraft}
-          gitIgnoreLocalChanges={gitIgnoreLocalChanges}
-          setGitIgnoreLocalChanges={setGitIgnoreLocalChanges}
-          gitCommitMessageDraft={gitCommitMessageDraft}
-          setGitCommitMessageDraft={setGitCommitMessageDraft}
-          loadGitAuthStatus={loadGitAuthStatus}
-          saveGitAuthConfig={saveGitAuthConfig}
-          clearGitAuthConfig={clearGitAuthConfig}
-          checkGitUpdates={checkGitUpdates}
-          applyGitUpdate={applyGitUpdate}
-          applyGitDeploy={applyGitDeploy}
-          gitStatus={gitStatus}
-          gitStatusLoading={gitStatusLoading}
-          gitUpdateRunning={gitUpdateRunning}
-          gitDeployRunning={gitDeployRunning}
-          gitPublishRunning={gitPublishRunning}
-          publishGitChanges={publishGitChanges}
-          gitActionMessage={gitActionMessage}
-          gitActionLog={gitActionLog}
-        />
-      ) : null}
-      {activeTab === 'analytics' ? (
-        <AdminAnalyticsTab
-          t={t}
-          adminAnalytics={adminAnalytics}
-          adminAnalyticsLoading={adminAnalyticsLoading}
-          adminAnalyticsError={adminAnalyticsError}
-          onRefreshAdminAnalytics={refreshAdminAnalytics}
-        />
-      ) : null}
-      {activeTab === 'database' ? (
-        <AdminDatabaseTab
-          t={t}
-          storageMode={storageMode as AdminStorageMode}
-          onStorageModeChange={onStorageModeChange}
-          dbConfigDraft={dbConfigDraft}
-          onDbConfigDraftChange={onDbConfigDraftChange}
-          onSaveDbConfigDraft={onSaveDbConfigDraft}
-          onTestDbConnection={onTestDbConnection}
-          dbConfigSaveStatus={dbConfigSaveStatus}
-          dbConnectionTestStatus={dbConnectionTestStatus}
-          dbConnectionTestError={dbConnectionTestError}
-          dbConnectionTestRunning={dbConnectionTestRunning}
-          onExportDbSchema={onExportDbSchema}
-          onImportDbSchema={onImportDbSchema}
-          onImportJsonConfigToDb={onImportJsonConfigToDb}
-          onExportDbBackup={onExportDbBackup}
-          onRestoreDbBackup={onRestoreDbBackup}
-          dbExportSchemaStatus={dbExportSchemaStatus}
-          dbExportSchemaError={dbExportSchemaError}
-          dbExportSchemaRunning={dbExportSchemaRunning}
-          dbImportSchemaStatus={dbImportSchemaStatus}
-          dbImportSchemaError={dbImportSchemaError}
-          dbImportSchemaRunning={dbImportSchemaRunning}
-          dbImportJsonConfigStatus={dbImportJsonConfigStatus}
-          dbImportJsonConfigError={dbImportJsonConfigError}
-          dbImportJsonConfigRunning={dbImportJsonConfigRunning}
-          dbExportBackupStatus={dbExportBackupStatus}
-          dbExportBackupError={dbExportBackupError}
-          dbExportBackupRunning={dbExportBackupRunning}
-          dbRestoreBackupStatus={dbRestoreBackupStatus}
-          dbRestoreBackupError={dbRestoreBackupError}
-          dbRestoreBackupRunning={dbRestoreBackupRunning}
-        />
-      ) : null}
-      {activeTab === 'users' ? (
-        <AdminUsersTab
-          t={t}
-          userSearch={adminUserSearch}
-          setUserSearch={setAdminUserSearch}
-          onSearch={() => {
-            void loadAdminUsers();
-          }}
-          users={adminUsers}
-          selectedUserId={selectedAdminUserId}
-          onSelectUserId={(value) => {
-            void loadAdminUserDetail(value);
-          }}
-          selectedUserDetail={selectedAdminUserDetail}
-          loading={adminUsersLoading}
-          error={adminUsersError}
-          onSetStatus={(status) => {
-            void updateAdminUserStatus(status);
-          }}
-          onSetRole={(role) => {
-            void updateAdminUserRole(role);
-          }}
-          editDraft={adminEditUserDraft}
-          setEditDraft={setAdminEditUserDraft}
-          onSaveEdit={() => {
-            void updateAdminUserProfile();
-          }}
-          createDraft={adminCreateUserDraft}
-          setCreateDraft={setAdminCreateUserDraft}
-          onCreateUser={() => {
-            void createAdminUser();
-          }}
-          onRequestPasswordReset={() => {
-            void requestAdminPasswordReset();
-          }}
-          onLogoutAllSessions={() => {
-            void logoutAllAdminUserSessions();
-          }}
-          onLogoutUserSession={(sessionId) => {
-            void logoutAdminUserSession(sessionId);
-          }}
-        />
-      ) : null}
-      {activeTab === 'awards' ? (
-        <AdminAwardsTab
-          t={t}
-          awards={adminAwards}
-          loading={adminAwardsLoading}
-          error={adminAwardsError}
-          selectedAwardId={selectedAdminAwardId}
-          onSelectAwardId={selectAdminAward}
-          draft={adminAwardDraft}
-          setDraft={setAdminAwardDraft}
-          onCreateNew={() => selectAdminAward('')}
-          onSave={() => {
-            void saveAdminAward();
-          }}
-          onDelete={() => {
-            void deleteAdminAward();
-          }}
-        />
-      ) : null}
-      {activeTab === 'bugReports' ? (
-        <AdminBugReportsTab
-          t={t}
-          reports={bugReports}
-          loading={bugReportsLoading}
-          error={bugReportsError}
-          selectedReportId={selectedBugReportId}
-          selectedReport={selectedBugReport}
-          screenshotUrl={bugReportImageUrl}
-          onSelectReport={(id) => {
-            void loadBugReportDetail(id);
-          }}
-          onCloseDetails={closeBugReportDetail}
-          onMarkResolved={() => {
-            void setBugReportStatus('resolved');
-          }}
-        />
-      ) : null}
-
-      {activeTab === 'deck' ? (
-        <AdminDeckTab
-          t={t}
-          lang={lang}
-          deckStats={deckStats}
-          sharedDeckTemplate={sharedDeckTemplate}
-          editTarget={editTarget}
-          editIndex={editIndex}
-          inlineEditor={inlineEditor}
-          onModuleAction={(moduleId, action) =>
-            applyModuleAction(moduleId, action)
-          }
-          deckManagerStatus={deckManagerStatus}
-          onStartCreateCardForModule={startCreateCardForModule}
-          onEditCardAt={openCardEditorAt}
-          onEditCardById={openCardEditorById}
-          onRemoveCardAt={removeCardAtFromEditor}
-          onRemoveCardById={removeCardByIdFromEditor}
-          cardCatalog={cardCatalog}
-          modules={deckModules}
-          onSaveModule={saveDeckModule}
-          onDeleteModule={deleteDeckModule}
-          sharedRanks={sharedRanks}
-          onSetLegendaryDeckMode={setLegendaryDeckMode}
-        />
-      ) : null}
-
-      {activeTab === 'import' ? (
-        <AdminImportTab
-          t={t}
-          importTarget={importTarget}
-          setImportTarget={(v) => setImportTarget(v as DeckTarget)}
-          importCategoryMode={importCategoryMode}
-          setImportCategoryMode={(v) =>
-            setImportCategoryMode(v as ImportCategoryMode)
-          }
-          categories={categories}
-          runImport={runImport}
-          importFromFile={importTemplateFromFile}
-          exportToFile={exportTemplateToFile}
-          importError={importError}
-          importStatus={importStatus}
-          importJson={importJson}
-          setImportJson={setImportJson}
-          clearImportStatus={() => setImportStatus('')}
-        />
-      ) : null}
-
-      {activeTab === 'state' ? (
-        <AdminStateTab
-          t={t}
-          snapshot={snapshot}
-          activeMatchId={activeMatchId}
-          stopGameRunning={stopGameRunning}
-          stopGameError={stopGameError}
-          stopGameStatus={stopGameStatus}
-          localizedRankName={localizedRankName}
-          onStopGame={() => {
-            void stopGame();
-          }}
-        />
-      ) : null}
-      {activeTab === 'ranks' ? (
-        <AdminRanksTab
-          t={t}
-          exportRanksToFile={exportRanksToFile}
-          importRanks={importRanks}
-          importRanksFromFile={importRanksFromFile}
-          ranksImportError={ranksImportError}
-          ranksImportStatus={ranksImportStatus}
-          ranksJson={ranksJson}
-          setRanksJson={setRanksJson}
-          setRanksImportError={setRanksImportError}
-          setRanksImportStatus={setRanksImportStatus}
-          editableRanks={editableRanks}
-          updateRankAt={updateRankAt}
-          attachRankImageFile={attachRankImageFile}
-          attachRankVariantImageFile={attachRankVariantImageFile}
-          rankResourceKeys={rankResourceKeys}
-          removeRankAt={removeRankAt}
-          rankDraft={rankDraft}
-          setRankDraft={setRankDraft}
-          attachRankDraftImageFile={attachRankDraftImageFile}
-          attachRankDraftVariantImageFile={attachRankDraftVariantImageFile}
-          saveRanks={saveRanks}
-          addRank={addRank}
-          onResetRanks={onResetRanks}
-        />
-      ) : null}
-      {activeTab === 'simulation' ? (
-        <AdminSimulationTab
-          t={t}
-          lang={lang}
-          simulationPlayers={simulationPlayers}
-          setSimulationPlayers={setSimulationPlayers}
-          simulationCount={simulationCount}
-          setSimulationCount={setSimulationCount}
-          simulationGameMode={simulationGameMode}
-          setSimulationGameMode={setSimulationGameMode}
-          simulationOptionalModules={optionalSimulationModules}
-          simulationOptionalModuleIds={simulationOptionalModuleIds}
-          setSimulationOptionalModuleIds={setSimulationOptionalModuleIds}
-          simulationRunning={simulationRunning}
-          simulationProgressPct={simulationProgressPct}
-          simulationProgressCompleted={simulationProgressCompleted}
-          simulationProgressTotal={simulationProgressTotal}
-          simulationCurrentMatch={simulationCurrentMatch}
-          simulationCurrentTurn={simulationCurrentTurn}
-          simulationCurrentMaxTurns={simulationCurrentMaxTurns}
-          runSimulation={runSimulation}
-          simulationReport={simulationReport}
-          simulationError={simulationError}
-          simulationBlockedReason={simulationBlockedReason}
-          localizedRankName={localizedRankName}
-        />
-      ) : null}
-    </>
-  );
   return (
-    <section
-      className={`admin-shell-v4 admin-panel-v4 admin-shell-v2 admin-panel-v2${uiVariant === 'v1' ? ' admin-shell-v1 admin-panel-v1' : ''}`}
-    >
-      <h2>{t.adminTitle}</h2>
-      <>
-        <section className="admin-v4-tab-nav">
-          <AdminCategoryButtons
-            categories={adminCategories}
-            activeCategoryId={activeCategoryId}
-            onSelectCategory={(categoryId) => {
-              const category = adminCategories.find(
-                (item) => item.id === categoryId,
-              );
-              if (category?.tabs[0]) {
-                setActiveTab(category.tabs[0].id);
+    <AdminShell uiVariant={uiVariant} t={t}>
+      <AdminNavigation
+        activeCategory={activeCategory}
+        activeTab={activeTab}
+        activeTabLabel={activeTabLabel}
+        adminCategories={adminCategories}
+        setActiveTab={setActiveTab}
+        matches={matches}
+        activeMatchId={activeMatchId}
+        t={t}
+        activeTabDescriptionMap={activeTabDescriptionMap}
+      />
+      <div className="admin-v4-workspace-body">
+        {activeTab === 'start' ? (
+          <AdminOverview
+            t={t}
+            lang={lang}
+            matches={matches}
+            cardCatalog={cardCatalog}
+            sharedRanks={sharedRanks}
+            sharedDeckTemplate={sharedDeckTemplate}
+            sharedConfigLoaded={sharedConfigLoaded}
+            activeMatchId={activeMatchId}
+            storageMode={storageMode}
+            serverUrl={serverUrl}
+            gitAuthStatus={gitAuthStatus}
+            gitStatus={gitStatus}
+            gitActionMessage={gitActionMessage}
+            bugReports={bugReports}
+            assets={assets}
+            adminUsers={adminUsers}
+            adminUsersLoading={adminUsersLoading}
+            assetsLoading={assetsLoading}
+            adminAnalytics={adminAnalytics}
+            localizedRankName={localizedRankName}
+            setActiveTab={setActiveTab}
+          />
+        ) : null}
+        {activeTab === 'matches' ? (
+          <AdminMatchesTab
+            t={t}
+            matchIds={matches.map((m) => m.id)}
+            matchesCount={matches.length}
+            activeMatchId={activeMatchId}
+            onActiveMatchIdChange={onActiveMatchIdChange}
+            activeMatchCreatedAt={activeMatch?.createdAt}
+            onCreateMatch={onCreateMatch}
+            onResetMatch={onResetMatch}
+            onDeleteMatch={onDeleteMatch}
+            canDelete={matches.length > 0}
+            deletingMatch={deletingMatch}
+          />
+        ) : null}
+
+        {activeTab === 'settings' ? (
+          <AdminSettingsTab
+            t={t}
+            lang={lang}
+            serverUrlDraft={serverUrlDraft}
+            onServerUrlDraftChange={onServerUrlDraftChange}
+            onSaveServerUrl={onSaveServerUrl}
+            onResetServerUrl={onResetServerUrl}
+            serverUrl={serverUrl}
+            onResetAll={onResetAll}
+            regenerateAllTemplateImages={regenerateAllTemplateImages}
+            imageRegenRunning={regenRunning}
+            restartingServer={restartingServer}
+            setAdminActionError={setAdminActionError}
+            setRestartingServer={setRestartingServer}
+            onRestartServer={onRestartServer}
+            adminActionError={adminActionError}
+            bugReportImagePath={bugReportImagePath}
+            onBugReportImagePathChange={setBugReportImagePath}
+            onSaveBugReportImagePath={() =>
+              saveBugReportUiConfig(bugReportImagePath)
+            }
+            onUploadBugReportImage={async (file) => {
+              if (!file) return;
+              const optimized = await optimizeBlobForUpload(file, file.name, {
+                maxWidth: 100,
+                maxHeight: 100,
+                quality: 0.92,
+              });
+              if (!optimized) {
+                setAdminActionError(t.uploadFailedGeneric);
+                return;
               }
+              const uploaded = await uploadDataUrl(
+                `bug-report-icon-${Date.now()}`,
+                optimized.dataUrl,
+              );
+              if (!uploaded) return;
+              setBugReportImagePath(uploaded);
+              await saveBugReportUiConfig(uploaded);
+            }}
+            bugReportUiConfigLoading={bugReportUiConfigLoading}
+            bugReportUiConfigError={bugReportUiConfigError}
+            bugReportUiConfigStatus={bugReportUiConfigStatus}
+            allowedRoomCapacities={allowedRoomCapacities}
+            onToggleAllowedRoomCapacity={(capacity) => {
+              const next = normalizeLobbyGameUiConfig({
+                allowedRoomCapacities: allowedRoomCapacities.includes(capacity)
+                  ? allowedRoomCapacities.filter((item) => item !== capacity)
+                  : [...allowedRoomCapacities, capacity],
+                defaultRoomCapacity,
+                allowedBotCounts,
+                defaultBotCount,
+              });
+              setAllowedRoomCapacities(next.allowedRoomCapacities);
+              setDefaultRoomCapacity(next.defaultRoomCapacity);
+              setAllowedBotCounts(next.allowedBotCounts);
+              setDefaultBotCount(next.defaultBotCount);
+            }}
+            defaultRoomCapacity={defaultRoomCapacity}
+            onDefaultRoomCapacityChange={setDefaultRoomCapacity}
+            allowedBotCounts={allowedBotCounts}
+            onToggleAllowedBotCount={(count) => {
+              const next = normalizeLobbyGameUiConfig({
+                allowedRoomCapacities,
+                defaultRoomCapacity,
+                allowedBotCounts: allowedBotCounts.includes(count)
+                  ? allowedBotCounts.filter((item) => item !== count)
+                  : [...allowedBotCounts, count],
+                defaultBotCount,
+              });
+              setAllowedBotCounts(next.allowedBotCounts);
+              setDefaultBotCount(next.defaultBotCount);
+            }}
+            defaultBotCount={defaultBotCount}
+            onDefaultBotCountChange={setDefaultBotCount}
+            resourceImagePaths={resourceImagePaths}
+            onResourceIconPathChange={(key, value) => {
+              setResourceImagePaths((prev) => ({ ...prev, [key]: value }));
+            }}
+            onUploadResourceIcon={async (key, file) => {
+              if (!file) return;
+              const optimized = await optimizeBlobForUpload(file, file.name, {
+                maxWidth: 256,
+                maxHeight: 256,
+                quality: 0.92,
+              });
+              if (!optimized) {
+                setAdminActionError(t.uploadFailedGeneric);
+                return;
+              }
+              const uploaded = await uploadDataUrl(
+                `resource-icon-${key}-${Date.now()}`,
+                optimized.dataUrl,
+              );
+              if (!uploaded) return;
+              const next = normalizeLobbyGameUiConfig({
+                allowedRoomCapacities,
+                defaultRoomCapacity,
+                allowedBotCounts,
+                defaultBotCount,
+                resourceImagePaths: {
+                  ...resourceImagePaths,
+                  [key]: uploaded,
+                },
+              });
+              setAllowedRoomCapacities(next.allowedRoomCapacities);
+              setDefaultRoomCapacity(next.defaultRoomCapacity);
+              setAllowedBotCounts(next.allowedBotCounts);
+              setDefaultBotCount(next.defaultBotCount);
+              setResourceImagePaths(next.resourceImagePaths);
+              await saveGameUiConfig(next);
+            }}
+            onSaveGameUiConfig={() => {
+              void saveGameUiConfig();
+            }}
+            gameUiConfigLoading={gameUiConfigLoading}
+            gameUiConfigError={gameUiConfigError}
+            gameUiConfigStatus={gameUiConfigStatus}
+            assets={assets}
+            assetsLoading={assetsLoading}
+            assetsError={assetsError}
+            assetsStatus={assetsStatus}
+            assetsCleanupRunning={assetsCleanupRunning}
+            onRefreshAssets={() => {
+              void loadAssets();
+            }}
+            onCleanupOrphanedFiles={() => {
+              void cleanupOrphanedFiles();
+            }}
+            onCleanupOrphanedRecords={() => {
+              void cleanupOrphanedRecords();
             }}
           />
-        </section>
-        <section className="admin-v4-workspace">
-          <header className={`admin-v4-workspace-head is-${activeCategory.id}`}>
-            <div className="admin-v4-workspace-copy">
-              <p className="admin-v4-kicker">{activeCategory.label}</p>
-              <h3>{activeTabLabel}</h3>
-              <p className="admin-v4-subtitle">
-                {activeTabDescriptionMap[activeTab]}
-              </p>
-              <AdminTabButtons
-                tabs={activeCategory.tabs}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                className={`admin-v4-tab-strip is-${activeCategory.id}`}
-              />
-            </div>
-            <aside
-              className={`admin-v4-category-banner is-${activeCategory.id}`}
-            >
-              <img
-                src={activeCategory.iconPath}
-                alt=""
-                className="admin-v4-category-banner-icon"
-              />
-              <span className="admin-v4-category-art-label">
-                {activeCategory.artLabel}
-              </span>
-              <strong>{activeCategory.label}</strong>
-              <small>{activeCategory.description}</small>
-              <span className="admin-v4-badge is-muted">
-                {matches.length} / {activeMatchId || t.notSelected}
-              </span>
-            </aside>
-          </header>
-          <div className="admin-v4-workspace-body">{activeTabPanel}</div>
-        </section>
-      </>
-    </section>
+        ) : null}
+        {activeTab === 'github' ? (
+          <AdminGithubTab
+            t={t}
+            gitAuthStatus={gitAuthStatus}
+            gitAuthStatusLoading={gitAuthStatusLoading}
+            gitAuthSaving={gitAuthSaving}
+            gitAuthUsernameDraft={gitAuthUsernameDraft}
+            setGitAuthUsernameDraft={setGitAuthUsernameDraft}
+            gitAuthTokenDraft={gitAuthTokenDraft}
+            setGitAuthTokenDraft={setGitAuthTokenDraft}
+            gitIgnoreLocalChanges={gitIgnoreLocalChanges}
+            setGitIgnoreLocalChanges={setGitIgnoreLocalChanges}
+            gitCommitMessageDraft={gitCommitMessageDraft}
+            setGitCommitMessageDraft={setGitCommitMessageDraft}
+            loadGitAuthStatus={loadGitAuthStatus}
+            saveGitAuthConfig={saveGitAuthConfig}
+            clearGitAuthConfig={clearGitAuthConfig}
+            checkGitUpdates={checkGitUpdates}
+            applyGitUpdate={applyGitUpdate}
+            applyGitDeploy={applyGitDeploy}
+            gitStatus={gitStatus}
+            gitStatusLoading={gitStatusLoading}
+            gitUpdateRunning={gitUpdateRunning}
+            gitDeployRunning={gitDeployRunning}
+            gitPublishRunning={gitPublishRunning}
+            publishGitChanges={publishGitChanges}
+            gitActionMessage={gitActionMessage}
+            gitActionLog={gitActionLog}
+          />
+        ) : null}
+        {activeTab === 'analytics' ? (
+          <AdminAnalyticsTab
+            t={t}
+            adminAnalytics={adminAnalytics}
+            adminAnalyticsLoading={adminAnalyticsLoading}
+            adminAnalyticsError={adminAnalyticsError}
+            onRefreshAdminAnalytics={refreshAdminAnalytics}
+          />
+        ) : null}
+        {activeTab === 'database' ? (
+          <AdminDatabaseTab
+            t={t}
+            storageMode={storageMode as AdminStorageMode}
+            onStorageModeChange={onStorageModeChange}
+            dbConfigDraft={dbConfigDraft}
+            onDbConfigDraftChange={onDbConfigDraftChange}
+            onSaveDbConfigDraft={onSaveDbConfigDraft}
+            onTestDbConnection={onTestDbConnection}
+            dbConfigSaveStatus={dbConfigSaveStatus}
+            dbConnectionTestStatus={dbConnectionTestStatus}
+            dbConnectionTestError={dbConnectionTestError}
+            dbConnectionTestRunning={dbConnectionTestRunning}
+            onExportDbSchema={onExportDbSchema}
+            onImportDbSchema={onImportDbSchema}
+            onImportJsonConfigToDb={onImportJsonConfigToDb}
+            onExportDbBackup={onExportDbBackup}
+            onRestoreDbBackup={onRestoreDbBackup}
+            dbExportSchemaStatus={dbExportSchemaStatus}
+            dbExportSchemaError={dbExportSchemaError}
+            dbExportSchemaRunning={dbExportSchemaRunning}
+            dbImportSchemaStatus={dbImportSchemaStatus}
+            dbImportSchemaError={dbImportSchemaError}
+            dbImportSchemaRunning={dbImportSchemaRunning}
+            dbImportJsonConfigStatus={dbImportJsonConfigStatus}
+            dbImportJsonConfigError={dbImportJsonConfigError}
+            dbImportJsonConfigRunning={dbImportJsonConfigRunning}
+            dbExportBackupStatus={dbExportBackupStatus}
+            dbExportBackupError={dbExportBackupError}
+            dbExportBackupRunning={dbExportBackupRunning}
+            dbRestoreBackupStatus={dbRestoreBackupStatus}
+            dbRestoreBackupError={dbRestoreBackupError}
+            dbRestoreBackupRunning={dbRestoreBackupRunning}
+          />
+        ) : null}
+        {activeTab === 'users' ? (
+          <AdminUsersTab
+            t={t}
+            userSearch={adminUserSearch}
+            setUserSearch={setAdminUserSearch}
+            onSearch={() => {
+              void loadAdminUsers();
+            }}
+            users={adminUsers}
+            selectedUserId={selectedAdminUserId}
+            onSelectUserId={(value) => {
+              void loadAdminUserDetail(value);
+            }}
+            selectedUserDetail={selectedAdminUserDetail}
+            loading={adminUsersLoading}
+            error={adminUsersError}
+            onSetStatus={(status) => {
+              void updateAdminUserStatus(status);
+            }}
+            onSetRole={(role) => {
+              void updateAdminUserRole(role);
+            }}
+            editDraft={adminEditUserDraft}
+            setEditDraft={setAdminEditUserDraft}
+            onSaveEdit={() => {
+              void updateAdminUserProfile();
+            }}
+            createDraft={adminCreateUserDraft}
+            setCreateDraft={setAdminCreateUserDraft}
+            onCreateUser={() => {
+              void createAdminUser();
+            }}
+            onRequestPasswordReset={() => {
+              void requestAdminPasswordReset();
+            }}
+            onLogoutAllSessions={() => {
+              void logoutAllAdminUserSessions();
+            }}
+            onLogoutUserSession={(sessionId) => {
+              void logoutAdminUserSession(sessionId);
+            }}
+          />
+        ) : null}
+        {activeTab === 'awards' ? (
+          <AdminAwardsTab
+            t={t}
+            awards={adminAwards}
+            loading={adminAwardsLoading}
+            error={adminAwardsError}
+            selectedAwardId={selectedAdminAwardId}
+            onSelectAwardId={selectAdminAward}
+            draft={adminAwardDraft}
+            setDraft={setAdminAwardDraft}
+            onCreateNew={() => selectAdminAward('')}
+            onSave={() => {
+              void saveAdminAward();
+            }}
+            onDelete={() => {
+              void deleteAdminAward();
+            }}
+          />
+        ) : null}
+        {activeTab === 'bugReports' ? (
+          <AdminBugReportsTab
+            t={t}
+            reports={bugReports}
+            loading={bugReportsLoading}
+            error={bugReportsError}
+            selectedReportId={selectedBugReportId}
+            selectedReport={selectedBugReport}
+            screenshotUrl={bugReportImageUrl}
+            onSelectReport={(id) => {
+              void loadBugReportDetail(id);
+            }}
+            onCloseDetails={closeBugReportDetail}
+            onMarkResolved={() => {
+              void setBugReportStatus('resolved');
+            }}
+          />
+        ) : null}
+
+        {activeTab === 'deck' ? (
+          <AdminDeckTab
+            t={t}
+            lang={lang}
+            deckStats={deckStats}
+            sharedDeckTemplate={sharedDeckTemplate}
+            editTarget={editTarget}
+            editIndex={editIndex}
+            inlineEditor={inlineEditor}
+            onModuleAction={(moduleId, action) =>
+              applyModuleAction(moduleId, action)
+            }
+            deckManagerStatus={deckManagerStatus}
+            onStartCreateCardForModule={startCreateCardForModule}
+            onEditCardAt={openCardEditorAt}
+            onEditCardById={openCardEditorById}
+            onRemoveCardAt={removeCardAtFromEditor}
+            onRemoveCardById={removeCardByIdFromEditor}
+            cardCatalog={cardCatalog}
+            modules={deckModules}
+            onSaveModule={saveDeckModule}
+            onDeleteModule={deleteDeckModule}
+            sharedRanks={sharedRanks}
+            onSetLegendaryDeckMode={setLegendaryDeckMode}
+          />
+        ) : null}
+
+        {activeTab === 'import' ? (
+          <AdminImportTab
+            t={t}
+            importTarget={importTarget}
+            setImportTarget={(v) => setImportTarget(v as DeckTarget)}
+            importCategoryMode={importCategoryMode}
+            setImportCategoryMode={(v) =>
+              setImportCategoryMode(v as ImportCategoryMode)
+            }
+            categories={categories}
+            runImport={runImport}
+            importFromFile={importTemplateFromFile}
+            exportToFile={exportTemplateToFile}
+            importError={importError}
+            importStatus={importStatus}
+            importJson={importJson}
+            setImportJson={setImportJson}
+            clearImportStatus={() => setImportStatus('')}
+          />
+        ) : null}
+
+        {activeTab === 'state' ? (
+          <AdminStateTab
+            t={t}
+            snapshot={snapshot}
+            activeMatchId={activeMatchId}
+            stopGameRunning={stopGameRunning}
+            stopGameError={stopGameError}
+            stopGameStatus={stopGameStatus}
+            localizedRankName={localizedRankName}
+            onStopGame={() => {
+              void stopGame();
+            }}
+          />
+        ) : null}
+        {activeTab === 'ranks' ? (
+          <AdminRanksTab
+            t={t}
+            exportRanksToFile={exportRanksToFile}
+            importRanks={importRanks}
+            importRanksFromFile={importRanksFromFile}
+            ranksImportError={ranksImportError}
+            ranksImportStatus={ranksImportStatus}
+            ranksJson={ranksJson}
+            setRanksJson={setRanksJson}
+            setRanksImportError={setRanksImportError}
+            setRanksImportStatus={setRanksImportStatus}
+            editableRanks={editableRanks}
+            updateRankAt={updateRankAt}
+            attachRankImageFile={attachRankImageFile}
+            attachRankVariantImageFile={attachRankVariantImageFile}
+            rankResourceKeys={rankResourceKeys}
+            removeRankAt={removeRankAt}
+            rankDraft={rankDraft}
+            setRankDraft={setRankDraft}
+            attachRankDraftImageFile={attachRankDraftImageFile}
+            attachRankDraftVariantImageFile={attachRankDraftVariantImageFile}
+            saveRanks={saveRanks}
+            addRank={addRank}
+            onResetRanks={onResetRanks}
+          />
+        ) : null}
+        {activeTab === 'simulation' ? (
+          <AdminSimulationTab
+            t={t}
+            lang={lang}
+            simulationPlayers={simulationPlayers}
+            setSimulationPlayers={setSimulationPlayers}
+            simulationCount={simulationCount}
+            setSimulationCount={setSimulationCount}
+            simulationGameMode={simulationGameMode}
+            setSimulationGameMode={setSimulationGameMode}
+            simulationOptionalModules={optionalSimulationModules}
+            simulationOptionalModuleIds={simulationOptionalModuleIds}
+            setSimulationOptionalModuleIds={setSimulationOptionalModuleIds}
+            simulationRunning={simulationRunning}
+            simulationProgressPct={simulationProgressPct}
+            simulationProgressCompleted={simulationProgressCompleted}
+            simulationProgressTotal={simulationProgressTotal}
+            simulationCurrentMatch={simulationCurrentMatch}
+            simulationCurrentTurn={simulationCurrentTurn}
+            simulationCurrentMaxTurns={simulationCurrentMaxTurns}
+            runSimulation={runSimulation}
+            simulationReport={simulationReport}
+            simulationError={simulationError}
+            simulationBlockedReason={simulationBlockedReason}
+            localizedRankName={localizedRankName}
+          />
+        ) : null}
+      </div>
+    </AdminShell>
   );
 };

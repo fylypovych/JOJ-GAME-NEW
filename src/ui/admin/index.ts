@@ -39,3 +39,8 @@ export {
   useBugReportUiConfig,
   useGameUiConfig,
 } from './hooks';
+export {
+  AdminShell,
+  AdminNavigation,
+  AdminOverview,
+} from './components';

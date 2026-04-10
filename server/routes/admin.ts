@@ -121,7 +121,6 @@ export const registerAdminRoutes = ({
     logLine,
     persistMatchSnapshot,
     markMatchDeleted,
-    audit,
   });
 
   registerAdminGitRoutes({
