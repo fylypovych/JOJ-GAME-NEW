@@ -69,6 +69,7 @@ import {
   exportSharedDeckTemplateJson,
   exportSharedRanksJson,
   getCardCatalog,
+  getModules,
   getSharedRanks,
   getSharedDeckTemplateStats,
   importSharedRanksJson,
@@ -473,7 +474,7 @@ void (async () => {
       IMAGE_UPLOAD_BODY_LIMIT,
       uploadsDir,
       userStore,
-      getCardCatalog,
+      getModules,
       assetStore,
       auditAdminAction: adminAudit,
     });

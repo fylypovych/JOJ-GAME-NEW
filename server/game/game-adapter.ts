@@ -13,6 +13,7 @@ export {
   exportSharedDeckTemplateJson,
   exportSharedRanksJson,
   getCardCatalog,
+  getModules,
   getSharedRanks,
   getSharedDeckTemplateStats,
   importSharedRanksJson,

@@ -206,6 +206,10 @@ export class SharedConfigService {
     return buildCardCatalog(this.sharedDeckTemplate, this.sharedExtraCatalog);
   }
 
+  getModules(): unknown[] {
+    return this.sharedDeckTemplate.modules || [];
+  }
+
   exportSharedDeckTemplateJson(): string {
     return exportSharedDeckTemplateState(this.sharedDeckTemplate, this.sharedExtraCatalog);
   }

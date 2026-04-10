@@ -5,7 +5,7 @@ import { requireAdminMutationAuth } from '../admin-auth';
 import type { UserStore } from '../services/user-store';
 import { issueUserCsrfToken, requireUserAuth, requireUserCsrf } from '../services/user-auth';
 
-type UploadRoutesDeps = {
+export type UploadRoutesDeps = {
   router: RouterLike;
   requireAdminAuth: RequireAdminAuth;
   enforceRateLimit: EnforceRateLimit;
@@ -15,15 +15,15 @@ type UploadRoutesDeps = {
   IMAGE_UPLOAD_BODY_LIMIT: number;
   uploadsDir: string;
   userStore?: UserStore | null;
-  getCardCatalog?: () => unknown[];
+  getModules?: () => unknown[];
   assetStore?: {
     upsertAsset: (input: {
       assetPath: string;
       fileName: string;
       mime: string;
       sizeBytes: number;
-      kind?: string;
-      source?: string;
+      kind: string;
+      source: string;
     }) => Promise<void>;
     markDeleted: (assetPath: string) => Promise<void>;
     listAssets: (args?: { kind?: string; includeDeleted?: boolean; limit?: number }) => Promise<Array<{
@@ -57,16 +57,16 @@ export const registerUploadRoutes = ({
   IMAGE_UPLOAD_BODY_LIMIT,
   uploadsDir,
   userStore,
-  getCardCatalog,
+  getModules,
   assetStore,
   auditAdminAction,
 }: UploadRoutesDeps) => {
   const CARD_ASSET_BASE_PATH = '/public/card-assets/';
   const AVATAR_ASSET_BASE_PATH = '/public/profile-image/';
   const isCardAssetPath = (value: string) => value.startsWith('/card-assets/') || value.startsWith('/cards/') || value.startsWith('/public/card-assets/');
-  const toCardAssetPath = (fileName: string, category?: string) => {
-    if (category) {
-      return `${CARD_ASSET_BASE_PATH}${category}/${fileName}`;
+  const toCardAssetPath = (fileName: string, moduleName?: string) => {
+    if (moduleName) {
+      return `${CARD_ASSET_BASE_PATH}${moduleName}/${fileName}`;
     }
     return `${CARD_ASSET_BASE_PATH}${fileName}`;
   };
@@ -136,30 +136,30 @@ export const registerUploadRoutes = ({
       ? normalizedBase
       : `asset-${Date.now()}`;
 
-    // Get card category if this is a card image
-    let category: string | undefined;
-    if (assetKind === 'card-image' && cardId && getCardCatalog) {
-      const catalog = getCardCatalog();
-      const card = catalog.find((c: unknown) => {
-        if (c && typeof c === 'object' && 'id' in c) {
-          return (c as { id: string }).id === cardId;
+    // Get module name if this is a card image
+    let moduleName: string | undefined;
+    if (assetKind === 'card-image' && cardId && getModules) {
+      const modules = getModules();
+      for (const module of modules) {
+        if (module && typeof module === 'object' && 'cardIds' in module && 'name' in module) {
+          const cardIds = (module as { cardIds: string[] }).cardIds || [];
+          if (cardIds.includes(cardId)) {
+            moduleName = (module as { name: string }).name;
+            break;
+          }
         }
-        return false;
-      });
-      if (card && typeof card === 'object' && 'category' in card && typeof card.category === 'string') {
-        category = card.category;
       }
     }
 
-    // Use separate directory for avatars, category subdirectories for cards, and system icons
+    // Use separate directory for avatars, module subdirectories for cards, and system icons
     const isAvatar = assetKind === 'avatar-image';
     const isCard = assetKind === 'card-image';
     const isSystemIcon = assetKind === 'system-icon';
     let targetDir: string;
     if (isAvatar) {
       targetDir = path.join('public', 'profile-image');
-    } else if (isCard && category) {
-      targetDir = path.join('public', 'card-assets', category);
+    } else if (isCard && moduleName) {
+      targetDir = path.join('public', 'card-assets', moduleName);
     } else if (isSystemIcon) {
       targetDir = path.join('public', 'sys.icons');
     } else {
@@ -184,7 +184,7 @@ export const registerUploadRoutes = ({
     } else if (isSystemIcon) {
       assetPath = `/sys.icons/${candidate}`;
     } else {
-      assetPath = toCardAssetPath(candidate, category);
+      assetPath = toCardAssetPath(candidate, moduleName);
     }
     await assetStore?.upsertAsset({
       assetPath,

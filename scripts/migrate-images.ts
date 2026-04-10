@@ -27,34 +27,51 @@ const findOldFile = async (fileName: string): Promise<string | null> => {
   return null;
 };
 
-// Load card catalog to get categories
+// Load card catalog and modules
 let cardCatalog: unknown[] = [];
+let modules: unknown[] = [];
 try {
   const templatePath = process.env.TEMPLATE_PATH || path.join(process.cwd(), 'database', 'shared-deck-template.json');
   const templateContent = await readFile(templatePath, 'utf8');
   const template = JSON.parse(templateContent);
   cardCatalog = template.catalog || [];
+  modules = template.modules || [];
   console.log(`Loaded ${cardCatalog.length} cards from catalog`);
+  console.log(`Loaded ${modules.length} modules`);
 } catch (error) {
   console.error('Failed to load card catalog:', error);
-  console.log('Continuing without category migration for cards...');
+  console.log('Continuing without module migration for cards...');
 }
 
-// Create a map of cardId -> category
-const cardCategoryMap = new Map<string, string>();
-for (const card of cardCatalog) {
-  if (card && typeof card === 'object' && 'id' in card && 'category' in card) {
-    cardCategoryMap.set((card as { id: string }).id, (card as { category: string }).category);
+// Create a map of cardId -> moduleName from modules
+const cardModuleMap = new Map<string, string>();
+for (const module of modules) {
+  if (module && typeof module === 'object' && 'name' in module && 'cardIds' in module) {
+    const moduleName = (module as { name: string }).name;
+    const cardIds = (module as { cardIds: string[] }).cardIds || [];
+    for (const cardId of cardIds) {
+      cardModuleMap.set(cardId, moduleName);
+    }
   }
 }
 
-// Get category for a card by filename
-const getCategoryForCard = (filename: string): string | undefined => {
+// Also create a map of cardId -> image path from catalog
+const cardImageMap = new Map<string, string>();
+for (const card of cardCatalog) {
+  if (card && typeof card === 'object' && 'id' in card && 'image' in card) {
+    const cardId = (card as { id: string }).id;
+    const imagePath = (card as { image: string }).image;
+    cardImageMap.set(cardId, imagePath);
+  }
+}
+
+// Get module name for a card by filename
+const getModuleForCard = (filename: string): string | undefined => {
   // Try to extract cardId from filename
   const cardIdMatch = filename.match(/^(\d{13,})-/); // UUID-like pattern
   if (cardIdMatch) {
     const cardId = cardIdMatch[1];
-    return cardCategoryMap.get(cardId);
+    return cardModuleMap.get(cardId);
   }
   return undefined;
 };
@@ -138,7 +155,7 @@ const migrateCardImages = async (pool: any) => {
       continue;
     }
     
-    const category = getCategoryForCard(fileName) || 'uncategorized';
+    const moduleName = getModuleForCard(fileName) || 'uncategorized';
     
     const oldFilePath = await findOldFile(fileName);
     if (!oldFilePath) {
@@ -146,9 +163,9 @@ const migrateCardImages = async (pool: any) => {
       continue;
     }
     
-    const newDir = path.join(CARD_ASSETS_DIR, category);
+    const newDir = path.join(CARD_ASSETS_DIR, moduleName);
     const newFilePath = path.join(newDir, fileName);
-    const newPath = `/public/card-assets/${category}/${fileName}`;
+    const newPath = `/public/card-assets/${moduleName}/${fileName}`;
     
     try {
       // Check if newPath already exists in database
@@ -174,7 +191,7 @@ const migrateCardImages = async (pool: any) => {
         [newPath, oldPath]
       );
       
-      console.log(`  Migrated ${fileName}: ${oldPath} -> ${newPath} (category: ${category})`);
+      console.log(`  Migrated ${fileName}: ${oldPath} -> ${newPath} (module: ${moduleName})`);
       migrated++;
       
       // Delete old file

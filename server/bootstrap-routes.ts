@@ -190,7 +190,7 @@ export const bootstrapRoutes = async (deps: RouteBootstrapDeps) => {
     IMAGE_UPLOAD_BODY_LIMIT,
     uploadsDir,
     userStore,
-    getCardCatalog: () => [],
+    getModules: () => [],
     assetStore,
     auditAdminAction: adminAudit,
   });

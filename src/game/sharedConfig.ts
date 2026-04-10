@@ -74,6 +74,7 @@ export const buildDeckModulesFromTemplate = (
   setupOverride?: Partial<SharedGameSetup>,
 ) => sharedConfigService.buildDeckModulesFromTemplate(template, setupOverride);
 export const getCardCatalog = () => sharedConfigService.getCardCatalog();
+export const getModules = () => sharedConfigService.getModules();
 export const exportSharedDeckTemplateJson = () => sharedConfigService.exportSharedDeckTemplateJson();
 export const importSharedDeckTemplateJson = (text: string) => sharedConfigService.importSharedDeckTemplateJson(text);
 export const validateSharedDeckTemplateJson = (text: string) => sharedConfigService.validateSharedDeckTemplateJson(text);
