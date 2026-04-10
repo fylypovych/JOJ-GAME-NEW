@@ -2,8 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameMode, BotDifficulty, BotProfile } from '../../game/types';
 import type { LobbyMatch } from './model';
 import { text } from '../i18n';
-import { getPublicTabPath } from './routes';
-import type { UserTab } from './routes';
 import { getAvailableBotCounts, clampBotCountToAllowed } from '../../game/lobbyConfig';
 import { useLobby } from '../providers/LobbyContext';
 import { useDeck } from '../providers/DeckContext';
@@ -75,73 +73,6 @@ export const AdminAuthCard = ({
     </section>
   );
 };
-
-type UserTabsProps = {
-  t: T;
-  activeUserTab: UserTab;
-  setActiveUserTab: (tab: UserTab) => void;
-  uiVariant?: 'v1' | 'v2';
-};
-
-export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v2' }: UserTabsProps) => (
-  <p className={`user-tabs user-tabs-v2${uiVariant === 'v1' ? ' user-tabs-v1' : ''}`}>
-    <a
-      href={getPublicTabPath('games')}
-      onClick={(event) => {
-        event.preventDefault();
-        setActiveUserTab('games');
-      }}
-      aria-current={activeUserTab === 'games' ? 'page' : undefined}
-      className={activeUserTab === 'games' ? 'is-active' : ''}
-    >
-      {t.userTabGames}
-    </a>
-    <a
-      href={getPublicTabPath('gallery')}
-      onClick={(event) => {
-        event.preventDefault();
-        setActiveUserTab('gallery');
-      }}
-      aria-current={activeUserTab === 'gallery' ? 'page' : undefined}
-      className={activeUserTab === 'gallery' ? 'is-active' : ''}
-    >
-      {t.userTabGallery}
-    </a>
-    <a
-      href={getPublicTabPath('rules')}
-      onClick={(event) => {
-        event.preventDefault();
-        setActiveUserTab('rules');
-      }}
-      aria-current={activeUserTab === 'rules' ? 'page' : undefined}
-      className={activeUserTab === 'rules' ? 'is-active' : ''}
-    >
-      {t.userTabRules}
-    </a>
-    <a
-      href={getPublicTabPath('profile')}
-      onClick={(event) => {
-        event.preventDefault();
-        setActiveUserTab('profile');
-      }}
-      aria-current={activeUserTab === 'profile' ? 'page' : undefined}
-      className={activeUserTab === 'profile' ? 'is-active' : ''}
-    >
-      {t.userTabProfile}
-    </a>
-    <a
-      href={getPublicTabPath('statistics')}
-      onClick={(event) => {
-        event.preventDefault();
-        setActiveUserTab('statistics');
-      }}
-      aria-current={activeUserTab === 'statistics' ? 'page' : undefined}
-      className={activeUserTab === 'statistics' ? 'is-active' : ''}
-    >
-      {t.userTabStatistics}
-    </a>
-  </p>
-);
 
 type LobbySectionProps = {
   t: T;
@@ -870,90 +801,6 @@ export const ProfileSection = ({
   </section>
 );
 
-export const RegisterSection = ({
-  t,
-  busy,
-  error,
-  registerDraft,
-  setRegisterDraft,
-  onRegister,
-  onBackToLogin,
-  uiVariant = 'v2',
-}: {
-  t: T;
-  busy: boolean;
-  error: string;
-  registerDraft: { username: string; email: string; password: string; displayName: string };
-  setRegisterDraft: (value: { username: string; email: string; password: string; displayName: string }) => void;
-  onRegister: () => void;
-  onBackToLogin: () => void;
-  uiVariant?: 'v1' | 'v2';
-}) => (
-  <section className={`board board-v2-panel board-v2-auth-shell${uiVariant === 'v1' ? ' board-v1-panel board-v1-auth-shell' : ''}`}>
-    <h2>{t.userRegisterTitle}</h2>
-    {error ? <p className="admin-error">{error}</p> : null}
-    <div className="auth-shell">
-      <div className={`auth-card board-v2-auth-card${uiVariant === 'v1' ? ' board-v1-auth-card' : ''}`}>
-        <p><input value={registerDraft.username} onChange={(e) => setRegisterDraft({ ...registerDraft, username: e.target.value })} placeholder={t.userUsernameLabel} /></p>
-        <p><input value={registerDraft.displayName} onChange={(e) => setRegisterDraft({ ...registerDraft, displayName: e.target.value })} placeholder={t.userDisplayNameLabel} /></p>
-        <p><input value={registerDraft.email} onChange={(e) => setRegisterDraft({ ...registerDraft, email: e.target.value })} placeholder={t.userEmailLabel} /></p>
-        <p><input type="password" value={registerDraft.password} onChange={(e) => setRegisterDraft({ ...registerDraft, password: e.target.value })} placeholder={t.userPasswordLabel} /></p>
-        <p className="admin-controls">
-          <button type="button" onClick={onRegister} disabled={busy}>{t.userRegisterButton}</button>
-          <button type="button" onClick={onBackToLogin} disabled={busy}>{t.userGoToLoginButton}</button>
-        </p>
-      </div>
-    </div>
-  </section>
-);
-
-export const PasswordResetSection = ({
-  t,
-  busy,
-  error,
-  resetRequestDraft,
-  setResetRequestDraft,
-  onRequestPasswordReset,
-  resetPasswordDraft,
-  setResetPasswordDraft,
-  onResetPassword,
-  onBackToLogin,
-  uiVariant = 'v2',
-}: {
-  t: T;
-  busy: boolean;
-  error: string;
-  resetRequestDraft: { login: string };
-  setResetRequestDraft: (value: { login: string }) => void;
-  onRequestPasswordReset: () => void;
-  resetPasswordDraft: { token: string; nextPassword: string };
-  setResetPasswordDraft: (value: { token: string; nextPassword: string }) => void;
-  onResetPassword: () => void;
-  onBackToLogin: () => void;
-  uiVariant?: 'v1' | 'v2';
-}) => (
-  <section className={`board board-v2-panel board-v2-auth-shell${uiVariant === 'v1' ? ' board-v1-panel board-v1-auth-shell' : ''}`}>
-    <h2>{t.userPasswordResetTitle}</h2>
-    {error ? <p className="admin-error">{error}</p> : null}
-    <div className="lobby-layout board-v2-dual-layout">
-      <div className={`lobby-col board-v2-column board-v2-subpanel${uiVariant === 'v1' ? ' board-v1-subpanel' : ''}`}>
-        <h3>{t.userPasswordResetRequestButton}</h3>
-        <p><input value={resetRequestDraft.login} onChange={(e) => setResetRequestDraft({ login: e.target.value })} placeholder={t.userLoginPlaceholder} /></p>
-        <p className="admin-controls">
-          <button type="button" onClick={onRequestPasswordReset} disabled={busy}>{t.userPasswordResetRequestButton}</button>
-          <button type="button" onClick={onBackToLogin} disabled={busy}>{t.userGoToLoginButton}</button>
-        </p>
-      </div>
-      <div className={`lobby-col board-v2-column board-v2-subpanel${uiVariant === 'v1' ? ' board-v1-subpanel' : ''}`}>
-        <h3>{t.userPasswordResetApplyButton}</h3>
-        <p><input value={resetPasswordDraft.token} onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, token: e.target.value })} placeholder={t.userResetTokenLabel} /></p>
-        <p><input type="password" value={resetPasswordDraft.nextPassword} onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, nextPassword: e.target.value })} placeholder={t.userNewPasswordLabel} /></p>
-        <p><button type="button" onClick={onResetPassword} disabled={busy}>{t.userPasswordResetApplyButton}</button></p>
-      </div>
-    </div>
-  </section>
-);
-
 export const StatisticsSection = ({
   t,
   lang,
@@ -1081,35 +928,6 @@ export const StatisticsSection = ({
         </>
       )}
     </section>
-  );
-};
-
-export const AuthErrorModal = ({
-  t,
-  open,
-  error,
-  onClose,
-  onOpenReset,
-}: {
-  t: T;
-  open: boolean;
-  error: string;
-  onClose: () => void;
-  onOpenReset: () => void;
-}) => {
-  if (!open) return null;
-  return (
-    <div className="gameover-modal" role="dialog" aria-label={t.userAuthErrorTitle}>
-      <div className="gameover-modal-card">
-        <h3>{t.userAuthErrorTitle}</h3>
-        <p>{error}</p>
-        <p>{t.userAuthErrorResetHint}</p>
-        <p className="admin-controls">
-          <button type="button" onClick={onOpenReset}>{t.userPasswordResetOpenButton}</button>
-          <button type="button" onClick={onClose}>{t.closePopup}</button>
-        </p>
-      </div>
-    </div>
   );
 };
 

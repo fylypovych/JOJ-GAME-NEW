@@ -49,6 +49,15 @@ export const matchDbCutoverMode = ((): 'auto' | 'skip' => {
 })();
 export const port = Number(process.env.PORT ?? 8000);
 
+// Validate critical environment variables
+if (port < 1 || port > 65535) {
+  throw new Error(`Invalid PORT: ${port}. Must be between 1 and 65535.`);
+}
+
+if (nodeEnv && !['development', 'production', 'test'].includes(nodeEnv)) {
+  throw new Error(`Invalid NODE_ENV: ${nodeEnv}. Must be 'development', 'production', or 'test'.`);
+}
+
 export const allowedFrontendOrigins = parseCsvEnv(process.env.FRONTEND_ORIGIN, [
   process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173',
   'http://127.0.0.1:5173',

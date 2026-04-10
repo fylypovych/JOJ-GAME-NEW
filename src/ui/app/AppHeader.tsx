@@ -1,5 +1,5 @@
 import type { Language } from '../i18n';
-import { UserTabs } from './sections';
+import { UserTabs } from './sections/user-tabs';
 import type { UserTab } from './model';
 
 type T = ReturnType<typeof import('../i18n').text>;

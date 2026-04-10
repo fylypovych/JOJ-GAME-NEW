@@ -26,7 +26,6 @@ export const createFileSharedConfigStore = ({
       const raw = await readFile(templatePath, 'utf8');
       const result = importSharedDeckTemplateJson(raw);
       if (!result.ok) {
-        console.warn(`[template] invalid saved template, fallback to default: ${result.error}`);
         await saveTemplateToDisk();
       }
     } catch {
@@ -39,7 +38,6 @@ export const createFileSharedConfigStore = ({
       const raw = await readFile(ranksPath, 'utf8');
       const result = importSharedRanksJson(raw);
       if (!result.ok) {
-        console.warn(`[ranks] invalid saved ranks, fallback to default: ${result.error}`);
         resetSharedRanks();
         await saveRanksToDisk();
       }

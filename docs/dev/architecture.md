@@ -1,4 +1,4 @@
-# Architecture Snapshot
+﻿# Architecture Snapshot
 
 Актуальна структура проєкту після server/UI cleanup.
 
