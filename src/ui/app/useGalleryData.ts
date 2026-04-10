@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { CardDefinition } from '../../game/types';
-import { formatModuleDisplayName } from '../moduleDisplay';
+import type { GalleryCategoryFilter } from './model';
 
 export interface UseGalleryDataArgs {
   cardCatalog: CardDefinition[];
@@ -14,34 +14,24 @@ export interface UseGalleryDataArgs {
     }>;
     rankTrack: Array<{ id: string }>;
   };
+  galleryCategoryFilter: GalleryCategoryFilter;
 }
 
 export interface UseGalleryDataResult {
-  optionalLobbyModules: Array<{ id: string; name: string; alwaysOn: boolean }>;
   galleryCards: CardDefinition[];
   cardImageById: Record<string, string>;
 }
 
 export const useGalleryData = (args: UseGalleryDataArgs): UseGalleryDataResult => {
-  const { cardCatalog, sharedDeckTemplate } = args;
-
-  const optionalLobbyModules = useMemo(
-    () => (sharedDeckTemplate.modules ?? [])
-      .filter((module) => module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
-      .map((module) => ({
-        id: module.id,
-        name: formatModuleDisplayName(module.name, module.id),
-        alwaysOn: module.category === 'VVNZ',
-      })),
-    [sharedDeckTemplate.modules],
-  );
+  const { cardCatalog, sharedDeckTemplate, galleryCategoryFilter } = args;
 
   const galleryCards = useMemo(() => {
     const rankTrackIds = new Set(sharedDeckTemplate.rankTrack.map((card) => card.id));
     return [...cardCatalog]
       .filter((card) => !rankTrackIds.has(card.id))
+      .filter((card) => galleryCategoryFilter === 'ALL' || card.category === galleryCategoryFilter)
       .sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
-  }, [cardCatalog, sharedDeckTemplate.rankTrack]);
+  }, [cardCatalog, sharedDeckTemplate.rankTrack, galleryCategoryFilter]);
 
   const cardImageById = useMemo<Record<string, string>>(
     () =>
@@ -53,7 +43,6 @@ export const useGalleryData = (args: UseGalleryDataArgs): UseGalleryDataResult =
   );
 
   return {
-    optionalLobbyModules,
     galleryCards,
     cardImageById,
   };

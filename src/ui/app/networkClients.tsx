@@ -1,12 +1,12 @@
 import { Client } from 'boardgame.io/react';
 import { SocketIO } from 'boardgame.io/multiplayer';
 import { jojGame } from '../../game/jojGame';
-import { GameBoardV1, GameBoardV2 } from '../board';
+import { GameBoardV2WithContext } from '../board/GameBoardV2WithContext';
 import { SERVER_URL } from './clientConfig';
 
 export const NetworkClientV2 = Client({
   game: jojGame,
-  board: GameBoardV2,
+  board: GameBoardV2WithContext,
   debug: false,
   numPlayers: 6,
   multiplayer: SocketIO({ server: SERVER_URL }),
@@ -14,7 +14,7 @@ export const NetworkClientV2 = Client({
 
 export const NetworkClientV1 = Client({
   game: jojGame,
-  board: GameBoardV1,
+  board: GameBoardV2WithContext,
   debug: false,
   numPlayers: 6,
   multiplayer: SocketIO({ server: SERVER_URL }),

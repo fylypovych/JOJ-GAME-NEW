@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { clampBotCountToAllowed, getAvailableBotCounts } from '../../game/lobbyConfig';
-import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
-import type { Language } from '../i18n';
+import type { GameMode, BotDifficulty, BotProfile } from '../../game/types';
+import type { LobbyMatch } from './model';
 import { text } from '../i18n';
-import { buildRoomShareLink, copyText } from './share';
-import type { LobbyMatch, UserTab } from './model';
 import { getPublicTabPath } from './routes';
+import type { UserTab } from './routes';
+import { getAvailableBotCounts, clampBotCountToAllowed } from '../../game/lobbyConfig';
+import { useLobby } from '../providers/LobbyContext';
+import { useDeck } from '../providers/DeckContext';
+import type { Language } from '../i18n';
+import { buildRoomShareLink, copyText } from './share';
 import type { AuthUser, UserAward, UserStats } from './useUserAccount';
 import type { UserMatchHistoryItem, UserSession } from './useUserAccount';
 import {
@@ -160,14 +163,6 @@ type LobbySectionProps = {
   setBotDifficulty: (value: BotDifficulty) => void;
   botProfile: BotProfile;
   setBotProfile: (value: BotProfile) => void;
-  createRoom: () => void;
-  refreshMatches: () => void;
-  loading: boolean;
-  error: string;
-  matches: LobbyMatch[];
-  joinRoom: (match: LobbyMatch) => void;
-  spectateRoom: (match: LobbyMatch) => void;
-  optionalModules: Array<{ id: string; name: string; alwaysOn: boolean }>;
   selectedOptionalModuleIds: string[];
   setSelectedOptionalModuleIds: (ids: string[]) => void;
   uiVariant?: 'v1' | 'v2';
@@ -193,18 +188,12 @@ export const LobbySection = ({
   setBotDifficulty,
   botProfile,
   setBotProfile,
-  createRoom,
-  refreshMatches,
-  loading,
-  error,
-  matches,
-  joinRoom,
-  spectateRoom,
-  optionalModules,
   selectedOptionalModuleIds,
   setSelectedOptionalModuleIds,
   uiVariant = 'v2',
 }: LobbySectionProps) => {
+  const { matches, loading, error, createRoom, joinRoom, spectateRoom, refreshMatches } = useLobby();
+  const { optionalLobbyModules: optionalModules } = useDeck();
   const [roomFilter, setRoomFilter] = useState<'all' | 'open' | 'free' | 'no_bots' | 'standard' | 'standard_plus'>('all');
   const moduleNameById = useMemo(
     () => new Map(optionalModules.map((module) => [module.id, module.name])),
@@ -550,7 +539,7 @@ export const ActiveSessionSection = ({
       if (!activeMatch || !previous || previous.matchID !== activeMatch.matchID) return prev;
       const nextEvents: string[] = [];
       for (const player of activeMatch.players) {
-        const before = previous.players.find((row) => row.id === player.id)?.name?.trim() || '';
+        const before = previous.players.find((row: LobbyMatch['players'][number]) => row.id === player.id)?.name?.trim() || '';
         const after = player.name?.trim() || '';
         if (!before && after) nextEvents.push(t.roomActivityPlayerJoined.replace('{name}', after).replace('{seat}', `#${player.id}`));
         if (before && !after) nextEvents.push(t.roomActivityPlayerLeft.replace('{name}', before).replace('{seat}', `#${player.id}`));

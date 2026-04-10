@@ -310,3 +310,56 @@
   background: linear-gradient(180deg, #5e88d6, #3d66b2);
   color: #fffaf2;
 }
+
+/* UI Variant Icon Buttons */
+.app-toolbar-theme-switch .ui-variant-btn {
+  min-height: 40px;
+  min-width: 44px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.app-toolbar-theme-switch .ui-variant-btn svg {
+  display: block;
+}
+
+.app-top-toolbar-v2 .ui-variant-btn {
+  border-color: rgba(143, 157, 168, 0.34);
+  background: linear-gradient(180deg, rgba(63, 70, 73, 0.96), rgba(39, 44, 46, 0.98));
+  color: #edf1e8;
+}
+
+.app-top-toolbar-v2 .ui-variant-btn:hover:not(:disabled) {
+  border-color: rgba(180, 189, 173, 0.42);
+  transform: translateY(-1px);
+}
+
+.app-top-toolbar-v2 .ui-variant-btn:disabled {
+  border-color: rgba(243, 208, 120, 0.78);
+  background: linear-gradient(180deg, #5a6b5a, #3d4a3d);
+  box-shadow: 0 0 0 2px rgba(243, 208, 120, 0.16);
+}
+
+.app-top-toolbar-v1 .ui-variant-btn {
+  border-color: rgba(157, 142, 117, 0.34);
+  background: linear-gradient(180deg, rgba(249, 245, 237, 0.98), rgba(228, 219, 205, 0.98));
+  color: #5d5142;
+}
+
+.app-top-toolbar-v1 .ui-variant-btn:hover:not(:disabled) {
+  border-color: rgba(157, 142, 117, 0.6);
+  transform: translateY(-1px);
+}
+
+.app-top-toolbar-v1 .ui-variant-btn:disabled {
+  border-color: rgba(89, 119, 182, 0.62);
+  background: linear-gradient(180deg, #5e88d6, #3d66b2);
+  color: #fffaf2;
+  box-shadow: 0 0 0 2px rgba(89, 119, 182, 0.14);
+}

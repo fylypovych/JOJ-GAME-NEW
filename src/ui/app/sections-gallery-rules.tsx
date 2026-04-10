@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { CARD_ASSET_BASE_PATH, normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition } from '../../game/types';
 import { cardFlavor, cardTitleWithOverride, categoryLabel, text } from '../i18n';
 import type { Language } from '../i18n';
 import type { GalleryCategoryFilter } from './model';
+import { galleryCategories } from './model';
+import { useGallery } from '../providers/GalleryContext';
 
 type T = ReturnType<typeof text>;
 
@@ -12,8 +14,6 @@ type GallerySectionProps = {
   lang: Language;
   galleryCategoryFilter: GalleryCategoryFilter;
   setGalleryCategoryFilter: (value: GalleryCategoryFilter) => void;
-  galleryCards: CardDefinition[];
-  galleryCategories: GalleryCategoryFilter[];
   effectLabel: (
     resource: 'time' | 'reputation' | 'discipline' | 'documents' | 'tech' | 'rank',
   ) => string;
@@ -25,11 +25,19 @@ export const GallerySection = ({
   lang,
   galleryCategoryFilter,
   setGalleryCategoryFilter,
-  galleryCards,
-  galleryCategories,
   effectLabel,
   uiVariant = 'v2',
 }: GallerySectionProps) => {
+  const { galleryCards } = useGallery();
+  
+  // Derive categories from cards
+  const derivedCategories = useMemo(() => {
+    const cats = new Set(galleryCards.map((c) => c.category));
+    return galleryCategories.filter(
+      (c) => cats.has(c as CardDefinition['category']) || c === 'RANK' || c === 'ALL'
+    );
+  }, [galleryCards]);
+  
   const [openPreviewKey, setOpenPreviewKey] = useState<string | null>(null);
   const togglePreview = (key: string) =>
     setOpenPreviewKey((prev) => (prev === key ? null : key));
@@ -53,7 +61,7 @@ export const GallerySection = ({
         >
           {t.allCategories}
         </button>
-        {galleryCategories.map((cat) => (
+        {derivedCategories.map((cat) => (
           <button
             type="button"
             key={`gallery-filter-${cat}`}

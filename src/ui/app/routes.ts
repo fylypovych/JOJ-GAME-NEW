@@ -1,4 +1,6 @@
-import type { UserTab } from './model';
+import type { UserTab as UserTabType } from './model';
+
+export type UserTab = UserTabType;
 
 export const DEFAULT_PUBLIC_TAB: UserTab = 'games';
 

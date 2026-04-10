@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useMemo } from 'react';
 import { useEffect } from 'react';
 import { text } from './i18n';
 import {
@@ -10,9 +10,10 @@ import { SERVER_URL } from './app/clientConfig';
 import {
   DEFAULT_SERVER_URL,
   PLAYER_NAME_STORAGE_KEY,
+  RANKS_STORAGE_KEY,
   SERVER_URL_STORAGE_KEY,
   SESSION_STORAGE_KEY,
-  galleryCategories,
+  SHARED_TEMPLATE_STORAGE_KEY,
   normalizeServerUrl,
 } from './app/model';
 import {
@@ -31,7 +32,9 @@ import { AppHeader } from './app/AppHeader';
 import { AppFooter } from './app/AppFooter';
 import { AdminPageContainer } from './app/AdminPageContainer';
 import { useAppShellState } from './app/useAppShellState';
-import { useAppGameState } from './app/useAppGameState';
+import { useLobbyData } from './app/useLobbyData';
+import { useDeckData } from './app/useDeckData';
+import { useGalleryData } from './app/useGalleryData';
 import { useAppUserState } from './app/useAppUserState';
 import { useAppAdminState } from './app/useAppAdminState';
 import { useProfileHandlers } from './app/useProfileHandlers';
@@ -188,7 +191,7 @@ export const App = () => {
     enabled: isAdminRoute && adminAuthorized,
   });
 
-  // Consolidated game state (replaces useSharedConfigSync + useLobbySession)
+  // Direct data hooks (replaces useAppGameState)
   const {
     sharedDeckTemplate,
     cardCatalog,
@@ -201,6 +204,14 @@ export const App = () => {
     rollbackTemplate,
     applyTemplateChange,
     rollbackRanks,
+    optionalLobbyModules,
+  } = useDeckData({
+    serverUrl: SERVER_URL,
+    sharedTemplateStorageKey: SHARED_TEMPLATE_STORAGE_KEY,
+    ranksStorageKey: RANKS_STORAGE_KEY,
+  });
+
+  const {
     matches,
     session,
     setSession,
@@ -215,15 +226,12 @@ export const App = () => {
     roomPlayerNames,
     canStart,
     lobbyGameUiConfig,
-    optionalLobbyModules,
-    galleryCards,
-    cardImageById,
     adminMatchID,
     activeSessionMatch,
     activeSessionShareLink,
     activeSessionGameModeLabel,
     activeSessionInviteText,
-  } = useAppGameState({
+  } = useLobbyData({
     serverUrl: SERVER_URL,
     playerName,
     user,
@@ -249,6 +257,12 @@ export const App = () => {
       roomSummaryPlayers: t.roomSummaryPlayers,
     },
     bindMatchSession,
+  });
+
+  const { galleryCards, cardImageById } = useGalleryData({
+    cardCatalog,
+    sharedDeckTemplate,
+    galleryCategoryFilter,
   });
 
   useEffect(() => {
@@ -475,8 +489,8 @@ export const App = () => {
 
   const shellUiVariant = isAdminRoute ? adminUiVariant : gameUiVariant;
 
-  // Prepare context values
-  const lobbyContextValue = {
+  // Prepare context values with memoization to prevent unnecessary re-renders
+  const lobbyContextValue = useMemo(() => ({
     matches,
     session,
     setSession,
@@ -496,9 +510,14 @@ export const App = () => {
     activeSessionShareLink,
     activeSessionGameModeLabel,
     activeSessionInviteText,
-  };
+  }), [
+    matches, session, loading, error, roomPlayerNames, canStart,
+    lobbyGameUiConfig, adminMatchID, activeSessionMatch,
+    activeSessionShareLink, activeSessionGameModeLabel, activeSessionInviteText,
+    setSession, setError, refreshMatches, createRoom, joinRoom, spectateRoom, leaveRoom,
+  ]);
 
-  const deckContextValue = {
+  const deckContextValue = useMemo(() => ({
     sharedDeckTemplate,
     cardCatalog,
     sharedRanks,
@@ -507,16 +526,22 @@ export const App = () => {
     refreshSharedDeckTemplate,
     syncRanksToServer,
     sharedDeckStats,
+    optionalLobbyModules,
     rollbackTemplate,
     applyTemplateChange,
     rollbackRanks,
-  };
+  }), [
+    sharedDeckTemplate, cardCatalog, sharedRanks, sharedConfigLoaded,
+    sharedDeckStats, optionalLobbyModules,
+    setSharedRanksState, refreshSharedDeckTemplate, syncRanksToServer,
+    rollbackTemplate, applyTemplateChange, rollbackRanks,
+  ]);
 
-  const galleryContextValue = {
+  const galleryContextValue = useMemo(() => ({
     optionalLobbyModules,
     galleryCards,
     cardImageById,
-  };
+  }), [optionalLobbyModules, galleryCards, cardImageById]);
 
   return (
     <LobbyProvider value={lobbyContextValue}>
@@ -570,14 +595,6 @@ export const App = () => {
           setBotDifficulty={setBotDifficulty}
           botProfile={botProfile}
           setBotProfile={setBotProfile}
-          createRoom={() => { void createRoom(); }}
-          refreshMatches={() => { void refreshMatches(); }}
-          loading={loading}
-          error={error}
-          matches={matches}
-          joinRoom={(match) => { void joinRoom(match); }}
-          spectateRoom={(match) => { void spectateRoom(match); }}
-          optionalModules={optionalLobbyModules}
           selectedOptionalModuleIds={selectedOptionalModuleIds}
           setSelectedOptionalModuleIds={setSelectedOptionalModuleIds}
           uiVariant={gameUiVariant}
@@ -595,14 +612,6 @@ export const App = () => {
               lang={lang}
               playerName={session.spectator ? t.spectatorJoinedLabel : playerName}
               knownPlayerNames={roomPlayerNames}
-              sharedRanks={sharedRanks}
-              rankTrackCards={sharedDeckTemplate.rankTrack}
-              cardImageById={cardImageById}
-              resourceImagePaths={lobbyGameUiConfig.resourceImagePaths}
-              roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
-              inviteText={activeSessionInviteText}
-              shareLink={activeSessionShareLink}
-              onLeaveRoom={() => { void leaveRoom(); }}
             /> : <NetworkClientV2
               key={`${session.matchID}:${session.playerID ?? 'spectator'}:v2`}
               matchID={session.matchID}
@@ -611,14 +620,6 @@ export const App = () => {
               lang={lang}
               playerName={session.spectator ? t.spectatorJoinedLabel : playerName}
               knownPlayerNames={roomPlayerNames}
-              sharedRanks={sharedRanks}
-              rankTrackCards={sharedDeckTemplate.rankTrack}
-              cardImageById={cardImageById}
-              resourceImagePaths={lobbyGameUiConfig.resourceImagePaths}
-              roomMeta={{ matchID: session.matchID, playerID: session.playerID }}
-              inviteText={activeSessionInviteText}
-              shareLink={activeSessionShareLink}
-              onLeaveRoom={() => { void leaveRoom(); }}
             />}
           </Suspense>
         ) : null}
@@ -704,8 +705,6 @@ export const App = () => {
           lang={lang}
           galleryCategoryFilter={galleryCategoryFilter}
           setGalleryCategoryFilter={setGalleryCategoryFilter}
-          galleryCards={galleryCards}
-          galleryCategories={galleryCategories}
           effectLabel={effectLabel}
           uiVariant={gameUiVariant}
         />

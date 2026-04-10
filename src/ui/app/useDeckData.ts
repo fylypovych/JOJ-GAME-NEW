@@ -1,6 +1,7 @@
 import { useMemo, useCallback } from 'react';
 import type { RankDefinition } from '../../game/types';
 import { useSharedConfigSync } from './useSharedConfigSync';
+import { formatModuleDisplayName } from '../moduleDisplay';
 import {
   getSharedDeckTemplate,
   getCardCatalog,
@@ -31,6 +32,7 @@ export interface UseDeckDataResult {
   
   // Derived
   sharedDeckStats: ReturnType<typeof getSharedDeckTemplateStats>;
+  optionalLobbyModules: Array<{ id: string; name: string; alwaysOn: boolean }>;
   
   // Helpers
   rollbackTemplate: (json: string) => void;
@@ -77,6 +79,17 @@ export const useDeckData = (args: UseDeckDataArgs): UseDeckDataResult => {
 
   const sharedDeckStats = useMemo(() => getSharedDeckTemplateStats(), []);
 
+  const optionalLobbyModules = useMemo(
+    () => (sharedDeckTemplate.modules ?? [])
+      .filter((module) => module.moduleType === 'SYSTEM_MODULE' && module.target === 'deck')
+      .map((module) => ({
+        id: module.id,
+        name: formatModuleDisplayName(module.name, module.id),
+        alwaysOn: module.category === 'VVNZ',
+      })),
+    [sharedDeckTemplate.modules],
+  );
+
   const rollbackTemplate = useCallback((json: string) => {
     const result = importSharedDeckTemplateJson(json);
     if (result.ok) void refreshSharedDeckTemplate(false);
@@ -104,6 +117,7 @@ export const useDeckData = (args: UseDeckDataArgs): UseDeckDataResult => {
     refreshSharedDeckTemplate,
     syncRanksToServer,
     sharedDeckStats,
+    optionalLobbyModules,
     rollbackTemplate,
     applyTemplateChange,
     rollbackRanks,
