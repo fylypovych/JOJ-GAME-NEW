@@ -6,6 +6,27 @@ const CARD_ASSETS_DIR = path.join(process.cwd(), 'public', 'card-assets');
 const PROFILE_IMAGE_DIR = path.join(process.cwd(), 'public', 'profile-image');
 const SYS_ICONS_DIR = path.join(process.cwd(), 'public', 'sys.icons');
 
+// Possible directories for old files
+const OLD_DIRS = [
+  path.join(process.cwd(), 'public', 'card-assets'),
+  path.join(process.cwd(), 'card-assets'),
+  path.join(process.cwd(), 'cards'),
+];
+
+// Find file in old directories
+const findOldFile = async (fileName: string): Promise<string | null> => {
+  for (const dir of OLD_DIRS) {
+    const filePath = path.join(dir, fileName);
+    try {
+      await access(filePath);
+      return filePath;
+    } catch {
+      // File doesn't exist in this directory
+    }
+  }
+  return null;
+};
+
 // Load card catalog to get categories
 let cardCatalog: unknown[] = [];
 try {
@@ -57,14 +78,16 @@ const migrateAvatars = async (pool: any) => {
       continue;
     }
     
-    const oldFilePath = path.join(CARD_ASSETS_DIR, fileName);
+    const oldFilePath = await findOldFile(fileName);
+    if (!oldFilePath) {
+      console.log(`  Skipping ${fileName} - file not found in old directories`);
+      continue;
+    }
+    
     const newFilePath = path.join(PROFILE_IMAGE_DIR, fileName);
     const newPath = `/public/profile-image/${fileName}`;
     
     try {
-      // Check if old file exists
-      await access(oldFilePath);
-      
       // Create target directory if needed
       await mkdir(PROFILE_IMAGE_DIR, { recursive: true });
       
@@ -117,15 +140,17 @@ const migrateCardImages = async (pool: any) => {
     
     const category = getCategoryForCard(fileName) || 'uncategorized';
     
-    const oldFilePath = path.join(CARD_ASSETS_DIR, fileName);
+    const oldFilePath = await findOldFile(fileName);
+    if (!oldFilePath) {
+      console.log(`  Skipping ${fileName} - file not found in old directories`);
+      continue;
+    }
+    
     const newDir = path.join(CARD_ASSETS_DIR, category);
     const newFilePath = path.join(newDir, fileName);
     const newPath = `/public/card-assets/${category}/${fileName}`;
     
     try {
-      // Check if old file exists
-      await access(oldFilePath);
-      
       // Create target directory if needed
       await mkdir(newDir, { recursive: true });
       
