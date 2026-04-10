@@ -11,6 +11,7 @@ export interface UseGalleryDataArgs {
       moduleType: string;
       target: string;
       category: string;
+      cardIds: string[];
     }>;
     rankTrack: Array<{ id: string }>;
   };
@@ -27,10 +28,12 @@ export const useGalleryData = (args: UseGalleryDataArgs): UseGalleryDataResult =
 
   const galleryCards = useMemo(() => {
     const rankTrackIds = new Set(sharedDeckTemplate.rankTrack.map((card) => card.id));
+    const rankModule = sharedDeckTemplate.modules?.find((m) => m.id === 'rank_default');
+    const rankModuleIds = new Set(rankModule?.cardIds ?? []);
     return [...cardCatalog]
       .filter((card) => {
         if (galleryCategoryFilter === 'RANK') {
-          return rankTrackIds.has(card.id);
+          return rankTrackIds.has(card.id) || rankModuleIds.has(card.id);
         }
         if (galleryCategoryFilter === 'ALL') {
           return true;
@@ -38,7 +41,7 @@ export const useGalleryData = (args: UseGalleryDataArgs): UseGalleryDataResult =
         return card.category === galleryCategoryFilter && !rankTrackIds.has(card.id);
       })
       .sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
-  }, [cardCatalog, sharedDeckTemplate.rankTrack, galleryCategoryFilter]);
+  }, [cardCatalog, sharedDeckTemplate.rankTrack, sharedDeckTemplate.modules, galleryCategoryFilter]);
 
   const cardImageById = useMemo<Record<string, string>>(
     () =>

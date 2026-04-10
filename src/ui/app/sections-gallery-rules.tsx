@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { CARD_ASSET_BASE_PATH, normalizeImagePath } from '../../game/imagePaths';
 import type { CardDefinition } from '../../game/types';
 import { cardFlavor, cardTitleWithOverride, categoryLabel, text } from '../i18n';
@@ -43,6 +43,34 @@ export const GallerySection = ({
   const [openPreviewKey, setOpenPreviewKey] = useState<string | null>(null);
   const togglePreview = (key: string) =>
     setOpenPreviewKey((prev) => (prev === key ? null : key));
+
+  // Preload images for current category
+  useEffect(() => {
+    const imagesToPreload = galleryCards.map((card) =>
+      normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`
+    );
+    
+    // Preload first 10 images immediately, then the rest
+    const immediatePreload = imagesToPreload.slice(0, 10);
+    const deferredPreload = imagesToPreload.slice(10);
+    
+    immediatePreload.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+    
+    // Defer remaining images to avoid blocking
+    if (deferredPreload.length > 0) {
+      const timeoutId = setTimeout(() => {
+        deferredPreload.forEach((src) => {
+          const img = new Image();
+          img.src = src;
+        });
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [galleryCards]);
 
   return (
     <section
@@ -99,8 +127,16 @@ export const GallerySection = ({
                 <img
                   src={normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`}
                   alt={cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}
+                  loading="lazy"
+                  decoding="async"
                   onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                    const img = e.currentTarget as HTMLImageElement;
+                    const fallbackSrc = `${CARD_ASSET_BASE_PATH}${card.id}.png`;
+                    if (img.src !== fallbackSrc && img.src !== window.location.origin + fallbackSrc) {
+                      img.src = fallbackSrc;
+                    } else {
+                      img.style.display = 'none';
+                    }
                   }}
                 />
                 <div
@@ -114,6 +150,14 @@ export const GallerySection = ({
                   <img
                     src={normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`}
                     alt={cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}
+                    decoding="async"
+                    onError={(e) => {
+                      const img = e.currentTarget as HTMLImageElement;
+                      const fallbackSrc = `${CARD_ASSET_BASE_PATH}${card.id}.png`;
+                      if (img.src !== fallbackSrc && img.src !== window.location.origin + fallbackSrc) {
+                        img.src = fallbackSrc;
+                      }
+                    }}
                   />
                 </div>
               </div>

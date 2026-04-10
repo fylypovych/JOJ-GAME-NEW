@@ -23,6 +23,7 @@ import { createUserStore } from './services/user-store';
 import { createAdminAuditLogger } from './services/admin-audit';
 import { createMatchRuntimeSync, type MatchDbBackend } from './services/match-runtime-sync';
 import { createCorsMiddleware, createSecurityHeadersMiddleware } from './services/http-security';
+import { createCacheControlMiddleware } from './cache-control-middleware';
 import { createSharedConfigStore } from './storage/shared-config';
 import { getAdminRuntimePolicy } from './runtime-policy';
 import {
@@ -175,6 +176,7 @@ const corsMiddleware = createCorsMiddleware({
   corsAllowedHeaders,
   corsAllowedMethods,
 });
+const cacheControlMiddleware = createCacheControlMiddleware();
 const publicGamesRouteCompatibilityMiddleware = async (ctx: RouteCtx, next: () => Promise<unknown>) => {
   const method = String(ctx?.method ?? '').toUpperCase();
   const path = typeof ctx?.path === 'string' ? ctx.path.replace(/\/+$/, '') || '/' : '';
@@ -200,10 +202,12 @@ if (app && Array.isArray(app.middleware)) {
   app.middleware.unshift(publicGamesRouteCompatibilityMiddleware);
   app.middleware.unshift(securityHeadersMiddleware);
   app.middleware.unshift(corsMiddleware);
+  app.middleware.unshift(cacheControlMiddleware);
 } else if (router && typeof router.use === 'function') {
   router.use(publicGamesRouteCompatibilityMiddleware);
   router.use(securityHeadersMiddleware);
   router.use(corsMiddleware);
+  router.use(cacheControlMiddleware);
 }
 const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });
 const { runGit, runShellCommand, spawnDetachedShell } = createCommandRunners(repoDir);
