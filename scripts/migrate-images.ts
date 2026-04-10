@@ -149,9 +149,13 @@ const migrateCardImages = async (pool: any) => {
     const oldPath = row.path;
     const fileName = row.file_name;
     
-    // Skip if already in new format (contains category)
-    if (oldPath.startsWith('/public/card-assets/') && oldPath.split('/').length > 3) {
-      console.log(`  Skipping ${fileName} - already in new format`);
+    // Extract current directory name from path
+    const pathParts = oldPath.split('/');
+    const currentDir = pathParts.length > 3 ? pathParts[3] : '';
+    
+    // Skip if already in a module directory (starts with 2026.)
+    if (currentDir && currentDir.startsWith('2026.')) {
+      console.log(`  Skipping ${fileName} - already in module directory: ${currentDir}`);
       continue;
     }
     
