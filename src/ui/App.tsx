@@ -105,6 +105,8 @@ export const App = () => {
     setResetPasswordDraft,
     serverUrlDraft,
     setServerUrlDraft,
+    theme,
+    setTheme,
   } = useAppShellState(SERVER_URL);
   const t = text(lang);
 
@@ -554,6 +556,8 @@ export const App = () => {
         setActiveUserTab={setActiveUserTab}
         gameUiVariant={gameUiVariant}
         setGameUiVariant={setGameUiVariant}
+        theme={theme}
+        setTheme={setTheme}
         t={t}
       />
       <p className="app-link-row">

@@ -142,7 +142,7 @@ export const StatisticsSection = ({
                     <ul>
                       <li key={`current-session-${currentSession.id}`} style={{ fontWeight: 'bold', background: 'rgba(255,255,0,0.1)' }}>
                         {new Date(currentSession.lastSeenAt).toLocaleString()} | {currentSession.sourceIp ?? '-'} | {(currentSession.userAgent ?? '-').slice(0, 48)}
-                        {onLogoutSession ? ` <button type="button" onClick={() => onLogoutSession(currentSession.id)}>${t.userLogoutSessionButton}</button>` : ''}
+                        {onLogoutSession ? <button type="button" onClick={() => onLogoutSession(currentSession.id)}>{t.userLogoutSessionButton}</button> : null}
                       </li>
                     </ul>
                   ) : <p>{t.simulationNoData}</p>;
@@ -162,7 +162,7 @@ export const StatisticsSection = ({
                     .map((session) => (
                     <li key={`stats-session-${session.id}`}>
                       {new Date(session.lastSeenAt).toLocaleString()} | {session.sourceIp ?? '-'} | {(session.userAgent ?? '-').slice(0, 48)}
-                      {onLogoutSession ? ` <button type="button" onClick={() => onLogoutSession(session.id)}>${t.userLogoutSessionButton}</button>` : ''}
+                      {onLogoutSession ? <button type="button" onClick={() => onLogoutSession(session.id)}>{t.userLogoutSessionButton}</button> : null}
                     </li>
                   ))}
                 </ul>

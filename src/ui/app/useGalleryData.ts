@@ -28,8 +28,15 @@ export const useGalleryData = (args: UseGalleryDataArgs): UseGalleryDataResult =
   const galleryCards = useMemo(() => {
     const rankTrackIds = new Set(sharedDeckTemplate.rankTrack.map((card) => card.id));
     return [...cardCatalog]
-      .filter((card) => galleryCategoryFilter === 'RANK' || !rankTrackIds.has(card.id))
-      .filter((card) => galleryCategoryFilter === 'ALL' || card.category === galleryCategoryFilter)
+      .filter((card) => {
+        if (galleryCategoryFilter === 'RANK') {
+          return rankTrackIds.has(card.id);
+        }
+        if (galleryCategoryFilter === 'ALL') {
+          return true;
+        }
+        return card.category === galleryCategoryFilter && !rankTrackIds.has(card.id);
+      })
       .sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
   }, [cardCatalog, sharedDeckTemplate.rankTrack, galleryCategoryFilter]);
 

@@ -42,6 +42,10 @@ export const useAppShellState = (serverUrl: string) => {
     if (raw === 'v1' || raw === 'v5') return 'v1';
     return 'v2';
   });
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const raw = window.localStorage.getItem('joj-theme');
+    return raw === 'dark' ? 'dark' : 'light';
+  });
   const GALLERY_CATEGORY_FILTER_STORAGE_KEY = 'joj-gallery-category-filter';
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>(() => (
     (window.localStorage.getItem(GALLERY_CATEGORY_FILTER_STORAGE_KEY) as GalleryCategoryFilter | null) ?? 'ALL'
@@ -84,6 +88,11 @@ export const useAppShellState = (serverUrl: string) => {
     window.localStorage.setItem(ADMIN_UI_VARIANT_STORAGE_KEY, adminUiVariant);
     window.localStorage.removeItem(LEGACY_ADMIN_UI_VARIANT_STORAGE_KEY);
   }, [adminUiVariant]);
+
+  useEffect(() => {
+    window.localStorage.setItem('joj-theme', theme);
+    document.body.className = theme === 'dark' ? 'is-dark-theme' : '';
+  }, [theme]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -139,6 +148,8 @@ export const useAppShellState = (serverUrl: string) => {
     setGameUiVariant,
     adminUiVariant,
     setAdminUiVariant,
+    theme,
+    setTheme,
     galleryCategoryFilter,
     setGalleryCategoryFilter,
     deletingAdminMatch,

@@ -12,11 +12,13 @@ interface AppHeaderProps {
   setActiveUserTab: (tab: UserTab) => void;
   gameUiVariant: 'v1' | 'v2';
   setGameUiVariant: (variant: 'v1' | 'v2') => void;
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
   t: T;
 }
 
 export const AppHeader = (props: AppHeaderProps) => {
-  const { isAdminRoute, lang, setLang, activeUserTab, setActiveUserTab, gameUiVariant, setGameUiVariant, t } = props;
+  const { isAdminRoute, lang, setLang, activeUserTab, setActiveUserTab, gameUiVariant, theme, setTheme, t } = props;
 
   if (isAdminRoute) {
     return (
@@ -36,11 +38,8 @@ export const AppHeader = (props: AppHeaderProps) => {
           <div className="app-toolbar-group">
             <span className="app-toolbar-label">{t.language}:</span>
             <div className="app-toolbar-button-row">
-              <button type="button" onClick={() => setLang('uk')} disabled={lang === 'uk'}>
-                {t.langUk}
-              </button>
-              <button type="button" onClick={() => setLang('en')} disabled={lang === 'en'}>
-                {t.langEn}
+              <button type="button" onClick={() => setLang(lang === 'uk' ? 'en' : 'uk')}>
+                {lang === 'uk' ? t.langEn : t.langUk}
               </button>
             </div>
           </div>
@@ -49,23 +48,12 @@ export const AppHeader = (props: AppHeaderProps) => {
             <div className="app-toolbar-button-row app-toolbar-theme-switch">
               <button
                 type="button"
-                className={`app-theme-icon-button${gameUiVariant === 'v1' ? ' is-active' : ''}`}
-                onClick={() => setGameUiVariant('v1')}
-                disabled={gameUiVariant === 'v1'}
-                aria-label={t.gameUiV1}
-                title={t.gameUiV1}
+                className="app-theme-icon-button"
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
+                title={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
               >
-                <img src="/ui-theme-night.png" alt="" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                className={`app-theme-icon-button${gameUiVariant === 'v2' ? ' is-active' : ''}`}
-                onClick={() => setGameUiVariant('v2')}
-                disabled={gameUiVariant === 'v2'}
-                aria-label={t.gameUiV2}
-                title={t.gameUiV2}
-              >
-                <img src="/ui-theme-day.png" alt="" aria-hidden="true" />
+                <img src={theme === 'light' ? '/ui-theme-night.png' : '/ui-theme-day.png'} alt="" aria-hidden="true" />
               </button>
             </div>
           </div>

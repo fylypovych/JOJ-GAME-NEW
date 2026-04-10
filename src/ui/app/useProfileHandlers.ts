@@ -94,7 +94,6 @@ export const useProfileHandlers = (args: UseProfileHandlersArgs): UseProfileHand
     setProfileDraft,
     setPasswordDraft,
     setUserError,
-    setUser,
     t,
   } = args;
 
@@ -154,14 +153,11 @@ export const useProfileHandlers = (args: UseProfileHandlersArgs): UseProfileHand
       const nextDraft = { ...profileDraft, avatarUrl: nextAvatarUrl };
       setProfileDraft(nextDraft);
       await updateUserProfile({ ...nextDraft, preferredLang: lang });
-      if (user) {
-        setUser({ ...user, avatarUrl: nextAvatarUrl });
-      }
       setProfileNotice(t.userAvatarUploaded);
     } catch (error) {
       setUserError(String(error instanceof Error ? error.message : error));
     }
-  }, [profileDraft, uploadAvatar, updateUserProfile, lang, setProfileDraft, setProfileNotice, setUserError, setUser, user, t.userAvatarUploaded]);
+  }, [profileDraft, uploadAvatar, updateUserProfile, lang, setProfileDraft, setProfileNotice, setUserError, t.userAvatarUploaded]);
 
   const onRefreshSessions = useCallback(() => {
     void refreshSessions().catch((error) => setUserError(String(error instanceof Error ? error.message : error)));
