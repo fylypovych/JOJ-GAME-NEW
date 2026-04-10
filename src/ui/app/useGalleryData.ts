@@ -33,6 +33,10 @@ export const useGalleryData = (args: UseGalleryDataArgs): UseGalleryDataResult =
     return [...cardCatalog]
       .filter((card) => {
         if (galleryCategoryFilter === 'RANK') {
+          // If rankTrack and rank_default are empty, show all RANK category cards
+          if (rankTrackIds.size === 0 && rankModuleIds.size === 0) {
+            return card.category === 'RANK';
+          }
           return rankTrackIds.has(card.id) || rankModuleIds.has(card.id);
         }
         if (galleryCategoryFilter === 'ALL') {

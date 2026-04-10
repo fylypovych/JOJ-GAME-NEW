@@ -12,9 +12,9 @@ export const normalizeImagePath = (input?: string): string | undefined => {
   if (normalized.startsWith('cards/')) return `/${normalized}`.replace('/cards/', CARD_ASSET_BASE_PATH);
   if (normalized.startsWith('/public/cards/')) return normalized.replace('/public/cards/', CARD_ASSET_BASE_PATH);
   if (normalized.startsWith('public/cards/')) return `/${normalized.replace(/^public\/cards\//, 'card-assets/')}`;
+  // Handle module-based paths: /public/card-assets/[moduleName]/filename
   if (normalized.startsWith('/public/card-assets/')) return normalized.replace('/public', '');
   if (normalized.startsWith('public/card-assets/')) return `/${normalized.replace(/^public\//, '')}`;
   if (/^[^/]+\.(png|webp|jpg|jpeg|gif|svg)$/i.test(normalized)) return `${CARD_ASSET_BASE_PATH}${normalized}`;
   return normalized.startsWith('/') ? normalized : `/${normalized}`;
 };
-
