@@ -47,6 +47,32 @@ type GitOpDeps = {
   devRestartTouchPath: string;
 };
 
+const getHeaderValue = (ctx: RouteCtx, name: string) => {
+  const headers = ctx?.request?.headers ?? {};
+  const value = headers[name] ?? headers[name.toLowerCase()];
+  if (Array.isArray(value)) return String(value[0] ?? '').trim();
+  return typeof value === 'string' ? value.trim() : '';
+};
+
+const buildAdminDeployLog = (args: {
+  action: 'deploy' | 'update' | 'publish';
+  route: string;
+  correlationId: string;
+  actor: string;
+  durationMs: number;
+  outcome: 'success' | 'error';
+  details?: Record<string, unknown>;
+}) => JSON.stringify({
+  event: 'admin_git_ops',
+  action: args.action,
+  route: args.route,
+  correlationId: args.correlationId,
+  actor: args.actor,
+  durationMs: Math.max(0, Math.floor(args.durationMs)),
+  outcome: args.outcome,
+  ...(args.details ?? {}),
+});
+
 const stashAllLocalGitChanges = async (runGit: RunGit) => {
   const stashRes = await runGit(['stash', 'push', '-u', '-m', 'admin-auto-stash-local-changes']);
   if (!stashRes.ok) return { ok: false as const, error: stashRes.error };
@@ -133,6 +159,9 @@ export const registerAdminGitRoutes = ({
   });
 
   router.post('/api/admin/git/update', async (ctx: RouteCtx) => {
+    const startedAt = Date.now();
+    const correlationId = getHeaderValue(ctx, 'x-request-id') || getHeaderValue(ctx, 'x-correlation-id') || `admin-update-${startedAt}`;
+    const actor = getHeaderValue(ctx, 'x-admin-actor') || 'unknown';
     if (!(await requireAdminWriteAccess(ctx, '/api/admin/git/update'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-git-update', 5, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/git/update', maxBytes: JSON_BODY_LIMIT, logLine });
@@ -194,10 +223,22 @@ export const registerAdminGitRoutes = ({
       return;
     }
     await logLine('WARN', `git update applied on branch=${status.branch}; pull output=${pullRes.stdout.trim() || '(no output)'}`);
+    await logLine('INFO', buildAdminDeployLog({
+      action: 'update',
+      route: '/api/admin/git/update',
+      correlationId,
+      actor,
+      durationMs: Date.now() - startedAt,
+      outcome: 'success',
+      details: { branch: status.branch, head: nextStatus.head },
+    }));
     routeOk(ctx, { updated: true, message: 'Update applied', output: pullRes.stdout.trim(), status: nextStatus });
   });
 
   router.post('/api/admin/git/deploy', async (ctx: RouteCtx) => {
+    const startedAt = Date.now();
+    const correlationId = getHeaderValue(ctx, 'x-request-id') || getHeaderValue(ctx, 'x-correlation-id') || `admin-deploy-${startedAt}`;
+    const actor = getHeaderValue(ctx, 'x-admin-actor') || 'unknown';
     if (!(await requireAdminWriteAccess(ctx, '/api/admin/git/deploy'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-git-deploy', 3, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/git/deploy', maxBytes: JSON_BODY_LIMIT, logLine });
@@ -266,6 +307,15 @@ export const registerAdminGitRoutes = ({
       installRes = await runShellCommand('npm install --include=dev', 30 * 60_000);
       if (!installRes.ok) {
         await logLine('ERROR', `deploy npm install --include=dev failed: ${installRes.error}`);
+        await logLine('ERROR', buildAdminDeployLog({
+          action: 'deploy',
+          route: '/api/admin/git/deploy',
+          correlationId,
+          actor,
+          durationMs: Date.now() - startedAt,
+          outcome: 'error',
+          details: { failedStep: 'npm install --include=dev' },
+        }));
         routeError(ctx, 500, 'npm install failed', { details: installRes.error, steps });
         return;
       }
@@ -277,6 +327,15 @@ export const registerAdminGitRoutes = ({
     const tscRes = await runShellCommand('npm run typecheck', 20 * 60_000);
     if (!tscRes.ok) {
       await logLine('ERROR', `deploy tsc failed: ${tscRes.error}`);
+      await logLine('ERROR', buildAdminDeployLog({
+        action: 'deploy',
+        route: '/api/admin/git/deploy',
+        correlationId,
+        actor,
+        durationMs: Date.now() - startedAt,
+        outcome: 'error',
+        details: { failedStep: 'npm run typecheck' },
+      }));
       routeError(ctx, 500, 'TypeScript build failed', { details: tscRes.error, steps });
       return;
     }
@@ -285,6 +344,15 @@ export const registerAdminGitRoutes = ({
     const viteRes = await runShellCommand('npm run build', 30 * 60_000);
     if (!viteRes.ok) {
       await logLine('ERROR', `deploy vite build failed: ${viteRes.error}`);
+      await logLine('ERROR', buildAdminDeployLog({
+        action: 'deploy',
+        route: '/api/admin/git/deploy',
+        correlationId,
+        actor,
+        durationMs: Date.now() - startedAt,
+        outcome: 'error',
+        details: { failedStep: 'npm run build' },
+      }));
       routeError(ctx, 500, 'Vite build failed', { details: viteRes.error, steps });
       return;
     }
@@ -298,6 +366,15 @@ export const registerAdminGitRoutes = ({
     }
 
     await logLine('WARN', `admin deploy completed; scheduling PM2 restart; head=${nextStatus.head}`);
+    await logLine('INFO', buildAdminDeployLog({
+      action: 'deploy',
+      route: '/api/admin/git/deploy',
+      correlationId,
+      actor,
+      durationMs: Date.now() - startedAt,
+      outcome: 'success',
+      details: { head: nextStatus.head, branch: nextStatus.branch },
+    }));
     routeOk(ctx, { message: 'Update, build and restart scheduled', restarted: true, steps, status: nextStatus });
     setTimeout(() => {
       try {
@@ -309,6 +386,9 @@ export const registerAdminGitRoutes = ({
   });
 
   router.post('/api/admin/git/publish', async (ctx: RouteCtx) => {
+    const startedAt = Date.now();
+    const correlationId = getHeaderValue(ctx, 'x-request-id') || getHeaderValue(ctx, 'x-correlation-id') || `admin-publish-${startedAt}`;
+    const actor = getHeaderValue(ctx, 'x-admin-actor') || 'unknown';
     if (!(await requireAdminWriteAccess(ctx, '/api/admin/git/publish'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-git-publish', 5, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/git/publish', maxBytes: JSON_BODY_LIMIT, logLine });
@@ -373,6 +453,15 @@ export const registerAdminGitRoutes = ({
     }
 
     await logLine('WARN', `git publish completed on branch=${branch}; push output=${pushRes.stdout.trim() || '(no output)'}`);
+    await logLine('INFO', buildAdminDeployLog({
+      action: 'publish',
+      route: '/api/admin/git/publish',
+      correlationId,
+      actor,
+      durationMs: Date.now() - startedAt,
+      outcome: 'success',
+      details: { branch, head: nextStatus.head },
+    }));
     routeOk(ctx, { message: 'Commit and push completed', steps, status: nextStatus });
   });
 };

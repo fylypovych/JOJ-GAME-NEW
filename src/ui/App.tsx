@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useEffect } from 'react';
 import { text } from './i18n';
 import {
@@ -16,21 +16,10 @@ import {
   SHARED_TEMPLATE_STORAGE_KEY,
   normalizeServerUrl,
 } from './app/model';
-import {
-  AuthErrorModal,
-  GallerySection,
-  LobbySection,
-  PasswordResetSection,
-  ProfileSection,
-  RegisterSection,
-  RulesSection,
-  StatisticsSection,
-} from './app/sections';
 import { useAdminSnapshot } from './app/useAdminSnapshot';
-import { BugReportWidget } from './app/BugReportWidget';
 import { AppHeader } from './app/AppHeader';
 import { AppFooter } from './app/AppFooter';
-import { AdminPageContainer } from './app/AdminPageContainer';
+import { AppFeatureContainers } from './app/AppFeatureContainers';
 import { useAppShellState } from './app/useAppShellState';
 import { useLobbyData } from './app/useLobbyData';
 import { useDeckData } from './app/useDeckData';
@@ -42,14 +31,9 @@ import { useAuthHandlers } from './app/useAuthHandlers';
 import { useGameSessionHandlers } from './app/useGameSessionHandlers';
 import { useAdminMatchControls } from './app/useAdminMatchControls';
 import { useDeckHandlers } from './app/useDeckHandlers';
-import { runGameSimulations } from '../game/jojGame';
 import { LobbyProvider } from './providers/LobbyContext';
 import { DeckProvider } from './providers/DeckContext';
 import { GalleryProvider } from './providers/GalleryContext';
-
-const AdminPage = lazy(async () => import('./AdminPage').then((module) => ({ default: module.AdminPage })));
-const NetworkClientV1 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV1 })));
-const NetworkClientV2 = lazy(async () => import('./app/networkClients').then((module) => ({ default: module.NetworkClientV2 })));
 const ADMIN_RESTART_API = `${SERVER_URL}/api/admin/restart`;
 const ADMIN_MATCH_STATE_API = `${SERVER_URL}/api/admin/match-state`;
 const ADMIN_MATCH_STOP_API = `${SERVER_URL}/api/admin/match-stop`;
