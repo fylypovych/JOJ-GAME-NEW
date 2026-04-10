@@ -133,7 +133,7 @@ const migrateCardImages = async (pool: any) => {
     const fileName = row.file_name;
     
     // Skip if already in new format (contains category)
-    if (oldPath.startsWith('/public/card-assets/') && oldPath.split('/').length > 4) {
+    if (oldPath.startsWith('/public/card-assets/') && oldPath.split('/').length > 3) {
       console.log(`  Skipping ${fileName} - already in new format`);
       continue;
     }
