@@ -49,29 +49,23 @@ export const AppHeader = (props: AppHeaderProps) => {
             <div className="app-toolbar-button-row app-toolbar-theme-switch">
               <button
                 type="button"
-                className="ui-variant-btn ui-variant-v1"
+                className={`app-theme-icon-button${gameUiVariant === 'v1' ? ' is-active' : ''}`}
                 onClick={() => setGameUiVariant('v1')}
                 disabled={gameUiVariant === 'v1'}
+                aria-label={t.gameUiV1}
                 title={t.gameUiV1}
               >
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                  <rect x="2" y="2" width="20" height="20" rx="2" fill="none" stroke="currentColor" strokeWidth="2"/>
-                  <rect x="5" y="5" width="6" height="14" rx="1"/>
-                  <rect x="13" y="5" width="6" height="8" rx="1"/>
-                </svg>
+                <img src="/ui-theme-night.png" alt="" aria-hidden="true" />
               </button>
               <button
                 type="button"
-                className="ui-variant-btn ui-variant-v2"
+                className={`app-theme-icon-button${gameUiVariant === 'v2' ? ' is-active' : ''}`}
                 onClick={() => setGameUiVariant('v2')}
                 disabled={gameUiVariant === 'v2'}
+                aria-label={t.gameUiV2}
                 title={t.gameUiV2}
               >
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                  <rect x="2" y="2" width="20" height="20" rx="2" fill="none" stroke="currentColor" strokeWidth="2"/>
-                  <rect x="5" y="5" width="14" height="6" rx="1"/>
-                  <rect x="5" y="13" width="14" height="6" rx="1"/>
-                </svg>
+                <img src="/ui-theme-day.png" alt="" aria-hidden="true" />
               </button>
             </div>
           </div>

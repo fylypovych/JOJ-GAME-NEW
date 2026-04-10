@@ -158,17 +158,17 @@ export const AdminOverview = ({
 
   return (
     <>
-      <section className="admin-v4-hero">
+      <section className="admin-v2-hero">
         <div>
-          <p className="admin-v4-kicker">GreenDesk Control Surface</p>
+          <p className="admin-v2-kicker">GreenDesk Control Surface</p>
           <h3>{t.tabStart}</h3>
-          <p className="admin-v4-subtitle">
+          <p className="admin-v2-subtitle">
             {sharedConfigLoaded
               ? `PostgreSQL online. Active match: ${activeMatchId || t.notSelected}.`
               : 'Loading shared config, runtime controls and telemetry.'}
           </p>
         </div>
-        <div className="admin-v4-hero-actions">
+        <div className="admin-v2-hero-actions">
           <button type="button" onClick={() => setActiveTab('matches')}>
             {t.tabMatches}
           </button>
@@ -180,31 +180,31 @@ export const AdminOverview = ({
           </button>
         </div>
       </section>
-      <section className="admin-v4-stats">
+      <section className="admin-v2-stats">
         {v4StatCards.map((card) => (
           <article
             key={card.label}
-            className={`admin-v4-stat-card tone-${card.tone}`}
+            className={`admin-v2-stat-card tone-${card.tone}`}
           >
             <span>{card.label}</span>
             <strong>{card.value}</strong>
           </article>
         ))}
       </section>
-      <section className="admin-v4-overview-grid">
-        <article className="admin-v4-panel">
-          <header className="admin-v4-panel-head">
+      <section className="admin-v2-overview-grid">
+        <article className="admin-v2-panel">
+          <header className="admin-v2-panel-head">
             <div>
               <p>{v4Text.runtimeMeta}</p>
               <h4>{v4Text.runtimeTitle}</h4>
             </div>
             <span
-              className={`admin-v4-badge ${sharedConfigLoaded ? 'is-good' : 'is-warn'}`}
+              className={`admin-v2-badge ${sharedConfigLoaded ? 'is-good' : 'is-warn'}`}
             >
               {sharedConfigLoaded ? v4Text.ready : v4Text.loading}
             </span>
           </header>
-          <div className="admin-v4-status-stack">
+          <div className="admin-v2-status-stack">
             <div>
               <span>{v4Text.storageLabel}</span>
               <strong>
@@ -223,21 +223,21 @@ export const AdminOverview = ({
             </div>
           </div>
         </article>
-        <article className="admin-v4-panel">
-          <header className="admin-v4-panel-head">
+        <article className="admin-v2-panel">
+          <header className="admin-v2-panel-head">
             <div>
               <p>{v4Text.gitMeta}</p>
               <h4>{v4Text.gitTitle}</h4>
             </div>
             <span
-              className={`admin-v4-badge ${gitAuthStatus?.hasGithubCredentials ? 'is-good' : 'is-muted'}`}
+              className={`admin-v2-badge ${gitAuthStatus?.hasGithubCredentials ? 'is-good' : 'is-muted'}`}
             >
               {gitAuthStatus?.hasGithubCredentials
                 ? v4Text.connected
                 : v4Text.notConnected}
             </span>
           </header>
-          <div className="admin-v4-status-stack">
+          <div className="admin-v2-status-stack">
             <div>
               <span>{v4Text.authLabel}</span>
               <strong>
@@ -262,24 +262,24 @@ export const AdminOverview = ({
             </div>
           </div>
           {gitActionMessage ? (
-            <p className="admin-v4-note">{gitActionMessage}</p>
+            <p className="admin-v2-note">{gitActionMessage}</p>
           ) : null}
         </article>
-        <article className="admin-v4-panel">
-          <header className="admin-v4-panel-head">
+        <article className="admin-v2-panel">
+          <header className="admin-v2-panel-head">
             <div>
               <p>{v4Text.moderationMeta}</p>
               <h4>{v4Text.moderationTitle}</h4>
             </div>
             <span
-              className={`admin-v4-badge ${unresolvedBugReports > 0 ? 'is-warn' : 'is-good'}`}
+              className={`admin-v2-badge ${unresolvedBugReports > 0 ? 'is-warn' : 'is-good'}`}
             >
               {unresolvedBugReports > 0
                 ? `${unresolvedBugReports}`
                 : v4Text.clean}
             </span>
           </header>
-          <div className="admin-v4-status-stack">
+          <div className="admin-v2-status-stack">
             <div>
               <span>{v4Text.newReportsLabel}</span>
               <strong>{String(unresolvedBugReports)}</strong>
@@ -297,23 +297,23 @@ export const AdminOverview = ({
               </strong>
             </div>
           </div>
-          <p className="admin-v4-note">
+          <p className="admin-v2-note">
             {latestBugReport?.descriptionPreview || v4Text.noData}
           </p>
         </article>
-        <article className="admin-v4-panel">
-          <header className="admin-v4-panel-head">
+        <article className="admin-v2-panel">
+          <header className="admin-v2-panel-head">
             <div>
               <p>{v4Text.usersAssetsMeta}</p>
               <h4>{v4Text.usersAssetsTitle}</h4>
             </div>
-            <span className="admin-v4-badge is-muted">
+            <span className="admin-v2-badge is-muted">
               {assetsLoading || adminUsersLoading
                 ? v4Text.loading
                 : v4Text.ready}
             </span>
           </header>
-          <div className="admin-v4-status-stack">
+          <div className="admin-v2-status-stack">
             <div>
               <span>{v4Text.usersLabel}</span>
               <strong>{String(adminUsers.length)}</strong>
@@ -327,25 +327,25 @@ export const AdminOverview = ({
               <strong>{String(assets.length)}</strong>
             </div>
           </div>
-          <p className="admin-v4-note">
+          <p className="admin-v2-note">
             {v4Text.latestAssetLabel}: {latestAsset?.fileName || v4Text.noData}
           </p>
         </article>
-        <article className="admin-v4-panel admin-v4-panel-wide">
-          <header className="admin-v4-panel-head">
+        <article className="admin-v2-panel admin-v2-panel-wide">
+          <header className="admin-v2-panel-head">
             <div>
               <p>{v4Text.analyticsMeta}</p>
               <h4>{v4Text.analyticsTitle}</h4>
             </div>
             <span
-              className={`admin-v4-badge ${adminAnalytics ? 'is-good' : 'is-muted'}`}
+              className={`admin-v2-badge ${adminAnalytics ? 'is-good' : 'is-muted'}`}
             >
               {adminAnalytics
                 ? `${adminAnalytics.matchesFinished}`
                 : v4Text.loading}
             </span>
           </header>
-          <div className="admin-v4-metric-row">
+          <div className="admin-v2-metric-row">
             <div>
               <span>{v4Text.finishedLabel}</span>
               <strong>{String(adminAnalytics?.matchesFinished ?? 0)}</strong>

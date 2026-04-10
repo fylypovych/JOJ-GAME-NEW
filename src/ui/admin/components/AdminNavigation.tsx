@@ -27,7 +27,7 @@ export const AdminNavigation = ({
 }: AdminNavigationProps) => {
   return (
     <>
-      <section className="admin-v4-tab-nav">
+      <section className="admin-v2-tab-nav">
         <AdminCategoryButtons
           categories={adminCategories}
           activeCategoryId={activeCategory.id}
@@ -41,35 +41,35 @@ export const AdminNavigation = ({
           }}
         />
       </section>
-      <section className="admin-v4-workspace">
-        <header className={`admin-v4-workspace-head is-${activeCategory.id}`}>
-          <div className="admin-v4-workspace-copy">
-            <p className="admin-v4-kicker">{activeCategory.label}</p>
+      <section className="admin-v2-workspace">
+        <header className={`admin-v2-workspace-head is-${activeCategory.id}`}>
+          <div className="admin-v2-workspace-copy">
+            <p className="admin-v2-kicker">{activeCategory.label}</p>
             <h3>{activeTabLabel}</h3>
-            <p className="admin-v4-subtitle">
+            <p className="admin-v2-subtitle">
               {activeTabDescriptionMap[activeTab]}
             </p>
             <AdminTabButtons
               tabs={activeCategory.tabs}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
-              className={`admin-v4-tab-strip is-${activeCategory.id}`}
+              className={`admin-v2-tab-strip is-${activeCategory.id}`}
             />
           </div>
           <aside
-            className={`admin-v4-category-banner is-${activeCategory.id}`}
+            className={`admin-v2-category-banner is-${activeCategory.id}`}
           >
             <img
               src={activeCategory.iconPath}
               alt=""
-              className="admin-v4-category-banner-icon"
+              className="admin-v2-category-banner-icon"
             />
-            <span className="admin-v4-category-art-label">
+            <span className="admin-v2-category-art-label">
               {activeCategory.artLabel}
             </span>
             <strong>{activeCategory.label}</strong>
             <small>{activeCategory.description}</small>
-            <span className="admin-v4-badge is-muted">
+            <span className="admin-v2-badge is-muted">
               {matches.length} / {activeMatchId || t.notSelected}
             </span>
           </aside>

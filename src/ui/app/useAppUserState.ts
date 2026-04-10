@@ -24,6 +24,7 @@ export interface UseAppUserStateResult {
   busy: ReturnType<typeof useUserAccount>['busy'];
   error: ReturnType<typeof useUserAccount>['error'];
   setError: ReturnType<typeof useUserAccount>['setError'];
+  setUser: ReturnType<typeof useUserAccount>['setUser'];
   register: ReturnType<typeof useUserAccount>['register'];
   login: ReturnType<typeof useUserAccount>['login'];
   logout: ReturnType<typeof useUserAccount>['logout'];
@@ -59,6 +60,7 @@ export const useAppUserState = (args: UseAppUserStateArgs): UseAppUserStateResul
     busy: userBusy,
     error: userError,
     setError: setUserError,
+    setUser,
     register: registerUser,
     login: loginUser,
     logout: logoutUser,
@@ -99,6 +101,7 @@ export const useAppUserState = (args: UseAppUserStateArgs): UseAppUserStateResul
     busy: userBusy,
     error: userError,
     setError: setUserError,
+    setUser,
     register: registerUser,
     login: loginUser,
     logout: logoutUser,

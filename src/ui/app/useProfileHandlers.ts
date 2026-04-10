@@ -49,6 +49,7 @@ export interface UseProfileHandlersArgs {
   }) => void;
   setPasswordDraft: (value: { currentPassword: string; nextPassword: string }) => void;
   setUserError: (value: string) => void;
+  setUser: (value: AuthUser | null) => void;
   t: {
     userLoginSuccess: string;
     userLogoutSuccess: string;
@@ -56,7 +57,7 @@ export interface UseProfileHandlersArgs {
     userPasswordChanged: string;
     userAvatarUploaded: string;
   };
-}
+};
 
 export interface UseProfileHandlersResult {
   onLogin: () => void;
@@ -93,6 +94,7 @@ export const useProfileHandlers = (args: UseProfileHandlersArgs): UseProfileHand
     setProfileDraft,
     setPasswordDraft,
     setUserError,
+    setUser,
     t,
   } = args;
 
@@ -152,11 +154,14 @@ export const useProfileHandlers = (args: UseProfileHandlersArgs): UseProfileHand
       const nextDraft = { ...profileDraft, avatarUrl: nextAvatarUrl };
       setProfileDraft(nextDraft);
       await updateUserProfile({ ...nextDraft, preferredLang: lang });
+      if (user) {
+        setUser({ ...user, avatarUrl: nextAvatarUrl });
+      }
       setProfileNotice(t.userAvatarUploaded);
     } catch (error) {
       setUserError(String(error instanceof Error ? error.message : error));
     }
-  }, [profileDraft, uploadAvatar, updateUserProfile, lang, setProfileDraft, setProfileNotice, setUserError, t.userAvatarUploaded]);
+  }, [profileDraft, uploadAvatar, updateUserProfile, lang, setProfileDraft, setProfileNotice, setUserError, setUser, user, t.userAvatarUploaded]);
 
   const onRefreshSessions = useCallback(() => {
     void refreshSessions().catch((error) => setUserError(String(error instanceof Error ? error.message : error)));

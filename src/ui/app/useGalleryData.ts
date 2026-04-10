@@ -28,7 +28,7 @@ export const useGalleryData = (args: UseGalleryDataArgs): UseGalleryDataResult =
   const galleryCards = useMemo(() => {
     const rankTrackIds = new Set(sharedDeckTemplate.rankTrack.map((card) => card.id));
     return [...cardCatalog]
-      .filter((card) => !rankTrackIds.has(card.id))
+      .filter((card) => galleryCategoryFilter === 'RANK' || !rankTrackIds.has(card.id))
       .filter((card) => galleryCategoryFilter === 'ALL' || card.category === galleryCategoryFilter)
       .sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
   }, [cardCatalog, sharedDeckTemplate.rankTrack, galleryCategoryFilter]);

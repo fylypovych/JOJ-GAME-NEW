@@ -2051,7 +2051,7 @@
 
 .game-ui-layout-shell .game-ui-layout-player-dock-main .game-card.is-v1.is-selected .game-card-inline-action.is-v1:not(.game-card-inline-discard) {
   border-color: rgba(243, 208, 126, 0.88);
-  background: linear-gradient(180deg, #f1d18e, #cb9844);
+  background: linear-gradient(180deg, #ffffff, #e8e8e8);
 }
 
 .game-ui-layout-shell .game-ui-v1-player-dock-main .game-card.is-v1.has-open-preview,
@@ -2079,8 +2079,8 @@
   padding: 6px 10px;
   border-radius: 999px;
   border-color: rgba(194, 154, 81, 0.54);
-  background: linear-gradient(180deg, #e3c07a, #b78638);
-  color: #27190b;
+  background: linear-gradient(180deg, #ffffff, #e8e8e8);
+  color: #1a1e1f;
   font-size: 0.75rem;
   letter-spacing: 0.02em;
   box-shadow:
@@ -2144,11 +2144,11 @@
 }
 
 .game-ui-layout-shell .game-ui-v1-resource-card strong {
-  color: #f6edd3;
+  color: #ffffff;
 }
 
 .game-ui-layout-shell .game-ui-v1-resource-card small {
-  color: #d2b084;
+  color: #eef2ec;
 }
 
 .game-ui-layout-shell .game-card-body.is-v1 small,
@@ -2292,7 +2292,7 @@
 }
 
 .game-ui-layout-shell .game-ui-v1-progress-bar i {
-  background: linear-gradient(90deg, #a8aa8b, #d4aa5c);
+  background: linear-gradient(90deg, #a8aa8b, #ffffff);
 }
 
 .game-ui-layout-shell .game-ui-v1-side > section,
@@ -2351,7 +2351,7 @@
 }
 
 .game-ui-layout-shell .game-ui-layout-footer-resource.is-highlighted {
-  color: #f2d48a;
+  color: #ffffff;
 }
 
 .game-ui-layout-shell .game-ui-layout-footer-resource.is-deficit {
@@ -2359,7 +2359,7 @@
 }
 
 .game-ui-layout-shell .game-ui-layout-footer-resource-icon {
-  color: #ead39a;
+  color: #ffffff;
   font-size: 1.8rem;
   line-height: 1;
   width: 28px;

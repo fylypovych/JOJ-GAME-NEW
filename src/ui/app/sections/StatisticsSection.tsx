@@ -20,6 +20,7 @@ export const StatisticsSection = ({
   awards,
   matchHistory,
   sessions,
+  onLogoutSession,
   uiVariant = 'v2',
 }: {
   t: T;
@@ -29,6 +30,7 @@ export const StatisticsSection = ({
   awards: UserAward[];
   matchHistory: UserMatchHistoryItem[];
   sessions: UserSession[];
+  onLogoutSession?: (sessionId: string) => void;
   uiVariant?: 'v1' | 'v2';
 }) => {
   const [activeCategory, setActiveCategory] = useState<'general' | 'resources' | 'actions' | 'achievements' | 'history' | 'sessions'>('general');
@@ -127,13 +129,44 @@ export const StatisticsSection = ({
           ) : null}
           {activeCategory === 'sessions' ? (
             sessions.length === 0 ? <p>{t.simulationNoData}</p> : (
-              <ul>
-                {sessions.map((session) => (
-                  <li key={`stats-session-${session.id}`}>
-                    {new Date(session.lastSeenAt).toLocaleString()} | {session.sourceIp ?? '-'} | {(session.userAgent ?? '-').slice(0, 48)}
-                  </li>
-                ))}
-              </ul>
+              <>
+                <h4>Поточна сесія / Current session</h4>
+                {(() => {
+                  const currentSession = sessions.reduce((latest, session) => {
+                    const sessionDate = new Date(session.lastSeenAt);
+                    const latestDate = new Date(latest.lastSeenAt);
+                    return sessionDate > latestDate ? session : latest;
+                  }, sessions[0]);
+                  const isCurrent = currentSession && new Date(currentSession.expiresAt) > new Date();
+                  return isCurrent && currentSession ? (
+                    <ul>
+                      <li key={`current-session-${currentSession.id}`} style={{ fontWeight: 'bold', background: 'rgba(255,255,0,0.1)' }}>
+                        {new Date(currentSession.lastSeenAt).toLocaleString()} | {currentSession.sourceIp ?? '-'} | {(currentSession.userAgent ?? '-').slice(0, 48)}
+                        {onLogoutSession ? ` <button type="button" onClick={() => onLogoutSession(currentSession.id)}>${t.userLogoutSessionButton}</button>` : ''}
+                      </li>
+                    </ul>
+                  ) : <p>{t.simulationNoData}</p>;
+                })()}
+                <h4>Інші сесії / Other sessions</h4>
+                <ul>
+                  {sessions
+                    .sort((a, b) => new Date(b.lastSeenAt).getTime() - new Date(a.lastSeenAt).getTime())
+                    .filter((session) => {
+                      const currentSession = sessions.reduce((latest, s) => {
+                        const sessionDate = new Date(s.lastSeenAt);
+                        const latestDate = new Date(latest.lastSeenAt);
+                        return sessionDate > latestDate ? s : latest;
+                      }, sessions[0]);
+                      return session.id !== currentSession?.id;
+                    })
+                    .map((session) => (
+                    <li key={`stats-session-${session.id}`}>
+                      {new Date(session.lastSeenAt).toLocaleString()} | {session.sourceIp ?? '-'} | {(session.userAgent ?? '-').slice(0, 48)}
+                      {onLogoutSession ? ` <button type="button" onClick={() => onLogoutSession(session.id)}>${t.userLogoutSessionButton}</button>` : ''}
+                    </li>
+                  ))}
+                </ul>
+              </>
             )
           ) : null}
         </>

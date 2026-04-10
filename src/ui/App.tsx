@@ -119,6 +119,7 @@ export const App = () => {
     busy: userBusy,
     error: userError,
     setError: setUserError,
+    setUser,
     register: registerUser,
     login: loginUser,
     logout: logoutUser,
@@ -413,6 +414,7 @@ export const App = () => {
     setProfileDraft,
     setPasswordDraft,
     setUserError,
+    setUser,
     t,
   });
 
@@ -674,6 +676,7 @@ export const App = () => {
         awards={userAwards}
         matchHistory={matchHistory}
         sessions={userSessions}
+        onLogoutSession={onLogoutSession}
         uiVariant={gameUiVariant}
       />
 
@@ -685,6 +688,7 @@ export const App = () => {
         setGalleryCategoryFilter={setGalleryCategoryFilter}
         effectLabel={effectLabel}
         uiVariant={gameUiVariant}
+        cardCatalog={cardCatalog}
       />
 
       <RulesFeature visible={!isAdminRoute && activeUserTab === 'rules'} t={t} rules={rules} uiVariant={gameUiVariant} />

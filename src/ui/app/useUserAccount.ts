@@ -348,6 +348,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
     busy,
     error,
     setError,
+    setUser,
     refreshUser,
     refreshSessions,
     register,

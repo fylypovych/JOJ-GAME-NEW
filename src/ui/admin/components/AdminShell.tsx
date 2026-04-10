@@ -9,7 +9,7 @@ interface AdminShellProps {
 export const AdminShell = ({ uiVariant, t, children }: AdminShellProps) => {
   return (
     <section
-      className={`admin-shell-v4 admin-panel-v4 admin-shell-v2 admin-panel-v2${uiVariant === 'v1' ? ' admin-shell-v1 admin-panel-v1' : ''}`}
+      className={`admin-shell-v2 admin-panel-v2${uiVariant === 'v1' ? ' admin-shell-v1 admin-panel-v1' : ''}`}
     >
       <h2>{t.adminTitle}</h2>
       {children}
