@@ -151,6 +151,17 @@ const migrateCardImages = async (pool: any) => {
     const newPath = `/public/card-assets/${category}/${fileName}`;
     
     try {
+      // Check if newPath already exists in database
+      const existingPath = await pool.query(
+        `SELECT path FROM uploaded_assets WHERE path = $1`,
+        [newPath]
+      );
+      
+      if (existingPath.rows.length > 0) {
+        console.log(`  Skipping ${fileName} - target path already exists: ${newPath}`);
+        continue;
+      }
+      
       // Create target directory if needed
       await mkdir(newDir, { recursive: true });
       
