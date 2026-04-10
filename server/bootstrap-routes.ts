@@ -1,4 +1,4 @@
-import type { LogLine, RouteCtx, RouterLike } from './routes/types';
+import type { LogLine, RouterLike } from './routes/types';
 import { createRequireAdminAuth, createRateLimiter, readJsonBodySafe } from './request-utils';
 import { registerAuthRoutes } from './routes/auth';
 import { registerUserLobbyRoutes } from './routes/user-lobby';
@@ -16,7 +16,6 @@ import { createAdminAuditLogger } from './services/admin-audit';
 import { deliverPasswordReset } from './services/user-recovery';
 import {
   gameUiConfigPath,
-  repoDir,
   devRestartTouchPath,
   dbSchemaPath,
   adminDbUiConfigPath,
@@ -29,13 +28,12 @@ import {
 
 export type RouteBootstrapDeps = {
   router: RouterLike;
-  userStore: ReturnType<import('./services/user-store').createUserStore> | null;
-  pool: ReturnType<import('./db/postgres').createPostgresPool> | null;
+  userStore: ReturnType<typeof import('./services/user-store').createUserStore> | null;
+  pool: ReturnType<typeof import('./db/postgres').createPostgresPool> | null;
   logLine: LogLine;
   enforceRateLimit: ReturnType<typeof createRateLimiter>;
-  matchStateStore: ReturnType<import('./services/match-state-store').createMatchStateStore> | null;
-  assetStore: ReturnType<import('./services/asset-store').createAssetStore> | null;
-  bugReportStore: ReturnType<import('./services/bug-report-store').createBugReportStore>;
+  assetStore: ReturnType<typeof import('./services/asset-store').createAssetStore> | null;
+  bugReportStore: ReturnType<typeof import('./services/bug-report-store').createBugReportStore>;
   isAdminAuthEnabled: boolean;
   getGitUpdateStatus: typeof getGitUpdateStatus;
   getGitAuthStatus: typeof getGitAuthStatus;
@@ -47,7 +45,7 @@ export type RouteBootstrapDeps = {
   prepareBackupSnapshot: () => Promise<void>;
   backupRootDir: string;
   backupAssetDirs: string[];
-  persistMatchSnapshot: (args: { matchId: string; state: unknown; metadata: unknown; snapshotKind: string }) => Promise<boolean>;
+  persistMatchSnapshot: (args: { matchId: string; state: { G?: unknown; ctx?: Record<string, unknown> | null } & Record<string, unknown>; metadata?: { updatedAt?: number; gameover?: unknown } & Record<string, unknown>; snapshotKind?: 'initial' | 'autosave' | 'manual' | 'admin_stop' | 'admin_reset' | 'final'; }) => boolean | Promise<boolean>;
   markMatchDeleted: (matchId: string) => Promise<void>;
   deliverPasswordResetFn: typeof deliverPasswordReset;
 };
@@ -59,7 +57,6 @@ export const bootstrapRoutes = async (deps: RouteBootstrapDeps) => {
     pool,
     logLine,
     enforceRateLimit,
-    matchStateStore,
     assetStore,
     bugReportStore,
     isAdminAuthEnabled,
@@ -174,9 +171,9 @@ export const bootstrapRoutes = async (deps: RouteBootstrapDeps) => {
     exportSharedDeckTemplateJson: () => '',
     getSharedDeckTemplateStats: () => ({ totalCards: 0 }),
     getSharedRanks: () => ({ ranks: [] }),
-    setSharedRanks: async () => {},
+    setSharedRanks: () => false,
     resetSharedRanks: async () => {},
-    importSharedDeckTemplateJson: async () => ({ ok: true }),
+    importSharedDeckTemplateJson: () => ({ ok: true }),
     resetSharedDeckTemplate: async () => {},
     saveRanksToDisk: async () => {},
     saveTemplateToDisk: async () => {},

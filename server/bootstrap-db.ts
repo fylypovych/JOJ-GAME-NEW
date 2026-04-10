@@ -4,7 +4,6 @@ import { createUserStore } from './services/user-store';
 import { createAssetStore } from './services/asset-store';
 import { createMatchStateStore } from './services/match-state-store';
 import { createBugReportStore } from './services/bug-report-store';
-import { createBoardgamePostgresDb } from './services/boardgame-postgres-db';
 import {
   databaseUrl,
   uploadsDir,
