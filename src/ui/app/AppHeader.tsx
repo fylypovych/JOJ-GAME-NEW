@@ -53,7 +53,7 @@ export const AppHeader = (props: AppHeaderProps) => {
                 aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
                 title={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
               >
-                <img src={theme === 'light' ? '/ui-theme-night.png' : '/ui-theme-day.png'} alt="" aria-hidden="true" />
+                <img src={theme === 'light' ? '/ui-theme-day.png' : '/ui-theme-night.png'} alt="" aria-hidden="true" />
               </button>
             </div>
           </div>
