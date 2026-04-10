@@ -161,7 +161,7 @@ export const registerUploadRoutes = ({
     } else if (isCard && category) {
       targetDir = path.join('public', 'card-assets', category);
     } else if (isSystemIcon) {
-      targetDir = path.join('public', 'card-assets', 'sys.icons');
+      targetDir = path.join('public', 'sys.icons');
     } else {
       targetDir = uploadsDir;
     }
@@ -182,7 +182,7 @@ export const registerUploadRoutes = ({
     if (isAvatar) {
       assetPath = toAvatarPath(candidate);
     } else if (isSystemIcon) {
-      assetPath = `${CARD_ASSET_BASE_PATH}sys.icons/${candidate}`;
+      assetPath = `/sys.icons/${candidate}`;
     } else {
       assetPath = toCardAssetPath(candidate, category);
     }

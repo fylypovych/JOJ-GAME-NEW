@@ -4,7 +4,7 @@ import { createPostgresPool } from '../server/db/postgres';
 
 const CARD_ASSETS_DIR = path.join(process.cwd(), 'public', 'card-assets');
 const PROFILE_IMAGE_DIR = path.join(process.cwd(), 'public', 'profile-image');
-const SYS_ICONS_DIR = path.join(process.cwd(), 'public', 'card-assets', 'sys.icons');
+const SYS_ICONS_DIR = path.join(process.cwd(), 'public', 'sys.icons');
 
 // Load card catalog to get categories
 let cardCatalog: unknown[] = [];
@@ -115,12 +115,7 @@ const migrateCardImages = async (pool: any) => {
       continue;
     }
     
-    const category = getCategoryForCard(fileName);
-    
-    if (!category) {
-      console.log(`  Skipping ${fileName} - could not determine category`);
-      continue;
-    }
+    const category = getCategoryForCard(fileName) || 'uncategorized';
     
     const oldFilePath = path.join(CARD_ASSETS_DIR, fileName);
     const newDir = path.join(CARD_ASSETS_DIR, category);
@@ -176,7 +171,7 @@ const migrateSystemIcons = async (pool: any) => {
       
       const oldFilePath = path.join(resourceIconsDir, entry.name);
       const newFilePath = path.join(SYS_ICONS_DIR, entry.name);
-      const newPath = `/public/card-assets/sys.icons/${entry.name}`;
+      const newPath = `/sys.icons/${entry.name}`;
       
       try {
         await copyFile(oldFilePath, newFilePath);
@@ -208,7 +203,7 @@ const migrateSystemIcons = async (pool: any) => {
       
       const oldFilePath = path.join(adminIconsDir, entry.name);
       const newFilePath = path.join(SYS_ICONS_DIR, entry.name);
-      const newPath = `/public/card-assets/sys.icons/${entry.name}`;
+      const newPath = `/sys.icons/${entry.name}`;
       
       try {
         await copyFile(oldFilePath, newFilePath);
