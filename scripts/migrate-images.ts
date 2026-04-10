@@ -65,10 +65,31 @@ for (const card of cardCatalog) {
   }
 }
 
+// Create mapping from image filename to module name
+const imageToModuleMap = new Map<string, string>();
+for (const card of cardCatalog) {
+  if (card && typeof card === 'object' && 'id' in card && 'image' in card) {
+    const cardId = (card as { id: string }).id;
+    const imagePath = (card as { image: string }).image;
+    cardImageMap.set(cardId, imagePath);
+    // Map image filename to module
+    const moduleName = cardModuleMap.get(cardId);
+    if (moduleName && imagePath) {
+      const imageFileName = imagePath.split('/').pop() || imagePath;
+      imageToModuleMap.set(imageFileName, moduleName);
+    }
+  }
+}
+
 // Get module name for a card by filename
 const getModuleForCard = (filename: string): string | undefined => {
+  // First try direct filename match
+  const moduleName = imageToModuleMap.get(filename);
+  if (moduleName) {
+    return moduleName;
+  }
   // Try to extract cardId from filename
-  const cardIdMatch = filename.match(/^(\d{13,})-/); // UUID-like pattern
+  const cardIdMatch = filename.match(/^(\d{13,})-/);
   if (cardIdMatch) {
     const cardId = cardIdMatch[1];
     return cardModuleMap.get(cardId);
@@ -160,6 +181,18 @@ const migrateCardImages = async (pool: any) => {
     }
     
     const moduleName = getModuleForCard(fileName) || 'uncategorized';
+    
+    // Skip if we don't have a better module (already in uncategorized or no module found)
+    if (currentDir === 'uncategorized' && moduleName === 'uncategorized') {
+      console.log(`  Skipping ${fileName} - already in uncategorized and no module found`);
+      continue;
+    }
+    
+    // Skip if already in the correct module directory
+    if (currentDir === moduleName) {
+      console.log(`  Skipping ${fileName} - already in correct module directory: ${currentDir}`);
+      continue;
+    }
     
     const oldFilePath = await findOldFile(fileName);
     if (!oldFilePath) {
