@@ -15,6 +15,7 @@ type UploadRoutesDeps = {
   IMAGE_UPLOAD_BODY_LIMIT: number;
   uploadsDir: string;
   userStore?: UserStore | null;
+  getCardCatalog?: () => unknown[];
   assetStore?: {
     upsertAsset: (input: {
       assetPath: string;
@@ -56,12 +57,20 @@ export const registerUploadRoutes = ({
   IMAGE_UPLOAD_BODY_LIMIT,
   uploadsDir,
   userStore,
+  getCardCatalog,
   assetStore,
   auditAdminAction,
 }: UploadRoutesDeps) => {
-  const CARD_ASSET_BASE_PATH = '/card-assets/';
-  const isCardAssetPath = (value: string) => value.startsWith('/card-assets/') || value.startsWith('/cards/');
-  const toCardAssetPath = (fileName: string) => `${CARD_ASSET_BASE_PATH}${fileName}`;
+  const CARD_ASSET_BASE_PATH = '/public/card-assets/';
+  const AVATAR_ASSET_BASE_PATH = '/public/profile-image/';
+  const isCardAssetPath = (value: string) => value.startsWith('/card-assets/') || value.startsWith('/cards/') || value.startsWith('/public/card-assets/');
+  const toCardAssetPath = (fileName: string, category?: string) => {
+    if (category) {
+      return `${CARD_ASSET_BASE_PATH}${category}/${fileName}`;
+    }
+    return `${CARD_ASSET_BASE_PATH}${fileName}`;
+  };
+  const toAvatarPath = (fileName: string) => `${AVATAR_ASSET_BASE_PATH}${fileName}`;
   const requireAdminWriteAccess = (ctx: RouteCtx, routeLabel: string) =>
     requireAdminMutationAuth(ctx, routeLabel, requireAdminAuth);
   const parseUploadBody = async (ctx: RouteCtx, routeLabel: string) => {
@@ -98,12 +107,14 @@ export const registerUploadRoutes = ({
     filename,
     fallbackBaseName,
     assetKind,
+    cardId,
   }: {
     mime: string;
     base64: string;
     filename: string;
     fallbackBaseName: string;
     assetKind: string;
+    cardId?: string;
   }) => {
     const extByMime: Record<string, string> = {
       'image/png': 'png',
@@ -125,20 +136,56 @@ export const registerUploadRoutes = ({
       ? normalizedBase
       : `asset-${Date.now()}`;
 
-    await mkdir(uploadsDir, { recursive: true });
+    // Get card category if this is a card image
+    let category: string | undefined;
+    if (assetKind === 'card-image' && cardId && getCardCatalog) {
+      const catalog = getCardCatalog();
+      const card = catalog.find((c: unknown) => {
+        if (c && typeof c === 'object' && 'id' in c) {
+          return (c as { id: string }).id === cardId;
+        }
+        return false;
+      });
+      if (card && typeof card === 'object' && 'category' in card && typeof card.category === 'string') {
+        category = card.category;
+      }
+    }
+
+    // Use separate directory for avatars, category subdirectories for cards, and system icons
+    const isAvatar = assetKind === 'avatar-image';
+    const isCard = assetKind === 'card-image';
+    const isSystemIcon = assetKind === 'system-icon';
+    let targetDir: string;
+    if (isAvatar) {
+      targetDir = path.join('public', 'profile-image');
+    } else if (isCard && category) {
+      targetDir = path.join('public', 'card-assets', category);
+    } else if (isSystemIcon) {
+      targetDir = path.join('public', 'card-assets', 'sys.icons');
+    } else {
+      targetDir = uploadsDir;
+    }
+    await mkdir(targetDir, { recursive: true });
     let candidate = `${safeNameBase}.${ext}`;
-    let outPath = path.join(uploadsDir, candidate);
+    let outPath = path.join(targetDir, candidate);
     try {
       await access(outPath);
       candidate = `${safeNameBase}-${Date.now()}.${ext}`;
-      outPath = path.join(uploadsDir, candidate);
+      outPath = path.join(targetDir, candidate);
     } catch {
       // file doesn't exist
     }
 
     const buffer = Buffer.from(base64, 'base64');
     await writeFile(outPath, buffer);
-    const assetPath = toCardAssetPath(candidate);
+    let assetPath: string;
+    if (isAvatar) {
+      assetPath = toAvatarPath(candidate);
+    } else if (isSystemIcon) {
+      assetPath = `${CARD_ASSET_BASE_PATH}sys.icons/${candidate}`;
+    } else {
+      assetPath = toCardAssetPath(candidate, category);
+    }
     await assetStore?.upsertAsset({
       assetPath,
       fileName: candidate,
@@ -172,6 +219,7 @@ export const registerUploadRoutes = ({
         filename: parsed.filename,
         fallbackBaseName: parsed.cardId || `card-${Date.now()}`,
         assetKind: 'card-image',
+        cardId: parsed.cardId || undefined,
       });
       await auditAdminAction?.({ action: 'uploads.card-image.upload', ctx, success: true, details: { path: assetPath } });
       ctx.body = { ok: true, path: assetPath };

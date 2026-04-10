@@ -31,7 +31,8 @@
     "sync:version-from-commit": "node scripts/sync-version-from-commit.cjs",
     "set:version": "node scripts/sync-version-from-commit.cjs",
     "check:version-sync": "node scripts/check-version-sync.cjs",
-    "seed:shared-config": "node scripts/seed-shared-config-to-db.cjs"
+    "seed:shared-config": "node scripts/seed-shared-config-to-db.cjs",
+    "migrate:images": "tsx scripts/migrate-images.ts"
   },
   "dependencies": {
     "boardgame.io": "^0.50.2",
