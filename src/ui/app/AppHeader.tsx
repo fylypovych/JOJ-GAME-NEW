@@ -19,6 +19,7 @@ interface AppHeaderProps {
 
 export const AppHeader = (props: AppHeaderProps) => {
   const { isAdminRoute, lang, setLang, activeUserTab, setActiveUserTab, gameUiVariant, theme, setTheme, t } = props;
+  const nextTheme = theme === 'light' ? 'dark' : 'light';
 
   if (isAdminRoute) {
     return (
@@ -49,11 +50,11 @@ export const AppHeader = (props: AppHeaderProps) => {
               <button
                 type="button"
                 className="app-theme-icon-button"
-                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
-                title={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
+                onClick={() => setTheme(nextTheme)}
+                aria-label={nextTheme === 'light' ? 'Switch to light theme' : 'Switch to dark theme'}
+                title={nextTheme === 'light' ? 'Switch to light theme' : 'Switch to dark theme'}
               >
-                <img src={theme === 'light' ? '/ui-theme-day.png' : '/ui-theme-night.png'} alt="" aria-hidden="true" />
+                <img src={nextTheme === 'light' ? '/ui-theme-day.png' : '/ui-theme-night.png'} alt="" aria-hidden="true" />
               </button>
             </div>
           </div>

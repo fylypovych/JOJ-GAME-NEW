@@ -62,7 +62,7 @@ export const registerUploadRoutes = ({
   auditAdminAction,
 }: UploadRoutesDeps) => {
   const CARD_ASSET_BASE_PATH = '/public/card-assets/';
-  const AVATAR_ASSET_BASE_PATH = '/public/profile-image/';
+  const AVATAR_ASSET_BASE_PATH = '/profile-image/';
   const isCardAssetPath = (value: string) => value.startsWith('/card-assets/') || value.startsWith('/cards/') || value.startsWith('/public/card-assets/');
   const toCardAssetPath = (fileName: string, moduleName?: string) => {
     if (moduleName) {

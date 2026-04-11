@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { AdminNavCategory } from '../tabs';
 import type { AdminTab } from '../types';
 import { AdminCategoryButtons, AdminTabButtons } from '../tabs';
@@ -12,6 +13,7 @@ interface AdminNavigationProps {
   activeMatchId: string | null;
   t: ReturnType<typeof import('../../i18n').text>;
   activeTabDescriptionMap: Record<AdminTab, string>;
+  children?: ReactNode;
 }
 
 export const AdminNavigation = ({
@@ -24,6 +26,7 @@ export const AdminNavigation = ({
   activeMatchId,
   t,
   activeTabDescriptionMap,
+  children,
 }: AdminNavigationProps) => {
   return (
     <>
@@ -74,6 +77,9 @@ export const AdminNavigation = ({
             </span>
           </aside>
         </header>
+        <div className="admin-v2-workspace-body">
+          {children}
+        </div>
       </section>
     </>
   );

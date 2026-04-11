@@ -734,8 +734,7 @@ export const AdminPage = ({
         activeMatchId={activeMatchId}
         t={t}
         activeTabDescriptionMap={activeTabDescriptionMap}
-      />
-      <div className="admin-v4-workspace-body">
+      >
         {activeTab === 'start' ? (
           <AdminOverview
             t={t}
@@ -1183,7 +1182,7 @@ export const AdminPage = ({
             localizedRankName={localizedRankName}
           />
         ) : null}
-      </div>
+      </AdminNavigation>
     </AdminShell>
   );
 };
