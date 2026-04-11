@@ -30,19 +30,16 @@ export const useGalleryData = (args: UseGalleryDataArgs): UseGalleryDataResult =
     const rankTrackIds = new Set(sharedDeckTemplate.rankTrack.map((card) => card.id));
     const rankModule = sharedDeckTemplate.modules?.find((m) => m.id === 'rank_default');
     const rankModuleIds = new Set(rankModule?.cardIds ?? []);
+    const rankCardIds = new Set([...rankTrackIds, ...rankModuleIds]);
     return [...cardCatalog]
       .filter((card) => {
         if (galleryCategoryFilter === 'RANK') {
-          // If rankTrack and rank_default are empty, show all RANK category cards
-          if (rankTrackIds.size === 0 && rankModuleIds.size === 0) {
-            return card.category === 'RANK';
-          }
-          return rankTrackIds.has(card.id) || rankModuleIds.has(card.id);
+          return rankCardIds.has(card.id);
         }
         if (galleryCategoryFilter === 'ALL') {
           return true;
         }
-        return card.category === galleryCategoryFilter && !rankTrackIds.has(card.id);
+        return card.category === galleryCategoryFilter && !rankCardIds.has(card.id);
       })
       .sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
   }, [cardCatalog, sharedDeckTemplate.rankTrack, sharedDeckTemplate.modules, galleryCategoryFilter]);

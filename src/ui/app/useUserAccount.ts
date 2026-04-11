@@ -110,13 +110,22 @@ const USER_ACCOUNT_ERRORS = {
   genericRequest: 'Request failed',
 } as const;
 
-const normalizeAvatarUrl = (value: string | null | undefined) => {
+const normalizeAvatarUrl = (
+  value: string | null | undefined,
+  serverUrl: string,
+) => {
   const normalized = typeof value === 'string' ? value.trim() : '';
   if (!normalized) return null;
-  if (normalized.startsWith('/public/profile-image/')) {
-    return normalized.replace('/public/profile-image/', '/profile-image/');
+  const publicFixed = normalized.startsWith('/public/profile-image/')
+    ? normalized.replace('/public/profile-image/', '/profile-image/')
+    : normalized;
+  if (/^https?:\/\//i.test(publicFixed)) {
+    return publicFixed;
   }
-  return normalized;
+  if (publicFixed.startsWith('/')) {
+    return `${serverUrl.replace(/\/+$/, '')}${publicFixed}`;
+  }
+  return publicFixed;
 };
 
 export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) => {
@@ -144,7 +153,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
       const mePayload = await fetchJson(`${authBase}/me`);
       const nextUserRaw = (mePayload as { user?: AuthUser | null }).user ?? null;
       const nextUser = nextUserRaw
-        ? { ...nextUserRaw, avatarUrl: normalizeAvatarUrl(nextUserRaw.avatarUrl) }
+        ? { ...nextUserRaw, avatarUrl: normalizeAvatarUrl(nextUserRaw.avatarUrl, serverUrl) }
         : null;
       setUser(nextUser);
       if (nextUser) {
@@ -248,6 +257,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
       });
       const path = normalizeAvatarUrl(
         typeof payload.path === 'string' ? payload.path : '',
+        serverUrl,
       );
       if (!path) throw new Error(USER_ACCOUNT_ERRORS.genericRequest);
       setError('');

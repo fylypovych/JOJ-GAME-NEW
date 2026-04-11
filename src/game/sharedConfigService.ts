@@ -82,7 +82,7 @@ export class SharedConfigService {
     });
   }
 
-  repairGeneratedRankVisualData(): { ranksChanged: boolean; templateChanged: boolean } {
+  private syncGeneratedRankVisualData(force = false): { ranksChanged: boolean; templateChanged: boolean } {
     let ranksChanged = false;
     let templateChanged = false;
 
@@ -98,7 +98,8 @@ export class SharedConfigService {
 
     const expectedRankTrackCount = this.sharedRanks.reduce((acc: number, rank: RankDefinition) => acc + generatedRankCardCopies(rank.id), 0);
     const hasOnlyGeneratedRankCards = this.sharedDeckTemplate.rankTrack.every((card) => isGeneratedRankTrackCardId(card.id));
-    const needsRankTrackRepair = this.sharedDeckTemplate.rankTrack.length === 0
+    const needsRankTrackRepair = force
+      || this.sharedDeckTemplate.rankTrack.length === 0
       || (hasOnlyGeneratedRankCards && this.sharedDeckTemplate.rankTrack.length !== expectedRankTrackCount);
 
     if (!needsRankTrackRepair) {
@@ -137,6 +138,10 @@ export class SharedConfigService {
     return { ranksChanged, templateChanged };
   }
 
+  repairGeneratedRankVisualData(): { ranksChanged: boolean; templateChanged: boolean } {
+    return this.syncGeneratedRankVisualData(false);
+  }
+
   getActiveRanks(): SharedRanks {
     return this.sharedRanks;
   }
@@ -160,6 +165,7 @@ export class SharedConfigService {
     const ids = next.map((rank) => rank.id.trim());
     if (new Set(ids).size !== ids.length) return false;
     this.sharedRanks = normalizeSharedRanks(next);
+    this.syncGeneratedRankVisualData(true);
     return true;
   }
 
@@ -181,6 +187,7 @@ export class SharedConfigService {
 
   resetSharedRanks(): void {
     this.sharedRanks = defaultSharedRanksSeed.map(cloneRank);
+    this.syncGeneratedRankVisualData(true);
   }
 
   getSharedDeckTemplateStats() {
