@@ -21,6 +21,7 @@ export const AppHeader = (props: AppHeaderProps) => {
   const { isAdminRoute, lang, setLang, activeUserTab, setActiveUserTab, gameUiVariant, setGameUiVariant, t } = props;
   const nextGameUiVariant = gameUiVariant === 'v1' ? 'v2' : 'v1';
   const nextGameUiLabel = nextGameUiVariant === 'v1' ? t.gameUiV1 : t.gameUiV2;
+  const nextGameUiIcon = gameUiVariant === 'v1' ? '/ui-theme-day.png' : '/ui-theme-night.png';
 
   if (isAdminRoute) {
     return (
@@ -56,7 +57,7 @@ export const AppHeader = (props: AppHeaderProps) => {
                 title={nextGameUiVariant === 'v1' ? 'Switch to v1 game UI' : 'Switch to v2 game UI'}
               >
                 <img
-                  src={nextGameUiVariant === 'v1' ? '/ui-theme-night.png' : '/ui-theme-day.png'}
+                  src={nextGameUiIcon}
                   alt=""
                   aria-hidden="true"
                 />

@@ -18,16 +18,41 @@ import type {
 } from './sharedConfig';
 import type { CardDefinition } from './types';
 
+const withModuleImagePath = (
+  card: CardDefinition,
+  moduleNameByCardId: Map<string, string>,
+): CardDefinition => {
+  const image = typeof card.image === 'string' ? card.image.trim() : '';
+  if (!image.startsWith('/card-assets/')) return cloneCard(card);
+  const relative = image.slice('/card-assets/'.length);
+  if (!relative || relative.includes('/')) return cloneCard(card);
+  const moduleName = moduleNameByCardId.get(card.id);
+  if (!moduleName) return cloneCard(card);
+  return cloneCard({
+    ...card,
+    image: `/card-assets/${moduleName}/${relative}`,
+  });
+};
+
 export const buildCardCatalog = (template: SharedDeckTemplate, extraCatalog: CardDefinition[]): CardDefinition[] => {
   const byId = new Map<string, CardDefinition>();
+  const moduleNameByCardId = new Map<string, string>();
+  template.modules.forEach((module) => {
+    if (module.target !== 'deck' && module.target !== 'legendaryDeck') return;
+    module.cardIds.forEach((cardId) => {
+      if (!moduleNameByCardId.has(cardId)) {
+        moduleNameByCardId.set(cardId, module.name);
+      }
+    });
+  });
   extraCatalog.forEach((card) => {
-    if (!byId.has(card.id)) byId.set(card.id, cloneCard(card));
+    if (!byId.has(card.id)) byId.set(card.id, withModuleImagePath(card, moduleNameByCardId));
   });
   template.deck.forEach((card) => {
-    byId.set(card.id, cloneCard(card));
+    byId.set(card.id, withModuleImagePath(card, moduleNameByCardId));
   });
   template.legendaryDeck.forEach((card) => {
-    byId.set(card.id, cloneCard({ ...card, category: 'LEGENDARY' }));
+    byId.set(card.id, withModuleImagePath({ ...card, category: 'LEGENDARY' }, moduleNameByCardId));
   });
   template.rankTrack.forEach((card) => {
     byId.set(card.id, cloneCard(card));
