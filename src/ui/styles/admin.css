@@ -2528,6 +2528,11 @@
   color: #243744;
 }
 
+.admin-panel-v2 h5,
+.admin-panel-v1 h5 {
+  color: #111111;
+}
+
 .admin-panel-v2 code {
   font-weight: 600;
 }
