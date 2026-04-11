@@ -1,4 +1,4 @@
-import { access, mkdir, readdir, stat, unlink, writeFile } from 'node:fs/promises';
+import { access, mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from './types';
 import { requireAdminMutationAuth } from '../admin-auth';
@@ -63,6 +63,8 @@ export const registerUploadRoutes = ({
 }: UploadRoutesDeps) => {
   const CARD_ASSET_BASE_PATH = '/public/card-assets/';
   const AVATAR_ASSET_BASE_PATH = '/profile-image/';
+  const avatarUploadsDir = path.resolve(uploadsDir, '..', 'profile-image');
+  const systemIconsDir = path.resolve(uploadsDir, '..', 'sys.icons');
   const isCardAssetPath = (value: string) => value.startsWith('/card-assets/') || value.startsWith('/cards/') || value.startsWith('/public/card-assets/');
   const toCardAssetPath = (fileName: string, moduleName?: string) => {
     if (moduleName) {
@@ -71,6 +73,36 @@ export const registerUploadRoutes = ({
     return `${CARD_ASSET_BASE_PATH}${fileName}`;
   };
   const toAvatarPath = (fileName: string) => `${AVATAR_ASSET_BASE_PATH}${fileName}`;
+  const serveAvatarFile = async (ctx: RouteCtx) => {
+    const fileName = typeof (ctx as RouteCtx & { params?: Record<string, unknown> }).params?.fileName === 'string'
+      ? String((ctx as RouteCtx & { params?: Record<string, unknown> }).params?.fileName).trim()
+      : '';
+    if (!fileName || fileName.includes('/') || fileName.includes('\\')) {
+      ctx.status = 400;
+      ctx.body = 'Invalid avatar path';
+      return;
+    }
+    const absPath = path.join(avatarUploadsDir, fileName);
+    try {
+      const fileBuffer = await readFile(absPath);
+      const ext = path.extname(fileName).toLowerCase();
+      const mime = ext === '.png'
+        ? 'image/png'
+        : ext === '.jpg' || ext === '.jpeg'
+          ? 'image/jpeg'
+          : ext === '.gif'
+            ? 'image/gif'
+            : 'image/webp';
+      if (typeof ctx.set === 'function') {
+        ctx.set('Content-Type', mime);
+      }
+      ctx.body = fileBuffer;
+    } catch {
+      ctx.status = 404;
+      ctx.body = 'Avatar not found';
+    }
+  };
+
   const requireAdminWriteAccess = (ctx: RouteCtx, routeLabel: string) =>
     requireAdminMutationAuth(ctx, routeLabel, requireAdminAuth);
   const parseUploadBody = async (ctx: RouteCtx, routeLabel: string) => {
@@ -157,11 +189,11 @@ export const registerUploadRoutes = ({
     const isSystemIcon = assetKind === 'system-icon';
     let targetDir: string;
     if (isAvatar) {
-      targetDir = path.join('public', 'profile-image');
+      targetDir = avatarUploadsDir;
     } else if (isCard && moduleName) {
-      targetDir = path.join('public', 'card-assets', moduleName);
+      targetDir = path.join(uploadsDir, moduleName);
     } else if (isSystemIcon) {
-      targetDir = path.join('public', 'sys.icons');
+      targetDir = systemIconsDir;
     } else {
       targetDir = uploadsDir;
     }
@@ -205,6 +237,9 @@ export const registerUploadRoutes = ({
     const assets = assetStore ? await assetStore.listAssets({ kind, limit }) : [];
     ctx.body = { ok: true, assets };
   });
+
+  router.get('/profile-image/:fileName', serveAvatarFile);
+  router.get('/public/profile-image/:fileName', serveAvatarFile);
 
   router.post('/api/upload-card-image', async (ctx: RouteCtx) => {
     if (!(await requireAdminWriteAccess(ctx, '/api/upload-card-image'))) return;

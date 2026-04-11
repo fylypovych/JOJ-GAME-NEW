@@ -50,27 +50,16 @@ export const AppHeader = (props: AppHeaderProps) => {
             <div className="app-toolbar-button-row app-toolbar-theme-switch">
               <button
                 type="button"
-                className="ui-variant-btn"
+                className="app-theme-icon-button"
                 onClick={() => setGameUiVariant(nextGameUiVariant)}
                 aria-label={nextGameUiVariant === 'v1' ? 'Switch to v1 game UI' : 'Switch to v2 game UI'}
                 title={nextGameUiVariant === 'v1' ? 'Switch to v1 game UI' : 'Switch to v2 game UI'}
               >
-                {nextGameUiVariant === 'v1' ? (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <rect x="3.5" y="4.5" width="17" height="15" rx="3" stroke="currentColor" strokeWidth="1.6" />
-                    <path d="M8 4.5V19.5" stroke="currentColor" strokeWidth="1.6" />
-                    <path d="M10.5 8H17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                    <path d="M10.5 12H17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                    <path d="M10.5 16H15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                  </svg>
-                ) : (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <rect x="4" y="4" width="7" height="7" rx="1.8" stroke="currentColor" strokeWidth="1.6" />
-                    <rect x="13" y="4" width="7" height="7" rx="1.8" stroke="currentColor" strokeWidth="1.6" />
-                    <rect x="4" y="13" width="7" height="7" rx="1.8" stroke="currentColor" strokeWidth="1.6" />
-                    <rect x="13" y="13" width="7" height="7" rx="1.8" stroke="currentColor" strokeWidth="1.6" />
-                  </svg>
-                )}
+                <img
+                  src={nextGameUiVariant === 'v1' ? '/ui-theme-night.png' : '/ui-theme-day.png'}
+                  alt=""
+                  aria-hidden="true"
+                />
                 <span className="sr-only">{nextGameUiLabel}</span>
               </button>
             </div>

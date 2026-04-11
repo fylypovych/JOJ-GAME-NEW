@@ -27,6 +27,13 @@ export const createCacheControlMiddleware = () => {
         ctx.set('Cache-Control', 'public, max-age=31536000, immutable');
       }
     }
+
+    // Cache uploaded avatars for 1 year
+    if (path.startsWith('/profile-image/')) {
+      if (typeof ctx.set === 'function') {
+        ctx.set('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    }
     
     // Cache admin icons for 1 year
     if (path.startsWith('/admin-icons/')) {
