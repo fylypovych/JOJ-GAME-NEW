@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import os from 'node:os';
 import path from 'node:path';
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { registerUploadRoutes } from '../server/routes/uploads';
 import type { RouteCtx, RouterLike } from '../server/routes/types';
 
@@ -152,4 +152,95 @@ test('admin assets cleanup removes orphan files', async () => {
 
   assert.equal((ctx.body as { ok: boolean }).ok, true);
   assert.equal((ctx.body as { cleaned: number }).cleaned, 1);
+});
+
+test('delete-card-image removes files from module subdirectories', async () => {
+  const uploadsDir = await mkdtemp(path.join(os.tmpdir(), 'joj-upload-delete-module-'));
+  await mkdir(path.join(uploadsDir, '2026.LEGENDARY.MODULE'), { recursive: true });
+  await writeFile(path.join(uploadsDir, '2026.LEGENDARY.MODULE', 'card.webp'), 'module-image', 'utf8');
+  const { router, postHandlers } = makeRouter();
+  const deletedPaths: string[] = [];
+
+  registerUploadRoutes({
+    router,
+    requireAdminAuth,
+    enforceRateLimit: allowRateLimit,
+    readJsonBodySafe,
+    logLine,
+    JSON_BODY_LIMIT: 10_000,
+    IMAGE_UPLOAD_BODY_LIMIT: 100_000,
+    uploadsDir,
+    assetStore: {
+      upsertAsset: async () => undefined,
+      markDeleted: async (assetPath) => { deletedPaths.push(assetPath); },
+      listAssets: async () => [],
+      purgeMissingFiles: async () => 0,
+      listKnownPaths: async () => new Set<string>(),
+    },
+  });
+
+  const handler = postHandlers.get('/api/admin/delete-card-image');
+  assert.ok(handler);
+  const ctx: RouteCtx = {
+    request: {
+      headers: {
+        cookie: 'joj_user_csrf=csrf-token',
+        'x-csrf-token': 'csrf-token',
+        host: 'localhost:8000',
+        origin: 'http://localhost:8000',
+      },
+      body: { path: '/card-assets/2026.LEGENDARY.MODULE/card.webp' },
+    },
+  };
+
+  await handler?.(ctx);
+
+  assert.equal((ctx.body as { ok: boolean }).ok, true);
+  await assert.rejects(access(path.join(uploadsDir, '2026.LEGENDARY.MODULE', 'card.webp')));
+  assert.deepEqual(deletedPaths, ['/card-assets/2026.LEGENDARY.MODULE/card.webp']);
+});
+
+test('admin assets cleanup removes orphan files from module subdirectories', async () => {
+  const uploadsDir = await mkdtemp(path.join(os.tmpdir(), 'joj-upload-clean-module-'));
+  await mkdir(path.join(uploadsDir, '2026.LEGENDARY.MODULE'), { recursive: true });
+  await writeFile(path.join(uploadsDir, '2026.LEGENDARY.MODULE', 'orphan.webp'), 'x', 'utf8');
+  const { router, postHandlers } = makeRouter();
+
+  registerUploadRoutes({
+    router,
+    requireAdminAuth,
+    enforceRateLimit: allowRateLimit,
+    readJsonBodySafe,
+    logLine,
+    JSON_BODY_LIMIT: 10_000,
+    IMAGE_UPLOAD_BODY_LIMIT: 100_000,
+    uploadsDir,
+    assetStore: {
+      upsertAsset: async () => undefined,
+      markDeleted: async () => undefined,
+      listAssets: async () => [],
+      purgeMissingFiles: async () => 0,
+      listKnownPaths: async () => new Set<string>(),
+    },
+  });
+
+  const handler = postHandlers.get('/api/admin/assets/cleanup');
+  assert.ok(handler);
+  const ctx: RouteCtx = {
+    request: {
+      headers: {
+        cookie: 'joj_user_csrf=csrf-token',
+        'x-csrf-token': 'csrf-token',
+        host: 'localhost:8000',
+        origin: 'http://localhost:8000',
+      },
+      body: { mode: 'files' },
+    },
+  };
+
+  await handler?.(ctx);
+
+  assert.equal((ctx.body as { ok: boolean }).ok, true);
+  assert.equal((ctx.body as { cleaned: number }).cleaned, 1);
+  await assert.rejects(access(path.join(uploadsDir, '2026.LEGENDARY.MODULE', 'orphan.webp')));
 });

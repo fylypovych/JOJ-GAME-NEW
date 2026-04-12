@@ -66,6 +66,40 @@ export const registerUploadRoutes = ({
   const avatarUploadsDir = path.resolve(uploadsDir, '..', 'profile-image');
   const systemIconsDir = path.resolve(uploadsDir, '..', 'sys.icons');
   const isCardAssetPath = (value: string) => value.startsWith('/card-assets/') || value.startsWith('/cards/') || value.startsWith('/public/card-assets/');
+  const toUploadsRelativePath = (assetPath: string) => {
+    const normalized = assetPath.replace(/\\/g, '/').trim();
+    if (normalized.startsWith('/public/card-assets/')) return normalized.slice('/public/card-assets/'.length);
+    if (normalized.startsWith('/card-assets/')) return normalized.slice('/card-assets/'.length);
+    if (normalized.startsWith('/cards/')) return normalized.slice('/cards/'.length);
+    return '';
+  };
+  const resolveCardAssetTargetPath = (assetPath: string) => {
+    const relativePath = toUploadsRelativePath(assetPath);
+    if (!relativePath || relativePath === '.' || relativePath === '..') return null;
+    const normalizedRelative = path.normalize(relativePath);
+    if (!normalizedRelative || normalizedRelative.startsWith('..') || path.isAbsolute(normalizedRelative)) return null;
+    const targetPath = path.resolve(uploadsDir, normalizedRelative);
+    const uploadsRoot = path.resolve(uploadsDir);
+    if (targetPath !== uploadsRoot && !targetPath.startsWith(`${uploadsRoot}${path.sep}`)) return null;
+    return { targetPath, normalizedRelative };
+  };
+  const listCardAssetRelativeFiles = async (rootDir: string, prefix = ''): Promise<string[]> => {
+    const entries = await readdir(rootDir, { withFileTypes: true }).catch(() => []);
+    const files: string[] = [];
+    for (const entry of entries) {
+      const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+      const absPath = path.join(rootDir, entry.name);
+      if (entry.isDirectory()) {
+        files.push(...await listCardAssetRelativeFiles(absPath, relativePath));
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      const fileStat = await stat(absPath).catch(() => null);
+      if (!fileStat?.isFile()) continue;
+      files.push(relativePath.replace(/\\/g, '/'));
+    }
+    return files;
+  };
   const toCardAssetPath = (fileName: string, moduleName?: string) => {
     if (moduleName) {
       return `${CARD_ASSET_BASE_PATH}${moduleName}/${fileName}`;
@@ -305,32 +339,27 @@ export const registerUploadRoutes = ({
       ctx.body = { ok: false, error: 'Only /card-assets/* paths can be deleted' };
       return;
     }
-    const fileName = path.basename(imagePath);
-    if (!fileName || fileName === '.' || fileName === '..') {
+    const resolvedAsset = resolveCardAssetTargetPath(imagePath);
+    if (!resolvedAsset) {
       ctx.status = 400;
       ctx.body = { ok: false, error: 'Invalid file path' };
       return;
     }
-    const targetPath = path.resolve(uploadsDir, fileName);
-    if (!targetPath.startsWith(uploadsDir + path.sep) && targetPath !== path.resolve(uploadsDir, fileName)) {
-      ctx.status = 400;
-      ctx.body = { ok: false, error: 'Invalid target path' };
-      return;
-    }
     try {
-      await unlink(targetPath);
+      await unlink(resolvedAsset.targetPath);
       await assetStore?.markDeleted(imagePath);
-      if (imagePath !== toCardAssetPath(fileName)) {
-        await assetStore?.markDeleted(toCardAssetPath(fileName));
+      const canonicalAssetPath = `/card-assets/${resolvedAsset.normalizedRelative.replace(/\\/g, '/')}`;
+      if (imagePath !== canonicalAssetPath) {
+        await assetStore?.markDeleted(canonicalAssetPath);
       }
-      await logLine('INFO', `image deleted: ${fileName}`);
-      await auditAdminAction?.({ action: 'uploads.card-image.delete', ctx, success: true, details: { fileName } });
+      await logLine('INFO', `image deleted: ${resolvedAsset.normalizedRelative}`);
+      await auditAdminAction?.({ action: 'uploads.card-image.delete', ctx, success: true, details: { fileName: resolvedAsset.normalizedRelative } });
       ctx.body = { ok: true };
     } catch (error) {
-      await auditAdminAction?.({ action: 'uploads.card-image.delete', ctx, success: false, details: { fileName, error: String(error) } });
+      await auditAdminAction?.({ action: 'uploads.card-image.delete', ctx, success: false, details: { fileName: resolvedAsset.normalizedRelative, error: String(error) } });
       ctx.status = 500;
       ctx.body = { ok: false, error: 'Failed to delete image' };
-      await logLine('ERROR', `image delete failed (${fileName}): ${String(error)}`);
+      await logLine('ERROR', `image delete failed (${resolvedAsset.normalizedRelative}): ${String(error)}`);
     }
   });
 
@@ -345,14 +374,8 @@ export const registerUploadRoutes = ({
       ctx.body = { ok: false, error: 'Asset metadata store is unavailable.' };
       return;
     }
-    const entries = await readdir(uploadsDir, { withFileTypes: true }).catch(() => []);
-    const fileNames = await Promise.all(entries.filter((entry) => entry.isFile()).map(async (entry) => {
-      const absPath = path.join(uploadsDir, entry.name);
-      const fileStat = await stat(absPath).catch(() => null);
-      if (!fileStat?.isFile()) return null;
-      return entry.name;
-    }));
-    const existingPaths = new Set(fileNames.filter((name): name is string => Boolean(name)).map((name) => toCardAssetPath(name)));
+    const fileNames = await listCardAssetRelativeFiles(uploadsDir);
+    const existingPaths = new Set(fileNames.map((name) => `/card-assets/${name}`));
 
     if (mode === 'records') {
       const cleaned = await assetStore.purgeMissingFiles(existingPaths, 'card-image');
@@ -365,10 +388,10 @@ export const registerUploadRoutes = ({
     let cleaned = 0;
     for (const assetPath of existingPaths) {
       if (knownPaths.has(assetPath)) continue;
-      const fileName = path.basename(assetPath);
-      const targetPath = path.resolve(uploadsDir, fileName);
+      const resolvedAsset = resolveCardAssetTargetPath(assetPath);
+      if (!resolvedAsset) continue;
       try {
-        await unlink(targetPath);
+        await unlink(resolvedAsset.targetPath);
         cleaned += 1;
       } catch {
         // ignore missing/locked file and continue cleanup

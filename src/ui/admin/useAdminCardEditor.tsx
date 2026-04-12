@@ -57,6 +57,53 @@ export const useAdminCardEditor = ({
   const [createCardModuleId, setCreateCardModuleId] = useState('');
   const [, setDeckBackImageInput] = useState(sharedDeckTemplate.deckBackImage ?? '');
 
+  const isManagedCardAssetPath = (value?: string) => {
+    const normalized = normalizeImagePath(value);
+    return Boolean(normalized && (normalized.startsWith('/card-assets/') || normalized.startsWith('/cards/')));
+  };
+
+  const countImageReferences = (imagePath?: string, excludingCardId?: string) => {
+    const normalizedTarget = normalizeImagePath(imagePath);
+    if (!normalizedTarget) return 0;
+    const seen = new Set<string>();
+    let count = 0;
+    const visit = (card?: CardDefinition | null) => {
+      if (!card || seen.has(card.id) || card.id === excludingCardId) return;
+      seen.add(card.id);
+      if (normalizeImagePath(card.image) === normalizedTarget) count += 1;
+    };
+    for (const card of sharedDeckTemplate.deck) visit(card);
+    for (const card of sharedDeckTemplate.legendaryDeck) visit(card);
+    for (const card of sharedDeckTemplate.rankTrack) visit(card);
+    for (const card of cardCatalog) visit(card);
+    return count;
+  };
+
+  const deleteUploadedImage = async (imagePath?: string) => {
+    const normalizedImagePath = normalizeImagePath(imagePath);
+    if (!normalizedImagePath || !isManagedCardAssetPath(normalizedImagePath)) return false;
+    try {
+      const response = await fetch(`${serverUrl}/api/admin/delete-card-image`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...adminHeaders(),
+        },
+        body: JSON.stringify({ path: normalizedImagePath }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string };
+      if (!response.ok || !payload.ok) {
+        setDeckManagerStatus(payload.error || t.uploadFailedGeneric);
+        return false;
+      }
+      return true;
+    } catch {
+      setDeckManagerStatus(t.uploadFailedGeneric);
+      return false;
+    }
+  };
+
   const parseEffects = (): CardDefinition['effects'] | null => {
     let parsed: unknown;
     try {
@@ -238,9 +285,10 @@ export const useAdminCardEditor = ({
     setEditError('');
   };
 
-  const removeCardAtFromEditor = (target: DeckTarget, index: number) => {
+  const removeCardAtFromEditor = async (target: DeckTarget, index: number) => {
     const card = sharedDeckTemplate[target]?.[index];
     if (!card) return;
+    const shouldDeleteImage = isManagedCardAssetPath(card.image) && countImageReferences(card.image, card.id) === 0;
     const ok = applyTemplateUpdate((nextTemplate) => {
       nextTemplate[target] = nextTemplate[target].filter((_, i) => i !== index);
       nextTemplate.modules = (nextTemplate.modules ?? []).map((module) => (
@@ -255,12 +303,16 @@ export const useAdminCardEditor = ({
       setCreateCardModuleId('');
       setEditOriginalCardId('');
     }
+    if (shouldDeleteImage) {
+      await deleteUploadedImage(card.image);
+    }
   };
 
-  const removeCardByIdFromEditor = (target: DeckTarget, cardId: string) => {
+  const removeCardByIdFromEditor = async (target: DeckTarget, cardId: string) => {
     const card = sharedDeckTemplate[target]?.find((row) => row.id === cardId)
       ?? cardCatalog.find((row) => row.id === cardId);
     if (!card) return;
+    const shouldDeleteImage = isManagedCardAssetPath(card.image) && countImageReferences(card.image, card.id) === 0;
     const ok = applyTemplateUpdate((nextTemplate) => {
       nextTemplate[target] = nextTemplate[target].filter((row) => row.id !== cardId);
       nextTemplate.modules = (nextTemplate.modules ?? []).map((module) => (
@@ -279,6 +331,9 @@ export const useAdminCardEditor = ({
       setEditIndex(-1);
       setCreateCardModuleId('');
       setEditOriginalCardId('');
+    }
+    if (shouldDeleteImage) {
+      await deleteUploadedImage(card.image);
     }
   };
 
