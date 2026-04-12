@@ -97,7 +97,11 @@ const stageFiles = (files) => {
   runGit(['add', ...existingFiles]);
 };
 
-const getVersionInputArg = () => process.argv.slice(2).join(' ').trim();
+const getRawArgs = () => process.argv.slice(2);
+const hasFlag = (flag) => getRawArgs().includes(flag);
+const shouldSkipGitStage = () => hasFlag('--no-stage');
+const shouldSkipConflictCheck = () => shouldSkipGitStage() || hasFlag('--allow-dirty-version-files');
+const getVersionInputArg = () => getRawArgs().filter((arg) => !arg.startsWith('--')).join(' ').trim();
 
 const readLatestCommitMessage = () => {
   try {
@@ -123,19 +127,21 @@ const main = () => {
   const version = resolveVersionFromInput();
   if (!version) return 0;
 
-  const conflictingFiles = getConflictingVersionFiles();
-  if (conflictingFiles.length > 0) {
-    const matchingVersions = [
-      readPackageVersion(packageJsonPath),
-      readPackageVersion(packageLockPath),
-    ].every((currentVersion) => currentVersion === version);
-    if (matchingVersions) {
-      return 0;
+  if (!shouldSkipConflictCheck()) {
+    const conflictingFiles = getConflictingVersionFiles();
+    if (conflictingFiles.length > 0) {
+      const matchingVersions = [
+        readPackageVersion(packageJsonPath),
+        readPackageVersion(packageLockPath),
+      ].every((currentVersion) => currentVersion === version);
+      if (matchingVersions) {
+        return 0;
+      }
+      for (const line of getConflictAbortText(conflictingFiles, version)) {
+        process.stderr.write(`${line}\n`);
+      }
+      return 1;
     }
-    for (const line of getConflictAbortText(conflictingFiles, version)) {
-      process.stderr.write(`${line}\n`);
-    }
-    return 1;
   }
 
   const changedFiles = [];
@@ -143,7 +149,9 @@ const main = () => {
   if (syncVersionInPackageLock(version)) changedFiles.push(packageLockPath);
   if (changedFiles.length === 0) return 0;
 
-  stageFiles(changedFiles);
+  if (!shouldSkipGitStage()) {
+    stageFiles(changedFiles);
+  }
   process.stdout.write(`[version-sync] synced version ${version}\n`);
   return 0;
 };

@@ -1,9 +1,10 @@
 {
   "name": "joj-game-new",
-  "version": "0.0.3.0",
+  "version": "0.0.2.88",
   "private": true,
   "type": "module",
   "scripts": {
+    "prebuild": "node scripts/sync-version-from-commit.cjs --no-stage",
     "dev": "vite",
     "dev:full": "concurrently \"npm:dev:web\" \"npm:dev:server\"",
     "dev:web": "vite",

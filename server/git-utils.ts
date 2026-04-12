@@ -1,4 +1,6 @@
 import { execFile, spawn } from 'node:child_process';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import type { LogLine } from './file-logger';
 
 type CmdResult = { ok: true; stdout: string; stderr: string } | { ok: false; error: string };
@@ -10,6 +12,13 @@ type GitAuthStatus = {
   savedUsername: string;
   credentialsPath: string;
   remoteAuthMode: 'https' | 'ssh' | 'other';
+};
+type StoredGitCredentials = { username: string; token: string };
+type GitCredentialStore = {
+  load: () => Promise<StoredGitCredentials | null>;
+  save: (credentials: StoredGitCredentials) => Promise<void>;
+  clear: () => Promise<void>;
+  getCredentialsPath: () => string;
 };
 
 const formatCommandFailure = (command: string, args: string[], error: unknown, stdout: string, stderr: string) => {
@@ -23,13 +32,73 @@ const formatCommandFailure = (command: string, args: string[], error: unknown, s
   return parts.join('\n');
 };
 
-export const createCommandRunners = (repoDir: string) => {
-  const runGit = async (args: string[]): Promise<CmdResult> => new Promise((resolve) => {
-    execFile('git', args, { cwd: repoDir, windowsHide: true, timeout: 30_000 }, (error, stdout, stderr) => {
-      if (error) return resolve({ ok: false, error: formatCommandFailure('git', args, error, String(stdout ?? ''), String(stderr ?? '')) });
-      return resolve({ ok: true, stdout: String(stdout ?? ''), stderr: String(stderr ?? '') });
+const normalizeGitCredential = (value: string) => String(value ?? '').trim();
+
+const buildGitProcessEnv = (credentials: StoredGitCredentials | null) => {
+  const env = {
+    ...process.env,
+    GIT_TERMINAL_PROMPT: '0',
+  } as NodeJS.ProcessEnv;
+  if (!credentials) return env;
+  const username = normalizeGitCredential(credentials.username);
+  const token = normalizeGitCredential(credentials.token);
+  if (!username || !token) return env;
+  env.GIT_CONFIG_COUNT = '1';
+  env.GIT_CONFIG_KEY_0 = `url.https://${encodeURIComponent(username)}:${encodeURIComponent(token)}@github.com/.insteadof`;
+  env.GIT_CONFIG_VALUE_0 = 'https://github.com/';
+  return env;
+};
+
+export const createGitCredentialStore = (
+  repoDir: string,
+  relativePath = path.join('database', '.admin-git-credentials.json'),
+): GitCredentialStore => {
+  const credentialsPath = path.join(repoDir, relativePath);
+  return {
+    load: async () => {
+      try {
+        const payload = JSON.parse(await readFile(credentialsPath, 'utf8')) as Partial<StoredGitCredentials>;
+        const username = normalizeGitCredential(payload.username ?? '');
+        const token = normalizeGitCredential(payload.token ?? '');
+        if (!username || !token) return null;
+        return { username, token };
+      } catch {
+        return null;
+      }
+    },
+    save: async (credentials) => {
+      const username = normalizeGitCredential(credentials.username);
+      const token = normalizeGitCredential(credentials.token);
+      if (!username || !token) throw new Error('GitHub username and token are required.');
+      await mkdir(path.dirname(credentialsPath), { recursive: true });
+      await writeFile(credentialsPath, `${JSON.stringify({ username, token }, null, 2)}\n`, { encoding: 'utf8', mode: 0o600 });
+    },
+    clear: async () => {
+      await rm(credentialsPath, { force: true });
+    },
+    getCredentialsPath: () => credentialsPath,
+  };
+};
+
+const resolveGithubCredentials = async (gitCredentialStore?: GitCredentialStore | null) => {
+  const envToken = normalizeGitCredential(String(process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? ''));
+  const envUsername = normalizeGitCredential(String(process.env.GITHUB_USER ?? process.env.GH_USER ?? ''));
+  if (envToken && envUsername) return { credentials: { username: envUsername, token: envToken }, source: 'env' as const };
+  const stored = await gitCredentialStore?.load();
+  if (stored) return { credentials: stored, source: 'stored' as const };
+  return { credentials: null, source: 'none' as const };
+};
+
+export const createCommandRunners = (repoDir: string, gitCredentialStore?: GitCredentialStore | null) => {
+  const runGit = async (args: string[]): Promise<CmdResult> => {
+    const { credentials } = await resolveGithubCredentials(gitCredentialStore);
+    return new Promise((resolve) => {
+      execFile('git', args, { cwd: repoDir, env: buildGitProcessEnv(credentials), windowsHide: true, timeout: 30_000 }, (error, stdout, stderr) => {
+        if (error) return resolve({ ok: false, error: formatCommandFailure('git', args, error, String(stdout ?? ''), String(stderr ?? '')) });
+        return resolve({ ok: true, stdout: String(stdout ?? ''), stderr: String(stderr ?? '') });
+      });
     });
-  });
+  };
 
   const runShellCommand = async (command: string, timeoutMs = 15 * 60_000): Promise<CmdResult> => new Promise((resolve) => {
     const isWin = process.platform === 'win32';
@@ -105,19 +174,21 @@ const detectRemoteAuthMode = (remote: string): GitAuthStatus['remoteAuthMode'] =
   return 'other';
 };
 
-export const getGitAuthStatus = async (runGit: (args: string[]) => Promise<CmdResult>): Promise<GitAuthStatus> => {
+export const getGitAuthStatus = async (
+  runGit: (args: string[]) => Promise<CmdResult>,
+  gitCredentialStore?: GitCredentialStore | null,
+): Promise<GitAuthStatus> => {
   const helperRes = await runGit(['config', '--global', '--get', 'credential.helper']);
   const remoteRes = await runGit(['remote', 'get-url', 'origin']);
   const helper = helperRes.ok ? helperRes.stdout.trim() : '';
   const remoteAuthMode = detectRemoteAuthMode(remoteRes.ok ? remoteRes.stdout.trim() : '');
-  const envToken = String(process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? '').trim();
-  const envUsername = String(process.env.GITHUB_USER ?? process.env.GH_USER ?? '').trim();
+  const { credentials, source } = await resolveGithubCredentials(gitCredentialStore);
   return {
     helper,
     helperConfigured: Boolean(helper) && helper !== 'store',
-    hasGithubCredentials: Boolean(envToken) || remoteAuthMode === 'ssh',
-    savedUsername: envUsername,
-    credentialsPath: '',
+    hasGithubCredentials: Boolean(credentials) || remoteAuthMode === 'ssh',
+    savedUsername: credentials?.username ?? '',
+    credentialsPath: source === 'stored' ? gitCredentialStore?.getCredentialsPath() ?? '' : '',
     remoteAuthMode,
   };
 };

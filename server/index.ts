@@ -5,6 +5,7 @@ import { createFileLogger } from './file-logger';
 import {
   autoStashRuntimeNoise,
   createCommandRunners,
+  createGitCredentialStore,
   getGitAuthStatus,
   getGitUpdateStatus,
 } from './git-utils';
@@ -211,7 +212,8 @@ if (app && Array.isArray(app.middleware)) {
   router.use(cacheControlMiddleware);
 }
 const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });
-const { runGit, runShellCommand, spawnDetachedShell } = createCommandRunners(repoDir);
+const gitCredentialStore = createGitCredentialStore(repoDir);
+const { runGit, runShellCommand, spawnDetachedShell } = createCommandRunners(repoDir, gitCredentialStore);
 
 void (async () => {
   await flatFileMatchDb.connect?.();
@@ -383,7 +385,15 @@ void (async () => {
       logLine,
       JSON_BODY_LIMIT,
       getGitUpdateStatus,
-      getGitAuthStatus,
+      getGitAuthStatus: () => getGitAuthStatus(runGit, gitCredentialStore),
+      saveGitAuthCredentials: async ({ username, token }) => {
+        await gitCredentialStore.save({ username, token });
+        return getGitAuthStatus(runGit, gitCredentialStore);
+      },
+      clearGitAuthCredentials: async () => {
+        await gitCredentialStore.clear();
+        return getGitAuthStatus(runGit, gitCredentialStore);
+      },
       autoStashRuntimeNoise,
       runGit,
       runShellCommand,

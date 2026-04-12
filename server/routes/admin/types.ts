@@ -60,7 +60,9 @@ export type AdminRoutesDeps = {
   logLine: LogLine;
   JSON_BODY_LIMIT: number;
   getGitUpdateStatus: (runGit: RunGit) => Promise<GitUpdateStatusResult>;
-  getGitAuthStatus: (runGit: RunGit) => Promise<GitAuthStatus>;
+  getGitAuthStatus: () => Promise<GitAuthStatus>;
+  saveGitAuthCredentials: (args: { username: string; token: string }) => Promise<GitAuthStatus>;
+  clearGitAuthCredentials: () => Promise<GitAuthStatus>;
   autoStashRuntimeNoise: (args: {
     status: { ignoredRuntimeDirtyFiles?: string[] };
     runGit: RunGit;

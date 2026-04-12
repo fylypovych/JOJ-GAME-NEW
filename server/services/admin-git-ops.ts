@@ -39,7 +39,9 @@ type GitOpDeps = {
   logLine: LogLine;
   JSON_BODY_LIMIT: number;
   getGitUpdateStatus: (runGit: RunGit) => Promise<GitUpdateStatusResult>;
-  getGitAuthStatus: (runGit: RunGit) => Promise<GitAuthStatus>;
+  getGitAuthStatus: () => Promise<GitAuthStatus>;
+  saveGitAuthCredentials: (args: { username: string; token: string }) => Promise<GitAuthStatus>;
+  clearGitAuthCredentials: () => Promise<GitAuthStatus>;
   autoStashRuntimeNoise: (args: { status: { ignoredRuntimeDirtyFiles?: string[] }; runGit: RunGit; logLine: LogLine }) => Promise<{ ok: boolean; error?: string }>;
   runGit: RunGit;
   runShellCommand: RunShellCommand;
@@ -93,6 +95,8 @@ export const registerAdminGitRoutes = ({
   JSON_BODY_LIMIT,
   getGitUpdateStatus,
   getGitAuthStatus,
+  saveGitAuthCredentials,
+  clearGitAuthCredentials,
   autoStashRuntimeNoise,
   runGit,
   runShellCommand,
@@ -115,7 +119,7 @@ export const registerAdminGitRoutes = ({
     if (!(await requireAdminAuth(ctx, '/api/admin/git/auth-status'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-git-auth-status', 20, 60_000))) return;
     try {
-      routeOk(ctx, await getGitAuthStatus(runGit));
+      routeOk(ctx, await getGitAuthStatus());
     } catch (error) {
       const details = String(error instanceof Error ? error.message : error);
       await logLine('ERROR', `git auth status failed: ${details}`);
@@ -128,8 +132,36 @@ export const registerAdminGitRoutes = ({
     if (!(await enforceRateLimit(ctx, 'admin-git-auth-configure', 10, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/git/auth-configure', maxBytes: JSON_BODY_LIMIT, logLine });
     if (!body) return;
-    await logLine('WARN', 'admin attempted to configure git credentials via API; operation is disabled');
-    routeError(ctx, 410, 'Server-side Git credential persistence is disabled. Use SSH auth or env-based token injection.');
+    const action = String(body.action ?? '').trim();
+    if (action === 'save') {
+      const username = String(body.username ?? '').trim();
+      const token = String(body.token ?? '').trim();
+      if (!username || !token) {
+        routeError(ctx, 400, 'GitHub username and token are required.');
+        return;
+      }
+      try {
+        const status = await saveGitAuthCredentials({ username, token });
+        routeOk(ctx, { message: 'GitHub credentials saved', status });
+      } catch (error) {
+        const details = String(error instanceof Error ? error.message : error);
+        await logLine('ERROR', `git auth save failed: ${details}`);
+        routeError(ctx, 500, 'Failed to save GitHub credentials', { details });
+      }
+      return;
+    }
+    if (action === 'clear') {
+      try {
+        const status = await clearGitAuthCredentials();
+        routeOk(ctx, { message: 'GitHub credentials cleared', status });
+      } catch (error) {
+        const details = String(error instanceof Error ? error.message : error);
+        await logLine('ERROR', `git auth clear failed: ${details}`);
+        routeError(ctx, 500, 'Failed to clear GitHub credentials', { details });
+      }
+      return;
+    }
+    routeError(ctx, 400, 'Unsupported GitHub auth action');
   });
 
   router.post('/api/admin/restart', async (ctx: RouteCtx) => {

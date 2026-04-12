@@ -99,10 +99,10 @@ test('getVvnzPlayBlockedReason reports target rank not higher', () => {
   assert.match(reason ?? '', /вже не нижче/);
 });
 
-test('getVvnzPlayBlockedReason checks requirements plus any two resources', () => {
+test('getVvnzPlayBlockedReason allows VVNZ without target rank requirements when payment is available', () => {
   const G = makeState({
     resources: {
-      '0': { time: 0, reputation: 7, discipline: 5, documents: 0, tech: 2 },
+      '0': { time: 0, reputation: 0, discipline: 0, documents: 0, tech: 2 },
       '1': { time: 2, reputation: 2, discipline: 2, documents: 0, tech: 0 },
     },
   });
@@ -178,7 +178,7 @@ test('getPromoteActionState exposes next rank and allowed flag', () => {
   assert.equal(state.nextRank?.id, 'soldier');
 });
 
-test('getHandCardActionState reflects VVNZ restrictions and generic stage blocks', () => {
+test('getHandCardActionState reflects generic stage blocks and VVNZ any-resource validation', () => {
   const G = makeState();
   const genericBlocked = getHandCardActionState({
     card: { id: 'support-1', title: 'Support', category: 'SUPPORT', effects: [] },
@@ -201,6 +201,6 @@ test('getHandCardActionState reflects VVNZ restrictions and generic stage blocks
     canPlayHandCard: true,
     lang: 'uk',
   });
-  assert.equal(vvnzBlocked.allowed, false);
+  assert.equal(vvnzBlocked.allowed, true);
   assert.equal(vvnzBlocked.behavior, 'vvnz');
 });

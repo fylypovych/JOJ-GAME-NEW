@@ -196,9 +196,6 @@ export const handleVvnzPlay = (args: {
     .length;
   if (occupied >= rankSeatLimitForRank(playerCount, targetRank.id, ranks as never)) return invalidMove();
   const playerResources = moveArgs.G.resources[playerID];
-  const meetsRequirements = Object.entries(targetRank.requirement ?? {})
-    .every(([key, amount]) => (playerResources[key as ResourceKey] ?? 0) >= (amount ?? 0));
-  if (!meetsRequirements) return invalidMove();
   if (!canAffordVvnzCost(playerResources)) return invalidMove();
   const payment = replacementResources.length > 0 ? replacementResources : (selectVvnzPaymentResources(playerResources) ?? []);
   if (!isValidVvnzPayment(playerResources, payment)) return invalidMove();
@@ -209,6 +206,8 @@ export const handleVvnzPlay = (args: {
   d.clampNonNegativeResources(playerResources);
   moveArgs.G.ranks[playerID] = targetRank.id;
   moveArgs.G.promotedThisTurn[playerID] = true;
+  if (!moveArgs.G.skippedTurnCounts) moveArgs.G.skippedTurnCounts = {};
+  moveArgs.G.skippedTurnCounts[playerID] = (moveArgs.G.skippedTurnCounts[playerID] ?? 0) + 1;
   d.syncPlayerState(moveArgs.G, playerID);
   try {
     const summary = summarizeCardEffectForPlayer(d, moveArgs.G, playerID, card, []);

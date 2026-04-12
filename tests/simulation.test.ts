@@ -341,6 +341,7 @@ const comparableState = (G: JojGameState) => ({
   legendaryDiscard: G.legendaryDiscard.map((card) => card.id),
   players: G.players,
   extraHandPlayTokens: G.extraHandPlayTokens,
+  skippedTurnCounts: G.skippedTurnCounts,
 });
 
 test('simulation hand SUPPORT execution stays in parity with live handler', () => {

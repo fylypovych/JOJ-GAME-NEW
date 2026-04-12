@@ -544,10 +544,6 @@ const tryExecuteHandPlanSim = (args: {
         .filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id)
         .length;
       if (occupied >= rankSeatLimitForRank(numPlayers, targetRank.id, ranks as never)) return false;
-      const requirements = (targetRank as { requirement?: Partial<Record<ResourceKey, number>> }).requirement ?? {};
-      const meetsRequirements = Object.entries(requirements)
-        .every(([key, amount]) => (G.resources[playerID][key as ResourceKey] ?? 0) >= (amount ?? 0));
-      if (!meetsRequirements) return false;
       if (!canAffordVvnzCost(G.resources[playerID])) return false;
       const payment = plan.replacementResources ?? selectVvnzPaymentResources(G.resources[playerID]);
       if (!payment || !isValidVvnzPayment(G.resources[playerID], payment)) return false;
@@ -557,6 +553,8 @@ const tryExecuteHandPlanSim = (args: {
       });
       G.ranks[playerID] = targetRank.id;
       G.promotedThisTurn[playerID] = true;
+      if (!G.skippedTurnCounts) G.skippedTurnCounts = {};
+      G.skippedTurnCounts[playerID] = (G.skippedTurnCounts[playerID] ?? 0) + 1;
       const ok = deps.applyCardEffects(G, playerID, card.effects, []);
       if (!ok) return false;
       deps.syncPlayerState(G, playerID);

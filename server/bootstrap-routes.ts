@@ -9,7 +9,6 @@ import { registerUploadRoutes } from './routes/uploads';
 import {
   autoStashRuntimeNoise,
   createCommandRunners,
-  getGitAuthStatus,
   getGitUpdateStatus,
 } from './git-utils';
 import { createAdminAuditLogger } from './services/admin-audit';
@@ -36,7 +35,9 @@ export type RouteBootstrapDeps = {
   bugReportStore: ReturnType<typeof import('./services/bug-report-store').createBugReportStore>;
   isAdminAuthEnabled: boolean;
   getGitUpdateStatus: typeof getGitUpdateStatus;
-  getGitAuthStatus: typeof getGitAuthStatus;
+  getGitAuthStatus: () => Promise<import('./routes/admin/types').GitAuthStatus>;
+  saveGitAuthCredentials: (args: { username: string; token: string }) => Promise<import('./routes/admin/types').GitAuthStatus>;
+  clearGitAuthCredentials: () => Promise<import('./routes/admin/types').GitAuthStatus>;
   autoStashRuntimeNoise: typeof autoStashRuntimeNoise;
   runGit: ReturnType<typeof createCommandRunners>['runGit'];
   runShellCommand: ReturnType<typeof createCommandRunners>['runShellCommand'];
@@ -62,6 +63,8 @@ export const bootstrapRoutes = async (deps: RouteBootstrapDeps) => {
     isAdminAuthEnabled,
     getGitUpdateStatus,
     getGitAuthStatus,
+    saveGitAuthCredentials,
+    clearGitAuthCredentials,
     autoStashRuntimeNoise,
     runGit,
     runShellCommand,
@@ -109,6 +112,8 @@ export const bootstrapRoutes = async (deps: RouteBootstrapDeps) => {
     JSON_BODY_LIMIT,
     getGitUpdateStatus,
     getGitAuthStatus,
+    saveGitAuthCredentials,
+    clearGitAuthCredentials,
     autoStashRuntimeNoise,
     runGit,
     runShellCommand,

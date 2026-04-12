@@ -92,7 +92,7 @@ export const getVvnzPlayBlockedReason = (args: {
   lang?: 'uk' | 'en';
   translator?: ActionTranslator;
 }): string | null => {
-  const { card, G, playerID, ranks, resourceLabels, translator } = args;
+  const { card, G, playerID, ranks, translator } = args;
   const t = translator ?? defaultTranslator;
   if (card.category !== 'VVNZ') return null;
   if (G.promotedThisTurn?.[playerID]) {
@@ -111,10 +111,6 @@ export const getVvnzPlayBlockedReason = (args: {
   }
   if (targetIdx <= currentIdx) {
     return t(actionValidationKeys.vvnz.rankNotLower, { rankName: targetRank.name });
-  }
-  const missingReq = getMissingResourceParts(targetRank.requirement, row, resourceLabels);
-  if (missingReq.length > 0) {
-    return t(actionValidationKeys.vvnz.missingRequirements, { rankName: targetRank.name, missing: missingReq.join(', ') });
   }
   const availableUnits = countAvailableResources(row);
   if (availableUnits < VVNZ_PLAY_COST) {

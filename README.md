@@ -305,6 +305,14 @@ Admin API:
 npm run setup:git-hooks
 ```
 
+Автоматична синхронізація під час білду:
+
+```bash
+npm run build
+```
+
+`prebuild` автоматично підтягує `package.json` і `package-lock.json` під версію з останнього `HEAD` commit message, якщо в ньому є маркер `v=...`.
+
 Явна синхронізація:
 
 ```bash

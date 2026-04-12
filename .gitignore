@@ -15,4 +15,5 @@ pnpm-debug.log*
 /database/bug-report-images/
 .env.save
 /database/admin-db-ui-config.json
+/database/.admin-git-credentials.json
 /.continue
