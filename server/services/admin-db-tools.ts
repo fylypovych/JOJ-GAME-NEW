@@ -390,7 +390,7 @@ export const registerAdminDbToolRoutes = ({
 
     const result = await runDbCommand(
       'pg_dump',
-      ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database, '--no-owner', '--no-privileges'],
+      ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database, '--no-owner', '--no-privileges', '--inserts'],
       parsed,
       30_000,
     );
