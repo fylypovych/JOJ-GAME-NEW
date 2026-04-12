@@ -130,8 +130,8 @@ export const AdminDatabaseTab = ({
           <button type="button" onClick={() => void onImportDbSchema()} disabled={dbImportSchemaRunning}>
             {dbImportSchemaRunning ? t.dbImportSchemaRunning : t.dbImportSchema}
           </button>
-          <button type="button" onClick={() => void onExportDbSchema()} disabled={dbExportSchemaRunning}>
-            {dbExportSchemaRunning ? t.dbExportSchemaRunning : t.dbExportSchema}
+          <button type="button" onClick={() => void onExportDbBackup()} disabled={dbExportBackupRunning}>
+            {dbExportBackupRunning ? t.dbExportBackupRunning : t.dbExportSchema}
           </button>
         </p>
         {dbImportJsonConfigStatus ? <p className="admin-success">{dbImportJsonConfigStatus}</p> : null}
