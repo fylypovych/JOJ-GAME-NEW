@@ -1,6 +1,7 @@
 import { isCommandCategory } from '../cardRules';
 import type { CardDefinition, JojGameState, ResourceKey } from '../types';
 import type { BotDifficulty, BotProfile } from '../types';
+import { selectVvnzPaymentResources } from '../vvnzCost';
 
 export type BotPlan =
   | { kind: 'promote'; score: number }
@@ -109,9 +110,11 @@ const buildCardPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string,
     }
     if (card.category === 'VVNZ') {
       const rankBoost = card.grantRank ? Math.max(0, getRankIndex(deps, card.grantRank) - currentRankIndex) : 0;
+      const replacementResources = selectVvnzPaymentResources(G.resources[playerID]) ?? [];
       return [{
         kind: 'play-card',
         cardId: card.id,
+        replacementResources,
         score: baseScore + rankBoost * (difficulty === 'hard' ? 30 : 18) + 12 + profileAdjustments.aggressiveRankBonus,
       }];
     }

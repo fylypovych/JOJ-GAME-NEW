@@ -4,6 +4,8 @@ import { getCardPlayBehavior } from '../cardRules';
 import { appendAppliedEffectLog } from '../effectLog';
 import { applyLegendaryCardEffects } from './legendaryHandlers';
 import { summarizeCardEffectForPlayer } from './runtimeHelpers';
+import { rankSeatLimitForRank } from '../rankEngine';
+import { canAffordVvnzCost, isValidVvnzPayment, selectVvnzPaymentResources, spendVvnzPayment } from '../vvnzCost';
 
 export const handleLyapPlay = (args: {
   d: JojMovesDeps;
@@ -175,14 +177,39 @@ export const handleVvnzPlay = (args: {
   moveArgs: MoveArgs;
   playerID: string;
   card: CardDefinition;
+  replacementResources: ResourceKey[];
   invalidMove: () => 'INVALID_MOVE';
 }) => {
-  const { d, moveArgs, playerID, card, invalidMove } = args;
+  const { d, moveArgs, playerID, card, replacementResources, invalidMove } = args;
   if (moveArgs.G.promotedThisTurn?.[playerID]) return invalidMove();
+  const ranks = d.getActiveRanks();
+  const currentRankId = moveArgs.G.ranks[playerID];
+  const currentRankIdx = Math.max(0, ranks.findIndex((rank) => rank.id === currentRankId));
+  const targetRankIdx = ranks.findIndex((rank) => rank.id === card.grantRank);
+  if (targetRankIdx <= currentRankIdx) return invalidMove();
+  const targetRank = ranks[targetRankIdx];
+  if (!targetRank) return invalidMove();
   const beforeRankId = moveArgs.G.ranks[playerID];
   const playerCount = Object.keys(moveArgs.G.players).length || Number(moveArgs.ctx.numPlayers ?? 0) || 2;
-  const promoted = d.promoteToSpecificRank(moveArgs.G, playerID, card.grantRank!, playerCount);
-  if (!promoted.ok) return invalidMove();
+  const occupied = Object.entries(moveArgs.G.ranks)
+    .filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id)
+    .length;
+  if (occupied >= rankSeatLimitForRank(playerCount, targetRank.id, ranks as never)) return invalidMove();
+  const playerResources = moveArgs.G.resources[playerID];
+  const meetsRequirements = Object.entries(targetRank.requirement ?? {})
+    .every(([key, amount]) => (playerResources[key as ResourceKey] ?? 0) >= (amount ?? 0));
+  if (!meetsRequirements) return invalidMove();
+  if (!canAffordVvnzCost(playerResources)) return invalidMove();
+  const payment = replacementResources.length > 0 ? replacementResources : (selectVvnzPaymentResources(playerResources) ?? []);
+  if (!isValidVvnzPayment(playerResources, payment)) return invalidMove();
+  spendVvnzPayment(playerResources, payment);
+  Object.entries(targetRank.bonus ?? {}).forEach(([key, amount]) => {
+    playerResources[key as ResourceKey] = (playerResources[key as ResourceKey] ?? 0) + (amount ?? 0);
+  });
+  d.clampNonNegativeResources(playerResources);
+  moveArgs.G.ranks[playerID] = targetRank.id;
+  moveArgs.G.promotedThisTurn[playerID] = true;
+  d.syncPlayerState(moveArgs.G, playerID);
   try {
     const summary = summarizeCardEffectForPlayer(d, moveArgs.G, playerID, card, []);
     if (!summary) return invalidMove();
@@ -196,8 +223,8 @@ export const handleVvnzPlay = (args: {
         card,
         beforeRankId,
         afterRankId,
-        promoted.rank?.cost ?? {},
-        promoted.rank?.bonus ?? {},
+        Object.fromEntries(payment.map((key) => [key, ((payment.filter((item) => item === key).length))])),
+        targetRank.bonus ?? {},
         summary,
       ),
     });
@@ -291,6 +318,7 @@ export const executeHandCardByBehavior = (args: {
         moveArgs: args.moveArgs,
         playerID: args.playerID,
         card: args.card,
+        replacementResources: args.replacementResources,
         invalidMove: args.invalidMove,
       });
     case 'legendary':

@@ -99,10 +99,10 @@ test('getVvnzPlayBlockedReason reports target rank not higher', () => {
   assert.match(reason ?? '', /вже не нижче/);
 });
 
-test('getVvnzPlayBlockedReason checks only target rank resources', () => {
+test('getVvnzPlayBlockedReason checks requirements plus any two resources', () => {
   const G = makeState({
     resources: {
-      '0': { time: 2, reputation: 7, discipline: 5, documents: 0, tech: 0 },
+      '0': { time: 0, reputation: 7, discipline: 5, documents: 0, tech: 2 },
       '1': { time: 2, reputation: 2, discipline: 2, documents: 0, tech: 0 },
     },
   });
@@ -115,6 +115,28 @@ test('getVvnzPlayBlockedReason checks only target rank resources', () => {
     lang: 'uk',
   });
   assert.equal(reason, null);
+});
+
+test('getVvnzPlayBlockedReason reports missing any-resource payment', () => {
+  const cheapRanks: RankDefinition[] = [
+    { id: 'recruit', name: 'Рекрут', requirement: {}, cost: {}, bonus: {} },
+    { id: 'soldier', name: 'Солдат', requirement: {}, cost: { time: 1 }, bonus: {} },
+  ];
+  const G = makeState({
+    resources: {
+      '0': { time: 1, reputation: 0, discipline: 0, documents: 0, tech: 0 },
+      '1': { time: 2, reputation: 2, discipline: 2, documents: 0, tech: 0 },
+    },
+  });
+  const reason = getVvnzPlayBlockedReason({
+    card: { category: 'VVNZ', grantRank: 'soldier' },
+    G,
+    playerID: '0',
+    ranks: cheapRanks,
+    resourceLabels: labels,
+    lang: 'uk',
+  });
+  assert.match(reason ?? '', /будь-які ресурси/i);
 });
 
 test('getVvnzPlayBlockedReason blocks VVNZ after any promotion already happened this turn', () => {

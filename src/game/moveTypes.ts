@@ -1,4 +1,4 @@
-import type { CardDefinition, JojGameState, ResourceKey } from './types';
+import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from './types';
 import type { legendaryTexts as LegendaryTexts } from './systemMessages';
 
 export type MoveCtx = {
@@ -135,5 +135,5 @@ export type JojMovesDeps = {
     playerCount: number,
   ) => { ok: true; fromRankId: string; toRankId: string } | { ok: false; reason: string };
   promoteRank: (G: JojGameState, playerID: string, playerCount: number) => boolean;
-  getActiveRanks: () => Array<{ id: string; cost?: Partial<Record<ResourceKey, number>>; bonus?: Partial<Record<ResourceKey, number>> }>;
+  getActiveRanks: () => RankDefinition[];
 };

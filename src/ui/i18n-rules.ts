@@ -1,4 +1,4 @@
-export type RulesPageContent = {
+﻿export type RulesPageContent = {
   heroKicker: string;
   heroTitle: string;
   heroDescription: string;
@@ -43,6 +43,7 @@ export const rulesListUk = [
   'Карти категорій Ляп і Скандал скидати добровільно не можна.',
   'Підвищення відбувається лише на наступне звання і максимум один раз за хід.',
   'Для підвищення треба виконати вимоги звання і сплатити його вартість; правило «2 за 1» тут не працює.',
+  'Карта ВВНЗ вимагає виконати вимоги цільового звання, сплатити 2 будь-які ресурси та після цього одразу дає бонус нового звання.',
   'На кожному званні є ліміт місць; якщо місць немає, підвищення заблоковане.',
   'Перемога настає одразу після отримання звання Генерал або після завершення колоди за тайбрейками.',
 ] as const;
@@ -58,6 +59,7 @@ export const rulesListEn = [
   'LYAP and SCANDAL cards cannot be chosen as voluntary discard.',
   'Promotion is sequential only and at most once per turn.',
   'Promotion requires both rank thresholds and promotion cost; the “2 for 1” replacement rule does not apply there.',
+  'A VVNZ card requires the target rank requirements, costs any 2 resources to play, and still grants that rank bonus immediately.',
   'Each rank has a seat limit, so promotion can be blocked if all slots are occupied.',
   'You win immediately by reaching General, or by tie-breakers after deck exhaustion.',
 ] as const;
@@ -104,7 +106,7 @@ export const rulesPageUk: RulesPageContent = {
     { title: 'Скандал', description: 'З добору б’є по всіх. З руки — по всіх, крім того, хто його зіграв.' },
     { title: 'Підтримка', description: 'Працює лише на гравця, який її зіграв, і допомагає підтягнути ресурси або темп.' },
     { title: 'Рішення командування', description: 'Глобальний ефект, який впливає на всіх учасників за столом.' },
-    { title: 'ВВНЗ', description: 'Працює на того, хто її зіграв, і пов’язана з отриманням або просуванням у званнях.' },
+    { title: 'ВВНЗ', description: 'Працює на того, хто її зіграв: треба виконати вимоги цільового звання, сплатити 2 будь-які ресурси, отримати звання і його бонус.' },
     { title: 'Легендарна карта', description: 'Дає сильну ситуативну перевагу. У більшості випадків діє на того, хто її зіграв, але окремі карти мають спеціальні умови.' },
   ],
   promotionTitle: 'Підвищення і кар’єрна драбина',
@@ -113,6 +115,7 @@ export const rulesPageUk: RulesPageContent = {
     'За один хід можна отримати максимум одне звання.',
     'Для переходу потрібно одночасно виконати вимоги звання та сплатити його вартість.',
     'Після підвищення ви одразу отримуєте бонус звання, вказаний у його параметрах.',
+    'Карта ВВНЗ не використовує звичайну вартість переходу: замість цього вона коштує 2 будь-які ресурси, але все одно вимагає виконати вимоги цільового звання.',
     'Правило заміни ресурсу «2 за 1» можна застосовувати для карт, але не для підвищення звання.',
     'На кожному званні є обмеження на кількість місць, тому інколи доводиться чекати або шукати інший шлях.',
   ],
@@ -184,7 +187,7 @@ export const rulesPageEn: RulesPageContent = {
     { title: 'SCANDAL', description: 'When drawn it affects everyone. From hand it affects everyone except the source player.' },
     { title: 'SUPPORT', description: 'Only affects the player who played it and helps rebuild tempo or resources.' },
     { title: 'COMMAND', description: 'A global effect that applies to every player at the table.' },
-    { title: 'VVNZ', description: 'Applies to the source player and is tied to rank gains or progression.' },
+    { title: 'VVNZ', description: 'Applies to the source player: you must meet the target rank requirements, pay any 2 resources, then gain the rank and its bonus.' },
     { title: 'LEGENDARY', description: 'Provides a strong situational advantage. Most affect the player who played them, with some special exceptions.' },
   ],
   promotionTitle: 'Promotion and rank ladder',
@@ -193,6 +196,7 @@ export const rulesPageEn: RulesPageContent = {
     'You can gain at most one rank per turn.',
     'To promote, you must meet the rank requirements and pay the promotion cost.',
     'After promotion, you immediately gain that rank’s bonus.',
+    'A VVNZ card does not use the normal promotion cost: instead it costs any 2 resources, but the target rank requirements still apply.',
     'The “2 for 1” resource substitution rule may help with card play, but not with rank promotion.',
     'Each rank has a seat limit, so a promotion can be blocked if all available slots are occupied.',
   ],
@@ -221,3 +225,4 @@ export const rulesPageEn: RulesPageContent = {
   quickRulesTitle: 'Quick reference',
   quickRulesIntro: 'If you want the short version before jumping into a match, these are the essentials:',
 };
+

@@ -21,6 +21,7 @@ export const actionValidationKeys = {
     missingRequirements: 'vvnz.missingRequirements',
     missingCost: 'vvnz.missingCost',
     noFreeSeat: 'vvnz.noFreeSeat',
+    anyResourcesLabel: 'vvnz.anyResourcesLabel',
   },
   handCard: {
     notYourTurn: 'handCard.notYourTurn',
@@ -56,6 +57,10 @@ const ukTranslations: Record<string, string> = {
   [actionValidationKeys.vvnz.resourcesNotLoaded]: 'Стан ресурсів ще не завантажено.',
   [actionValidationKeys.vvnz.unknownTargetRank]: 'Невідоме цільове звання: {rankId}',
   [actionValidationKeys.vvnz.rankNotLower]: 'Карта дає звання «{rankName}», але ваше поточне звання вже не нижче.',
+  [actionValidationKeys.vvnz.missingRequirements]: 'Для карти ВВНЗ до «{rankName}» бракує вимог: {missing}',
+  [actionValidationKeys.vvnz.missingCost]: 'Для карти ВВНЗ до «{rankName}» бракує вартості: {missing}',
+  [actionValidationKeys.vvnz.noFreeSeat]: 'Немає вільного місця на званні «{rankName}» (ліміт: {seatLimit})',
+  [actionValidationKeys.vvnz.anyResourcesLabel]: 'будь-які ресурси',
   [actionValidationKeys.handCard.cannotPlayNow]: 'Цю карту зараз не можна розіграти.',
 };
 

@@ -7,6 +7,8 @@ import { calculateSimulationTurnLimit, createSimulationState } from './simulatio
 import type { SharedGameSetup } from './sharedConfig';
 import { buildBotPlans, type BotPlan } from './bot-engine/planner';
 import { executeBestBotPlan, executeBotPlanSequence } from './bot-engine/execution';
+import { canAffordVvnzCost, isValidVvnzPayment, selectVvnzPaymentResources, spendVvnzPayment } from './vvnzCost';
+import { rankSeatLimitForRank } from './rankEngine';
 
 export type SimulationReport = {
   input: {
@@ -532,8 +534,29 @@ const tryExecuteHandPlanSim = (args: {
     if (!played) return false;
   } else if (behavior === 'vvnz') {
     const played = runSimulationTransaction(G, () => {
-      const promoted = deps.promoteToSpecificRank(G, playerID, card.grantRank as string, numPlayers);
-      if (!promoted.ok) return false;
+      const ranks = deps.getActiveRanks();
+      const currentRankIdx = Math.max(0, ranks.findIndex((rank) => rank.id === G.ranks[playerID]));
+      const targetRankIdx = ranks.findIndex((rank) => rank.id === (card.grantRank as string));
+      if (targetRankIdx <= currentRankIdx) return false;
+      const targetRank = ranks[targetRankIdx];
+      if (!targetRank) return false;
+      const occupied = Object.entries(G.ranks)
+        .filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id)
+        .length;
+      if (occupied >= rankSeatLimitForRank(numPlayers, targetRank.id, ranks as never)) return false;
+      const requirements = (targetRank as { requirement?: Partial<Record<ResourceKey, number>> }).requirement ?? {};
+      const meetsRequirements = Object.entries(requirements)
+        .every(([key, amount]) => (G.resources[playerID][key as ResourceKey] ?? 0) >= (amount ?? 0));
+      if (!meetsRequirements) return false;
+      if (!canAffordVvnzCost(G.resources[playerID])) return false;
+      const payment = plan.replacementResources ?? selectVvnzPaymentResources(G.resources[playerID]);
+      if (!payment || !isValidVvnzPayment(G.resources[playerID], payment)) return false;
+      spendVvnzPayment(G.resources[playerID], payment);
+      Object.entries((targetRank as { bonus?: Partial<Record<ResourceKey, number>> }).bonus ?? {}).forEach(([key, amount]) => {
+        G.resources[playerID][key as ResourceKey] = (G.resources[playerID][key as ResourceKey] ?? 0) + (amount ?? 0);
+      });
+      G.ranks[playerID] = targetRank.id;
+      G.promotedThisTurn[playerID] = true;
       const ok = deps.applyCardEffects(G, playerID, card.effects, []);
       if (!ok) return false;
       deps.syncPlayerState(G, playerID);

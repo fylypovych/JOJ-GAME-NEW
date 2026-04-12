@@ -348,6 +348,8 @@ test('playCardHandler rolls back command soft effects when self-resolution fails
 
 test('playCardHandler rolls back VVNZ promotion when effects fail', () => {
   const G = makeState();
+  G.resources['0'] = { time: 1, reputation: 1, discipline: 1, documents: 1, tech: 1 };
+  G.players['0'].resources = { ...G.resources['0'] };
   G.hands['0'] = [
     {
       id: 'vvnz-play',
@@ -370,10 +372,8 @@ test('playCardHandler rolls back VVNZ promotion when effects fail', () => {
     events: { setStage: () => undefined },
   };
   const deps = makeDeps({
-    promoteToSpecificRank: (state: JojGameState, playerID: string) => {
-      state.ranks[playerID] = 'soldier';
-      return { ok: true, rank: { cost: {}, bonus: {} } };
-    },
+    getActiveRanks: () =>
+      [{ id: 'recruit', requirement: {}, cost: {}, bonus: {} }, { id: 'soldier', requirement: {}, cost: {}, bonus: {} }] as never,
     applyCardEffects: () => false,
     snapshotResourcesForStats: () => ({
       '0': { ...G.resources['0'] },
@@ -795,10 +795,8 @@ test('playCardHandler rejects VVNZ when player already received promotion this t
 
   const result = playCardHandler(
     makeDeps({
-      promoteToSpecificRank: () => ({
-        ok: true,
-        rank: { cost: {}, bonus: {} },
-      }),
+      getActiveRanks: () =>
+        [{ id: 'recruit', requirement: {}, cost: {}, bonus: {} }, { id: 'soldier', requirement: {}, cost: {}, bonus: {} }] as never,
       applyCardEffects: () => true,
     }),
     args,
@@ -808,6 +806,58 @@ test('playCardHandler rejects VVNZ when player already received promotion this t
   assert.equal(result, 'INVALID_MOVE');
   assert.equal(G.hands['0'].length, 1);
   assert.equal(G.discard.length, 0);
+});
+
+test('playCardHandler applies VVNZ with any two resources and grants rank bonus', () => {
+  const G = makeState();
+  G.resources['0'] = { time: 0, reputation: 1, discipline: 2, documents: 1, tech: 0 };
+  G.players['0'].resources = { ...G.resources['0'] };
+  G.hands['0'] = [
+    {
+      id: 'vvnz-pay',
+      title: 'VVNZ',
+      category: 'VVNZ',
+      grantRank: 'soldier',
+      effects: [],
+    },
+  ];
+  G.players['0'].hand = G.hands['0'];
+  const args: MoveArgs = {
+    G,
+    ctx: {
+      currentPlayer: '0',
+      activePlayers: { '0': 'play' },
+      turn: 1,
+      numPlayers: 2,
+    },
+    playerID: '0',
+    events: { setStage: () => undefined },
+  };
+
+  const result = playCardHandler(
+    makeDeps({
+      getActiveRanks: () =>
+        [
+          { id: 'recruit', requirement: {}, cost: {}, bonus: {} },
+          { id: 'soldier', requirement: {}, cost: {}, bonus: { discipline: 1 } },
+        ] as never,
+      applyCardEffects: () => true,
+      snapshotResourcesForStats: () => ({
+        '0': { ...G.resources['0'] },
+        '1': { ...G.resources['1'] },
+      }),
+    }),
+    args,
+    'vvnz-pay',
+    ['documents', 'reputation'],
+  );
+
+  assert.equal(result, undefined);
+  assert.equal(G.ranks['0'], 'soldier');
+  assert.equal(G.resources['0'].reputation, 0);
+  assert.equal(G.resources['0'].documents, 0);
+  assert.equal(G.resources['0'].discipline, 3);
+  assert.equal(G.discard.at(-1)?.id, 'vvnz-pay');
 });
 
 test('playCardHandler keeps current turn active when played card causes future skip', () => {
