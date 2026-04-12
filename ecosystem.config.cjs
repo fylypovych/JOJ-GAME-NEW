@@ -40,6 +40,9 @@ module.exports = {
       cwd: __dirname,
       env: {
         NODE_ENV: 'production',
+        DATABASE_URL: String(envValue('DATABASE_URL', '')),
+        ADMIN_TOKEN: String(envValue('ADMIN_TOKEN', '')),
+        TRUST_PROXY: String(envValue('TRUST_PROXY', 'loopback, linklocal, uniquelocal')),
         PORT: String(envValue('PORT', '8000')),
         FRONTEND_ORIGIN: String(envValue('FRONTEND_ORIGIN', 'http://localhost:5173')),
       },
