@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { CardDefinition } from '../../game/types';
 import type { GalleryCategoryFilter } from './model';
+import { normalizeImagePath } from '../../game/imagePaths';
 
 export interface UseGalleryDataArgs {
   cardCatalog: CardDefinition[];
@@ -47,7 +48,8 @@ export const useGalleryData = (args: UseGalleryDataArgs): UseGalleryDataResult =
   const cardImageById = useMemo<Record<string, string>>(
     () =>
       cardCatalog.reduce<Record<string, string>>((acc, card) => {
-        if (typeof card.image === 'string' && card.image.trim()) acc[card.id] = card.image;
+        const normalized = normalizeImagePath(card.image);
+        if (normalized) acc[card.id] = normalized;
         return acc;
       }, {}),
     [cardCatalog],

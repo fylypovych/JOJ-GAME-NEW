@@ -2,6 +2,7 @@ import type { Dispatch, RefObject, SetStateAction } from 'react';
 import { HoverImage } from './HoverImage';
 import type { CropDraft } from './types';
 import type { CardCategory, CardDefinition, EffectResource } from '../../game/types';
+import { normalizeImagePath } from '../../game/imagePaths';
 
 export const AdminInlineEditor = (props: {
   t: ReturnType<typeof import('../i18n').text>;
@@ -100,7 +101,7 @@ export const AdminInlineEditor = (props: {
         {editCard.image ? (
           <label>{t.fieldImagePreview}
             <HoverImage
-              src={withCacheBust(editCard.image)}
+              src={withCacheBust(normalizeImagePath(editCard.image))}
               className="admin-thumb"
               alt={t.fieldImagePreview}
               onLoad={(e) => {

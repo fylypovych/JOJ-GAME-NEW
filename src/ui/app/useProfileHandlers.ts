@@ -103,6 +103,7 @@ export const useProfileHandlers = (args: UseProfileHandlersArgs): UseProfileHand
       .then(() => {
         setPlayerName((prev) => prev.trim() ? prev : loginDraft.login.trim());
         setAuthErrorModal('');
+        setUserError('');
         setProfileNotice(t.userLoginSuccess);
       })
       .catch((error) => {
