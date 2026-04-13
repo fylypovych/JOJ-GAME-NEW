@@ -183,10 +183,22 @@ export const getGitAuthStatus = async (
   const helper = helperRes.ok ? helperRes.stdout.trim() : '';
   const remoteAuthMode = detectRemoteAuthMode(remoteRes.ok ? remoteRes.stdout.trim() : '');
   const { credentials, source } = await resolveGithubCredentials(gitCredentialStore);
+  
+  // Спробуємо виконати git ls-remote для перевірки доступу до remote
+  let canAccessRemote = false;
+  if (remoteRes.ok && remoteRes.stdout.trim()) {
+    try {
+      const lsRemoteRes = await runGit(['ls-remote', '--heads', 'origin']);
+      canAccessRemote = lsRemoteRes.ok;
+    } catch {
+      canAccessRemote = false;
+    }
+  }
+  
   return {
     helper,
     helperConfigured: Boolean(helper) && helper !== 'store',
-    hasGithubCredentials: Boolean(credentials) || remoteAuthMode === 'ssh',
+    hasGithubCredentials: Boolean(credentials) || remoteAuthMode === 'ssh' || canAccessRemote,
     savedUsername: credentials?.username ?? '',
     credentialsPath: source === 'stored' ? gitCredentialStore?.getCredentialsPath() ?? '' : '',
     remoteAuthMode,

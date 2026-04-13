@@ -381,7 +381,8 @@ CREATE TABLE IF NOT EXISTS persisted_match_results (
   winner_player_id text,
   end_reason text,
   turns_completed integer NOT NULL DEFAULT 0,
-  persisted_at timestamptz NOT NULL DEFAULT now()
+  persisted_at timestamptz NOT NULL DEFAULT now(),
+  final_rank_id text
 );
 
 CREATE TABLE IF NOT EXISTS persisted_match_participants (

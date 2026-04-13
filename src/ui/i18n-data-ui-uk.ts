@@ -218,6 +218,9 @@ export const uiUkData = {
   dbImportSchemaRunning: 'Імпорт схеми...',
   dbImportJsonConfig: 'Імпортувати дані JSON в БД',
   dbImportJsonConfigRunning: 'Імпорт JSON-даних у БД...',
+  dbSyncMigrations: 'Синхронізувати міграції',
+  dbSyncMigrationsRunning: 'Синхронізація міграцій...',
+  dbSyncMigrationsHint: 'Застосовує відсутні міграції до бази даних для оновлення схеми.',
   dbBackupTitle: 'Резервна копія БД',
   dbBackupHint:
     'Створює SQL dump через pg_dump на сервері для резервування та переносу.',

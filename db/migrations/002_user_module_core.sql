@@ -63,7 +63,8 @@ CREATE TABLE IF NOT EXISTS persisted_match_results (
   bot_count integer NOT NULL DEFAULT 0,
   bot_difficulty text,
   turns_completed integer NOT NULL DEFAULT 0,
-  persisted_at timestamptz NOT NULL DEFAULT now()
+  persisted_at timestamptz NOT NULL DEFAULT now(),
+  final_rank_id text
 );
 
 ALTER TABLE persisted_match_results ADD COLUMN IF NOT EXISTS winner_player_name text;
@@ -71,6 +72,7 @@ ALTER TABLE persisted_match_results ADD COLUMN IF NOT EXISTS game_mode text NOT 
 ALTER TABLE persisted_match_results ADD COLUMN IF NOT EXISTS player_count integer NOT NULL DEFAULT 0;
 ALTER TABLE persisted_match_results ADD COLUMN IF NOT EXISTS bot_count integer NOT NULL DEFAULT 0;
 ALTER TABLE persisted_match_results ADD COLUMN IF NOT EXISTS bot_difficulty text;
+ALTER TABLE persisted_match_results ADD COLUMN IF NOT EXISTS final_rank_id text;
 
 CREATE TABLE IF NOT EXISTS persisted_match_participants (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

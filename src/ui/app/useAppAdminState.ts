@@ -32,6 +32,9 @@ export interface UseAppAdminStateResult {
   dbRestoreBackupStatus: ReturnType<typeof useDbAdminTools>['dbRestoreBackupStatus'];
   dbRestoreBackupError: ReturnType<typeof useDbAdminTools>['dbRestoreBackupError'];
   dbRestoreBackupRunning: ReturnType<typeof useDbAdminTools>['dbRestoreBackupRunning'];
+  dbSyncMigrationsStatus: ReturnType<typeof useDbAdminTools>['dbSyncMigrationsStatus'];
+  dbSyncMigrationsError: ReturnType<typeof useDbAdminTools>['dbSyncMigrationsError'];
+  dbSyncMigrationsRunning: ReturnType<typeof useDbAdminTools>['dbSyncMigrationsRunning'];
   saveDbConfigDraft: ReturnType<typeof useDbAdminTools>['saveDbConfigDraft'];
   testDbConnection: ReturnType<typeof useDbAdminTools>['testDbConnection'];
   exportDbSchema: ReturnType<typeof useDbAdminTools>['exportDbSchema'];
@@ -39,6 +42,7 @@ export interface UseAppAdminStateResult {
   importJsonConfigToDb: ReturnType<typeof useDbAdminTools>['importJsonConfigToDb'];
   exportDbBackup: ReturnType<typeof useDbAdminTools>['exportDbBackup'];
   restoreDbBackup: ReturnType<typeof useDbAdminTools>['restoreDbBackup'];
+  syncDbMigrations: ReturnType<typeof useDbAdminTools>['syncDbMigrations'];
   ADMIN_STORAGE_MODE_STORAGE_KEY: ReturnType<typeof useDbAdminTools>['ADMIN_STORAGE_MODE_STORAGE_KEY'];
   LEGACY_ADMIN_STORAGE_MODE_STORAGE_KEY: ReturnType<typeof useDbAdminTools>['LEGACY_ADMIN_STORAGE_MODE_STORAGE_KEY'];
 }
@@ -46,10 +50,18 @@ export interface UseAppAdminStateResult {
 export const useAppAdminState = (args: UseAppAdminStateArgs): UseAppAdminStateResult => {
   const { serverUrl, lang, adminFetch, enabled } = args;
 
-  return useDbAdminTools({
+  const result = useDbAdminTools({
     lang,
-    adminFetch,
     serverUrl,
+    adminFetch,
     enabled,
   });
+
+  return {
+    ...result,
+    dbSyncMigrationsStatus: result.dbSyncMigrationsStatus,
+    dbSyncMigrationsError: result.dbSyncMigrationsError,
+    dbSyncMigrationsRunning: result.dbSyncMigrationsRunning,
+    syncDbMigrations: result.syncDbMigrations,
+  };
 };

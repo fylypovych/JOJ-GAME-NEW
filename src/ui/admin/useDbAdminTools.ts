@@ -49,6 +49,9 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
   const [dbRestoreBackupStatus, setDbRestoreBackupStatus] = useState<string>('');
   const [dbRestoreBackupError, setDbRestoreBackupError] = useState<string>('');
   const [dbRestoreBackupRunning, setDbRestoreBackupRunning] = useState<boolean>(false);
+  const [dbSyncMigrationsStatus, setDbSyncMigrationsStatus] = useState<string>('');
+  const [dbSyncMigrationsError, setDbSyncMigrationsError] = useState<string>('');
+  const [dbSyncMigrationsRunning, setDbSyncMigrationsRunning] = useState<boolean>(false);
   const adminFetchRef = useRef(adminFetch);
 
   useEffect(() => {
@@ -243,6 +246,29 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
     }
   };
 
+  const syncDbMigrations = async () => {
+    setDbSyncMigrationsStatus('');
+    setDbSyncMigrationsError('');
+    setDbSyncMigrationsRunning(true);
+    try {
+      const response = await adminFetch(`${serverUrl}/api/admin/db/sync-migrations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
+      if (!response.ok || !payload.ok) {
+        setDbSyncMigrationsError(payload.details ?? payload.error ?? 'Failed to sync migrations');
+        return;
+      }
+      setDbSyncMigrationsStatus(payload.message ?? 'Migrations synced successfully');
+    } catch {
+      setDbSyncMigrationsError('Failed to sync migrations');
+    } finally {
+      setDbSyncMigrationsRunning(false);
+    }
+  };
+
   const exportDbBackup = async () => {
     setDbRestoreBackupStatus('');
     setDbRestoreBackupError('');
@@ -323,6 +349,9 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
     dbRestoreBackupStatus,
     dbRestoreBackupError,
     dbRestoreBackupRunning,
+    dbSyncMigrationsStatus,
+    dbSyncMigrationsError,
+    dbSyncMigrationsRunning,
     saveDbConfigDraft: saveDbConfigDraftAndServer,
     testDbConnection,
     exportDbSchema,
@@ -330,6 +359,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
     importJsonConfigToDb,
     exportDbBackup,
     restoreDbBackup,
+    syncDbMigrations,
     ADMIN_STORAGE_MODE_STORAGE_KEY,
     LEGACY_ADMIN_STORAGE_MODE_STORAGE_KEY,
   };

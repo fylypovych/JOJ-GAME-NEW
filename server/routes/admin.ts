@@ -108,6 +108,7 @@ export const registerAdminRoutes = ({
     JSON_BODY_LIMIT,
     dbSchemaPath,
     adminDbUiConfigPath,
+    migrationsPath: './db/migrations',
     importJsonConfigToDb,
     pool,
     prepareBackupSnapshot,

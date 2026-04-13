@@ -24,6 +24,7 @@ type AdminDbToolsDeps = {
   JSON_BODY_LIMIT: number;
   dbSchemaPath: string;
   adminDbUiConfigPath: string;
+  migrationsPath: string;
   importJsonConfigToDb: (draft?: DbConnInput) => Promise<void>;
   pool?: Pool | null;
   prepareBackupSnapshot?: () => Promise<void>;
@@ -433,6 +434,57 @@ export const registerAdminDbToolRoutes = ({
       message: `Backup restored successfully${filename ? ` (${filename})` : ''}`,
       restoredAssetCount,
     };
+  });
+
+  router.post('/api/admin/db/sync-migrations', async (ctx: RouteCtx) => {
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/db/sync-migrations'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-db-sync-migrations', 5, 60_000))) return;
+    try {
+      const parsed = await buildDbConnInputForExecution({}, adminDbUiConfigPath, pool);
+      if ('error' in parsed) return fail(ctx, 400, parsed.error);
+
+      const migrationsDir = migrationsPath;
+      const migrationFiles = await readdir(migrationsDir);
+      const sqlFiles = migrationFiles
+        .filter((f) => f.endsWith('.sql'))
+        .sort((a, b) => a.localeCompare(b));
+
+      const appliedMigrations: string[] = [];
+      const errors: string[] = [];
+
+      for (const file of sqlFiles) {
+        const filePath = path.join(migrationsDir, file);
+        const sql = await readFile(filePath, 'utf-8');
+        
+        const result = await runDbCommand(
+          'psql',
+          ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database, '-v', 'ON_ERROR_STOP=1'],
+          parsed,
+          30_000,
+          sql,
+        );
+
+        if (result.ok) {
+          appliedMigrations.push(file);
+        } else {
+          errors.push(`${file}: ${result.stderr || result.error || result.stdout || ''}`);
+        }
+      }
+
+      if (errors.length > 0) {
+        return fail(ctx, 500, 'Some migrations failed', errors.join('; '));
+      }
+
+      ctx.body = {
+        ok: true,
+        message: `Successfully applied ${appliedMigrations.length} migrations`,
+        appliedMigrations,
+      };
+    } catch (error) {
+      const details = String(error instanceof Error ? error.message : error);
+      await logLine('ERROR', `Failed to sync migrations: ${details}`);
+      return fail(ctx, 500, 'Failed to sync migrations', details);
+    }
   });
 };
 

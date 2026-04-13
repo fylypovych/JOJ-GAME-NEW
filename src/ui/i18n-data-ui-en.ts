@@ -208,15 +208,18 @@ export const uiEnData = {
     'Prepare and maintain the future DB storage: mode switch, connection test, schema export, and backup export.',
   dbTabFileModeHint:
     'Local file mode is currently enabled. Switch the data source to "Database" to use DB actions.',
-  dbSchemaTitle: 'DB schema (db.sql)',
+  dbSchemaTitle: 'Database Schema (db.sql)',
   dbSchemaHint:
-    'Exports the PostgreSQL schema file that can later be imported from the admin panel on another server.',
+    'Exports a PostgreSQL schema file that can be imported from the admin panel on a new server.',
   dbExportSchema: 'Export db.sql',
   dbExportSchemaRunning: 'Exporting schema...',
   dbImportSchema: 'Import db.sql',
   dbImportSchemaRunning: 'Importing schema...',
-  dbImportJsonConfig: 'Import JSON data into DB',
-  dbImportJsonConfigRunning: 'Importing JSON data into DB...',
+  dbImportJsonConfig: 'Import JSON data to DB',
+  dbImportJsonConfigRunning: 'Importing JSON data to DB...',
+  dbSyncMigrations: 'Sync Migrations',
+  dbSyncMigrationsRunning: 'Syncing migrations...',
+  dbSyncMigrationsHint: 'Applies missing migrations to the database to update the schema.',
   dbBackupTitle: 'DB backup',
   dbBackupHint:
     'Creates an SQL dump via pg_dump on the server for backup and migration.',

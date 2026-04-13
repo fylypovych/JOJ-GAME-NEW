@@ -36,6 +36,10 @@ export const AdminDatabaseTab = ({
   dbRestoreBackupStatus,
   dbRestoreBackupError,
   dbRestoreBackupRunning,
+  onSyncDbMigrations,
+  dbSyncMigrationsStatus,
+  dbSyncMigrationsError,
+  dbSyncMigrationsRunning,
 }: {
   t: T;
   storageMode: AdminStorageMode;
@@ -68,6 +72,10 @@ export const AdminDatabaseTab = ({
   dbRestoreBackupStatus: string;
   dbRestoreBackupError: string;
   dbRestoreBackupRunning: boolean;
+  onSyncDbMigrations: () => Promise<void> | void;
+  dbSyncMigrationsStatus: string;
+  dbSyncMigrationsError: string;
+  dbSyncMigrationsRunning: boolean;
 }) => {
   const [backupFile, setBackupFile] = useState<File | null>(null);
   return (
@@ -137,12 +145,20 @@ export const AdminDatabaseTab = ({
             {dbExportBackupRunning ? t.dbExportBackupRunning : t.dbExportBackup}
           </button>
         </p>
+        <p>{t.dbSyncMigrationsHint}</p>
+        <p className="admin-controls">
+          <button type="button" onClick={() => void onSyncDbMigrations()} disabled={dbSyncMigrationsRunning}>
+            {dbSyncMigrationsRunning ? t.dbSyncMigrationsRunning : t.dbSyncMigrations}
+          </button>
+        </p>
         {dbImportJsonConfigStatus ? <p className="admin-success">{dbImportJsonConfigStatus}</p> : null}
         {dbImportJsonConfigError ? <p className="admin-error">{dbImportJsonConfigError}</p> : null}
         {dbImportSchemaStatus ? <p className="admin-success">{dbImportSchemaStatus}</p> : null}
         {dbImportSchemaError ? <p className="admin-error">{dbImportSchemaError}</p> : null}
         {dbExportSchemaStatus ? <p className="admin-success">{dbExportSchemaStatus}</p> : null}
         {dbExportSchemaError ? <p className="admin-error">{dbExportSchemaError}</p> : null}
+        {dbSyncMigrationsStatus ? <p className="admin-success">{dbSyncMigrationsStatus}</p> : null}
+        {dbSyncMigrationsError ? <p className="admin-error">{dbSyncMigrationsError}</p> : null}
 
         <h4>{t.dbBackupTitle}</h4>
         <p>{t.dbBackupHint}</p>
