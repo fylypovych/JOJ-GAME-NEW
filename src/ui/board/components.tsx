@@ -256,6 +256,9 @@ export const BoardChatPanel = ({
       }}
     >
       <input
+        id="chat-input"
+        name="chatMessage"
+        autoComplete="off"
         value={chatInput}
         onChange={(e) => setChatInput(e.target.value)}
         onKeyDown={(e) => {

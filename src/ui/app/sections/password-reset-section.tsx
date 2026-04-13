@@ -33,7 +33,7 @@ export const PasswordResetSection = ({
     <div className="lobby-layout board-v2-dual-layout">
       <div className={`lobby-col board-v2-column board-v2-subpanel${uiVariant === 'v1' ? ' board-v1-subpanel' : ''}`}>
         <h3>{t.userPasswordResetRequestButton}</h3>
-        <p><input value={resetRequestDraft.login} onChange={(e) => setResetRequestDraft({ login: e.target.value })} placeholder={t.userLoginPlaceholder} /></p>
+        <p><input id="reset-request-login" name="login" autoComplete="username" value={resetRequestDraft.login} onChange={(e) => setResetRequestDraft({ login: e.target.value })} placeholder={t.userLoginPlaceholder} /></p>
         <p className="admin-controls">
           <button type="button" onClick={onRequestPasswordReset} disabled={busy}>{t.userPasswordResetRequestButton}</button>
           <button type="button" onClick={onBackToLogin} disabled={busy}>{t.userGoToLoginButton}</button>
@@ -41,8 +41,8 @@ export const PasswordResetSection = ({
       </div>
       <div className={`lobby-col board-v2-column board-v2-subpanel${uiVariant === 'v1' ? ' board-v1-subpanel' : ''}`}>
         <h3>{t.userPasswordResetApplyButton}</h3>
-        <p><input value={resetPasswordDraft.token} onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, token: e.target.value })} placeholder={t.userResetTokenLabel} /></p>
-        <p><input type="password" value={resetPasswordDraft.nextPassword} onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, nextPassword: e.target.value })} placeholder={t.userNewPasswordLabel} /></p>
+        <p><input id="reset-token" name="token" autoComplete="off" value={resetPasswordDraft.token} onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, token: e.target.value })} placeholder={t.userResetTokenLabel} /></p>
+        <p><input id="reset-new-password" name="nextPassword" type="password" autoComplete="new-password" value={resetPasswordDraft.nextPassword} onChange={(e) => setResetPasswordDraft({ ...resetPasswordDraft, nextPassword: e.target.value })} placeholder={t.userNewPasswordLabel} /></p>
         <p><button type="button" onClick={onResetPassword} disabled={busy}>{t.userPasswordResetApplyButton}</button></p>
       </div>
     </div>

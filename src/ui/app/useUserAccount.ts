@@ -261,6 +261,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
       );
       if (!path) throw new Error(USER_ACCOUNT_ERRORS.genericRequest);
       setError('');
+      setUser((prev) => prev ? { ...prev, avatarUrl: path } : null);
       return path;
     } finally {
       setBusy(false);

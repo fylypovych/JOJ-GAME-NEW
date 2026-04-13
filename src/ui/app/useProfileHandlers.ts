@@ -151,14 +151,12 @@ export const useProfileHandlers = (args: UseProfileHandlersArgs): UseProfileHand
     setUserError('');
     try {
       const nextAvatarUrl = await uploadAvatar(file);
-      const nextDraft = { ...profileDraft, avatarUrl: nextAvatarUrl };
-      setProfileDraft(nextDraft);
-      await updateUserProfile({ ...nextDraft, preferredLang: lang });
+      setProfileDraft((prev) => ({ ...prev, avatarUrl: nextAvatarUrl }));
       setProfileNotice(t.userAvatarUploaded);
     } catch (error) {
       setUserError(String(error instanceof Error ? error.message : error));
     }
-  }, [profileDraft, uploadAvatar, updateUserProfile, lang, setProfileDraft, setProfileNotice, setUserError, t.userAvatarUploaded]);
+  }, [uploadAvatar, setProfileDraft, setProfileNotice, setUserError, t.userAvatarUploaded]);
 
   const onRefreshSessions = useCallback(() => {
     void refreshSessions().catch((error) => setUserError(String(error instanceof Error ? error.message : error)));

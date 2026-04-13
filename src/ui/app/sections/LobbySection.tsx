@@ -233,6 +233,9 @@ export const LobbySection = ({
             <p>
               {t.playerName}:{' '}
               <input
+                id="lobby-player-name"
+                name="playerName"
+                autoComplete="off"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
                 placeholder={t.playerNamePlaceholder}
