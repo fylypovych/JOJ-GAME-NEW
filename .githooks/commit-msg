@@ -1,4 +1,0 @@
-#!/bin/sh
-# Version display is derived from git metadata at build/runtime.
-# Keep commit-msg hook as a no-op to avoid mutating package files on commit.
-exit 0
