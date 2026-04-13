@@ -3890,8 +3890,10 @@
 
 .game-ui-v2-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.95fr) minmax(196px, 0.6fr);
+  grid-template-columns: 80% 15%;
   gap: 12px;
+  width: 98%;
+  margin: 0 auto;
 }
 
 .game-ui-v2-main,
