@@ -413,7 +413,6 @@ export const App = () => {
     setProfileScreen,
     setProfileNotice,
     setLoginDraft,
-    setProfileDraft,
     setPasswordDraft,
     setUserError,
     setUser,

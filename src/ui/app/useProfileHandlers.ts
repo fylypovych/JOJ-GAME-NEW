@@ -38,15 +38,6 @@ export interface UseProfileHandlersArgs {
   setProfileScreen: (value: 'login' | 'register' | 'reset') => void;
   setProfileNotice: (value: string) => void;
   setLoginDraft: (value: { login: string; password: string }) => void;
-  setProfileDraft: (value: {
-    displayName: string;
-    email: string;
-    bio: string;
-    avatarUrl: string;
-    profilePublic: boolean;
-    showStatsPublic: boolean;
-    showRecentMatchesPublic: boolean;
-  }) => void;
   setPasswordDraft: (value: { currentPassword: string; nextPassword: string }) => void;
   setUserError: (value: string) => void;
   setUser: (value: AuthUser | null) => void;
@@ -91,7 +82,6 @@ export const useProfileHandlers = (args: UseProfileHandlersArgs): UseProfileHand
     setProfileScreen,
     setProfileNotice,
     setLoginDraft,
-    setProfileDraft,
     setPasswordDraft,
     setUserError,
     t,
