@@ -16,6 +16,19 @@ Expose the game for open testing without directly exposing internal dev/service 
 - Reverse proxy (`80/443`) -> API/game server (`127.0.0.1:8000`)
 - Admin access protected separately (token/auth; checklist item 3)
 
+## Environment Variables
+
+Set these in `.env`:
+
+```env
+NODE_ENV=production
+ADMIN_TOKEN=your-secret-token
+DATABASE_URL=postgresql://user:password@127.0.0.1:5432/joj_game
+FRONTEND_ORIGIN=https://your-domain.com
+TRUST_PROXY=true
+STORAGE_MODE=postgres
+```
+
 ## Firewall (Windows Server)
 
 1. Allow inbound `80` and `443`.
@@ -48,6 +61,7 @@ sudo ufw deny 5173/tcp
 - Proxy frontend routes to `127.0.0.1:4173`.
 - Enable HTTPS and HTTP->HTTPS redirect.
 - Preserve client IP via `X-Forwarded-For` (backend rate limiting uses it when present).
+- Set `TRUST_PROXY=true` in `.env` when using reverse proxy.
 
 ## Validation Checklist
 
@@ -56,3 +70,4 @@ sudo ufw deny 5173/tcp
 - Direct access to `http://your-domain:8000` is blocked.
 - Direct access to `http://your-domain:4173` is blocked.
 - PM2 processes restart automatically after crash/reboot.
+- Server starts without errors (ADMIN_TOKEN, DATABASE_URL, FRONTEND_ORIGIN are set).

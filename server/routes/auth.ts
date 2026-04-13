@@ -396,4 +396,19 @@ export const registerAuthRoutes = (args: {
     }
     routeOk(ctx, profile);
   });
+
+  router.get('/api/users', async (ctx: RouteCtx) => {
+    if (!requireUserStore(ctx)) return;
+    const store = getStore();
+    const limit = typeof ctx?.query?.limit === 'string' ? Math.min(200, Math.max(1, parseInt(ctx.query.limit, 10) || 50)) : 50;
+    const offset = typeof ctx?.query?.offset === 'string' ? Math.max(0, parseInt(ctx.query.offset, 10) || 0) : 0;
+    const search = typeof ctx?.query?.search === 'string' ? ctx.query.search.trim() : '';
+    
+    try {
+      const users = await (store as any).listPublicUsers?.(search, limit, offset) ?? [];
+      routeOk(ctx, { users, limit, offset });
+    } catch (error) {
+      routeError(ctx, 500, String(error instanceof Error ? error.message : error));
+    }
+  });
 };

@@ -207,8 +207,97 @@ export const createUserAdminStore = (args: {
     return { user, stats, awards, recentMatches };
   };
 
+  const listPublicUsers = async (search = '', limit = 50, offset = 0): Promise<Array<{
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl: string | null;
+    stats: {
+      matchesFinished: number;
+      wins: number;
+      winRatePct: number;
+      bestRankName: string;
+    };
+    awards: Array<{
+      awardId: string;
+      key: string;
+      title: string;
+      badgeLabel: string;
+      threshold: number;
+      progressValue: number;
+      awarded: boolean;
+    }>;
+  }>> => {
+    const normalizedSearch = search.trim().toLowerCase();
+    const result = await pool.query<{
+      id: string;
+      username: string;
+      displayName: string;
+      avatarUrl: string | null;
+      matchesFinished: number;
+      wins: number;
+      winRatePct: number;
+      bestRankName: string;
+    }>(`
+      SELECT
+        u.id,
+        u.username,
+        COALESCE(p.display_name, u.username) AS "displayName",
+        p.avatar_url AS "avatarUrl",
+        COUNT(DISTINCT r.match_id)::int AS "matchesFinished",
+        COUNT(DISTINCT r.match_id) FILTER (WHERE r.winner_player_id = u.id)::int AS "wins",
+        CASE
+          WHEN COUNT(DISTINCT r.match_id) = 0 THEN 0
+          ELSE ROUND(COUNT(DISTINCT r.match_id) FILTER (WHERE r.winner_player_id = u.id)::numeric / COUNT(DISTINCT r.match_id) * 100, 2)
+        END AS "winRatePct",
+        COALESCE(MAX(r.final_rank_id), 'recruit') AS "bestRankName"
+      FROM app_users u
+      LEFT JOIN user_profiles p ON p.user_id = u.id
+      LEFT JOIN user_match_links l ON l.user_id = u.id
+      LEFT JOIN persisted_match_results r ON r.match_id = l.match_id
+      WHERE u.status = 'active'
+        AND p.show_stats_public = true
+        AND (
+          $1 = ''
+          OR u.username ILIKE '%' || $1 || '%'
+          OR COALESCE(p.display_name, '') ILIKE '%' || $1 || '%'
+        )
+      GROUP BY u.id, u.username, p.display_name, p.avatar_url
+      ORDER BY u.created_at DESC
+      LIMIT $2 OFFSET $3
+    `, [normalizedSearch, Math.max(1, Math.min(limit, 200)), Math.max(0, offset)]);
+
+    const users = await Promise.all(result.rows.map(async (row) => {
+      const awards = await evaluateUserAwards(row.id);
+      return {
+        id: row.id,
+        username: row.username,
+        displayName: row.displayName,
+        avatarUrl: row.avatarUrl,
+        stats: {
+          matchesFinished: row.matchesFinished,
+          wins: row.wins,
+          winRatePct: row.winRatePct,
+          bestRankName: row.bestRankName,
+        },
+        awards: awards.map((award) => ({
+          awardId: award.award_id,
+          key: award.award_key,
+          title: award.title,
+          badgeLabel: award.badge_label,
+          threshold: award.threshold,
+          progressValue: award.progress_value,
+          awarded: award.awarded,
+        })),
+      };
+    }));
+
+    return users;
+  };
+
   return {
     listUsersAdmin,
+    listPublicUsers,
     updateUserStatus,
     updateUserRole,
     updateUserAdminProfile,

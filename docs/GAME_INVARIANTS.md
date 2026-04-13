@@ -19,6 +19,7 @@ These are the guarantees the codebase is expected to preserve.
 15. `stalled-no-cards` ending must remain a valid deterministic fallback.
 16. Rank promotion and demotion must respect seat limits and recruit exception rules.
 17. Admin routes must not run insecurely in production unless explicitly overridden.
+18. Card deletions must synchronize across `template.catalog` and `extraCatalog` to prevent deleted cards from appearing in the gallery.
 
 ## Verification Gates
 

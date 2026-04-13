@@ -9,6 +9,7 @@ import {
   formatBotDifficultyLabel,
   localizeRankValue,
 } from '../section-helpers';
+import { UsersListSection } from './UsersListSection';
 
 type T = ReturnType<typeof text>;
 
@@ -33,7 +34,7 @@ export const StatisticsSection = ({
   onLogoutSession?: (sessionId: string) => void;
   uiVariant?: 'v1' | 'v2';
 }) => {
-  const [activeCategory, setActiveCategory] = useState<'general' | 'resources' | 'actions' | 'achievements' | 'history' | 'sessions'>('general');
+  const [activeCategory, setActiveCategory] = useState<'general' | 'resources' | 'actions' | 'achievements' | 'history' | 'sessions' | 'users'>('general');
   return (
     <section className={`board board-v2-panel board-v2-statistics${uiVariant === 'v1' ? ' board-v1-panel board-v1-statistics' : ''}`}>
       <h2>{t.userTabStatistics}</h2>
@@ -47,6 +48,7 @@ export const StatisticsSection = ({
               <button type="button" onClick={() => setActiveCategory('achievements')} disabled={activeCategory === 'achievements'}>{t.statisticsCategoryAchievements}</button>
               <button type="button" onClick={() => setActiveCategory('history')} disabled={activeCategory === 'history'}>{t.statisticsCategoryHistory}</button>
               <button type="button" onClick={() => setActiveCategory('sessions')} disabled={activeCategory === 'sessions'}>{t.statisticsCategorySessions}</button>
+              <button type="button" onClick={() => setActiveCategory('users')} disabled={activeCategory === 'users'}>{t.statisticsCategoryUsers}</button>
             </p>
           </nav>
           {!stats ? <p>{t.simulationNoData}</p> : null}
@@ -168,6 +170,9 @@ export const StatisticsSection = ({
                 </ul>
               </>
             )
+          ) : null}
+          {activeCategory === 'users' ? (
+            <UsersListSection t={t} lang={lang} />
           ) : null}
         </>
       )}

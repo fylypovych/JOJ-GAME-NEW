@@ -4,7 +4,7 @@ Use this when switching or validating PostgreSQL-backed shared config (`STORAGE_
 
 ## Scope
 
-- Applies to shared deck/ranks config only.
+- Applies to shared deck/ranks config and user authentication/profiles.
 - Match storage is still file-based: `database/matches/`.
 
 ## Preconditions
@@ -16,6 +16,9 @@ Use this when switching or validating PostgreSQL-backed shared config (`STORAGE_
 ```env
 STORAGE_MODE=postgres
 DATABASE_URL=postgresql://user:password@host:5432/joj_game
+ADMIN_TOKEN=your-secret-token
+FRONTEND_ORIGIN=https://your-domain.com
+NODE_ENV=production
 ```
 
 ## Cutover Steps (One-time or Re-cutover)
@@ -32,17 +35,21 @@ DATABASE_URL=postgresql://user:password@host:5432/joj_game
    - `SELECT deck_target, count(*) FROM deck_template_entries GROUP BY deck_target ORDER BY deck_target;`
    - `SELECT rank_set_key, is_active FROM rank_sets;`
    - `SELECT count(*) FROM rank_definitions;`
+   - `SELECT id, username, role FROM users;`
    - or run one command from repo root:
      - `powershell -ExecutionPolicy Bypass -File scripts/db-cutover-check.ps1`
 5. Validate app behavior:
    - Open `/admin` -> Deck/Ranks and confirm expected data is loaded.
    - Edit one card title in admin, save, refresh, and verify persisted value remains.
+   - Test user registration and login.
+   - Create a user via admin and verify it persists after restart.
 
 ## Ongoing Ops Policy
 
 - Source of truth after cutover: PostgreSQL.
 - Do not manually edit `database/shared-deck-template.json` / `database/shared-ranks.json` in normal operation.
 - If JSON was changed manually (or restored from backup), run forced sync JSON -> DB again.
+- User authentication and profiles are stored in PostgreSQL after cutover.
 
 ## Failure / Rollback
 

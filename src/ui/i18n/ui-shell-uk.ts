@@ -96,6 +96,7 @@ export const uiShellUk = {
   statisticsCategoryAchievements: 'Нагороди',
   statisticsCategoryHistory: 'Історія матчів',
   statisticsCategorySessions: 'Сесії',
+  statisticsCategoryUsers: 'Користувачі',
   userPasswordResetRequestButton: 'Запросити скидання пароля',
   userPasswordResetApplyButton: 'Скинути пароль',
   userResetTokenLabel: 'Токен скидання',

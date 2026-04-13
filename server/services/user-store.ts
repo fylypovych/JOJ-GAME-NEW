@@ -125,6 +125,7 @@ export const createUserStore = (pool: Pool) => {
   });
   const {
     listUsersAdmin,
+    listPublicUsers,
     updateUserStatus,
     updateUserRole,
     updateUserAdminProfile,
@@ -166,6 +167,7 @@ export const createUserStore = (pool: Pool) => {
     listPendingPersistMatchIds,
     getAdminAnalytics,
     listUsersAdmin,
+    listPublicUsers,
     updateUserStatus,
     updateUserRole,
     updateUserAdminProfile,

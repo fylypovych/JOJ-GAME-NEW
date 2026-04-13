@@ -3,8 +3,9 @@
 This project supports a gradual migration to PostgreSQL.
 
 Current production-ready DB scope:
-- shared deck template (`deck`, `legendaryDeck`, `rankTrack`, `deckBackImage`)
+- shared deck template (`deck`, `legendaryDeck`, `rankTrack`, `deckBackImage`, `modules`, `catalog`, `extraCatalog`)
 - shared ranks
+- user authentication and profiles
 - admin DB tools (schema import/export, backup export/restore, JSON -> DB sync)
 
 Still file-based:
@@ -24,6 +25,10 @@ Set in `.env`:
 ```env
 STORAGE_MODE=postgres
 DATABASE_URL=postgresql://user:password@127.0.0.1:5432/joj_game
+ADMIN_TOKEN=your-secret-token
+FRONTEND_ORIGIN=http://your-domain.com
+TRUST_PROXY=true
+NODE_ENV=production
 ```
 
 Restart PM2 with env refresh:
@@ -52,6 +57,7 @@ pm2 restart joj-game-server joj-game-web --update-env
 - Export backup (`pg_dump`)
 - Restore backup (`psql` apply uploaded `.sql`)
 - Import current JSON deck/ranks into DB tables
+- Manage users (create, update, role assignment, password reset)
 
 ## Tables Used for Shared Config
 
@@ -63,6 +69,10 @@ Ranks:
 - `rank_sets`
 - `rank_definitions`
 
+Users:
+- `users`
+- `user_sessions`
+
 ## Quick Verification SQL
 
 ```sql
@@ -70,6 +80,7 @@ SELECT template_key, is_active, updated_at FROM deck_templates;
 SELECT deck_target, count(*) FROM deck_template_entries GROUP BY deck_target ORDER BY deck_target;
 SELECT rank_set_key, is_active, updated_at FROM rank_sets;
 SELECT count(*) FROM rank_definitions;
+SELECT id, username, role, created_at FROM users;
 ```
 
 ## Troubleshooting
@@ -80,6 +91,15 @@ SELECT count(*) FROM rank_definitions;
 `Shared config storage mode is not postgres`:
 - Old server build or old endpoint version. Update code and rebuild.
 - Newer builds allow JSON -> DB import directly via DB connection form values.
+
+`Server cannot start in production without ADMIN_TOKEN`:
+- Set `ADMIN_TOKEN` in `.env`.
+
+`Server cannot start in production without DATABASE_URL`:
+- Set `DATABASE_URL` in `.env`.
+
+`Server cannot start in production without FRONTEND_ORIGIN`:
+- Set `FRONTEND_ORIGIN` in `.env`.
 
 DB data not visible after changing `.env`:
 - Restart PM2 with `--update-env`.

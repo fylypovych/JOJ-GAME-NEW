@@ -95,6 +95,7 @@ export const uiShellEn = {
   statisticsCategoryAchievements: 'Awards',
   statisticsCategoryHistory: 'Match history',
   statisticsCategorySessions: 'Sessions',
+  statisticsCategoryUsers: 'Users',
   userPasswordResetRequestButton: 'Request password reset',
   userPasswordResetApplyButton: 'Reset password',
   userResetTokenLabel: 'Reset token',
