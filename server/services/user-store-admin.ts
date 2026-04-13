@@ -245,16 +245,16 @@ export const createUserAdminStore = (args: {
         COALESCE(p.display_name, u.username) AS "displayName",
         p.avatar_url AS "avatarUrl",
         COUNT(DISTINCT r.match_id)::int AS "matchesFinished",
-        COUNT(DISTINCT r.match_id) FILTER (WHERE r.winner_player_id = u.id)::int AS "wins",
+        COUNT(DISTINCT r.match_id) FILTER (WHERE r.winner_player_id::text = u.id::text)::int AS "wins",
         CASE
           WHEN COUNT(DISTINCT r.match_id) = 0 THEN 0
-          ELSE ROUND(COUNT(DISTINCT r.match_id) FILTER (WHERE r.winner_player_id = u.id)::numeric / COUNT(DISTINCT r.match_id) * 100, 2)
+          ELSE ROUND(COUNT(DISTINCT r.match_id) FILTER (WHERE r.winner_player_id::text = u.id::text)::numeric / COUNT(DISTINCT r.match_id) * 100, 2)
         END AS "winRatePct",
         COALESCE(MAX(r.final_rank_id), 'recruit') AS "bestRankName"
       FROM app_users u
-      LEFT JOIN user_profiles p ON p.user_id = u.id
-      LEFT JOIN user_match_links l ON l.user_id = u.id
-      LEFT JOIN persisted_match_results r ON r.match_id = l.match_id
+      LEFT JOIN user_profiles p ON p.user_id::text = u.id::text
+      LEFT JOIN user_match_links l ON l.user_id::text = u.id::text
+      LEFT JOIN persisted_match_results r ON r.match_id::text = l.match_id::text
       WHERE u.status = 'active'
         AND p.show_stats_public = true
         AND (
