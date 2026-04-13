@@ -298,6 +298,11 @@ export const useAdminCardEditor = ({
           ? { ...module, cardIds: module.cardIds.filter((id) => id !== card.id), cardCount: Math.max(0, module.cardCount - 1) }
           : module
       ));
+      nextTemplate.catalog = (nextTemplate.catalog ?? []).filter((row) => row.id !== card.id);
+      // Не видаляти з extraCatalog для rankTrack карт
+      if (target !== 'rankTrack') {
+        nextTemplate.extraCatalog = (nextTemplate.extraCatalog ?? []).filter((row) => row.id !== card.id);
+      }
     });
     if (!ok) return;
     if (editTarget === target && editIndex === index) {
@@ -327,6 +332,10 @@ export const useAdminCardEditor = ({
           : module
       ));
       nextTemplate.catalog = (nextTemplate.catalog ?? []).filter((row) => row.id !== cardId);
+      // Не видаляти з extraCatalog для rankTrack карт
+      if (target !== 'rankTrack') {
+        nextTemplate.extraCatalog = (nextTemplate.extraCatalog ?? []).filter((row) => row.id !== cardId);
+      }
     });
     if (!ok) return;
     if (editOriginalCardId === cardId) {
