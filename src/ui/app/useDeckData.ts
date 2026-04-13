@@ -50,8 +50,8 @@ export const useDeckData = (args: UseDeckDataArgs): UseDeckDataResult => {
     };
   }, []);
 
-  const TEMPLATE_API = (server: string) => `${server}/api/admin/deck-template`;
-  const RANKS_API = (server: string) => `${server}/api/admin/ranks`;
+  const TEMPLATE_API = (server: string) => `${server}/api/shared-deck-template`;
+  const RANKS_API = (server: string) => `${server}/api/shared-ranks`;
 
   const {
     sharedDeckTemplate,

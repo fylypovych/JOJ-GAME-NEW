@@ -93,6 +93,8 @@ export const useAdminCardEditor = ({
         body: JSON.stringify({ path: normalizedImagePath }),
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string };
+      // Treat 404 as success - file is already gone
+      if (response.status === 404) return true;
       if (!response.ok || !payload.ok) {
         setDeckManagerStatus(payload.error || t.uploadFailedGeneric);
         return false;

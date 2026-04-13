@@ -80,7 +80,7 @@ export const corsAllowedHeaders = parseCsvEnv(process.env.CORS_ALLOWED_HEADERS, 
   'authorization',
 ]);
 export const cspConnectSrcExtras = parseCsvEnv(process.env.CSP_CONNECT_SRC_EXTRA, []);
-export const cspScriptSrc = parseCsvEnv(process.env.CSP_SCRIPT_SRC, ["'self'", "'unsafe-inline'"]);
+export const cspScriptSrc = parseCsvEnv(process.env.CSP_SCRIPT_SRC, ["'self'", "'unsafe-inline'", "'unsafe-eval'"]);
 export const cspStyleSrc = parseCsvEnv(process.env.CSP_STYLE_SRC, ["'self'", "'unsafe-inline'"]);
 export const cspImgSrc = parseCsvEnv(process.env.CSP_IMG_SRC, ["'self'", 'data:', 'blob:']);
 export const cspFontSrc = parseCsvEnv(process.env.CSP_FONT_SRC, ["'self'"]);

@@ -356,10 +356,12 @@ export const registerUploadRoutes = ({
       await auditAdminAction?.({ action: 'uploads.card-image.delete', ctx, success: true, details: { fileName: resolvedAsset.normalizedRelative } });
       ctx.body = { ok: true };
     } catch (error) {
-      await auditAdminAction?.({ action: 'uploads.card-image.delete', ctx, success: false, details: { fileName: resolvedAsset.normalizedRelative, error: String(error) } });
-      ctx.status = 500;
-      ctx.body = { ok: false, error: 'Failed to delete image' };
-      await logLine('ERROR', `image delete failed (${resolvedAsset.normalizedRelative}): ${String(error)}`);
+      const errorMessage = String(error);
+      const isNotFound = errorMessage.includes('ENOENT') || errorMessage.includes('no such file');
+      await auditAdminAction?.({ action: 'uploads.card-image.delete', ctx, success: false, details: { fileName: resolvedAsset.normalizedRelative, error: errorMessage } });
+      ctx.status = isNotFound ? 404 : 500;
+      ctx.body = { ok: false, error: isNotFound ? 'File not found' : 'Failed to delete image' };
+      await logLine('ERROR', `image delete failed (${resolvedAsset.normalizedRelative}): ${errorMessage}`);
     }
   });
 
