@@ -9,14 +9,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 /logs
-/database/matches/*
-!/database/matches/.gitkeep
-/database/bug-reports.json
-/database/bug-report-images/
 .env.save
-/database/admin-db-ui-config.json
-/database/.admin-git-credentials.json
 /.continue
 /.claude
-/.vscode
 /.vscode
