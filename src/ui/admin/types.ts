@@ -141,6 +141,10 @@ export type AdminPageProps = {
   dbRestoreBackupStatus: string;
   dbRestoreBackupError: string;
   dbRestoreBackupRunning: boolean;
+  dbSyncMigrationsStatus: string;
+  dbSyncMigrationsError: string;
+  dbSyncMigrationsRunning: boolean;
+  onSyncDbMigrations: () => Promise<void>;
   matches: MatchInfo[];
   activeMatchId: string;
   onActiveMatchIdChange: (matchID: string) => void;

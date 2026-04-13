@@ -174,6 +174,10 @@ export const App = () => {
     dbRestoreBackupStatus,
     dbRestoreBackupError,
     dbRestoreBackupRunning,
+    dbSyncMigrationsStatus,
+    dbSyncMigrationsError,
+    dbSyncMigrationsRunning,
+    syncDbMigrations,
     saveDbConfigDraft,
     testDbConnection,
     exportDbSchema,
@@ -735,6 +739,10 @@ export const App = () => {
         dbRestoreBackupStatus={dbRestoreBackupStatus}
         dbRestoreBackupError={dbRestoreBackupError}
         dbRestoreBackupRunning={dbRestoreBackupRunning}
+        dbSyncMigrationsStatus={dbSyncMigrationsStatus}
+        dbSyncMigrationsError={dbSyncMigrationsError}
+        dbSyncMigrationsRunning={dbSyncMigrationsRunning}
+        syncDbMigrations={syncDbMigrations}
         matches={matches}
         adminMatchID={adminMatchID}
         setAdminSelectedMatchID={setAdminSelectedMatchID}

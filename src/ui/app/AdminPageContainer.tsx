@@ -47,6 +47,10 @@ type AdminPageContainerProps = {
   dbRestoreBackupStatus: AdminPageProps['dbRestoreBackupStatus'];
   dbRestoreBackupError: AdminPageProps['dbRestoreBackupError'];
   dbRestoreBackupRunning: AdminPageProps['dbRestoreBackupRunning'];
+  dbSyncMigrationsStatus: AdminPageProps['dbSyncMigrationsStatus'];
+  dbSyncMigrationsError: AdminPageProps['dbSyncMigrationsError'];
+  dbSyncMigrationsRunning: AdminPageProps['dbSyncMigrationsRunning'];
+  syncDbMigrations: AdminPageProps['onSyncDbMigrations'];
   matches: MatchLike[];
   adminMatchID: string;
   setAdminSelectedMatchID: AdminPageProps['onActiveMatchIdChange'];
@@ -118,6 +122,10 @@ export const AdminPageContainer = ({
   dbRestoreBackupStatus,
   dbRestoreBackupError,
   dbRestoreBackupRunning,
+  dbSyncMigrationsStatus,
+  dbSyncMigrationsError,
+  dbSyncMigrationsRunning,
+  syncDbMigrations,
   matches,
   adminMatchID,
   setAdminSelectedMatchID,
