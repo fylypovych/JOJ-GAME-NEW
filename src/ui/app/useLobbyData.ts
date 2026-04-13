@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { LobbyClient } from 'boardgame.io/client';
 import type { BotDifficulty, BotProfile } from '../../game/types';
 import type { AuthUser } from './useUserAccount';
+import type { Session } from './model';
 import {
   DEFAULT_LOBBY_GAME_UI_CONFIG,
   normalizeLobbyGameUiConfig,
@@ -10,6 +11,19 @@ import { useLobbySession } from './useLobbySession';
 import { buildRoomShareLink } from './share';
 import { GAME_NAME, SESSION_STORAGE_KEY } from './model';
 import { createBrowserApiClient } from './httpClient';
+
+const readInitialSession = (key: string): Session | null => {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Session;
+    // Validate session has required fields
+    if (!parsed.matchID || !parsed.playerID || !parsed.credentials) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
 
 export interface UseLobbyDataArgs {
   serverUrl: string;
@@ -125,7 +139,7 @@ export const useLobbyData = (args: UseLobbyDataArgs): UseLobbyDataResult => {
     botDifficulty,
     botProfile,
     sessionStorageKey: SESSION_STORAGE_KEY,
-    initialSession: null,
+    initialSession: readInitialSession(SESSION_STORAGE_KEY),
     serverUnavailableText: t.serverUnavailable,
     enterNameText: t.enterName,
     roomFullText: t.roomFull,

@@ -245,7 +245,8 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
   const uploadAvatar = async (file: File) => {
     setBusy(true);
     try {
-      const optimized = await optimizeBlobForUpload(file, file.name, {
+      // Pass empty filename to force server to use fallbackBaseName (avatar-{user.id})
+      const optimized = await optimizeBlobForUpload(file, '', {
         maxWidth: 512,
         maxHeight: 512,
         quality: 0.9,

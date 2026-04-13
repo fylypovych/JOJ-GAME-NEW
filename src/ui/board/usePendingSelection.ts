@@ -16,7 +16,8 @@ export type PendingSelection =
   | { type: 'draw-lyap'; cardId: string }
   | { type: 'draw-scandal'; cardId: string }
   | { type: 'legendary-drone'; cardId: string }
-  | { type: 'legendary-water'; cardId: string };
+  | { type: 'legendary-water'; cardId: string }
+  | { type: 'vvnz-payment'; cardId: string };
 
 export type NoticeKind = 'info' | 'error' | 'success';
 
@@ -127,18 +128,22 @@ export const usePendingSelection = ({
   const [pendingSelection, setPendingSelection] = useState<PendingSelection | null>(null);
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
   const [selectedResource, setSelectedResource] = useState<ResourceKey | null>(null);
+  const [vvnzSelectedResources, setVvnzSelectedResources] = useState<ResourceKey[]>([]);
   const [replacementSelectionsByTarget, setReplacementSelectionsByTarget] = useState<Record<string, ResourceKey[]>>({});
   const [activeReplacementTargetId, setActiveReplacementTargetId] = useState<string | null>(null);
   const botPlayerIds = useMemo(() => new Set(Object.keys(G?.botPlayers ?? {})), [G?.botPlayers]);
 
-  const clearPendingSelection = () => resetSelectionState(
-    setPendingSelection,
-    setSelectedTargetId,
-    setSelectedResource,
-    setReplacementSelectionsByTarget,
-    setActiveReplacementTargetId,
-    () => postNotice('info', ''),
-  );
+  const clearPendingSelection = () => {
+    resetSelectionState(
+      setPendingSelection,
+      setSelectedTargetId,
+      setSelectedResource,
+      setReplacementSelectionsByTarget,
+      setActiveReplacementTargetId,
+      () => postNotice('info', ''),
+    );
+    setVvnzSelectedResources([]);
+  };
 
   const requestPlayHandCard = (card: CardDefinition) => {
     if (getCardPlayBehavior(card) === 'lyap') {
@@ -164,6 +169,12 @@ export const usePendingSelection = ({
       setReplacementSelectionsByTarget({});
       setActiveReplacementTargetId(targetsNeedingReplacement[0] ?? null);
       postNotice('info', `${board.pickResource}: ${cardTitle(card.id, card.title, lang)}`);
+      return false;
+    }
+    if (getCardPlayBehavior(card) === 'vvnz') {
+      setPendingSelection({ type: 'vvnz-payment', cardId: card.id });
+      setVvnzSelectedResources([]);
+      postNotice('info', `${board.pickTwoResources}: ${cardTitle(card.id, card.title, lang)}`);
       return false;
     }
     moves.playCard(card.id, [], undefined);
@@ -388,6 +399,28 @@ export const usePendingSelection = ({
     botPlayerIds,
   ]);
 
+  const toggleVvnzResource = (resourceKey: ResourceKey) => {
+    setVvnzSelectedResources((prev) => {
+      if (prev.includes(resourceKey)) {
+        return prev.filter((k) => k !== resourceKey);
+      }
+      if (prev.length >= 2) return prev;
+      return [...prev, resourceKey];
+    });
+  };
+
+  const confirmVvnzPayment = () => {
+    if (pendingSelection?.type !== 'vvnz-payment') return;
+    if (vvnzSelectedResources.length !== 2) {
+      postNotice('error', board.selectTwoResources);
+      return;
+    }
+    const card = currentPendingCard;
+    if (!card) return;
+    moves.playCard(card.id, vvnzSelectedResources, undefined);
+    clearPendingSelection();
+  };
+
   return {
     pendingSelection,
     setPendingSelection,
@@ -395,6 +428,9 @@ export const usePendingSelection = ({
     setSelectedTargetId,
     selectedResource,
     setSelectedResource,
+    vvnzSelectedResources,
+    toggleVvnzResource,
+    confirmVvnzPayment,
     replacementSelectionsByTarget,
     setReplacementSelectionsByTarget,
     activeReplacementTargetId,
@@ -414,6 +450,7 @@ export const usePendingSelection = ({
     activeSelectionNeedsTarget: pendingSelection?.type === 'hand-lyap' || pendingSelection?.type === 'legendary-drone',
     activeSelectionNeedsResource: pendingSelection?.type === 'legendary-water',
     activeSelectionNeedsReplacement: manualReplacementTargetIds.length > 0,
+    activeSelectionNeedsVvnzPayment: pendingSelection?.type === 'vvnz-payment',
     pickTargetNotice: (targetId: string) => postNotice('info', `${board.pickTarget}: ${playerLabelById(targetId)}`),
   };
 };

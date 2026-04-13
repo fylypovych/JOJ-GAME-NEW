@@ -119,10 +119,11 @@ export const V2NoticeStack = (props: {
 };
 
 export const V2SelectionPanel = (props: {
-  pendingSelection: { type: string; cardId: string } | null;
+  pendingSelection: import('./usePendingSelection').PendingSelection | null;
   activeSelectionNeedsTarget: boolean;
   activeSelectionNeedsReplacement: boolean;
   activeSelectionNeedsResource: boolean;
+  activeSelectionNeedsVvnzPayment: boolean;
   currentPendingCard: CardDefinition | null;
   selectedTargetId: string | null;
   setSelectedTargetId: (value: string | null) => void;
@@ -143,6 +144,9 @@ export const V2SelectionPanel = (props: {
   undoReplacementResource: () => void;
   selectedResource: ResourceKey | null;
   setSelectedResource: (value: ResourceKey | null) => void;
+  vvnzSelectedResources: ResourceKey[];
+  toggleVvnzResource: (key: ResourceKey) => void;
+  confirmVvnzPayment: () => void;
   resources: Record<ResourceKey, number>;
   confirmPendingSelection: () => void;
   clearPendingSelection: () => void;
@@ -153,6 +157,7 @@ export const V2SelectionPanel = (props: {
     activeSelectionNeedsTarget,
     activeSelectionNeedsReplacement,
     activeSelectionNeedsResource,
+    activeSelectionNeedsVvnzPayment,
     currentPendingCard,
     selectedTargetId,
     setSelectedTargetId,
@@ -173,6 +178,9 @@ export const V2SelectionPanel = (props: {
     undoReplacementResource,
     selectedResource,
     setSelectedResource,
+    vvnzSelectedResources,
+    toggleVvnzResource,
+    confirmVvnzPayment,
     resources,
     confirmPendingSelection,
     clearPendingSelection,
@@ -190,7 +198,11 @@ export const V2SelectionPanel = (props: {
         <p className="game-ui-v2-kicker">
           {activeSelectionNeedsTarget
             ? board.pickTarget
-            : (activeSelectionNeedsReplacement ? board.replacementSelection : board.pickResource)}
+            : activeSelectionNeedsReplacement
+              ? board.replacementSelection
+              : activeSelectionNeedsVvnzPayment
+                ? board.pickTwoResources
+                : board.pickResource}
         </p>
         <h3>{currentPendingCard ? cardTitle(currentPendingCard.id, currentPendingCard.title, lang) : pendingSelection.cardId}</h3>
         <p className="game-ui-v2-subtle">
@@ -282,8 +294,31 @@ export const V2SelectionPanel = (props: {
           ))}
         </div>
       ) : null}
+      {activeSelectionNeedsVvnzPayment ? (
+        <>
+          <p className="game-ui-v2-subtle">{board.selectTwoResources} ({vvnzSelectedResources.length}/2)</p>
+          <div className="game-ui-v2-chip-row">
+            {BOARD_RESOURCE_ORDER.map((key) => (
+              <button
+                key={`vvnz-resource-${key}`}
+                type="button"
+                className={`game-ui-v2-pick-chip game-ui-layout-pick-chip${vvnzSelectedResources.includes(key) ? ' is-selected' : ''}`}
+                onClick={() => toggleVvnzResource(key)}
+                disabled={(resources[key] ?? 0) <= 0 && !vvnzSelectedResources.includes(key)}
+              >
+                {resourceLabels[key]} ({resources[key] ?? 0})
+                {vvnzSelectedResources.includes(key) ? ' ✓' : ''}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
       <div className="game-ui-v2-selection-actions game-ui-layout-selection-actions">
-        <button type="button" onClick={confirmPendingSelection}>{board.confirm}</button>
+        {activeSelectionNeedsVvnzPayment ? (
+          <button type="button" onClick={confirmVvnzPayment} disabled={vvnzSelectedResources.length !== 2}>{board.confirm}</button>
+        ) : (
+          <button type="button" onClick={confirmPendingSelection}>{board.confirm}</button>
+        )}
         <button type="button" className="ghost" onClick={clearPendingSelection}>{board.cancel}</button>
       </div>
     </div>

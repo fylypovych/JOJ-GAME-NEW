@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { CardDefinition } from '../../game/types';
+import type { PendingSelection } from './usePendingSelection';
 
 type HandCardRow = {
   card: CardDefinition;
@@ -17,7 +18,7 @@ export const useBoardV2Interactions = (args: {
   visibleHandSelectedId: string | null;
   selectedPlayableHandCard: CardDefinition | null;
   blockPlayerTurnControls: boolean;
-  pendingSelection: { cardId: string } | null;
+  pendingSelection: PendingSelection | null;
   confirmPendingSelection: () => void;
   stage: string | undefined;
   canDraw: boolean;

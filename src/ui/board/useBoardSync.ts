@@ -9,7 +9,8 @@ type PendingSelection =
   | { type: 'draw-lyap'; cardId: string }
   | { type: 'draw-scandal'; cardId: string }
   | { type: 'legendary-drone'; cardId: string }
-  | { type: 'legendary-water'; cardId: string };
+  | { type: 'legendary-water'; cardId: string }
+  | { type: 'vvnz-payment'; cardId: string };
 
 export const useBoardSync = (args: {
   G?: JojGameState;

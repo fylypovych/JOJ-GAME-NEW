@@ -356,14 +356,13 @@ export const App = () => {
 
   useEffect(() => {
     if (!user || !session?.matchID || !session?.playerID || !session.credentials) return;
-    if (resolvedUserPlayerName && playerName.trim() === resolvedUserPlayerName) return;
     void bindMatchSession({
       matchID: session.matchID,
       playerID: session.playerID,
       credentials: session.credentials,
       playerName: resolvedUserPlayerName || playerName,
     });
-  }, [user, session?.matchID, session?.playerID, session?.credentials, resolvedUserPlayerName, playerName]);
+  }, [user, session?.matchID, session?.playerID, session?.credentials]);
 
   useEffect(() => {
     if (session?.matchID) {

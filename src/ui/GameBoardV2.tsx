@@ -186,6 +186,10 @@ export const GameBoardV2 = ({
     activeSelectionNeedsTarget,
     activeSelectionNeedsResource,
     activeSelectionNeedsReplacement,
+    activeSelectionNeedsVvnzPayment,
+    vvnzSelectedResources,
+    toggleVvnzResource,
+    confirmVvnzPayment,
     pickTargetNotice,
   } = usePendingSelection({
     G,
@@ -515,6 +519,7 @@ export const GameBoardV2 = ({
               activeSelectionNeedsTarget={activeSelectionNeedsTarget}
               activeSelectionNeedsReplacement={activeSelectionNeedsReplacement}
               activeSelectionNeedsResource={activeSelectionNeedsResource}
+              activeSelectionNeedsVvnzPayment={activeSelectionNeedsVvnzPayment}
               currentPendingCard={currentPendingCard}
               selectedTargetId={selectedTargetId}
               setSelectedTargetId={setSelectedTargetId}
@@ -535,6 +540,9 @@ export const GameBoardV2 = ({
               undoReplacementResource={undoReplacementResource}
               selectedResource={selectedResource}
               setSelectedResource={setSelectedResource}
+              vvnzSelectedResources={vvnzSelectedResources}
+              toggleVvnzResource={toggleVvnzResource}
+              confirmVvnzPayment={confirmVvnzPayment}
               resources={resources}
               confirmPendingSelection={confirmPendingSelection}
               clearPendingSelection={clearPendingSelection}
@@ -568,6 +576,7 @@ export const GameBoardV2 = ({
           activeSelectionNeedsTarget={activeSelectionNeedsTarget}
           activeSelectionNeedsReplacement={activeSelectionNeedsReplacement}
           activeSelectionNeedsResource={activeSelectionNeedsResource}
+          activeSelectionNeedsVvnzPayment={activeSelectionNeedsVvnzPayment}
           currentPendingCard={currentPendingCard}
           selectedTargetId={selectedTargetId}
           setSelectedTargetId={setSelectedTargetId}
@@ -588,6 +597,9 @@ export const GameBoardV2 = ({
           undoReplacementResource={undoReplacementResource}
           selectedResource={selectedResource}
           setSelectedResource={setSelectedResource}
+          vvnzSelectedResources={vvnzSelectedResources}
+          toggleVvnzResource={toggleVvnzResource}
+          confirmVvnzPayment={confirmVvnzPayment}
           resources={resources}
           confirmPendingSelection={confirmPendingSelection}
           clearPendingSelection={clearPendingSelection}
