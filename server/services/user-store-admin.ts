@@ -281,12 +281,12 @@ export const createUserAdminStore = (args: {
           bestRankName: row.bestRankName,
         },
         awards: awards.map((award) => ({
-          awardId: award.award_id,
-          key: award.award_key,
+          awardId: award.awardId,
+          key: award.key,
           title: award.title,
-          badgeLabel: award.badge_label,
+          badgeLabel: award.badgeLabel,
           threshold: award.threshold,
-          progressValue: award.progress_value,
+          progressValue: award.progressValue,
           awarded: award.awarded,
         })),
       };

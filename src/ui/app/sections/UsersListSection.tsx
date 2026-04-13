@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import type { Language } from '../../i18n';
 import { text } from '../../i18n';
 import { createBrowserApiClient } from '../httpClient';
 
@@ -27,7 +26,7 @@ type PublicUserSummary = {
   }>;
 };
 
-export const UsersListSection = ({ t, lang }: { t: T; lang: Language }) => {
+export const UsersListSection = ({ t }: { t: T }) => {
   const [users, setUsers] = useState<PublicUserSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,10 +36,9 @@ export const UsersListSection = ({ t, lang }: { t: T; lang: Language }) => {
       try {
         setLoading(true);
         setError('');
-        const client = createBrowserApiClient();
-        const response = await client.get('/api/users?limit=50');
-        const data = (await response.json()) as { ok?: boolean; users?: PublicUserSummary[]; error?: string };
-        if (!response.ok || !data.ok) {
+        const client = createBrowserApiClient(window.location.origin);
+        const data = await client.getJson<{ ok?: boolean; users?: PublicUserSummary[]; error?: string }>('/api/users?limit=50');
+        if (!data.ok) {
           throw new Error(data.error || 'Failed to load users');
         }
         setUsers(data.users ?? []);

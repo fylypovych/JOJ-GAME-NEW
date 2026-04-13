@@ -35,6 +35,7 @@ export interface SharedDeckTemplate {
   deck: CardDefinition[];
   legendaryDeck: CardDefinition[];
   rankTrack: CardDefinition[];
+  extraCatalog: CardDefinition[];
   deckBackImage?: string;
   modules: DeckModuleDefinition[];
   gameSetup: SharedGameSetup;

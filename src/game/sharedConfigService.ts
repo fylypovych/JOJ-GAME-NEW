@@ -199,7 +199,8 @@ export class SharedConfigService {
   }
 
   getSharedDeckTemplate(): SharedDeckTemplate {
-    return cloneSharedDeckTemplate(this.sharedDeckTemplate);
+    const template = cloneSharedDeckTemplate(this.sharedDeckTemplate);
+    return { ...template, extraCatalog: this.sharedExtraCatalog.map(cloneCard) };
   }
 
   buildDeckModulesFromTemplate(

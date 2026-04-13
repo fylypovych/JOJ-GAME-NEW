@@ -9,6 +9,7 @@ export const cloneTemplateForEdit = (
   deck: sharedDeckTemplate.deck.map((card) => ({ ...card })),
   legendaryDeck: sharedDeckTemplate.legendaryDeck.map((card) => ({ ...card })),
   rankTrack: sharedDeckTemplate.rankTrack.map((card) => ({ ...card })),
+  extraCatalog: sharedDeckTemplate.extraCatalog.map((card) => ({ ...card })),
   deckBackImage: sharedDeckTemplate.deckBackImage,
   catalog: cardCatalog.map((card) => ({ ...card })),
   modules: (sharedDeckTemplate.modules ?? []).map((module) => ({ ...module, cardIds: [...module.cardIds] })),

@@ -172,7 +172,7 @@ export const StatisticsSection = ({
             )
           ) : null}
           {activeCategory === 'users' ? (
-            <UsersListSection t={t} lang={lang} />
+            <UsersListSection t={t} />
           ) : null}
         </>
       )}

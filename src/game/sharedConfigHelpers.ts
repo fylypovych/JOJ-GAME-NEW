@@ -184,6 +184,7 @@ export const buildTemplateWithDefaults = (
     deck: CardDefinition[];
     legendaryDeck: CardDefinition[];
     rankTrack: CardDefinition[];
+    extraCatalog?: CardDefinition[];
     deckBackImage?: string;
     modules?: DeckModuleDefinition[];
     gameSetup?: Partial<SharedGameSetup>;
@@ -193,6 +194,7 @@ export const buildTemplateWithDefaults = (
     deck: source.deck.map(cloneCard),
     legendaryDeck: source.legendaryDeck.map(cloneCard),
     rankTrack: source.rankTrack.map(cloneCard),
+    extraCatalog: source.extraCatalog?.map(cloneCard) ?? [],
     deckBackImage: normalizeImagePath(source.deckBackImage),
   };
   const modules = normalizeModules(source.modules, base);

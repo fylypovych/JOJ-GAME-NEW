@@ -94,6 +94,7 @@ export type SimulationDeps = {
     deck: CardDefinition[];
     legendaryDeck: CardDefinition[];
     rankTrack: CardDefinition[];
+    extraCatalog: CardDefinition[];
     deckBackImage?: string;
     modules: Array<{
       id: string;

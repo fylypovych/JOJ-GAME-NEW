@@ -64,6 +64,7 @@ export const cloneSharedDeckTemplate = (template: SharedDeckTemplate): SharedDec
   deck: template.deck.map(cloneCard),
   legendaryDeck: template.legendaryDeck.map(cloneCard),
   rankTrack: template.rankTrack.map(cloneCard),
+  extraCatalog: template.extraCatalog.map(cloneCard),
   deckBackImage: template.deckBackImage,
   modules: template.modules.map((module) => ({ ...module, cardIds: [...module.cardIds] })),
   gameSetup: {
@@ -102,6 +103,7 @@ export const buildDeckModulesFromTemplateState = (
     deck: Array.isArray(template?.deck) ? template.deck : [],
     legendaryDeck: Array.isArray(template?.legendaryDeck) ? template.legendaryDeck : [],
     rankTrack: Array.isArray(template?.rankTrack) ? template.rankTrack : [],
+    extraCatalog: Array.isArray(template?.extraCatalog) ? template.extraCatalog : [],
     modules: Array.isArray(template?.modules) ? template.modules : [],
     gameSetup: template?.gameSetup ?? { optionalMainDeckModuleIds: [], legendaryDeckMode: 'separate' as const },
     deckBackImage: template?.deckBackImage,
