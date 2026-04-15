@@ -51,7 +51,7 @@ export const AppHeader = (props: AppHeaderProps) => {
             <div className="app-toolbar-button-row app-toolbar-theme-switch">
               <button
                 type="button"
-                className="app-theme-icon-button"
+                className="app-theme-icon-button no-border no-shadow"
                 onClick={() => setGameUiVariant(nextGameUiVariant)}
                 aria-label={nextGameUiVariant === 'v1' ? 'Switch to v1 game UI' : 'Switch to v2 game UI'}
                 title={nextGameUiVariant === 'v1' ? 'Switch to v1 game UI' : 'Switch to v2 game UI'}

@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { getPublicTabPath } from '../routes';
 import type { UserTab } from '../routes';
 import type { T, UiVariant } from './shared';
@@ -9,62 +10,102 @@ type UserTabsProps = {
   uiVariant?: UiVariant;
 };
 
-export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v2' }: UserTabsProps) => (
-  <p className={`user-tabs user-tabs-v2${uiVariant === 'v1' ? ' user-tabs-v1' : ''}`}>
-    <a
-      href={getPublicTabPath('games')}
-      onClick={(event) => {
-        event.preventDefault();
-        setActiveUserTab('games');
-      }}
-      aria-current={activeUserTab === 'games' ? 'page' : undefined}
-      className={activeUserTab === 'games' ? 'is-active' : ''}
-    >
-      {t.userTabGames}
-    </a>
-    <a
-      href={getPublicTabPath('gallery')}
-      onClick={(event) => {
-        event.preventDefault();
-        setActiveUserTab('gallery');
-      }}
-      aria-current={activeUserTab === 'gallery' ? 'page' : undefined}
-      className={activeUserTab === 'gallery' ? 'is-active' : ''}
-    >
-      {t.userTabGallery}
-    </a>
-    <a
-      href={getPublicTabPath('rules')}
-      onClick={(event) => {
-        event.preventDefault();
-        setActiveUserTab('rules');
-      }}
-      aria-current={activeUserTab === 'rules' ? 'page' : undefined}
-      className={activeUserTab === 'rules' ? 'is-active' : ''}
-    >
-      {t.userTabRules}
-    </a>
-    <a
-      href={getPublicTabPath('profile')}
-      onClick={(event) => {
-        event.preventDefault();
-        setActiveUserTab('profile');
-      }}
-      aria-current={activeUserTab === 'profile' ? 'page' : undefined}
-      className={activeUserTab === 'profile' ? 'is-active' : ''}
-    >
-      {t.userTabProfile}
-    </a>
-    <a
-      href={getPublicTabPath('statistics')}
-      onClick={(event) => {
-        event.preventDefault();
-        setActiveUserTab('statistics');
-      }}
-      aria-current={activeUserTab === 'statistics' ? 'page' : undefined}
-      className={activeUserTab === 'statistics' ? 'is-active' : ''}
-    >
-      {t.userTabStatistics}
-    </a>
-  </p>
-);
+export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v2' }: UserTabsProps) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 992);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1200;
+      setIsMobile(mobile);
+      if (!mobile) setIsMenuOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isMenuOpen &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMenuOpen]);
+
+  const handleTabClick = (tab: UserTab) => {
+    setActiveUserTab(tab);
+    setIsMenuOpen(false);
+  };
+
+  const tabs = [
+    { id: 'games', label: t.userTabGames, path: getPublicTabPath('games') },
+    { id: 'gallery', label: t.userTabGallery, path: getPublicTabPath('gallery') },
+    { id: 'rules', label: t.userTabRules, path: getPublicTabPath('rules') },
+    { id: 'profile', label: t.userTabProfile, path: getPublicTabPath('profile') },
+    { id: 'statistics', label: t.userTabStatistics, path: getPublicTabPath('statistics') },
+  ] as const;
+
+  if (!isMobile) {
+    return (
+      <p className={`user-tabs user-tabs-v2${uiVariant === 'v1' ? ' user-tabs-v1' : ''}`}>
+        {tabs.map((tab) => (
+          <a
+            key={tab.id}
+            href={tab.path}
+            onClick={(event) => {
+              event.preventDefault();
+              setActiveUserTab(tab.id);
+            }}
+            aria-current={activeUserTab === tab.id ? 'page' : undefined}
+            className={activeUserTab === tab.id ? 'is-active' : ''}
+          >
+            {tab.label}
+          </a>
+        ))}
+      </p>
+    );
+  }
+
+  return (
+    <div className="user-tabs-mobile">
+      <button
+        ref={buttonRef}
+        className={`hamburger-button ${isMenuOpen ? 'is-open' : ''}`}
+        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        aria-label="Меню навигации"
+        aria-expanded={isMenuOpen}
+      >
+        <span className="hamburger-line"></span>
+        <span className="hamburger-line"></span>
+        <span className="hamburger-line"></span>
+      </button>
+      {isMenuOpen && (
+        <div ref={menuRef} className="mobile-menu-dropdown">
+          {tabs.map((tab) => (
+            <a
+              key={tab.id}
+              href={tab.path}
+              onClick={(event) => {
+                event.preventDefault();
+                handleTabClick(tab.id);
+              }}
+              className={activeUserTab === tab.id ? 'is-active' : ''}
+            >
+              {tab.label}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { text } from './i18n';
 import {
   clampBotCountToAllowed,
@@ -545,266 +545,290 @@ export const App = () => {
     cardImageById,
   }), [optionalLobbyModules, galleryCards, cardImageById]);
 
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > window.innerHeight);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <LobbyProvider value={lobbyContextValue}>
       <DeckProvider value={deckContextValue}>
         <GalleryProvider value={galleryContextValue}>
           <main className={`app app-${shellUiVariant}${shellUiVariant === 'v1' ? ' app-v1' : ' app-v2'}`} data-bug-report-capture-root="true">
-      <AppHeader
-        isAdminRoute={isAdminRoute}
-        lang={lang}
-        setLang={setLang}
-        activeUserTab={activeUserTab}
-        setActiveUserTab={setActiveUserTab}
-        gameUiVariant={gameUiVariant}
-        setGameUiVariant={setGameUiVariant}
-        theme={theme}
-        setTheme={setTheme}
-        t={t}
-      />
-      <p className="app-link-row">
-        {isAdminRoute ? <a href="/">{t.openGame}</a> : null}
-      </p>
-
-      {isAdminRoute && (!adminAuthorized || adminAuthChecking) ? (
-        <section className={`admin-shell-v4 admin-panel-v4 admin-shell-v2 admin-panel-v2 admin-auth-shell${adminUiVariant === 'v1' ? ' admin-shell-v1 admin-panel-v1' : ''}`}>
-          <h2>{t.adminTitle}</h2>
-          <p className="admin-auth-status">{adminAuthChecking ? t.loading : (adminAuthError || (adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminUnauthorized))}</p>
-          {!adminAuthChecking ? (
-            <p className="admin-controls admin-auth-actions">
-              <button type="button" onClick={() => { void verifyAdminToken(); }}>{t.refreshRooms}</button>
+            <AppHeader
+              isAdminRoute={isAdminRoute}
+              lang={lang}
+              setLang={setLang}
+              activeUserTab={activeUserTab}
+              setActiveUserTab={setActiveUserTab}
+              gameUiVariant={gameUiVariant}
+              setGameUiVariant={setGameUiVariant}
+              theme={theme}
+              setTheme={setTheme}
+              t={t}
+            />
+            <p className="app-link-row">
+              {isAdminRoute ? <a href="/">{t.openGame}</a> : null}
             </p>
-          ) : null}
-        </section>
-      ) : null}
 
-      <LobbyFeature
-        visible={!isAdminRoute && activeUserTab === 'games' && !session}
-        t={t}
-        playerName={playerName}
-        fallbackPlayerName={user?.displayName?.trim() || user?.username?.trim() || ''}
-        authenticatedUser={Boolean(user)}
-        setPlayerName={setPlayerName}
-        roomCapacity={roomCapacity}
-        setRoomCapacity={setRoomCapacity}
-        allowedRoomCapacities={lobbyGameUiConfig.allowedRoomCapacities}
-        gameMode={gameMode}
-        setGameMode={setGameMode}
-        createWithBots={createWithBots}
-        setCreateWithBots={setCreateWithBots}
-        botCount={botCount}
-        setBotCount={setBotCount}
-        allowedBotCounts={lobbyGameUiConfig.allowedBotCounts}
-        botDifficulty={botDifficulty}
-        setBotDifficulty={setBotDifficulty}
-        botProfile={botProfile}
-        setBotProfile={setBotProfile}
-        selectedOptionalModuleIds={selectedOptionalModuleIds}
-        setSelectedOptionalModuleIds={setSelectedOptionalModuleIds}
-        uiVariant={gameUiVariant}
-      />
+            {isAdminRoute && (!adminAuthorized || adminAuthChecking) ? (
+              <section className={`admin-shell-v4 admin-panel-v4 admin-shell-v2 admin-panel-v2 admin-auth-shell${adminUiVariant === 'v1' ? ' admin-shell-v1 admin-panel-v1' : ''}`}>
+                <h2>{t.adminTitle}</h2>
+                <p className="admin-auth-status">{adminAuthChecking ? t.loading : (adminAuthError || (adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminUnauthorized))}</p>
+                {!adminAuthChecking ? (
+                  <p className="admin-controls admin-auth-actions">
+                    <button type="button" onClick={() => { void verifyAdminToken(); }}>{t.refreshRooms}</button>
+                  </p>
+                ) : null}
+              </section>
+            ) : null}
 
-      <ActiveGameFeature
-        visible={!isAdminRoute && activeUserTab === 'games' && Boolean(session) && Boolean(activeSessionMatch) && canStart}
-        loadingLabel={t.loading}
-        gameUiVariant={gameUiVariant}
-        session={session}
-        lang={lang}
-        playerName={playerName}
-        spectatorJoinedLabel={t.spectatorJoinedLabel}
-        roomPlayerNames={roomPlayerNames}
-      />
+            <LobbyFeature
+              visible={!isAdminRoute && activeUserTab === 'games' && !session}
+              t={t}
+              playerName={playerName}
+              fallbackPlayerName={user?.displayName?.trim() || user?.username?.trim() || ''}
+              authenticatedUser={Boolean(user)}
+              setPlayerName={setPlayerName}
+              roomCapacity={roomCapacity}
+              setRoomCapacity={setRoomCapacity}
+              allowedRoomCapacities={lobbyGameUiConfig.allowedRoomCapacities}
+              gameMode={gameMode}
+              setGameMode={setGameMode}
+              createWithBots={createWithBots}
+              setCreateWithBots={setCreateWithBots}
+              botCount={botCount}
+              setBotCount={setBotCount}
+              allowedBotCounts={lobbyGameUiConfig.allowedBotCounts}
+              botDifficulty={botDifficulty}
+              setBotDifficulty={setBotDifficulty}
+              botProfile={botProfile}
+              setBotProfile={setBotProfile}
+              selectedOptionalModuleIds={selectedOptionalModuleIds}
+              setSelectedOptionalModuleIds={setSelectedOptionalModuleIds}
+              uiVariant={gameUiVariant}
+            />
 
-      <ProfileFeature
-        visible={!isAdminRoute && activeUserTab === 'profile' && (Boolean(user) || profileScreen === 'login')}
-        t={t}
-        lang={lang}
-        user={user}
-        loading={userLoading}
-        busy={userBusy}
-        error={userError}
-        notice={profileNotice}
-        loginDraft={loginDraft}
-        setLoginDraft={setLoginDraft}
-        onLogin={onLogin}
-        onLogout={onLogout}
-        profileDraft={profileDraft}
-        setProfileDraft={setProfileDraft}
-        onSaveProfile={onSaveProfile}
-        passwordDraft={passwordDraft}
-        setPasswordDraft={setPasswordDraft}
-        onChangePassword={onChangePassword}
-        stats={userStats}
-        awards={userAwards}
-        matchHistory={matchHistory}
-        sessions={userSessions}
-        onRefreshSessions={onRefreshSessions}
-        onLogoutAllSessions={onLogoutAllSessions}
-        onLogoutSession={onLogoutSession}
-        onOpenRegister={onOpenRegister}
-        onUploadAvatar={onUploadAvatar}
-        uiVariant={gameUiVariant}
-      />
+            <ActiveGameFeature
+              visible={!isAdminRoute && activeUserTab === 'games' && Boolean(session) && Boolean(activeSessionMatch) && canStart}
+              loadingLabel={t.loading}
+              gameUiVariant={gameUiVariant}
+              session={session}
+              lang={lang}
+              playerName={playerName}
+              spectatorJoinedLabel={t.spectatorJoinedLabel}
+              roomPlayerNames={roomPlayerNames}
+            />
 
-      <RegisterFeature
-        visible={!isAdminRoute && activeUserTab === 'profile' && !user && profileScreen === 'register'}
-        t={t}
-        busy={userBusy}
-        error={userError}
-        registerDraft={registerDraft}
-        setRegisterDraft={setRegisterDraft}
-        onRegister={onRegister}
-        onBackToLogin={onBackToLogin}
-        uiVariant={gameUiVariant}
-      />
+            <ProfileFeature
+              visible={!isAdminRoute && activeUserTab === 'profile' && (Boolean(user) || profileScreen === 'login')}
+              t={t}
+              lang={lang}
+              user={user}
+              loading={userLoading}
+              busy={userBusy}
+              error={userError}
+              notice={profileNotice}
+              loginDraft={loginDraft}
+              setLoginDraft={setLoginDraft}
+              onLogin={onLogin}
+              onLogout={onLogout}
+              profileDraft={profileDraft}
+              setProfileDraft={setProfileDraft}
+              onSaveProfile={onSaveProfile}
+              passwordDraft={passwordDraft}
+              setPasswordDraft={setPasswordDraft}
+              onChangePassword={onChangePassword}
+              stats={userStats}
+              awards={userAwards}
+              matchHistory={matchHistory}
+              sessions={userSessions}
+              onRefreshSessions={onRefreshSessions}
+              onLogoutAllSessions={onLogoutAllSessions}
+              onLogoutSession={onLogoutSession}
+              onOpenRegister={onOpenRegister}
+              onUploadAvatar={onUploadAvatar}
+              uiVariant={gameUiVariant}
+            />
 
-      <PasswordResetFeature
-        visible={!isAdminRoute && activeUserTab === 'profile' && !user && profileScreen === 'reset'}
-        t={t}
-        busy={userBusy}
-        error={userError}
-        resetRequestDraft={resetRequestDraft}
-        setResetRequestDraft={setResetRequestDraft}
-        onRequestPasswordReset={onRequestPasswordReset}
-        resetPasswordDraft={resetPasswordDraft}
-        setResetPasswordDraft={setResetPasswordDraft}
-        onResetPassword={onResetPassword}
-        onBackToLogin={onBackToLogin}
-        uiVariant={gameUiVariant}
-      />
+            <RegisterFeature
+              visible={!isAdminRoute && activeUserTab === 'profile' && !user && profileScreen === 'register'}
+              t={t}
+              busy={userBusy}
+              error={userError}
+              registerDraft={registerDraft}
+              setRegisterDraft={setRegisterDraft}
+              onRegister={onRegister}
+              onBackToLogin={onBackToLogin}
+              uiVariant={gameUiVariant}
+            />
 
-      <StatisticsFeature
-        visible={!isAdminRoute && activeUserTab === 'statistics'}
-        t={t}
-        lang={lang}
-        user={user}
-        stats={userStats}
-        awards={userAwards}
-        matchHistory={matchHistory}
-        sessions={userSessions}
-        onLogoutSession={onLogoutSession}
-        uiVariant={gameUiVariant}
-      />
+            <PasswordResetFeature
+              visible={!isAdminRoute && activeUserTab === 'profile' && !user && profileScreen === 'reset'}
+              t={t}
+              busy={userBusy}
+              error={userError}
+              resetRequestDraft={resetRequestDraft}
+              setResetRequestDraft={setResetRequestDraft}
+              onRequestPasswordReset={onRequestPasswordReset}
+              resetPasswordDraft={resetPasswordDraft}
+              setResetPasswordDraft={setResetPasswordDraft}
+              onResetPassword={onResetPassword}
+              onBackToLogin={onBackToLogin}
+              uiVariant={gameUiVariant}
+            />
 
-      <GalleryFeature
-        visible={!isAdminRoute && activeUserTab === 'gallery'}
-        t={t}
-        lang={lang}
-        galleryCategoryFilter={galleryCategoryFilter}
-        setGalleryCategoryFilter={setGalleryCategoryFilter}
-        effectLabel={effectLabel}
-        uiVariant={gameUiVariant}
-        cardCatalog={cardCatalog}
-      />
+            <StatisticsFeature
+              visible={!isAdminRoute && activeUserTab === 'statistics'}
+              t={t}
+              lang={lang}
+              user={user}
+              stats={userStats}
+              awards={userAwards}
+              matchHistory={matchHistory}
+              sessions={userSessions}
+              onLogoutSession={onLogoutSession}
+              uiVariant={gameUiVariant}
+            />
 
-      <RulesFeature visible={!isAdminRoute && activeUserTab === 'rules'} t={t} rules={rules} uiVariant={gameUiVariant} />
+            <GalleryFeature
+              visible={!isAdminRoute && activeUserTab === 'gallery'}
+              t={t}
+              lang={lang}
+              galleryCategoryFilter={galleryCategoryFilter}
+              setGalleryCategoryFilter={setGalleryCategoryFilter}
+              effectLabel={effectLabel}
+              uiVariant={gameUiVariant}
+              cardCatalog={cardCatalog}
+            />
 
-      <AdminFeature
-        visible={isAdminRoute && adminAuthorized}
-        loadingLabel={t.loading}
-        uiVariant={adminUiVariant}
-        lang={lang}
-        serverUrl={SERVER_URL}
-        serverUrlDraft={serverUrlDraft}
-        setServerUrlDraft={setServerUrlDraft}
-        saveServerUrl={saveServerUrl}
-        resetServerUrl={resetServerUrl}
-        adminStorageMode={adminStorageMode}
-        setAdminStorageMode={setAdminStorageMode}
-        adminDbConfigDraft={adminDbConfigDraft}
-        setAdminDbConfigDraft={setAdminDbConfigDraft}
-        saveDbConfigDraft={saveDbConfigDraft}
-        testDbConnection={testDbConnection}
-        exportDbSchema={exportDbSchema}
-        importDbSchema={importDbSchema}
-        importJsonConfigToDb={importJsonConfigToDb}
-        exportDbBackup={exportDbBackup}
-        restoreDbBackup={restoreDbBackup}
-        dbConfigSaveStatus={dbConfigSaveStatus}
-        dbConnectionTestStatus={dbConnectionTestStatus}
-        dbConnectionTestError={dbConnectionTestError}
-        dbConnectionTestRunning={dbConnectionTestRunning}
-        dbExportSchemaStatus={dbExportSchemaStatus}
-        dbExportSchemaError={dbExportSchemaError}
-        dbExportSchemaRunning={dbExportSchemaRunning}
-        dbImportSchemaStatus={dbImportSchemaStatus}
-        dbImportSchemaError={dbImportSchemaError}
-        dbImportSchemaRunning={dbImportSchemaRunning}
-        dbImportJsonConfigStatus={dbImportJsonConfigStatus}
-        dbImportJsonConfigError={dbImportJsonConfigError}
-        dbImportJsonConfigRunning={dbImportJsonConfigRunning}
-        dbExportBackupStatus={dbExportBackupStatus}
-        dbExportBackupError={dbExportBackupError}
-        dbExportBackupRunning={dbExportBackupRunning}
-        dbRestoreBackupStatus={dbRestoreBackupStatus}
-        dbRestoreBackupError={dbRestoreBackupError}
-        dbRestoreBackupRunning={dbRestoreBackupRunning}
-        dbSyncMigrationsStatus={dbSyncMigrationsStatus}
-        dbSyncMigrationsError={dbSyncMigrationsError}
-        dbSyncMigrationsRunning={dbSyncMigrationsRunning}
-        syncDbMigrations={syncDbMigrations}
-        matches={matches}
-        adminMatchID={adminMatchID}
-        setAdminSelectedMatchID={setAdminSelectedMatchID}
-        snapshot={snapshot}
-        sharedDeckStats={sharedDeckStats}
-        sharedDeckTemplate={sharedDeckTemplate}
-        cardCatalog={cardCatalog}
-        sharedRanks={sharedRanks}
-        sharedConfigLoaded={sharedConfigLoaded}
-        createRoom={createRoom}
-        onResetMatch={onResetMatch}
-        onDeleteMatch={onDeleteMatch}
-        deletingAdminMatch={deletingAdminMatch}
-        clearSessionState={() => {
-          window.localStorage.removeItem(SESSION_STORAGE_KEY);
-          window.localStorage.removeItem(PLAYER_NAME_STORAGE_KEY);
-          setSession(null);
-          setPlayerName('');
-          setError('');
-          void refreshMatches();
-        }}
-        onRestartServer={onRestartServer}
-        onShuffleDeck={onShuffleDeck}
-        onAddCard={onAddCard}
-        onAddCustomCard={onAddCustomCard}
-        onUpdateCard={onUpdateCard}
-        onRemoveCard={onRemoveCard}
-        onResetDeck={onResetDeck}
-        onSetBack={onSetBack}
-        onExportTemplate={onExportTemplate}
-        onImportTemplate={onImportTemplate}
-        onSetRanks={onSetRanks}
-        onResetRanks={onResetRanks}
-        onStopGame={onStopGame}
-        runGameSimulations={(players, simulations, options) =>
-          runGameSimulations(players, simulations, 0, options)
-        }
-      />
+            <RulesFeature visible={!isAdminRoute && activeUserTab === 'rules'} t={t} rules={rules} uiVariant={gameUiVariant} />
 
-      <AuthErrorFeature
-        visible={!isAdminRoute}
-        t={t}
-        open={!user && activeUserTab === 'profile' && profileScreen === 'login' && Boolean(authErrorModal)}
-        error={authErrorModal}
-        onClose={() => setAuthErrorModal('')}
-        onOpenReset={() => {
-          setAuthErrorModal('');
-          setActiveUserTab('profile');
-          setProfileScreen('reset');
-        }}
-      />
-      <BugReportFeature
-        visible={!isAdminRoute}
-        lang={lang}
-        serverUrl={SERVER_URL}
-        session={session}
-        user={user}
-        playerName={playerName}
-        gameUiVariant={gameUiVariant}
-      />
-      <AppFooter buildLabel={buildLabel} />
+            <AdminFeature
+              visible={isAdminRoute && adminAuthorized}
+              loadingLabel={t.loading}
+              uiVariant={adminUiVariant}
+              lang={lang}
+              serverUrl={SERVER_URL}
+              serverUrlDraft={serverUrlDraft}
+              setServerUrlDraft={setServerUrlDraft}
+              saveServerUrl={saveServerUrl}
+              resetServerUrl={resetServerUrl}
+              adminStorageMode={adminStorageMode}
+              setAdminStorageMode={setAdminStorageMode}
+              adminDbConfigDraft={adminDbConfigDraft}
+              setAdminDbConfigDraft={setAdminDbConfigDraft}
+              saveDbConfigDraft={saveDbConfigDraft}
+              testDbConnection={testDbConnection}
+              exportDbSchema={exportDbSchema}
+              importDbSchema={importDbSchema}
+              importJsonConfigToDb={importJsonConfigToDb}
+              exportDbBackup={exportDbBackup}
+              restoreDbBackup={restoreDbBackup}
+              dbConfigSaveStatus={dbConfigSaveStatus}
+              dbConnectionTestStatus={dbConnectionTestStatus}
+              dbConnectionTestError={dbConnectionTestError}
+              dbConnectionTestRunning={dbConnectionTestRunning}
+              dbExportSchemaStatus={dbExportSchemaStatus}
+              dbExportSchemaError={dbExportSchemaError}
+              dbExportSchemaRunning={dbExportSchemaRunning}
+              dbImportSchemaStatus={dbImportSchemaStatus}
+              dbImportSchemaError={dbImportSchemaError}
+              dbImportSchemaRunning={dbImportSchemaRunning}
+              dbImportJsonConfigStatus={dbImportJsonConfigStatus}
+              dbImportJsonConfigError={dbImportJsonConfigError}
+              dbImportJsonConfigRunning={dbImportJsonConfigRunning}
+              dbExportBackupStatus={dbExportBackupStatus}
+              dbExportBackupError={dbExportBackupError}
+              dbExportBackupRunning={dbExportBackupRunning}
+              dbRestoreBackupStatus={dbRestoreBackupStatus}
+              dbRestoreBackupError={dbRestoreBackupError}
+              dbRestoreBackupRunning={dbRestoreBackupRunning}
+              dbSyncMigrationsStatus={dbSyncMigrationsStatus}
+              dbSyncMigrationsError={dbSyncMigrationsError}
+              dbSyncMigrationsRunning={dbSyncMigrationsRunning}
+              syncDbMigrations={syncDbMigrations}
+              matches={matches}
+              adminMatchID={adminMatchID}
+              setAdminSelectedMatchID={setAdminSelectedMatchID}
+              snapshot={snapshot}
+              sharedDeckStats={sharedDeckStats}
+              sharedDeckTemplate={sharedDeckTemplate}
+              cardCatalog={cardCatalog}
+              sharedRanks={sharedRanks}
+              sharedConfigLoaded={sharedConfigLoaded}
+              createRoom={createRoom}
+              onResetMatch={onResetMatch}
+              onDeleteMatch={onDeleteMatch}
+              deletingAdminMatch={deletingAdminMatch}
+              clearSessionState={() => {
+                window.localStorage.removeItem(SESSION_STORAGE_KEY);
+                window.localStorage.removeItem(PLAYER_NAME_STORAGE_KEY);
+                setSession(null);
+                setPlayerName('');
+                setError('');
+                void refreshMatches();
+              }}
+              onRestartServer={onRestartServer}
+              onShuffleDeck={onShuffleDeck}
+              onAddCard={onAddCard}
+              onAddCustomCard={onAddCustomCard}
+              onUpdateCard={onUpdateCard}
+              onRemoveCard={onRemoveCard}
+              onResetDeck={onResetDeck}
+              onSetBack={onSetBack}
+              onExportTemplate={onExportTemplate}
+              onImportTemplate={onImportTemplate}
+              onSetRanks={onSetRanks}
+              onResetRanks={onResetRanks}
+              onStopGame={onStopGame}
+              runGameSimulations={(players, simulations, options) =>
+                runGameSimulations(players, simulations, 0, options)
+              }
+            />
+
+            <AuthErrorFeature
+              visible={!isAdminRoute}
+              t={t}
+              open={!user && activeUserTab === 'profile' && profileScreen === 'login' && Boolean(authErrorModal)}
+              error={authErrorModal}
+              onClose={() => setAuthErrorModal('')}
+              onOpenReset={() => {
+                setAuthErrorModal('');
+                setActiveUserTab('profile');
+                setProfileScreen('reset');
+              }}
+            />
+            <BugReportFeature
+              visible={!isAdminRoute}
+              lang={lang}
+              serverUrl={SERVER_URL}
+              session={session}
+              user={user}
+              playerName={playerName}
+              gameUiVariant={gameUiVariant}
+            />
+            <AppFooter buildLabel={buildLabel} />
           </main>
+          {showScrollTop && (
+              <button
+                onClick={scrollToTop}
+                className="scroll-to-top-button"
+                aria-label="Наверх"
+                title="Наверх"
+              >
+                ↑
+              </button>
+            )}
         </GalleryProvider>
       </DeckProvider>
     </LobbyProvider>

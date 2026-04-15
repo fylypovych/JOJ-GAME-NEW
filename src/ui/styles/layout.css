@@ -1,11 +1,53 @@
 body {
-  margin: 0;
+  margin    : 0;
   min-height: 100vh;
-  color: var(--text);
+  color     : var(--text);
 }
 
 html,
 body,
 #root {
   min-height: 100%;
+}
+
+.no-border {
+  border: none !important;
+}
+
+.no-shadow {
+  box-shadow : none !important;
+  text-shadow: none !important;
+}
+
+.app+.scroll-to-top-button {
+  position       : fixed;
+  bottom         : 24px;
+  right          : 23px;
+  width          : 45px;
+  height         : 45px;
+  border-radius  : 50%;
+  border         : none;
+  cursor         : pointer;
+  font-size      : 24px;
+  display        : flex;
+  align-items    : center;
+  justify-content: center;
+  box-shadow     : 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index        : 1000;
+  opacity        : 1;
+  transition     : opacity 0.2s;
+}
+
+.app-v1+.scroll-to-top-button {
+  color          : #fff !important;
+  background     : linear-gradient(180deg, #486fd6, #294aa6) !important;
+}
+
+.app-v2+.scroll-to-top-button {
+  color          : #161c1c !important;
+  background: linear-gradient(180deg, #fff, #ccc) !important;
+}
+
+.scroll-to-top-button:hover {
+  opacity: 0.9;
 }
