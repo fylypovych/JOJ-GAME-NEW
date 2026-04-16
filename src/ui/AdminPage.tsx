@@ -372,6 +372,8 @@ export const AdminPage = ({
     setGitCommitMessageDraft,
     gitActionMessage,
     gitActionLog,
+    gitLocalChanges,
+    gitLocalChangesLoading,
     setGitActionMessage,
     setGitActionLog,
     loadGitAuthStatus,
@@ -380,6 +382,7 @@ export const AdminPage = ({
     checkGitUpdates,
     applyGitUpdate,
     applyGitDeploy,
+    viewGitLocalChanges,
     publishGitChanges,
   } = useAdminGitActions({
     lang,
@@ -945,6 +948,9 @@ export const AdminPage = ({
             gitDeployRunning={gitDeployRunning}
             gitPublishRunning={gitPublishRunning}
             publishGitChanges={publishGitChanges}
+            gitLocalChanges={gitLocalChanges}
+            gitLocalChangesLoading={gitLocalChangesLoading}
+            viewGitLocalChanges={viewGitLocalChanges}
             gitActionMessage={gitActionMessage}
             gitActionLog={gitActionLog}
           />

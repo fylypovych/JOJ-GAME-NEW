@@ -361,6 +361,7 @@ export const App = () => {
   }, [user?.displayName, user?.username]);
 
   const resolvedUserPlayerName = user?.displayName?.trim() || user?.username?.trim() || '';
+  const canOpenAdmin = Boolean(user && user.role === 'administrator');
 
   useEffect(() => {
     if (!user || !session?.matchID || !session?.playerID || !session.credentials) return;
@@ -570,6 +571,7 @@ export const App = () => {
           <main className={`app app-${shellUiVariant}${shellUiVariant === 'v1' ? ' app-v1' : ' app-v2'}`} data-bug-report-capture-root="true">
             <AppHeader
               isAdminRoute={isAdminRoute}
+              canOpenAdmin={canOpenAdmin}
               lang={lang}
               setLang={setLang}
               activeUserTab={activeUserTab}

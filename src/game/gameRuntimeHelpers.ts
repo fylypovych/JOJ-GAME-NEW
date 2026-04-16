@@ -49,7 +49,6 @@ export const createGameRuntimeHelpers = (args: {
     getPlayerLabel,
     clampNonNegativeResources,
     syncPlayerState,
-    hasResources,
     planReplacementResources,
   } = args;
 
@@ -356,24 +355,6 @@ export const createGameRuntimeHelpers = (args: {
     G.noPlayablePassStreak = 0;
   };
 
-  const canPromoteToSpecificRankWithoutMutation = (
-    G: JojGameState,
-    playerID: string,
-    targetRankId: string,
-  ): boolean => {
-    const ranks = getActiveRanks();
-    const playerCount = Object.keys(G.players ?? {}).length || 2;
-    const currentRankIdx = Math.max(0, ranks.findIndex((r) => r.id === G.ranks[playerID]));
-    const targetRankIdx = ranks.findIndex((r) => r.id === targetRankId);
-    if (targetRankIdx <= currentRankIdx) return false;
-    const targetRank = ranks[targetRankIdx];
-    if (!targetRank) return false;
-    const occupied = Object.entries(G.ranks).filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id).length;
-    if (occupied >= rankSeatLimitForRank(playerCount, targetRank.id, ranks)) return false;
-    return hasResources(G.resources[playerID], (targetRank as { requirement?: Partial<Record<ResourceKey, number>> }).requirement ?? {})
-      && hasResources(G.resources[playerID], (targetRank as { cost?: Partial<Record<ResourceKey, number>> }).cost ?? {});
-  };
-
   const canGrantSpecificRankIgnoringRequirementsWithoutMutation = (
     G: JojGameState,
     playerID: string,
@@ -412,7 +393,7 @@ export const createGameRuntimeHelpers = (args: {
   const canPlayRegularHandCardByInventory = (G: JojGameState, playerID: string, card: CardDefinition): boolean => {
     if (card.category === 'VVNZ') {
       if (!card.grantRank) return true;
-      return canPromoteToSpecificRankWithoutMutation(G, playerID, card.grantRank);
+      return canGrantSpecificRankIgnoringRequirementsWithoutMutation(G, playerID, card.grantRank);
     }
     if (card.category === 'LYAP' || card.category === 'SCANDAL') return Object.keys(G.players ?? {}).some((pid) => pid !== playerID);
     return planReplacementResources(G.resources[playerID], card.effects) !== null;

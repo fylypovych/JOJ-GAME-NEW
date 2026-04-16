@@ -1,5 +1,5 @@
 import { text } from '../../i18n';
-import type { GitAuthStatus, GitUpdateStatus } from '../types';
+import type { GitAuthStatus, GitLocalChangesPreview, GitUpdateStatus } from '../types';
 
 type T = ReturnType<typeof text>;
 
@@ -28,6 +28,9 @@ export const AdminGithubTab = ({
   gitDeployRunning,
   gitPublishRunning,
   publishGitChanges,
+  gitLocalChanges,
+  gitLocalChangesLoading,
+  viewGitLocalChanges,
   gitActionMessage,
   gitActionLog,
 }: {
@@ -55,6 +58,9 @@ export const AdminGithubTab = ({
   gitDeployRunning: boolean;
   gitPublishRunning: boolean;
   publishGitChanges: () => Promise<void> | void;
+  gitLocalChanges: GitLocalChangesPreview | null;
+  gitLocalChangesLoading: boolean;
+  viewGitLocalChanges: () => Promise<void> | void;
   gitActionMessage: string;
   gitActionLog: string;
 }) => (
@@ -135,6 +141,13 @@ export const AdminGithubTab = ({
       >
         {gitDeployRunning ? t.githubDeployLoading : t.githubDeploy}
       </button>
+      <button
+        type="button"
+        onClick={() => void viewGitLocalChanges()}
+        disabled={gitLocalChangesLoading || gitStatusLoading || !gitStatus?.dirty}
+      >
+        {gitLocalChangesLoading ? t.githubViewLocalChangesLoading : t.githubViewLocalChanges}
+      </button>
     </p>
     {gitStatus ? (
       <div className="admin-inline-editor">
@@ -146,6 +159,25 @@ export const AdminGithubTab = ({
         <p>{t.githubCanUpdate}: {gitStatus.canUpdate ? t.yes : t.no}</p>
         <p>{t.githubHead}: <code>{gitStatus.head || '-'}</code></p>
         {gitStatus.note ? <p>{t.githubNote}: {gitStatus.note}</p> : null}
+      </div>
+    ) : null}
+    {gitLocalChanges?.hasLocalChanges ? (
+      <div className="admin-inline-editor">
+        <h5>{t.githubLocalChangesTitle}</h5>
+        <p>
+          {t.githubLocalChangesFiles}: {gitLocalChanges.files.length}
+        </p>
+        {gitLocalChanges.files.length ? (
+          <p><code>{gitLocalChanges.files.join(', ')}</code></p>
+        ) : null}
+        {gitLocalChanges.truncated ? (
+          <p className="admin-error">{t.githubLocalChangesTruncated}</p>
+        ) : null}
+        {gitLocalChanges.diff ? (
+          <pre className="admin-textarea admin-log-viewer admin-github-log-viewer">{gitLocalChanges.diff}</pre>
+        ) : (
+          <p>{t.githubLocalChangesNone}</p>
+        )}
       </div>
     ) : null}
     {gitActionMessage ? <p className="admin-success">{gitActionMessage}</p> : null}

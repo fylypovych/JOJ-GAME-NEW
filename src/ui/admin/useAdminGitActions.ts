@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Language } from '../i18n';
-import type { GitAuthStatus, GitUpdateStatus } from './types';
+import type { GitAuthStatus, GitLocalChangesPreview, GitUpdateStatus } from './types';
 
 type UseAdminGitActionsParams = {
   lang: Language;
@@ -16,6 +16,7 @@ const createGitActionErrors = (lang: Language) => ({
   authStatus: lang === 'uk' ? 'Не вдалося перевірити GitHub credentials' : 'Failed to check GitHub credentials',
   authSave: lang === 'uk' ? 'Не вдалося зберегти GitHub credentials' : 'Failed to save GitHub credentials',
   authClear: lang === 'uk' ? 'Не вдалося очистити GitHub credentials' : 'Failed to clear GitHub credentials',
+  localChanges: lang === 'uk' ? 'Не вдалося отримати локальні git-зміни' : 'Failed to load local git changes',
 });
 
 const normalizeGitAuthStatus = (payload: Partial<GitAuthStatus>): GitAuthStatus => ({
@@ -48,6 +49,8 @@ export const useAdminGitActions = ({
   const [gitCommitMessageDraft, setGitCommitMessageDraft] = useState<string>('');
   const [gitActionMessage, setGitActionMessage] = useState<string>('');
   const [gitActionLog, setGitActionLog] = useState<string>('');
+  const [gitLocalChanges, setGitLocalChanges] = useState<GitLocalChangesPreview | null>(null);
+  const [gitLocalChangesLoading, setGitLocalChangesLoading] = useState<boolean>(false);
   const deployRecoveryTimersRef = useRef<number[]>([]);
   const deployRecoveryActiveRef = useRef<boolean>(false);
 
@@ -319,6 +322,52 @@ export const useAdminGitActions = ({
     }
   };
 
+  const viewGitLocalChanges = async () => {
+    setGitLocalChangesLoading(true);
+    setAdminActionError('');
+    setGitActionMessage('');
+    setGitActionLog('');
+    try {
+      const response = await fetch(`${serverUrl}/api/admin/git/local-changes`, {
+        headers: adminHeaders(),
+        credentials: 'include',
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        error?: string;
+        details?: string;
+        hasLocalChanges?: boolean;
+        files?: string[];
+        statusText?: string;
+        diff?: string;
+        truncated?: boolean;
+      };
+      if (!response.ok || !payload.ok) {
+        setAdminActionError(payload.error ?? gitActionErrors.localChanges);
+        setGitActionLog(payload.details ?? payload.error ?? '');
+        return;
+      }
+      const preview: GitLocalChangesPreview = {
+        hasLocalChanges: Boolean(payload.hasLocalChanges),
+        files: Array.isArray(payload.files) ? payload.files.map((row) => String(row)) : [],
+        statusText: String(payload.statusText ?? ''),
+        diff: String(payload.diff ?? ''),
+        truncated: Boolean(payload.truncated),
+      };
+      setGitLocalChanges(preview);
+      if (preview.hasLocalChanges) {
+        setGitActionMessage(lang === 'uk' ? 'Локальні git-зміни завантажено' : 'Local git changes loaded');
+      } else {
+        setGitActionMessage(lang === 'uk' ? 'Локальних git-змін немає' : 'No local git changes');
+      }
+    } catch {
+      setAdminActionError(gitActionErrors.localChanges);
+      setGitActionLog('');
+    } finally {
+      setGitLocalChangesLoading(false);
+    }
+  };
+
   const publishGitChanges = async () => {
     setGitPublishRunning(true);
     setAdminActionError('');
@@ -385,6 +434,8 @@ export const useAdminGitActions = ({
     setGitCommitMessageDraft,
     gitActionMessage,
     gitActionLog,
+    gitLocalChanges,
+    gitLocalChangesLoading,
     setGitActionMessage,
     setGitActionLog,
     loadGitAuthStatus,
@@ -393,6 +444,7 @@ export const useAdminGitActions = ({
     checkGitUpdates,
     applyGitUpdate,
     applyGitDeploy,
+    viewGitLocalChanges,
     publishGitChanges,
   };
 };

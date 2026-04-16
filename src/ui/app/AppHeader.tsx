@@ -6,6 +6,7 @@ type T = ReturnType<typeof import('../i18n').text>;
 
 interface AppHeaderProps {
   isAdminRoute: boolean;
+  canOpenAdmin: boolean;
   lang: Language;
   setLang: (lang: Language) => void;
   activeUserTab: UserTab;
@@ -18,7 +19,17 @@ interface AppHeaderProps {
 }
 
 export const AppHeader = (props: AppHeaderProps) => {
-  const { isAdminRoute, lang, setLang, activeUserTab, setActiveUserTab, gameUiVariant, setGameUiVariant, t } = props;
+  const {
+    isAdminRoute,
+    canOpenAdmin,
+    lang,
+    setLang,
+    activeUserTab,
+    setActiveUserTab,
+    gameUiVariant,
+    setGameUiVariant,
+    t,
+  } = props;
   const nextGameUiVariant = gameUiVariant === 'v1' ? 'v2' : 'v1';
   const nextGameUiLabel = nextGameUiVariant === 'v1' ? t.gameUiV1 : t.gameUiV2;
   const nextGameUiIcon = gameUiVariant === 'v1' ? '/ui-theme-night.png' : '/ui-theme-day.png';
@@ -65,11 +76,13 @@ export const AppHeader = (props: AppHeaderProps) => {
               </button>
             </div>
           </div>
-          <div className="app-toolbar-group">
-            <a href="/admin" className="app-toolbar-link-button">
-              {t.openAdmin}
-            </a>
-          </div>
+          {canOpenAdmin ? (
+            <div className="app-toolbar-group">
+              <a href="/admin" className="app-toolbar-link-button">
+                {t.openAdmin}
+              </a>
+            </div>
+          ) : null}
         </div>
       </div>
     </section>

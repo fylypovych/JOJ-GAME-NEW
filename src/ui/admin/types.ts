@@ -40,6 +40,14 @@ export type GitAuthStatus = {
   remoteAuthMode: 'https' | 'ssh' | 'other';
 };
 
+export type GitLocalChangesPreview = {
+  hasLocalChanges: boolean;
+  files: string[];
+  statusText: string;
+  diff: string;
+  truncated: boolean;
+};
+
 export type AdminDbActionResult = {
   ok: boolean;
   message?: string;

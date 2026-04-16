@@ -29,6 +29,13 @@ type GitUpdateStatusOk = {
   ignoredRuntimeDirtyFiles?: string[];
 };
 type GitUpdateStatusResult = GitUpdateStatusOk | { ok: false; error: string };
+type GitLocalChangesPreview = {
+  hasLocalChanges: boolean;
+  files: string[];
+  statusText: string;
+  diff: string;
+  truncated: boolean;
+};
 
 type GitOpDeps = {
   router: RouterLike;
@@ -85,6 +92,26 @@ const stashAllLocalGitChanges = async (runGit: RunGit) => {
   };
 };
 
+const parsePorcelainFiles = (stdout: string): string[] =>
+  stdout
+    .split(/\r?\n/)
+    .map((line) => line.trimEnd())
+    .filter(Boolean)
+    .map((line) => {
+      let rest = line.slice(3).trim();
+      if (rest.includes(' -> ')) rest = rest.split(' -> ').pop() ?? rest;
+      return rest;
+    })
+    .filter(Boolean);
+
+const truncateText = (value: string, maxChars: number) => {
+  if (value.length <= maxChars) return { value, truncated: false };
+  return {
+    value: `${value.slice(0, Math.max(0, maxChars))}\n\n[...truncated by admin API...]`,
+    truncated: true,
+  };
+};
+
 export const registerAdminGitRoutes = ({
   router,
   requireAdminAuth,
@@ -113,6 +140,66 @@ export const registerAdminGitRoutes = ({
       return;
     }
     ctx.body = result;
+  });
+
+  router.get('/api/admin/git/local-changes', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/git/local-changes'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-git-local-changes', 20, 60_000))) return;
+
+    const statusRes = await runGit(['status', '--porcelain', '--untracked-files=all']);
+    if (!statusRes.ok) {
+      await logLine('ERROR', `git local changes status failed: ${statusRes.error}`);
+      routeError(ctx, 500, 'Failed to read local git changes', { details: statusRes.error });
+      return;
+    }
+
+    const files = parsePorcelainFiles(statusRes.stdout);
+    const hasLocalChanges = files.length > 0;
+    if (!hasLocalChanges) {
+      routeOk<GitLocalChangesPreview>(ctx, {
+        hasLocalChanges: false,
+        files: [],
+        statusText: '',
+        diff: '',
+        truncated: false,
+      });
+      return;
+    }
+
+    const unstagedDiffRes = await runGit(['diff', '--no-ext-diff', '--submodule=short']);
+    if (!unstagedDiffRes.ok) {
+      await logLine('ERROR', `git local changes diff failed: ${unstagedDiffRes.error}`);
+      routeError(ctx, 500, 'Failed to read unstaged git diff', { details: unstagedDiffRes.error });
+      return;
+    }
+    const stagedDiffRes = await runGit(['diff', '--cached', '--no-ext-diff', '--submodule=short']);
+    if (!stagedDiffRes.ok) {
+      await logLine('ERROR', `git local changes cached diff failed: ${stagedDiffRes.error}`);
+      routeError(ctx, 500, 'Failed to read staged git diff', { details: stagedDiffRes.error });
+      return;
+    }
+
+    const combinedDiff = [
+      '### git status --porcelain',
+      statusRes.stdout.trim() || '(empty)',
+      '',
+      '### git diff (unstaged)',
+      unstagedDiffRes.stdout.trim() || '(no unstaged diff)',
+      '',
+      '### git diff --cached (staged)',
+      stagedDiffRes.stdout.trim() || '(no staged diff)',
+    ]
+      .join('\n')
+      .trim();
+    const truncated = truncateText(combinedDiff, 120_000);
+
+    routeOk<GitLocalChangesPreview>(ctx, {
+      hasLocalChanges,
+      files,
+      statusText: statusRes.stdout.trim(),
+      diff: truncated.value,
+      truncated: truncated.truncated,
+    });
   });
 
   router.get('/api/admin/git/auth-status', async (ctx: RouteCtx) => {
