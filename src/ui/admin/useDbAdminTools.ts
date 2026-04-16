@@ -297,6 +297,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        body: JSON.stringify(adminDbConfigDraft),
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
       if (!response.ok || !payload.ok) {
