@@ -594,8 +594,10 @@ WHERE r.is_active = true;`);
   router.post('/api/admin/db/sync-migrations', async (ctx: RouteCtx) => {
     if (!(await requireAdminWriteAccess(ctx, '/api/admin/db/sync-migrations'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-db-sync-migrations', 5, 60_000))) return;
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/sync-migrations', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
     try {
-      const parsed = await buildDbConnInputForExecution({}, adminDbUiConfigPath, pool);
+      const parsed = await buildDbConnInputForExecution(body, adminDbUiConfigPath, pool);
       if ('error' in parsed) return fail(ctx, 400, parsed.error);
 
       const migrationsDir = migrationsPath;
