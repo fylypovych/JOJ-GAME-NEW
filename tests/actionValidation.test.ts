@@ -99,10 +99,10 @@ test('getVvnzPlayBlockedReason reports target rank not higher', () => {
   assert.match(reason ?? '', /вже не нижче/);
 });
 
-test('getVvnzPlayBlockedReason allows VVNZ without target rank requirements when payment is available', () => {
+test('getVvnzPlayBlockedReason allows VVNZ without target rank requirements when time payment is available', () => {
   const G = makeState({
     resources: {
-      '0': { time: 0, reputation: 0, discipline: 0, documents: 0, tech: 2 },
+      '0': { time: 2, reputation: 0, discipline: 0, documents: 0, tech: 2 },
       '1': { time: 2, reputation: 2, discipline: 2, documents: 0, tech: 0 },
     },
   });
@@ -117,7 +117,7 @@ test('getVvnzPlayBlockedReason allows VVNZ without target rank requirements when
   assert.equal(reason, null);
 });
 
-test('getVvnzPlayBlockedReason reports missing any-resource payment', () => {
+test('getVvnzPlayBlockedReason reports missing time payment', () => {
   const cheapRanks: RankDefinition[] = [
     { id: 'recruit', name: 'Рекрут', requirement: {}, cost: {}, bonus: {} },
     { id: 'soldier', name: 'Солдат', requirement: {}, cost: { time: 1 }, bonus: {} },
@@ -136,7 +136,7 @@ test('getVvnzPlayBlockedReason reports missing any-resource payment', () => {
     resourceLabels: labels,
     lang: 'uk',
   });
-  assert.match(reason ?? '', /будь-які ресурси/i);
+  assert.match(reason ?? '', /Час/i);
 });
 
 test('getVvnzPlayBlockedReason blocks VVNZ after any promotion already happened this turn', () => {
@@ -178,7 +178,7 @@ test('getPromoteActionState exposes next rank and allowed flag', () => {
   assert.equal(state.nextRank?.id, 'soldier');
 });
 
-test('getHandCardActionState reflects generic stage blocks and VVNZ any-resource validation', () => {
+test('getHandCardActionState reflects generic stage blocks and VVNZ time-cost validation', () => {
   const G = makeState();
   const genericBlocked = getHandCardActionState({
     card: { id: 'support-1', title: 'Support', category: 'SUPPORT', effects: [] },

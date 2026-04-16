@@ -375,6 +375,10 @@ test('simulation hand SUPPORT execution stays in parity with live handler', () =
 test('simulation hand VVNZ execution stays in parity with live handler', () => {
   const live = makeParityState();
   const sim = makeParityState();
+  live.resources['0'].time = 2;
+  sim.resources['0'].time = 2;
+  syncParityPlayerState(live, '0');
+  syncParityPlayerState(sim, '0');
   const card: CardDefinition = {
     id: 'vvnz-parity',
     title: 'VVNZ',

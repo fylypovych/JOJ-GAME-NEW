@@ -120,6 +120,7 @@ export type AdminPageProps = {
   onExportDbSchema: () => Promise<void>;
   onImportDbSchema: () => Promise<void>;
   onImportJsonConfigToDb: () => Promise<void>;
+  onCheckDbConfigSync: () => Promise<void>;
   onExportDbBackup: () => Promise<void>;
   onRestoreDbBackup: (file: File | null) => Promise<void>;
   dbConfigSaveStatus: string;
@@ -135,6 +136,9 @@ export type AdminPageProps = {
   dbImportJsonConfigStatus: string;
   dbImportJsonConfigError: string;
   dbImportJsonConfigRunning: boolean;
+  dbCheckSyncStatus: string;
+  dbCheckSyncError: string;
+  dbCheckSyncRunning: boolean;
   dbExportBackupStatus: string;
   dbExportBackupError: string;
   dbExportBackupRunning: boolean;

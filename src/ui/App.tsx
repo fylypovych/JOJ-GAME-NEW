@@ -168,6 +168,9 @@ export const App = () => {
     dbImportJsonConfigStatus,
     dbImportJsonConfigError,
     dbImportJsonConfigRunning,
+    dbCheckSyncStatus,
+    dbCheckSyncError,
+    dbCheckSyncRunning,
     dbExportBackupStatus,
     dbExportBackupError,
     dbExportBackupRunning,
@@ -183,6 +186,7 @@ export const App = () => {
     exportDbSchema,
     importDbSchema,
     importJsonConfigToDb,
+    checkDbConfigSync,
     exportDbBackup,
     restoreDbBackup,
     ADMIN_STORAGE_MODE_STORAGE_KEY,
@@ -732,6 +736,7 @@ export const App = () => {
               exportDbSchema={exportDbSchema}
               importDbSchema={importDbSchema}
               importJsonConfigToDb={importJsonConfigToDb}
+              checkDbConfigSync={checkDbConfigSync}
               exportDbBackup={exportDbBackup}
               restoreDbBackup={restoreDbBackup}
               dbConfigSaveStatus={dbConfigSaveStatus}
@@ -747,6 +752,9 @@ export const App = () => {
               dbImportJsonConfigStatus={dbImportJsonConfigStatus}
               dbImportJsonConfigError={dbImportJsonConfigError}
               dbImportJsonConfigRunning={dbImportJsonConfigRunning}
+              dbCheckSyncStatus={dbCheckSyncStatus}
+              dbCheckSyncError={dbCheckSyncError}
+              dbCheckSyncRunning={dbCheckSyncRunning}
               dbExportBackupStatus={dbExportBackupStatus}
               dbExportBackupError={dbExportBackupError}
               dbExportBackupRunning={dbExportBackupRunning}

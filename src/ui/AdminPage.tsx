@@ -76,6 +76,7 @@ export const AdminPage = ({
   onExportDbSchema,
   onImportDbSchema,
   onImportJsonConfigToDb,
+  onCheckDbConfigSync,
   onExportDbBackup,
   onRestoreDbBackup,
   dbExportSchemaStatus,
@@ -87,6 +88,9 @@ export const AdminPage = ({
   dbImportJsonConfigStatus,
   dbImportJsonConfigError,
   dbImportJsonConfigRunning,
+  dbCheckSyncStatus,
+  dbCheckSyncError,
+  dbCheckSyncRunning,
   dbExportBackupStatus,
   dbExportBackupError,
   dbExportBackupRunning,
@@ -970,6 +974,7 @@ export const AdminPage = ({
             onExportDbSchema={onExportDbSchema}
             onImportDbSchema={onImportDbSchema}
             onImportJsonConfigToDb={onImportJsonConfigToDb}
+            onCheckDbConfigSync={onCheckDbConfigSync}
             onExportDbBackup={onExportDbBackup}
             onRestoreDbBackup={onRestoreDbBackup}
             dbExportSchemaStatus={dbExportSchemaStatus}
@@ -981,6 +986,9 @@ export const AdminPage = ({
             dbImportJsonConfigStatus={dbImportJsonConfigStatus}
             dbImportJsonConfigError={dbImportJsonConfigError}
             dbImportJsonConfigRunning={dbImportJsonConfigRunning}
+            dbCheckSyncStatus={dbCheckSyncStatus}
+            dbCheckSyncError={dbCheckSyncError}
+            dbCheckSyncRunning={dbCheckSyncRunning}
             onSyncDbMigrations={onSyncDbMigrations}
             dbSyncMigrationsStatus={dbSyncMigrationsStatus}
             dbSyncMigrationsError={dbSyncMigrationsError}

@@ -60,7 +60,7 @@ const ukTranslations: Record<string, string> = {
   [actionValidationKeys.vvnz.missingRequirements]: 'Для карти ВВНЗ до «{rankName}» бракує вимог: {missing}',
   [actionValidationKeys.vvnz.missingCost]: 'Для карти ВВНЗ до «{rankName}» бракує вартості: {missing}',
   [actionValidationKeys.vvnz.noFreeSeat]: 'Немає вільного місця на званні «{rankName}» (ліміт: {seatLimit})',
-  [actionValidationKeys.vvnz.anyResourcesLabel]: 'будь-які ресурси',
+  [actionValidationKeys.vvnz.anyResourcesLabel]: 'ресурси Часу',
   [actionValidationKeys.handCard.cannotPlayNow]: 'Цю карту зараз не можна розіграти.',
 };
 

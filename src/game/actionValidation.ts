@@ -2,7 +2,7 @@ import { getCardPlayBehavior, type CardPlayBehavior } from './cardRules';
 import { rankSeatLimitForRank } from './rankEngine';
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from './types';
 import { actionValidationKeys, type ActionTranslator, defaultTranslator } from './actionValidation.i18n';
-import { VVNZ_PLAY_COST, countAvailableResources } from './vvnzCost';
+import { VVNZ_PLAY_COST, countAvailableVvnzTime } from './vvnzCost';
 
 export type ResourceLabels = Record<ResourceKey, string>;
 export type ActionAvailability = { allowed: boolean; reason: string | null };
@@ -92,7 +92,7 @@ export const getVvnzPlayBlockedReason = (args: {
   lang?: 'uk' | 'en';
   translator?: ActionTranslator;
 }): string | null => {
-  const { card, G, playerID, ranks, translator } = args;
+  const { card, G, playerID, ranks, resourceLabels, translator } = args;
   const t = translator ?? defaultTranslator;
   if (card.category !== 'VVNZ') return null;
   if (G.promotedThisTurn?.[playerID]) {
@@ -112,11 +112,11 @@ export const getVvnzPlayBlockedReason = (args: {
   if (targetIdx <= currentIdx) {
     return t(actionValidationKeys.vvnz.rankNotLower, { rankName: targetRank.name });
   }
-  const availableUnits = countAvailableResources(row);
+  const availableUnits = countAvailableVvnzTime(row);
   if (availableUnits < VVNZ_PLAY_COST) {
     return t(actionValidationKeys.vvnz.missingCost, {
       rankName: targetRank.name,
-      missing: `${t(actionValidationKeys.vvnz.anyResourcesLabel)} ${VVNZ_PLAY_COST - availableUnits}`,
+      missing: `${resourceLabels.time} ${VVNZ_PLAY_COST - availableUnits}`,
     });
   }
   const playerCount = Object.keys(G.players ?? {}).length;

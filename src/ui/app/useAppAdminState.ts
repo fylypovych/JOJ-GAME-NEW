@@ -26,6 +26,9 @@ export interface UseAppAdminStateResult {
   dbImportJsonConfigStatus: ReturnType<typeof useDbAdminTools>['dbImportJsonConfigStatus'];
   dbImportJsonConfigError: ReturnType<typeof useDbAdminTools>['dbImportJsonConfigError'];
   dbImportJsonConfigRunning: ReturnType<typeof useDbAdminTools>['dbImportJsonConfigRunning'];
+  dbCheckSyncStatus: ReturnType<typeof useDbAdminTools>['dbCheckSyncStatus'];
+  dbCheckSyncError: ReturnType<typeof useDbAdminTools>['dbCheckSyncError'];
+  dbCheckSyncRunning: ReturnType<typeof useDbAdminTools>['dbCheckSyncRunning'];
   dbExportBackupStatus: ReturnType<typeof useDbAdminTools>['dbExportBackupStatus'];
   dbExportBackupError: ReturnType<typeof useDbAdminTools>['dbExportBackupError'];
   dbExportBackupRunning: ReturnType<typeof useDbAdminTools>['dbExportBackupRunning'];
@@ -40,6 +43,7 @@ export interface UseAppAdminStateResult {
   exportDbSchema: ReturnType<typeof useDbAdminTools>['exportDbSchema'];
   importDbSchema: ReturnType<typeof useDbAdminTools>['importDbSchema'];
   importJsonConfigToDb: ReturnType<typeof useDbAdminTools>['importJsonConfigToDb'];
+  checkDbConfigSync: ReturnType<typeof useDbAdminTools>['checkDbConfigSync'];
   exportDbBackup: ReturnType<typeof useDbAdminTools>['exportDbBackup'];
   restoreDbBackup: ReturnType<typeof useDbAdminTools>['restoreDbBackup'];
   syncDbMigrations: ReturnType<typeof useDbAdminTools>['syncDbMigrations'];

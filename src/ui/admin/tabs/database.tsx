@@ -19,6 +19,7 @@ export const AdminDatabaseTab = ({
   onExportDbSchema,
   onImportDbSchema,
   onImportJsonConfigToDb,
+  onCheckDbConfigSync,
   onExportDbBackup,
   onRestoreDbBackup,
   dbExportSchemaStatus,
@@ -30,6 +31,9 @@ export const AdminDatabaseTab = ({
   dbImportJsonConfigStatus,
   dbImportJsonConfigError,
   dbImportJsonConfigRunning,
+  dbCheckSyncStatus,
+  dbCheckSyncError,
+  dbCheckSyncRunning,
   dbExportBackupStatus,
   dbExportBackupError,
   dbExportBackupRunning,
@@ -55,6 +59,7 @@ export const AdminDatabaseTab = ({
   onExportDbSchema: () => Promise<void> | void;
   onImportDbSchema: () => Promise<void> | void;
   onImportJsonConfigToDb: () => Promise<void> | void;
+  onCheckDbConfigSync: () => Promise<void> | void;
   onExportDbBackup: () => Promise<void> | void;
   onRestoreDbBackup: (file: File | null) => Promise<void> | void;
   dbExportSchemaStatus: string;
@@ -66,6 +71,9 @@ export const AdminDatabaseTab = ({
   dbImportJsonConfigStatus: string;
   dbImportJsonConfigError: string;
   dbImportJsonConfigRunning: boolean;
+  dbCheckSyncStatus: string;
+  dbCheckSyncError: string;
+  dbCheckSyncRunning: boolean;
   dbExportBackupStatus: string;
   dbExportBackupError: string;
   dbExportBackupRunning: boolean;
@@ -132,6 +140,9 @@ export const AdminDatabaseTab = ({
         <h4>{t.dbSchemaTitle}</h4>
         <p>{t.dbSchemaHint}</p>
         <p className="admin-controls">
+          <button type="button" onClick={() => void onCheckDbConfigSync()} disabled={dbCheckSyncRunning}>
+            {dbCheckSyncRunning ? t.dbCheckSyncRunning : t.dbCheckSync}
+          </button>
           <button type="button" onClick={() => void onImportJsonConfigToDb()} disabled={dbImportJsonConfigRunning}>
             {dbImportJsonConfigRunning ? t.dbImportJsonConfigRunning : t.dbImportJsonConfig}
           </button>
@@ -145,6 +156,9 @@ export const AdminDatabaseTab = ({
             {dbExportBackupRunning ? t.dbExportBackupRunning : t.dbExportBackup}
           </button>
         </p>
+        <p>{t.dbCheckSyncHint}</p>
+        {dbCheckSyncStatus ? <p className="admin-success">{dbCheckSyncStatus}</p> : null}
+        {dbCheckSyncError ? <p className="admin-error">{dbCheckSyncError}</p> : null}
         <p>{t.dbSyncMigrationsHint}</p>
         <p className="admin-controls">
           <button type="button" onClick={() => void onSyncDbMigrations()} disabled={dbSyncMigrationsRunning}>

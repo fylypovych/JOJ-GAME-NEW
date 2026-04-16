@@ -26,6 +26,7 @@ type AdminPageContainerProps = {
   exportDbSchema: AdminPageProps['onExportDbSchema'];
   importDbSchema: AdminPageProps['onImportDbSchema'];
   importJsonConfigToDb: AdminPageProps['onImportJsonConfigToDb'];
+  checkDbConfigSync: AdminPageProps['onCheckDbConfigSync'];
   exportDbBackup: AdminPageProps['onExportDbBackup'];
   restoreDbBackup: AdminPageProps['onRestoreDbBackup'];
   dbConfigSaveStatus: AdminPageProps['dbConfigSaveStatus'];
@@ -41,6 +42,9 @@ type AdminPageContainerProps = {
   dbImportJsonConfigStatus: AdminPageProps['dbImportJsonConfigStatus'];
   dbImportJsonConfigError: AdminPageProps['dbImportJsonConfigError'];
   dbImportJsonConfigRunning: AdminPageProps['dbImportJsonConfigRunning'];
+  dbCheckSyncStatus: AdminPageProps['dbCheckSyncStatus'];
+  dbCheckSyncError: AdminPageProps['dbCheckSyncError'];
+  dbCheckSyncRunning: AdminPageProps['dbCheckSyncRunning'];
   dbExportBackupStatus: AdminPageProps['dbExportBackupStatus'];
   dbExportBackupError: AdminPageProps['dbExportBackupError'];
   dbExportBackupRunning: AdminPageProps['dbExportBackupRunning'];
@@ -101,6 +105,7 @@ export const AdminPageContainer = ({
   exportDbSchema,
   importDbSchema,
   importJsonConfigToDb,
+  checkDbConfigSync,
   exportDbBackup,
   restoreDbBackup,
   dbConfigSaveStatus,
@@ -116,6 +121,9 @@ export const AdminPageContainer = ({
   dbImportJsonConfigStatus,
   dbImportJsonConfigError,
   dbImportJsonConfigRunning,
+  dbCheckSyncStatus,
+  dbCheckSyncError,
+  dbCheckSyncRunning,
   dbExportBackupStatus,
   dbExportBackupError,
   dbExportBackupRunning,
@@ -176,6 +184,7 @@ export const AdminPageContainer = ({
         onExportDbSchema={exportDbSchema}
         onImportDbSchema={importDbSchema}
         onImportJsonConfigToDb={importJsonConfigToDb}
+        onCheckDbConfigSync={checkDbConfigSync}
         onExportDbBackup={exportDbBackup}
         onRestoreDbBackup={restoreDbBackup}
         dbConfigSaveStatus={dbConfigSaveStatus}
@@ -195,6 +204,9 @@ export const AdminPageContainer = ({
         dbImportJsonConfigStatus={dbImportJsonConfigStatus}
         dbImportJsonConfigError={dbImportJsonConfigError}
         dbImportJsonConfigRunning={dbImportJsonConfigRunning}
+        dbCheckSyncStatus={dbCheckSyncStatus}
+        dbCheckSyncError={dbCheckSyncError}
+        dbCheckSyncRunning={dbCheckSyncRunning}
         dbExportBackupStatus={dbExportBackupStatus}
         dbExportBackupError={dbExportBackupError}
         dbExportBackupRunning={dbExportBackupRunning}

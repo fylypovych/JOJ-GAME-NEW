@@ -145,6 +145,23 @@ const runDbCommand = async (
   })
 );
 
+const runPsqlScalar = async (conn: DbConnInput, sql: string): Promise<{ ok: true; value: string } | { ok: false; error: string }> => {
+  const result = await runDbCommand(
+    'psql',
+    ['-h', conn.host, '-p', conn.port, '-U', conn.user, '-d', conn.database, '--no-psqlrc', '-v', 'ON_ERROR_STOP=1', '-tA', '-c', sql],
+    conn,
+    15_000,
+  );
+  if (!result.ok) {
+    return { ok: false, error: (result.stderr || result.error || result.stdout || '').trim() || 'psql scalar query failed' };
+  }
+  const value = result.stdout
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find((line) => line.length > 0) ?? '';
+  return { ok: true, value };
+};
+
 const collectFilesRecursive = async (dirPath: string): Promise<string[]> => {
   const entries = await readdir(dirPath, { withFileTypes: true });
   const nested = await Promise.all(entries.map(async (entry) => {
@@ -372,6 +389,143 @@ export const registerAdminDbToolRoutes = ({
       ctx.body = { ok: true, message: 'Shared JSON config imported into database' };
     } catch (error) {
       fail(ctx, 400, 'Failed to import shared JSON config into database', String(error));
+    }
+  });
+
+  router.post('/api/admin/db/check-config-sync', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/db/check-config-sync'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-db-check-config-sync', 20, 60_000))) return;
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/check-config-sync', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const parsed = await buildDbConnInputForExecution(body, adminDbUiConfigPath, pool);
+    if ('error' in parsed) return fail(ctx, 400, parsed.error);
+
+    const compareJson = body.compareJson !== false;
+    const mismatches: string[] = [];
+    try {
+      const activeTemplateCountRaw = await runPsqlScalar(parsed, "SELECT count(*) FROM deck_templates WHERE is_active = true;");
+      if (!activeTemplateCountRaw.ok) return fail(ctx, 400, 'Failed to read active deck template count', activeTemplateCountRaw.error);
+      const activeRankSetCountRaw = await runPsqlScalar(parsed, "SELECT count(*) FROM rank_sets WHERE is_active = true;");
+      if (!activeRankSetCountRaw.ok) return fail(ctx, 400, 'Failed to read active rank set count', activeRankSetCountRaw.error);
+      const templateKeyRaw = await runPsqlScalar(parsed, "SELECT template_key FROM deck_templates WHERE is_active = true ORDER BY updated_at DESC LIMIT 1;");
+      if (!templateKeyRaw.ok) return fail(ctx, 400, 'Failed to read active template key', templateKeyRaw.error);
+      const rankSetKeyRaw = await runPsqlScalar(parsed, "SELECT rank_set_key FROM rank_sets WHERE is_active = true ORDER BY updated_at DESC LIMIT 1;");
+      if (!rankSetKeyRaw.ok) return fail(ctx, 400, 'Failed to read active rank set key', rankSetKeyRaw.error);
+
+      const dbDeckCountRaw = await runPsqlScalar(parsed, `
+SELECT count(*)
+FROM deck_template_entries e
+JOIN deck_templates t ON t.id = e.deck_template_id
+WHERE t.is_active = true AND e.deck_target = 'deck';`);
+      if (!dbDeckCountRaw.ok) return fail(ctx, 400, 'Failed to read deck entry count', dbDeckCountRaw.error);
+      const dbLegendaryCountRaw = await runPsqlScalar(parsed, `
+SELECT count(*)
+FROM deck_template_entries e
+JOIN deck_templates t ON t.id = e.deck_template_id
+WHERE t.is_active = true AND e.deck_target = 'legendaryDeck';`);
+      if (!dbLegendaryCountRaw.ok) return fail(ctx, 400, 'Failed to read legendaryDeck entry count', dbLegendaryCountRaw.error);
+      const dbRankTrackCountRaw = await runPsqlScalar(parsed, `
+SELECT count(*)
+FROM deck_template_entries e
+JOIN deck_templates t ON t.id = e.deck_template_id
+WHERE t.is_active = true AND e.deck_target = 'rankTrack';`);
+      if (!dbRankTrackCountRaw.ok) return fail(ctx, 400, 'Failed to read rankTrack entry count', dbRankTrackCountRaw.error);
+      const dbRankDefinitionsCountRaw = await runPsqlScalar(parsed, `
+SELECT count(*)
+FROM rank_definitions d
+JOIN rank_sets r ON r.id = d.rank_set_id
+WHERE r.is_active = true;`);
+      if (!dbRankDefinitionsCountRaw.ok) return fail(ctx, 400, 'Failed to read rank definitions count', dbRankDefinitionsCountRaw.error);
+
+      const activeTemplateCount = Number.parseInt(activeTemplateCountRaw.value, 10) || 0;
+      const activeRankSetCount = Number.parseInt(activeRankSetCountRaw.value, 10) || 0;
+      const dbDeckCount = Number.parseInt(dbDeckCountRaw.value, 10) || 0;
+      const dbLegendaryCount = Number.parseInt(dbLegendaryCountRaw.value, 10) || 0;
+      const dbRankTrackCount = Number.parseInt(dbRankTrackCountRaw.value, 10) || 0;
+      const dbRankDefinitionsCount = Number.parseInt(dbRankDefinitionsCountRaw.value, 10) || 0;
+      const templateKey = templateKeyRaw.value;
+      const rankSetKey = rankSetKeyRaw.value;
+
+      if (activeTemplateCount !== 1) {
+        mismatches.push(`Expected exactly 1 active deck template, got ${activeTemplateCount}.`);
+      }
+      if (activeRankSetCount !== 1) {
+        mismatches.push(`Expected exactly 1 active rank set, got ${activeRankSetCount}.`);
+      }
+
+      let jsonCounts: null | {
+        deck: number;
+        legendaryDeck: number;
+        rankTrack: number;
+        rankDefinitions: number;
+      } = null;
+
+      if (compareJson) {
+        const repoRoot = path.dirname(path.dirname(path.dirname(dbSchemaPath)));
+        const sharedDeckPath = path.join(repoRoot, 'database', 'shared-deck-template.json');
+        const sharedRanksPath = path.join(repoRoot, 'database', 'shared-ranks.json');
+
+        try {
+          const deckRaw = await readFile(sharedDeckPath, 'utf8');
+          const ranksRaw = await readFile(sharedRanksPath, 'utf8');
+          const deckJson = JSON.parse(deckRaw) as {
+            deck?: unknown[];
+            legendaryDeck?: unknown[];
+            rankTrack?: unknown[];
+            deckIds?: unknown[];
+            legendaryDeckIds?: unknown[];
+            rankTrackIds?: unknown[];
+          };
+          const ranksJson = JSON.parse(ranksRaw) as unknown;
+          const deckCount = Array.isArray(deckJson.deck) ? deckJson.deck.length : (Array.isArray(deckJson.deckIds) ? deckJson.deckIds.length : 0);
+          const legendaryDeckCount = Array.isArray(deckJson.legendaryDeck)
+            ? deckJson.legendaryDeck.length
+            : (Array.isArray(deckJson.legendaryDeckIds) ? deckJson.legendaryDeckIds.length : 0);
+          const rankTrackCount = Array.isArray(deckJson.rankTrack)
+            ? deckJson.rankTrack.length
+            : (Array.isArray(deckJson.rankTrackIds) ? deckJson.rankTrackIds.length : 0);
+          const rankDefinitionsCount = Array.isArray(ranksJson)
+            ? ranksJson.length
+            : (ranksJson && typeof ranksJson === 'object' && Array.isArray((ranksJson as { ranks?: unknown[] }).ranks)
+              ? ((ranksJson as { ranks: unknown[] }).ranks.length)
+              : 0);
+
+          jsonCounts = {
+            deck: deckCount,
+            legendaryDeck: legendaryDeckCount,
+            rankTrack: rankTrackCount,
+            rankDefinitions: rankDefinitionsCount,
+          };
+
+          if (dbDeckCount !== deckCount) mismatches.push(`deck count mismatch: db=${dbDeckCount} json=${deckCount}`);
+          if (dbLegendaryCount !== legendaryDeckCount) mismatches.push(`legendaryDeck count mismatch: db=${dbLegendaryCount} json=${legendaryDeckCount}`);
+          if (dbRankTrackCount !== rankTrackCount) mismatches.push(`rankTrack count mismatch: db=${dbRankTrackCount} json=${rankTrackCount}`);
+          if (dbRankDefinitionsCount !== rankDefinitionsCount) mismatches.push(`rank definitions mismatch: db=${dbRankDefinitionsCount} json=${rankDefinitionsCount}`);
+        } catch (error) {
+          mismatches.push(`Failed to compare with local JSON mirror: ${String(error instanceof Error ? error.message : error)}`);
+        }
+      }
+
+      const ok = mismatches.length === 0;
+      ctx.body = {
+        ok,
+        message: ok ? 'Shared config sync check passed.' : 'Shared config sync check failed.',
+        details: {
+          activeTemplateKey: templateKey,
+          activeRankSetKey: rankSetKey,
+          dbCounts: {
+            deck: dbDeckCount,
+            legendaryDeck: dbLegendaryCount,
+            rankTrack: dbRankTrackCount,
+            rankDefinitions: dbRankDefinitionsCount,
+          },
+          jsonCounts,
+          compareJson,
+          mismatches,
+        },
+      };
+    } catch (error) {
+      fail(ctx, 500, 'Failed to run shared config sync check', String(error instanceof Error ? error.message : error));
     }
   });
 

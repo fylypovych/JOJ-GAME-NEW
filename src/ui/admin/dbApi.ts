@@ -36,6 +36,7 @@ export const parseStoredAdminDbConfig = (raw: string | null): AdminDbConfigDraft
 export const createAdminDbApiUrls = (serverUrl: string) => ({
   uiConfig: `${serverUrl}/api/admin/db/ui-config`,
   testConnection: `${serverUrl}/api/admin/db/test-connection`,
+  checkConfigSync: `${serverUrl}/api/admin/db/check-config-sync`,
   schema: `${serverUrl}/api/admin/db/schema`,
   importSchema: `${serverUrl}/api/admin/db/import-schema`,
   importJsonConfig: `${serverUrl}/api/admin/db/import-json-config`,
@@ -48,6 +49,8 @@ export const dbAdminText = (lang: Language) => ({
   browserAndServerSave: lang === 'uk' ? 'Налаштування БД збережено (браузер + сервер).' : 'DB settings saved (browser + server).',
   connectionFailed: lang === 'uk' ? 'Не вдалося підключитися до БД.' : 'Failed to connect to database.',
   connectionOk: lang === 'uk' ? 'Підключення до БД успішне.' : 'Database connection successful.',
+  syncCheckFailed: lang === 'uk' ? 'Не вдалося перевірити синхронізацію даних БД.' : 'Failed to verify DB config synchronization.',
+  syncCheckOk: lang === 'uk' ? 'Перевірку синхронізації даних БД завершено.' : 'DB config synchronization check completed.',
   exportSchemaFailed: lang === 'uk' ? 'Не вдалося експортувати схему БД.' : 'Failed to export DB schema.',
   exportSchemaOk: lang === 'uk' ? 'Схему БД експортовано.' : 'DB schema exported.',
   importSchemaFailed: lang === 'uk' ? 'Не вдалося імпортувати db.sql.' : 'Failed to import db.sql.',

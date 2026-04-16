@@ -43,6 +43,9 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
   const [dbImportJsonConfigStatus, setDbImportJsonConfigStatus] = useState<string>('');
   const [dbImportJsonConfigError, setDbImportJsonConfigError] = useState<string>('');
   const [dbImportJsonConfigRunning, setDbImportJsonConfigRunning] = useState<boolean>(false);
+  const [dbCheckSyncStatus, setDbCheckSyncStatus] = useState<string>('');
+  const [dbCheckSyncError, setDbCheckSyncError] = useState<string>('');
+  const [dbCheckSyncRunning, setDbCheckSyncRunning] = useState<boolean>(false);
   const [dbExportBackupStatus, setDbExportBackupStatus] = useState<string>('');
   const [dbExportBackupError, setDbExportBackupError] = useState<string>('');
   const [dbExportBackupRunning, setDbExportBackupRunning] = useState<boolean>(false);
@@ -246,6 +249,45 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
     }
   };
 
+  const checkDbConfigSync = async () => {
+    setDbImportSchemaStatus('');
+    setDbImportSchemaError('');
+    setDbImportJsonConfigStatus('');
+    setDbImportJsonConfigError('');
+    setDbCheckSyncStatus('');
+    setDbCheckSyncError('');
+    setDbCheckSyncRunning(true);
+    try {
+      const response = await adminFetch(api.checkConfigSync, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...adminDbConfigDraft, compareJson: true }),
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        error?: string;
+        details?: string | { mismatches?: string[] };
+        message?: string;
+      };
+      if (!response.ok || !payload.ok) {
+        if (payload.details && typeof payload.details === 'object' && Array.isArray(payload.details.mismatches)) {
+          const mismatchText = payload.details.mismatches.length > 0
+            ? payload.details.mismatches.join('; ')
+            : dbText.syncCheckFailed;
+          setDbCheckSyncError(mismatchText);
+          return;
+        }
+        setDbCheckSyncError((typeof payload.details === 'string' ? payload.details : '') || payload.error || dbText.syncCheckFailed);
+        return;
+      }
+      setDbCheckSyncStatus(payload.message ?? dbText.syncCheckOk);
+    } catch {
+      setDbCheckSyncError(dbText.syncCheckFailed);
+    } finally {
+      setDbCheckSyncRunning(false);
+    }
+  };
+
   const syncDbMigrations = async () => {
     setDbSyncMigrationsStatus('');
     setDbSyncMigrationsError('');
@@ -343,6 +385,9 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
     dbImportJsonConfigStatus,
     dbImportJsonConfigError,
     dbImportJsonConfigRunning,
+    dbCheckSyncStatus,
+    dbCheckSyncError,
+    dbCheckSyncRunning,
     dbExportBackupStatus,
     dbExportBackupError,
     dbExportBackupRunning,
@@ -357,6 +402,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
     exportDbSchema,
     importDbSchema,
     importJsonConfigToDb,
+    checkDbConfigSync,
     exportDbBackup,
     restoreDbBackup,
     syncDbMigrations,

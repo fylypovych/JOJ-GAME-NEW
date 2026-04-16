@@ -808,9 +808,9 @@ test('playCardHandler rejects VVNZ when player already received promotion this t
   assert.equal(G.discard.length, 0);
 });
 
-test('playCardHandler applies VVNZ with any two resources, grants rank bonus, and marks next turn skip', () => {
+test('playCardHandler applies VVNZ with two time resources, grants rank bonus, and marks next turn skip', () => {
   const G = makeState();
-  G.resources['0'] = { time: 0, reputation: 1, discipline: 0, documents: 1, tech: 0 };
+  G.resources['0'] = { time: 2, reputation: 1, discipline: 0, documents: 1, tech: 0 };
   G.players['0'].resources = { ...G.resources['0'] };
   G.hands['0'] = [
     {
@@ -849,13 +849,14 @@ test('playCardHandler applies VVNZ with any two resources, grants rank bonus, an
     }),
     args,
     'vvnz-pay',
-    ['documents', 'reputation'],
+    ['time', 'time'],
   );
 
   assert.equal(result, undefined);
   assert.equal(G.ranks['0'], 'soldier');
-  assert.equal(G.resources['0'].reputation, 0);
-  assert.equal(G.resources['0'].documents, 0);
+  assert.equal(G.resources['0'].time, 0);
+  assert.equal(G.resources['0'].reputation, 1);
+  assert.equal(G.resources['0'].documents, 1);
   assert.equal(G.resources['0'].discipline, 1);
   assert.equal(G.skippedTurnCounts?.['0'], 1);
   assert.equal(G.discard.at(-1)?.id, 'vvnz-pay');
