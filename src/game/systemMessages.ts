@@ -196,8 +196,4 @@ export const legendaryTexts = {
     `«Статуя Святого ТОРа» благословила ${playerLabel} на +3 ${resourceLabel}, а решті видала по документу "щоб не розслаблялись".`,
   churchLeadership: (playerLabel: string) =>
     `«Церква Святого Лідерства» підсилила ${playerLabel} (+2 Час, +2 Авторитет), а решті видала короткий курс зі скромності (-1 Авторитет).`,
-  goodPressOfficerGranted: (playerLabel: string, rankName: string, bonusText: string) =>
-    `«Хороший прес-офіцер» подав матеріал настільки красиво, що ${playerLabel} отримує ${rankName} без перевірки вимог. Бонус звання: ${bonusText}.`,
-  goodPressOfficerNoChange: (playerLabel: string, rankName: string) =>
-    `«Хороший прес-офіцер» відпрацював бездоганно, але ${playerLabel} вже має ${rankName} або вище — піар спрацював, гравітація ні.`,
 };

@@ -115,8 +115,6 @@ const makeDeps = (overrides: Partial<JojMovesDeps> = {}): JojMovesDeps => ({
     statueTor: () => '',
     churchLeadership: () => '',
     waterRestore: () => '',
-    goodPressOfficerGranted: () => '',
-    goodPressOfficerNoChange: () => '',
     droidDemote: () => '',
   } as JojMovesDeps['legendaryTexts'],
   clampNonNegativeResources: () => undefined,

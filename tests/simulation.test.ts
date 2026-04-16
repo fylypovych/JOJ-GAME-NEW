@@ -296,8 +296,6 @@ const createParityMoveDeps = (): JojMovesDeps => {
       statueTor: () => '',
       churchLeadership: () => '',
       waterRestore: () => '',
-      goodPressOfficerGranted: () => '',
-      goodPressOfficerNoChange: () => '',
       droidDemote: () => '',
     },
     clampNonNegativeResources: () => undefined,

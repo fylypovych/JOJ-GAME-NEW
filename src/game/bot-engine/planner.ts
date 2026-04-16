@@ -157,7 +157,6 @@ const buildLegendaryPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: st
           score: base + 24,
         };
       }
-      if (card.id === 'legendary-13') return { kind: 'play-legendary', cardId: card.id, score: base + 40 };
       if (card.id === 'legendary-03') return { kind: 'play-legendary', cardId: card.id, score: base + 28 };
       if (card.id === 'legendary-12') return { kind: 'play-legendary', cardId: card.id, score: base + 18 };
       return { kind: 'play-legendary', cardId: card.id, score: base + (difficulty === 'hard' ? 16 : 10) };

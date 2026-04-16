@@ -406,7 +406,6 @@ export const createGameRuntimeHelpers = (args: {
 
   const canPlayLegendaryCardByInventory = (G: JojGameState, playerID: string, card: CardDefinition): boolean => {
     if (card.id === 'legendary-10') return canDemoteAnyOpponentWithoutMutation(G, playerID);
-    if (card.id === 'legendary-13') return canGrantSpecificRankIgnoringRequirementsWithoutMutation(G, playerID, 'senior_lieutenant');
     return true;
   };
 

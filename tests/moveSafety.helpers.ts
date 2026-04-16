@@ -160,8 +160,6 @@ export const makeDeps = (
     statueTor: () => '',
     churchLeadership: () => '',
     waterRestore: () => '',
-    goodPressOfficerGranted: () => '',
-    goodPressOfficerNoChange: () => '',
     droidDemote: () => '',
   } as JojMovesDeps['legendaryTexts'],
   clampNonNegativeResources: () => undefined,

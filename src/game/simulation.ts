@@ -420,8 +420,6 @@ const tryExecuteLegendaryPlanSim = (args: {
           statueTor: () => '',
           churchLeadership: () => '',
           waterRestore: () => '',
-          goodPressOfficerGranted: () => '',
-          goodPressOfficerNoChange: () => '',
           droidDemote: () => '',
         },
         effectSummaryToText: () => '',

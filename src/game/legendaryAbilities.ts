@@ -16,8 +16,6 @@ type LegendaryAbilityDeps = {
     statueTor: (playerLabel: string, resourceLabel: string) => string;
     churchLeadership: (playerLabel: string) => string;
     waterRestore: (playerLabel: string, resourceLabel: string, before: number, after: number) => string;
-    goodPressOfficerGranted: (playerLabel: string, rankName: string, bonusText: string) => string;
-    goodPressOfficerNoChange: (playerLabel: string, rankName: string) => string;
     droidDemote: (targetPlayerLabel: string, fromRankName: string, toRankName: string) => string;
   };
   effectSummaryToText: (summary: { resources: Partial<Record<ResourceKey, number>>; rank: number }) => string;
@@ -117,15 +115,6 @@ const legendaryAbilityRegistry: Record<string, LegendaryAbilityHandler> = {
     d.clampNonNegativeResources(G.resources[playerID]);
     d.syncPlayerState(G, playerID);
     return d.legendaryTexts.churchLeadership(playerLabel);
-  },
-  'legendary-13': ({ d, G, ctx, playerID }) => {
-    const playerLabel = d.getPlayerLabel(G, playerID);
-    const playerCount = Object.keys(G.players).length || Number(ctx.numPlayers ?? 0) || 2;
-    const granted = d.grantSpecificRankIgnoringRequirements(G, playerID, 'senior_lieutenant', playerCount);
-    if (!granted.ok) return d.INVALID_MOVE;
-    return granted.applied
-      ? d.legendaryTexts.goodPressOfficerGranted(playerLabel, d.rankNameById('senior_lieutenant'), d.resourceDeltaToText(granted.rank.bonus ?? {}))
-      : d.legendaryTexts.goodPressOfficerNoChange(playerLabel, d.rankNameById(G.ranks[playerID]));
   },
   'legendary-10': ({ d, G, ctx, playerID, targetPlayerID }) => {
     if (!targetPlayerID || !(targetPlayerID in G.players) || targetPlayerID === playerID) return d.INVALID_MOVE;
