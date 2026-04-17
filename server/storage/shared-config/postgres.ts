@@ -106,14 +106,25 @@ SET title = EXCLUDED.title,
     is_active = true,
     updated_at = now();
 UPDATE deck_templates SET is_active = false WHERE template_key <> 'shared-default' AND is_active = true;
-DELETE FROM deck_template_entries WHERE deck_template_id = (SELECT id FROM deck_templates WHERE template_key='shared-default' LIMIT 1);
-DELETE FROM card_catalog;
 ${cardCatalogRows.length > 0 ? `
 INSERT INTO card_catalog (id, title, category, image_path, flavor, effects, tags, metadata)
-VALUES ${cardCatalogRows.join(',\n')};` : ''}
+VALUES ${cardCatalogRows.join(',\n')}
+ON CONFLICT (id) DO UPDATE
+SET title = EXCLUDED.title,
+    category = EXCLUDED.category,
+    image_path = EXCLUDED.image_path,
+    flavor = EXCLUDED.flavor,
+    effects = EXCLUDED.effects,
+    tags = EXCLUDED.tags,
+    metadata = EXCLUDED.metadata,
+    updated_at = now();` : ''}
 ${rows.length > 0 ? `
 INSERT INTO deck_template_entries (deck_template_id, deck_target, card_id, sort_index, card_snapshot)
-VALUES ${rows.join(',\n')};` : ''}
+VALUES ${rows.join(',\n')}
+ON CONFLICT (deck_template_id, deck_target, sort_index) DO UPDATE
+SET card_id = EXCLUDED.card_id,
+    card_snapshot = EXCLUDED.card_snapshot,
+    updated_at = now();` : ''}
 COMMIT;`;
 
     const result = await runPsqlSql(targetDatabaseUrl, sql);
@@ -165,12 +176,20 @@ SET title = EXCLUDED.title,
     is_active = true,
     updated_at = now();
 UPDATE rank_sets SET is_active = false WHERE rank_set_key <> 'shared-default' AND is_active = true;
-DELETE FROM rank_definitions WHERE rank_set_id = (SELECT id FROM rank_sets WHERE rank_set_key='shared-default' LIMIT 1);
 ${rows.length > 0 ? `
 INSERT INTO rank_definitions (
   rank_set_id, rank_code, display_name, sort_order, requirements, promotion_cost, bonus, image_path, metadata
 )
-VALUES ${rows.join(',\n')};` : ''}
+VALUES ${rows.join(',\n')}
+ON CONFLICT (rank_set_id, rank_code) DO UPDATE
+SET display_name = EXCLUDED.display_name,
+    sort_order = EXCLUDED.sort_order,
+    requirements = EXCLUDED.requirements,
+    promotion_cost = EXCLUDED.promotion_cost,
+    bonus = EXCLUDED.bonus,
+    image_path = EXCLUDED.image_path,
+    metadata = EXCLUDED.metadata,
+    updated_at = now();` : ''}
 COMMIT;`;
 
     const result = await runPsqlSql(targetDatabaseUrl, sql);
