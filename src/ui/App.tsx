@@ -1,12 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { text } from './i18n';
-import {
-  clampBotCountToAllowed,
-  clampRoomCapacityToAllowed,
-  getAvailableBotCounts,
-} from '../game/lobbyConfig';
 import { runGameSimulations } from '../game/jojGame';
 import { SERVER_URL } from './app/clientConfig';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import {
   DEFAULT_SERVER_URL,
   PLAYER_NAME_STORAGE_KEY,
@@ -46,6 +42,9 @@ import { useDeckHandlers } from './app/useDeckHandlers';
 import { LobbyProvider } from './providers/LobbyContext';
 import { DeckProvider } from './providers/DeckContext';
 import { GalleryProvider } from './providers/GalleryContext';
+import { ScrollToTop } from './components/ScrollToTop';
+import { AdminAuthShell } from './components/AdminAuthShell';
+import { useAppEffects } from './hooks/useAppEffects';
 const ADMIN_RESTART_API = `${SERVER_URL}/api/admin/restart`;
 const ADMIN_MATCH_STATE_API = `${SERVER_URL}/api/admin/match-state`;
 const ADMIN_MATCH_STOP_API = `${SERVER_URL}/api/admin/match-stop`;
@@ -272,43 +271,37 @@ export const App = () => {
     galleryCategoryFilter,
   });
 
-  useEffect(() => {
-    const alwaysOn = optionalLobbyModules.filter((module) => module.alwaysOn).map((module) => module.id);
-    setSelectedOptionalModuleIds((prev) => {
-      const merged = Array.from(new Set([...prev, ...alwaysOn]));
-      const allowed = new Set(optionalLobbyModules.map((module) => module.id));
-      return merged.filter((id) => allowed.has(id));
-    });
-  }, [optionalLobbyModules]);
-  useEffect(() => {
-    const nextRoomCapacity = clampRoomCapacityToAllowed(roomCapacity, lobbyGameUiConfig.allowedRoomCapacities);
-    if (roomCapacity !== nextRoomCapacity) {
-      setRoomCapacity(nextRoomCapacity);
-      return;
-    }
-    const availableBotCounts = getAvailableBotCounts(lobbyGameUiConfig.allowedBotCounts, roomCapacity);
-    if (createWithBots && availableBotCounts.length === 0) {
-      setCreateWithBots(false);
-      return;
-    }
-    const nextBotCount = clampBotCountToAllowed(
-      botCount || lobbyGameUiConfig.defaultBotCount,
-      lobbyGameUiConfig.allowedBotCounts,
-      roomCapacity,
-    );
-    if (createWithBots && nextBotCount > 0 && botCount !== nextBotCount) {
-      setBotCount(nextBotCount);
-      return;
-    }
-    if (!createWithBots && availableBotCounts.length > 0 && botCount !== lobbyGameUiConfig.defaultBotCount) {
-      const fallbackBotCount = clampBotCountToAllowed(
-        lobbyGameUiConfig.defaultBotCount,
-        lobbyGameUiConfig.allowedBotCounts,
-        roomCapacity,
-      );
-      if (fallbackBotCount > 0 && botCount !== fallbackBotCount) setBotCount(fallbackBotCount);
-    }
-  }, [lobbyGameUiConfig, roomCapacity, createWithBots, botCount]);
+  // Consolidated app effects
+  useAppEffects({
+    optionalLobbyModules,
+    setSelectedOptionalModuleIds,
+    roomCapacity,
+    lobbyGameUiConfig,
+    setRoomCapacity,
+    createWithBots,
+    setCreateWithBots,
+    botCount,
+    setBotCount,
+    user,
+    setProfileScreen,
+    setAuthErrorModal,
+    setProfileDraft,
+    profileScreen,
+    activeUserTab,
+    setPlayerName,
+    playerName,
+    session,
+    bindMatchSession,
+    adminSelectedMatchID,
+    setAdminSelectedMatchID,
+    matches,
+    isAdminRoute,
+    gameTitle: t.gameTitle,
+    adminTitle: t.adminTitle,
+    adminStorageMode,
+    ADMIN_STORAGE_MODE_STORAGE_KEY,
+    LEGACY_ADMIN_STORAGE_MODE_STORAGE_KEY,
+  });
   const effectLabel = (resource: 'time' | 'reputation' | 'discipline' | 'documents' | 'tech' | 'rank') =>
     resource === 'rank' ? t.rankResource : t.resources[resource];
   const rules = t.rulesList;
@@ -331,65 +324,7 @@ export const App = () => {
     adminMatchStateApi: ADMIN_MATCH_STATE_API,
   });
 
-  useEffect(() => {
-    if (!user) return;
-    setProfileScreen('login');
-    setAuthErrorModal('');
-    setProfileDraft({
-      displayName: user.displayName ?? '',
-      email: user.email ?? '',
-      bio: user.bio ?? '',
-      avatarUrl: user.avatarUrl ?? '',
-      profilePublic: user.profilePublic !== false,
-      showStatsPublic: user.showStatsPublic !== false,
-      showRecentMatchesPublic: user.showRecentMatchesPublic === true,
-    });
-  }, [user]);
-
-  useEffect(() => {
-    if (user || profileScreen !== 'login' || activeUserTab !== 'profile') {
-      setAuthErrorModal('');
-    }
-  }, [user, profileScreen, activeUserTab]);
-
-  useEffect(() => {
-    if (!user) return;
-    const nextPlayerName = user.displayName?.trim() || user.username?.trim() || '';
-    if (!nextPlayerName) return;
-    if (playerName === nextPlayerName) return;
-    setPlayerName(nextPlayerName);
-  }, [user?.displayName, user?.username]);
-
-  const resolvedUserPlayerName = user?.displayName?.trim() || user?.username?.trim() || '';
   const canOpenAdmin = Boolean(user && user.role === 'administrator');
-
-  useEffect(() => {
-    if (!user || !session?.matchID || !session?.playerID || !session.credentials) return;
-    void bindMatchSession({
-      matchID: session.matchID,
-      playerID: session.playerID,
-      credentials: session.credentials,
-      playerName: resolvedUserPlayerName || playerName,
-    });
-  }, [user, session?.matchID, session?.playerID, session?.credentials]);
-
-  useEffect(() => {
-    if (session?.matchID) {
-      setAdminSelectedMatchID(session.matchID);
-      return;
-    }
-    if (adminSelectedMatchID && matches.some((m) => m.matchID === adminSelectedMatchID)) return;
-    setAdminSelectedMatchID(matches[0]?.matchID ?? '');
-  }, [adminSelectedMatchID, matches, session?.matchID]);
-
-  useEffect(() => {
-    document.title = isAdminRoute ? t.adminTitle : t.gameTitle;
-  }, [isAdminRoute, t.adminTitle, t.gameTitle]);
-
-  useEffect(() => {
-    window.localStorage.setItem(ADMIN_STORAGE_MODE_STORAGE_KEY, adminStorageMode);
-    window.localStorage.removeItem(LEGACY_ADMIN_STORAGE_MODE_STORAGE_KEY);
-  }, [adminStorageMode]);
 
   // Profile handlers
   const {
@@ -550,25 +485,12 @@ export const App = () => {
     cardImageById,
   }), [optionalLobbyModules, galleryCards, cardImageById]);
 
-  const [showScrollTop, setShowScrollTop] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > window.innerHeight);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   return (
-    <LobbyProvider value={lobbyContextValue}>
-      <DeckProvider value={deckContextValue}>
-        <GalleryProvider value={galleryContextValue}>
-          <main className={`app app-${shellUiVariant}${shellUiVariant === 'v1' ? ' app-v1' : ' app-v2'}`} data-bug-report-capture-root="true">
+    <ErrorBoundary>
+      <LobbyProvider value={lobbyContextValue}>
+        <DeckProvider value={deckContextValue}>
+          <GalleryProvider value={galleryContextValue}>
+            <main className={`app app-${shellUiVariant}${shellUiVariant === 'v1' ? ' app-v1' : ' app-v2'}`} data-bug-report-capture-root="true">
             <AppHeader
               isAdminRoute={isAdminRoute}
               canOpenAdmin={canOpenAdmin}
@@ -587,15 +509,18 @@ export const App = () => {
             </p>
 
             {isAdminRoute && (!adminAuthorized || adminAuthChecking) ? (
-              <section className={`admin-shell-v4 admin-panel-v4 admin-shell-v2 admin-panel-v2 admin-auth-shell${adminUiVariant === 'v1' ? ' admin-shell-v1 admin-panel-v1' : ''}`}>
-                <h2>{t.adminTitle}</h2>
-                <p className="admin-auth-status">{adminAuthChecking ? t.loading : (adminAuthError || (adminAuthEnabled === false ? t.adminAuthDisabledHint : t.adminUnauthorized))}</p>
-                {!adminAuthChecking ? (
-                  <p className="admin-controls admin-auth-actions">
-                    <button type="button" onClick={() => { void verifyAdminToken(); }}>{t.refreshRooms}</button>
-                  </p>
-                ) : null}
-              </section>
+              <AdminAuthShell
+                adminUiVariant={adminUiVariant}
+                adminAuthChecking={adminAuthChecking}
+                adminAuthError={adminAuthError}
+                adminAuthEnabled={adminAuthEnabled}
+                adminTitle={t.adminTitle}
+                loading={t.loading}
+                adminUnauthorized={t.adminUnauthorized}
+                adminAuthDisabledHint={t.adminAuthDisabledHint}
+                refreshRooms={t.refreshRooms}
+                onVerifyAdminToken={verifyAdminToken}
+              />
             ) : null}
 
             <LobbyFeature
@@ -829,18 +754,10 @@ export const App = () => {
             />
             <AppFooter buildLabel={buildLabel} />
           </main>
-          {showScrollTop && (
-              <button
-                onClick={scrollToTop}
-                className="scroll-to-top-button"
-                aria-label="Наверх"
-                title="Наверх"
-              >
-                ↑
-              </button>
-            )}
+          <ScrollToTop />
         </GalleryProvider>
       </DeckProvider>
     </LobbyProvider>
+    </ErrorBoundary>
   );
 };

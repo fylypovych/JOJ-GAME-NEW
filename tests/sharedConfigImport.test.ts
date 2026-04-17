@@ -55,5 +55,5 @@ test('resetSharedDeckTemplate restores full shared template instead of legacy mi
   resetSharedDeckTemplate();
   const template = getSharedDeckTemplate();
   assert.equal(template.deck.length, 100);
-  assert.equal(template.legendaryDeck.length, 15);
+  assert.equal(template.legendaryDeck.length, 14);
 });

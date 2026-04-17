@@ -1,6 +1,6 @@
 {
   "name": "joj-game-new",
-  "version": "0.0.3.33",
+  "version": "0.0.3.39",
   "private": true,
   "type": "module",
   "scripts": {
@@ -19,7 +19,7 @@
     "test:invariants": "tsx --test tests/gameInvariants.test.ts tests/playerView.test.ts tests/moveSafety.handlers.test.ts tests/moveSafety.turn-rules.test.ts tests/rankEngine.test.ts tests/actionValidation.test.ts",
     "test:simulation": "tsx --test tests/simulation.test.ts",
     "test:config": "tsx --test tests/sharedConfigImport.test.ts tests/effectsEngine.test.ts",
-    "coverage": "c8 --check-coverage --lines 65 --functions 80 --branches 55 --statements 65 --exclude=tests/** --exclude=scripts/** --exclude=public/** --exclude=database/** --exclude=db/** npm run test:unit",
+    "coverage": "c8 --check-coverage --lines 75 --functions 85 --branches 65 --statements 75 --exclude=tests/** --exclude=scripts/** --exclude=public/** --exclude=database/** --exclude=db/** npm run test:unit",
     "check:shared-config": "tsx scripts/check-shared-config.ts",
     "check:assets": "tsx scripts/check-asset-inventory.ts",
     "check:i18n": "tsx scripts/check-i18n.ts",
@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
-    "@types/node": "^22.12.0",
+    "@types/node": "^25.6.0",
     "@types/nodemailer": "^7.0.11",
     "@types/pg": "^8.18.0",
     "@types/react": "^18.3.18",
@@ -60,7 +60,7 @@
     "pg-mem": "^3.0.14",
     "prettier": "^3.8.1",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.58.1",
     "vite": "^6.0.7"
   }

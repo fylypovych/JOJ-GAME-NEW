@@ -21,14 +21,9 @@ if ('serviceWorker' in navigator) {
 
   if (isHttpsOrLocalhost) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').then(
-        (registration) => {
-          console.log('Service Worker registered: ', registration);
-        },
-        (error) => {
-          console.log('Service Worker registration failed: ', error);
-        }
-      );
+      navigator.serviceWorker.register('/sw.js').catch(() => {
+        // Service Worker registration failed silently - image caching will not work
+      });
     });
   }
 }
