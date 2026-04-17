@@ -5,7 +5,7 @@ type T = ReturnType<typeof text>;
 export const AdminSystemAdminTab = ({
   t,
   lang: _lang,
-  serverUrl,
+  serverUrl: _serverUrl,
   onResetAll,
   regenerateAllTemplateImages,
   imageRegenRunning,

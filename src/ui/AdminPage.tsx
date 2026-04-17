@@ -952,7 +952,7 @@ export const AdminPage = ({
             bugReportImagePath={bugReportImagePath}
             onBugReportImagePathChange={setBugReportImagePath}
             onSaveBugReportImagePath={() => saveBugReportUiConfig(bugReportImagePath)}
-            onUploadBugReportImage={async (file) => {
+            onUploadBugReportImage={async (file: File) => {
               if (!file) return;
               const optimized = await optimizeBlobForUpload(file, file.name, {
                 maxWidth: 100,
@@ -972,7 +972,7 @@ export const AdminPage = ({
             bugReportUiConfigError={bugReportUiConfigError}
             bugReportUiConfigStatus={bugReportUiConfigStatus}
             allowedRoomCapacities={allowedRoomCapacities}
-            onToggleAllowedRoomCapacity={(capacity) => {
+            onToggleAllowedRoomCapacity={(capacity: number) => {
               const next = normalizeLobbyGameUiConfig({
                 allowedRoomCapacities: allowedRoomCapacities.includes(capacity)
                   ? allowedRoomCapacities.filter((item) => item !== capacity)
@@ -987,7 +987,7 @@ export const AdminPage = ({
             defaultRoomCapacity={defaultRoomCapacity}
             onDefaultRoomCapacityChange={setDefaultRoomCapacity}
             allowedBotCounts={allowedBotCounts}
-            onToggleAllowedBotCount={(count) => {
+            onToggleAllowedBotCount={(count: number) => {
               const next = normalizeLobbyGameUiConfig({
                 allowedRoomCapacities,
                 defaultRoomCapacity,
@@ -1002,10 +1002,10 @@ export const AdminPage = ({
             defaultBotCount={defaultBotCount}
             onDefaultBotCountChange={setDefaultBotCount}
             resourceImagePaths={resourceImagePaths}
-            onResourceIconPathChange={(key, value) => {
+            onResourceIconPathChange={(key: string, value: string) => {
               setResourceImagePaths((prev) => ({ ...prev, [key]: value }));
             }}
-            onUploadResourceIcon={async (key, file) => {
+            onUploadResourceIcon={async (key: string, file: File) => {
               if (!file) return;
               const optimized = await optimizeBlobForUpload(file, file.name, {
                 maxWidth: 256,

@@ -22,6 +22,8 @@ export {
   AdminAwardsTab,
   AdminBugReportsTab,
   AdminUsersTab,
+  AdminGameConfigTab,
+  AdminSystemAdminTab,
 } from './tabs';
 export {
   useAdminAnalytics,
