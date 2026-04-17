@@ -137,8 +137,18 @@ export const AdminDatabaseTab = ({
           <p>{t.dbConnectionPreview}: <code>{`postgresql://${dbConfigDraft.user || 'user'}:${dbConfigDraft.password ? '***' : ''}@${dbConfigDraft.host || '127.0.0.1'}:${dbConfigDraft.port || '5432'}/${dbConfigDraft.database || 'database'}?sslmode=${dbConfigDraft.sslMode}`}</code></p>
         </div>
 
-        <h4>{t.dbSchemaTitle}</h4>
-        <p>{t.dbSchemaHint}</p>
+        <h4>{t.dbSyncMigrations}</h4>
+        <p>{t.dbSyncMigrationsHint}</p>
+        <p className="admin-controls">
+          <button type="button" onClick={() => void onSyncDbMigrations()} disabled={dbSyncMigrationsRunning}>
+            {dbSyncMigrationsRunning ? t.dbSyncMigrationsRunning : t.dbSyncMigrations}
+          </button>
+        </p>
+        {dbSyncMigrationsStatus ? <p className="admin-success">{dbSyncMigrationsStatus}</p> : null}
+        {dbSyncMigrationsError ? <p className="admin-error">{dbSyncMigrationsError}</p> : null}
+
+        <h4>{t.dbCheckSync}</h4>
+        <p>{t.dbCheckSyncHint}</p>
         <p className="admin-controls">
           <button type="button" onClick={() => void onCheckDbConfigSync()} disabled={dbCheckSyncRunning}>
             {dbCheckSyncRunning ? t.dbCheckSyncRunning : t.dbCheckSync}
@@ -146,36 +156,19 @@ export const AdminDatabaseTab = ({
           <button type="button" onClick={() => void onImportJsonConfigToDb()} disabled={dbImportJsonConfigRunning}>
             {dbImportJsonConfigRunning ? t.dbImportJsonConfigRunning : t.dbImportJsonConfig}
           </button>
-          <button type="button" onClick={() => void onImportDbSchema()} disabled={dbImportSchemaRunning}>
-            {dbImportSchemaRunning ? t.dbImportSchemaRunning : t.dbImportSchema}
-          </button>
-          <button type="button" onClick={() => void onExportDbSchema()} disabled={dbExportSchemaRunning}>
-            {dbExportSchemaRunning ? t.dbExportSchemaRunning : t.dbExportSchema}
-          </button>
+        </p>
+        {dbCheckSyncStatus ? <p className="admin-success">{dbCheckSyncStatus}</p> : null}
+        {dbCheckSyncError ? <p className="admin-error">{dbCheckSyncError}</p> : null}
+        {dbImportJsonConfigStatus ? <p className="admin-success">{dbImportJsonConfigStatus}</p> : null}
+        {dbImportJsonConfigError ? <p className="admin-error">{dbImportJsonConfigError}</p> : null}
+
+        <h4>{t.dbBackupTitle}</h4>
+        <p>{t.dbBackupHint}</p>
+        <p className="admin-controls">
           <button type="button" onClick={() => void onExportDbBackup()} disabled={dbExportBackupRunning}>
             {dbExportBackupRunning ? t.dbExportBackupRunning : t.dbExportBackup}
           </button>
         </p>
-        <p>{t.dbCheckSyncHint}</p>
-        {dbCheckSyncStatus ? <p className="admin-success">{dbCheckSyncStatus}</p> : null}
-        {dbCheckSyncError ? <p className="admin-error">{dbCheckSyncError}</p> : null}
-        <p>{t.dbSyncMigrationsHint}</p>
-        <p className="admin-controls">
-          <button type="button" onClick={() => void onSyncDbMigrations()} disabled={dbSyncMigrationsRunning}>
-            {dbSyncMigrationsRunning ? t.dbSyncMigrationsRunning : t.dbSyncMigrations}
-          </button>
-        </p>
-        {dbImportJsonConfigStatus ? <p className="admin-success">{dbImportJsonConfigStatus}</p> : null}
-        {dbImportJsonConfigError ? <p className="admin-error">{dbImportJsonConfigError}</p> : null}
-        {dbImportSchemaStatus ? <p className="admin-success">{dbImportSchemaStatus}</p> : null}
-        {dbImportSchemaError ? <p className="admin-error">{dbImportSchemaError}</p> : null}
-        {dbExportSchemaStatus ? <p className="admin-success">{dbExportSchemaStatus}</p> : null}
-        {dbExportSchemaError ? <p className="admin-error">{dbExportSchemaError}</p> : null}
-        {dbSyncMigrationsStatus ? <p className="admin-success">{dbSyncMigrationsStatus}</p> : null}
-        {dbSyncMigrationsError ? <p className="admin-error">{dbSyncMigrationsError}</p> : null}
-
-        <h4>{t.dbBackupTitle}</h4>
-        <p>{t.dbBackupHint}</p>
         <p className="admin-controls">
           <label>
             {t.dbRestoreBackupFileLabel}
@@ -185,20 +178,30 @@ export const AdminDatabaseTab = ({
               onChange={(e) => setBackupFile(e.target.files?.[0] ?? null)}
             />
           </label>
-        </p>
-        {backupFile ? <p>{t.dbRestoreBackupFileSelected}: <code>{backupFile.name}</code></p> : null}
-        <p className="admin-controls">
           <button type="button" onClick={() => void onRestoreDbBackup(backupFile)} disabled={dbRestoreBackupRunning || !backupFile}>
             {dbRestoreBackupRunning ? t.dbRestoreBackupRunning : t.dbRestoreBackup}
           </button>
-          <button type="button" onClick={() => void onExportDbBackup()} disabled={dbExportBackupRunning}>
-            {dbExportBackupRunning ? t.dbExportBackupRunning : t.dbExportBackup}
-          </button>
         </p>
+        {backupFile ? <p>{t.dbRestoreBackupFileSelected}: <code>{backupFile.name}</code></p> : null}
         {dbRestoreBackupStatus ? <p className="admin-success">{dbRestoreBackupStatus}</p> : null}
         {dbRestoreBackupError ? <p className="admin-error">{dbRestoreBackupError}</p> : null}
         {dbExportBackupStatus ? <p className="admin-success">{dbExportBackupStatus}</p> : null}
         {dbExportBackupError ? <p className="admin-error">{dbExportBackupError}</p> : null}
+
+        <h4>{t.dbSchemaTitle}</h4>
+        <p>{t.dbSchemaHint}</p>
+        <p className="admin-controls">
+          <button type="button" onClick={() => void onExportDbSchema()} disabled={dbExportSchemaRunning}>
+            {dbExportSchemaRunning ? t.dbExportSchemaRunning : t.dbExportSchema}
+          </button>
+          <button type="button" onClick={() => void onImportDbSchema()} disabled={dbImportSchemaRunning}>
+            {dbImportSchemaRunning ? t.dbImportSchemaRunning : t.dbImportSchema}
+          </button>
+        </p>
+        {dbExportSchemaStatus ? <p className="admin-success">{dbExportSchemaStatus}</p> : null}
+        {dbExportSchemaError ? <p className="admin-error">{dbExportSchemaError}</p> : null}
+        {dbImportSchemaStatus ? <p className="admin-success">{dbImportSchemaStatus}</p> : null}
+        {dbImportSchemaError ? <p className="admin-error">{dbImportSchemaError}</p> : null}
       </>
     ) : null}
   </>

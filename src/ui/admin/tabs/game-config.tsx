@@ -1,0 +1,219 @@
+import { text } from '../../i18n';
+import {
+  LOBBY_BOT_COUNT_OPTIONS,
+  LOBBY_ROOM_CAPACITY_OPTIONS,
+  type LobbyBotCountOption,
+  type LobbyRoomCapacityOption,
+} from '../../../game/lobbyConfig';
+import { resourceKeys } from '../../../game/resourceMeta';
+import type { ResourceKey } from '../../../game/types';
+
+type T = ReturnType<typeof text>;
+
+export const AdminGameConfigTab = ({
+  t,
+  lang: _lang,
+  serverUrlDraft,
+  onServerUrlDraftChange,
+  onSaveServerUrl,
+  onResetServerUrl,
+  serverUrl,
+  bugReportImagePath,
+  onBugReportImagePathChange,
+  onSaveBugReportImagePath,
+  onUploadBugReportImage,
+  bugReportUiConfigLoading,
+  bugReportUiConfigError,
+  bugReportUiConfigStatus,
+  allowedRoomCapacities,
+  onToggleAllowedRoomCapacity,
+  defaultRoomCapacity,
+  onDefaultRoomCapacityChange,
+  allowedBotCounts,
+  onToggleAllowedBotCount,
+  defaultBotCount,
+  onDefaultBotCountChange,
+  resourceImagePaths,
+  onResourceIconPathChange,
+  onUploadResourceIcon,
+  onSaveGameUiConfig,
+  gameUiConfigLoading,
+  gameUiConfigError,
+  gameUiConfigStatus,
+}: {
+  t: T;
+  lang: 'uk' | 'en';
+  serverUrlDraft: string;
+  onServerUrlDraftChange: (v: string) => void;
+  onSaveServerUrl: (v: string) => void;
+  onResetServerUrl: () => void;
+  serverUrl: string;
+  bugReportImagePath: string;
+  onBugReportImagePathChange: (value: string) => void;
+  onSaveBugReportImagePath: () => Promise<void> | void;
+  onUploadBugReportImage: (file: File | null) => Promise<void> | void;
+  bugReportUiConfigLoading: boolean;
+  bugReportUiConfigError: string;
+  bugReportUiConfigStatus: string;
+  allowedRoomCapacities: LobbyRoomCapacityOption[];
+  onToggleAllowedRoomCapacity: (capacity: LobbyRoomCapacityOption) => void;
+  defaultRoomCapacity: LobbyRoomCapacityOption;
+  onDefaultRoomCapacityChange: (capacity: LobbyRoomCapacityOption) => void;
+  allowedBotCounts: LobbyBotCountOption[];
+  onToggleAllowedBotCount: (count: LobbyBotCountOption) => void;
+  defaultBotCount: LobbyBotCountOption;
+  onDefaultBotCountChange: (count: LobbyBotCountOption) => void;
+  resourceImagePaths: Record<ResourceKey, string>;
+  onResourceIconPathChange: (key: ResourceKey, value: string) => void;
+  onUploadResourceIcon: (key: ResourceKey, file: File | null) => Promise<void> | void;
+  onSaveGameUiConfig: () => Promise<void> | void;
+  gameUiConfigLoading: boolean;
+  gameUiConfigError: string;
+  gameUiConfigStatus: string;
+}) => (
+  <>
+    <h3>{t.tabGameConfig}</h3>
+    <p>{t.settingsHint}</p>
+    <p>{t.adminPath}: <code>/admin</code></p>
+    
+    <h4>{t.serverSettingsTitle}</h4>
+    <p className="admin-controls">
+      <label>
+        {t.serverUrlLabel}
+        <input value={serverUrlDraft} onChange={(e) => onServerUrlDraftChange(e.target.value)} placeholder="http://192.168.0.25:8000" />
+      </label>
+      <button type="button" onClick={() => onSaveServerUrl(serverUrlDraft)}>{t.saveServerUrl}</button>
+      <button type="button" onClick={onResetServerUrl}>{t.resetServerUrl}</button>
+    </p>
+    <p>{t.currentServerUrl}: <code>{serverUrl}</code></p>
+    <p>{t.serverUrlReloadHint}</p>
+    
+    <h4>{t.bugReportIconSettingsTitle}</h4>
+    <p>{t.bugReportIconSettingsHint}</p>
+    <p className="admin-controls">
+      <label>
+        {t.bugReportIconPathLabel}
+        <input value={bugReportImagePath} onChange={(e) => onBugReportImagePathChange(e.target.value)} placeholder="/card-assets/bug-report-icon.webp" />
+      </label>
+      <button type="button" onClick={() => void onSaveBugReportImagePath()} disabled={bugReportUiConfigLoading}>
+        {t.saveServerUrl}
+      </button>
+      <label>
+        {t.bugReportIconUploadLabel}
+        <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => void onUploadBugReportImage(e.target.files?.[0] ?? null)} />
+      </label>
+    </p>
+    {bugReportImagePath ? (
+      <p>
+        <img
+          className="admin-bug-report-icon-preview"
+          src={`${serverUrl}/api/bug-reports/ui-image?path=${encodeURIComponent(bugReportImagePath)}&v=${encodeURIComponent(bugReportImagePath)}`}
+          alt={t.bugReportImageAlt}
+        />
+      </p>
+    ) : null}
+    {bugReportUiConfigStatus ? <p className="admin-success">{bugReportUiConfigStatus}</p> : null}
+    {bugReportUiConfigError ? <p className="admin-error">{bugReportUiConfigError}</p> : null}
+    
+    <h4>{t.resourceIconsSettingsTitle}</h4>
+    <p>{t.resourceIconsSettingsHint}</p>
+    <div className="admin-json-preview">
+      {resourceKeys.map((key) => (
+        <div key={`resource-icon-${key}`} className="admin-editor-grid">
+          <label>
+            {t.resources[key]}
+            <input
+              value={resourceImagePaths[key] ?? ''}
+              onChange={(e) => onResourceIconPathChange(key, e.target.value)}
+              placeholder={`/resource-icons/${key}.png`}
+            />
+          </label>
+          <label>
+            {t.resourceIconUploadLabel}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                void onUploadResourceIcon(key, e.target.files?.[0] ?? null);
+                e.currentTarget.value = '';
+              }}
+            />
+          </label>
+          {resourceImagePaths[key] ? (
+            <p>
+              <img
+                className="admin-bug-report-icon-preview"
+                src={resourceImagePaths[key]}
+                alt={t.resources[key]}
+              />
+            </p>
+          ) : null}
+        </div>
+      ))}
+    </div>
+    
+    <h4>{t.botSettingsTitle}</h4>
+    <p>{t.botSettingsHint}</p>
+    <p>{t.botSettingsRoomCapacitiesLabel}:</p>
+    <p className="admin-controls">
+      {LOBBY_ROOM_CAPACITY_OPTIONS.map((capacity) => (
+        <label key={`room-capacity-setting-${capacity}`}>
+          <input
+            type="checkbox"
+            checked={allowedRoomCapacities.includes(capacity)}
+            onChange={() => onToggleAllowedRoomCapacity(capacity)}
+          />
+          {capacity}
+        </label>
+      ))}
+    </p>
+    <p>{t.botSettingsDefaultRoomCapacityLabel}:</p>
+    <p className="admin-controls">
+      {allowedRoomCapacities.map((capacity) => (
+        <button
+          key={`room-capacity-default-${capacity}`}
+          type="button"
+          aria-pressed={defaultRoomCapacity === capacity}
+          onClick={() => onDefaultRoomCapacityChange(capacity)}
+          disabled={gameUiConfigLoading}
+        >
+          {defaultRoomCapacity === capacity ? '✓ ' : ''}{capacity}
+        </button>
+      ))}
+    </p>
+    <p>{t.botSettingsAllowedLabel}:</p>
+    <p className="admin-controls">
+      {LOBBY_BOT_COUNT_OPTIONS.map((count) => (
+        <label key={`bot-setting-${count}`}>
+          <input
+            type="checkbox"
+            checked={allowedBotCounts.includes(count)}
+            onChange={() => onToggleAllowedBotCount(count)}
+          />
+          {count}
+        </label>
+      ))}
+    </p>
+    <p>{t.botSettingsDefaultLabel}:</p>
+    <p className="admin-controls">
+      {allowedBotCounts.map((count) => (
+        <button
+          key={`bot-setting-default-${count}`}
+          type="button"
+          aria-pressed={defaultBotCount === count}
+          onClick={() => onDefaultBotCountChange(count)}
+          disabled={gameUiConfigLoading}
+        >
+          {defaultBotCount === count ? '✓ ' : ''}{count}
+        </button>
+      ))}
+    </p>
+    <p className="admin-controls">
+      <button type="button" onClick={() => void onSaveGameUiConfig()} disabled={gameUiConfigLoading}>
+        {t.dbSaveSettings}
+      </button>
+    </p>
+    {gameUiConfigStatus ? <p className="admin-success">{gameUiConfigStatus}</p> : null}
+    {gameUiConfigError ? <p className="admin-error">{gameUiConfigError}</p> : null}
+  </>
+);

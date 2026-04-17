@@ -107,6 +107,8 @@ export const uiUkData = {
   tabBugReports: 'Баг-репорти',
   tabSettings: 'Налаштування',
   tabSimulation: 'Симуляція',
+  tabGameConfig: 'Налаштування гри',
+  tabSystemAdmin: 'Система',
   bugReportFab: 'BUG REPORT',
   bugReportTitle: 'Баг-репорт',
   bugReportHint:

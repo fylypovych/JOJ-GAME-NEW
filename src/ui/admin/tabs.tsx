@@ -3,6 +3,8 @@ export type { AdminNavCategory, AdminNavTab } from './tabs/common';
 export { AdminAnalyticsTab } from './tabs/analytics';
 export { AdminGithubTab } from './tabs/github';
 export { AdminSettingsTab } from './tabs/settings';
+export { AdminGameConfigTab } from './tabs/game-config';
+export { AdminSystemAdminTab } from './tabs/system-admin';
 export { AdminDatabaseTab } from './tabs/database';
 export { AdminImportTab, AdminStateTab, AdminSimulationTab } from './tabs/import-state-sim';
 export { AdminDeckTab } from './tabs/deck';

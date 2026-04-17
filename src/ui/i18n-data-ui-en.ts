@@ -106,6 +106,8 @@ export const uiEnData = {
   tabBugReports: 'Bug reports',
   tabSettings: 'Settings',
   tabSimulation: 'Simulation',
+  tabGameConfig: 'Game Config',
+  tabSystemAdmin: 'System',
   bugReportFab: 'BUG REPORT',
   bugReportTitle: 'Bug report',
   bugReportHint:

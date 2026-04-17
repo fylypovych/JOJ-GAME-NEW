@@ -20,6 +20,7 @@ import {
   AdminBugReportsTab,
   AdminDatabaseTab,
   AdminDeckTab,
+  AdminGameConfigTab,
   AdminGithubTab,
   AdminImportTab,
   AdminMatchesTab,
@@ -27,6 +28,7 @@ import {
   AdminSettingsTab,
   AdminSimulationTab,
   AdminStateTab,
+  AdminSystemAdminTab,
   AdminUsersTab,
   categories,
   rankResourceKeys,
@@ -476,9 +478,12 @@ export const AdminPage = ({
     void refreshAdminAnalytics();
   }, [activeTab, adminAnalytics, adminAnalyticsLoading, refreshAdminAnalytics]);
   useEffect(() => {
-    if (activeTab !== 'settings') return;
+    if (activeTab !== 'gameConfig' && activeTab !== 'settings') return;
     void loadBugReportUiConfig();
     void loadGameUiConfig();
+  }, [activeTab]);
+  useEffect(() => {
+    if (activeTab !== 'systemAdmin' && activeTab !== 'settings') return;
     void loadAssets();
   }, [activeTab]);
   useEffect(() => {
@@ -586,6 +591,18 @@ export const AdminPage = ({
       short: 'BR',
       iconPath: '/admin-icons/tab-bugs.svg',
     },
+    gameConfig: {
+      id: 'gameConfig',
+      label: activeTabLabelMap.gameConfig,
+      short: 'GC',
+      iconPath: '/admin-icons/tab-settings.svg',
+    },
+    systemAdmin: {
+      id: 'systemAdmin',
+      label: activeTabLabelMap.systemAdmin,
+      short: 'SA',
+      iconPath: '/admin-icons/tab-settings.svg',
+    },
   };
   const activeTabLabel = activeTabLabelMap[activeTab];
   const activeTabDescriptionMap = buildActiveTabDescriptionMap(lang);
@@ -655,9 +672,9 @@ export const AdminPage = ({
             label: 'Система',
             short: 'SYS',
             artLabel: 'Control Room',
-            description: 'Аналітика й налаштування',
+            description: 'Аналітика, налаштування гри та система',
             iconPath: '/admin-icons/system.svg',
-            tabs: [adminTabMeta.analytics, adminTabMeta.settings],
+            tabs: [adminTabMeta.analytics, adminTabMeta.gameConfig, adminTabMeta.systemAdmin],
           },
         ]
       : [
@@ -724,9 +741,9 @@ export const AdminPage = ({
             label: 'System',
             short: 'SYS',
             artLabel: 'Control Room',
-            description: 'Analytics and settings',
+            description: 'Analytics, game config and system',
             iconPath: '/admin-icons/system.svg',
-            tabs: [adminTabMeta.analytics, adminTabMeta.settings],
+            tabs: [adminTabMeta.analytics, adminTabMeta.gameConfig, adminTabMeta.systemAdmin],
           },
         ];
   const activeCategory =
@@ -922,6 +939,126 @@ export const AdminPage = ({
             }}
           />
         ) : null}
+
+        {activeTab === 'gameConfig' ? (
+          <AdminGameConfigTab
+            t={t}
+            lang={lang}
+            serverUrlDraft={serverUrlDraft}
+            onServerUrlDraftChange={onServerUrlDraftChange}
+            onSaveServerUrl={onSaveServerUrl}
+            onResetServerUrl={onResetServerUrl}
+            serverUrl={serverUrl}
+            bugReportImagePath={bugReportImagePath}
+            onBugReportImagePathChange={setBugReportImagePath}
+            onSaveBugReportImagePath={() => saveBugReportUiConfig(bugReportImagePath)}
+            onUploadBugReportImage={async (file) => {
+              if (!file) return;
+              const optimized = await optimizeBlobForUpload(file, file.name, {
+                maxWidth: 100,
+                maxHeight: 100,
+                quality: 0.92,
+              });
+              if (!optimized) {
+                setAdminActionError(t.uploadFailedGeneric);
+                return;
+              }
+              const uploaded = await uploadDataUrl(`bug-report-icon-${Date.now()}`, optimized.dataUrl);
+              if (!uploaded) return;
+              setBugReportImagePath(uploaded);
+              await saveBugReportUiConfig(uploaded);
+            }}
+            bugReportUiConfigLoading={bugReportUiConfigLoading}
+            bugReportUiConfigError={bugReportUiConfigError}
+            bugReportUiConfigStatus={bugReportUiConfigStatus}
+            allowedRoomCapacities={allowedRoomCapacities}
+            onToggleAllowedRoomCapacity={(capacity) => {
+              const next = normalizeLobbyGameUiConfig({
+                allowedRoomCapacities: allowedRoomCapacities.includes(capacity)
+                  ? allowedRoomCapacities.filter((item) => item !== capacity)
+                  : [...allowedRoomCapacities, capacity],
+                defaultRoomCapacity,
+                allowedBotCounts,
+                defaultBotCount,
+              });
+              setAllowedRoomCapacities(next.allowedRoomCapacities);
+              setDefaultRoomCapacity(next.defaultRoomCapacity);
+            }}
+            defaultRoomCapacity={defaultRoomCapacity}
+            onDefaultRoomCapacityChange={setDefaultRoomCapacity}
+            allowedBotCounts={allowedBotCounts}
+            onToggleAllowedBotCount={(count) => {
+              const next = normalizeLobbyGameUiConfig({
+                allowedRoomCapacities,
+                defaultRoomCapacity,
+                allowedBotCounts: allowedBotCounts.includes(count)
+                  ? allowedBotCounts.filter((item) => item !== count)
+                  : [...allowedBotCounts, count],
+                defaultBotCount,
+              });
+              setAllowedBotCounts(next.allowedBotCounts);
+              setDefaultBotCount(next.defaultBotCount);
+            }}
+            defaultBotCount={defaultBotCount}
+            onDefaultBotCountChange={setDefaultBotCount}
+            resourceImagePaths={resourceImagePaths}
+            onResourceIconPathChange={(key, value) => {
+              setResourceImagePaths((prev) => ({ ...prev, [key]: value }));
+            }}
+            onUploadResourceIcon={async (key, file) => {
+              if (!file) return;
+              const optimized = await optimizeBlobForUpload(file, file.name, {
+                maxWidth: 256,
+                maxHeight: 256,
+                quality: 0.92,
+              });
+              if (!optimized) {
+                setAdminActionError(t.uploadFailedGeneric);
+                return;
+              }
+              const uploaded = await uploadDataUrl(`resource-icon-${key}-${Date.now()}`, optimized.dataUrl);
+              if (!uploaded) return;
+              const next = normalizeLobbyGameUiConfig({
+                allowedRoomCapacities,
+                defaultRoomCapacity,
+                allowedBotCounts,
+                defaultBotCount,
+                resourceImagePaths: { ...resourceImagePaths, [key]: uploaded },
+              });
+              setResourceImagePaths(next.resourceImagePaths);
+              await saveGameUiConfig(next);
+            }}
+            onSaveGameUiConfig={() => void saveGameUiConfig()}
+            gameUiConfigLoading={gameUiConfigLoading}
+            gameUiConfigError={gameUiConfigError}
+            gameUiConfigStatus={gameUiConfigStatus}
+          />
+        ) : null}
+
+        {activeTab === 'systemAdmin' ? (
+          <AdminSystemAdminTab
+            t={t}
+            lang={lang}
+            serverUrl={serverUrl}
+            onResetAll={onResetAll}
+            regenerateAllTemplateImages={regenerateAllTemplateImages}
+            imageRegenRunning={regenRunning}
+            restartingServer={restartingServer}
+            setAdminActionError={setAdminActionError}
+            setRestartingServer={setRestartingServer}
+            onRestartServer={onRestartServer}
+            adminActionError={adminActionError}
+            assets={assets}
+            assetsLoading={assetsLoading}
+            assetsError={assetsError}
+            assetsStatus={assetsStatus}
+            assetsCleanupRunning={assetsCleanupRunning}
+            onRefreshAssets={() => void loadAssets()}
+            onCleanupOrphanedFiles={() => void cleanupOrphanedFiles()}
+            onCleanupOrphanedRecords={() => void cleanupOrphanedRecords()}
+          />
+        ) : null}
+
         {activeTab === 'github' ? (
           <AdminGithubTab
             t={t}
