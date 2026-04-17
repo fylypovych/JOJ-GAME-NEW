@@ -47,6 +47,28 @@ export type UserStatsSummary = {
   }>;
 };
 
+export type PublicUser = {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  stats: {
+    matchesFinished: number;
+    wins: number;
+    winRatePct: number;
+    bestRankName: string;
+  };
+  awards: Array<{
+    awardId: string;
+    key: string;
+    title: string;
+    badgeLabel: string;
+    threshold: number;
+    progressValue: number;
+    awarded: boolean;
+  }>;
+};
+
 export type UserMatchHistoryItem = {
   matchId: string;
   playerId: string;

@@ -3,18 +3,34 @@ import ReactDOM from 'react-dom/client';
 import { App } from './ui/App';
 import './ui/styles.css';
 
+// Redirect to HTTPS if not on localhost and using HTTP
+if (
+  window.location.protocol === 'http:' &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1'
+) {
+  window.location.href = window.location.href.replace('http:', 'https:');
+}
+
 // Register Service Worker for image caching
-if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(
-      (registration) => {
-        console.log('Service Worker registered: ', registration);
-      },
-      (error) => {
-        console.log('Service Worker registration failed: ', error);
-      }
-    );
-  });
+if ('serviceWorker' in navigator) {
+  const isHttpsOrLocalhost =
+    window.location.protocol === 'https:' ||
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1';
+
+  if (isHttpsOrLocalhost) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').then(
+        (registration) => {
+          console.log('Service Worker registered: ', registration);
+        },
+        (error) => {
+          console.log('Service Worker registration failed: ', error);
+        }
+      );
+    });
+  }
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

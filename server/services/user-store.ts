@@ -15,6 +15,7 @@ export type {
   AwardDefinition,
   AwardMetric,
   PersistableMatchState,
+  PublicUser,
   UserAwardRecord,
   UserRecord,
   UserSessionRecord,

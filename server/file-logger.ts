@@ -11,5 +11,8 @@ export const createFileLogger = (logsPath: string): LogLine => async (level, mes
   } catch {
     // ignore logging failures
   }
-  console.log(line.trimEnd());
+  // Only log to console in development
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(line.trimEnd());
+  }
 };

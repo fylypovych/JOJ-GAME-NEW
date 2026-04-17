@@ -11,6 +11,8 @@ export default tseslint.config(
       'node_modules/**',
       'public/card-assets/**',
       'database/matches/**',
+      'scripts/**',
+      'public/sw.js',
     ],
   },
   js.configs.recommended,

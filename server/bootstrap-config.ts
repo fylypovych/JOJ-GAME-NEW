@@ -2,6 +2,7 @@ import net from 'node:net';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
 import { loadEnvFile } from './env';
 
 const serverDir = path.dirname(fileURLToPath(import.meta.url));
@@ -34,6 +35,11 @@ export const gameUiConfigPath = path.resolve(appRootDir, 'database', 'game-ui-co
 export const JSON_BODY_LIMIT = 2 * 1024 * 1024;
 export const LARGE_JSON_BODY_LIMIT = 8 * 1024 * 1024;
 export const IMAGE_UPLOAD_BODY_LIMIT = 16 * 1024 * 1024;
+
+// Check if .env file exists before loading
+if (!existsSync(envPath)) {
+  console.warn(`[bootstrap-config] .env file not found at ${envPath}. Using default environment variables.`);
+}
 
 loadEnvFile(envPath);
 
