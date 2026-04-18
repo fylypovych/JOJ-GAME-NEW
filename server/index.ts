@@ -189,6 +189,26 @@ void (async () => {
     }
   }
 
+  // Create shared config store
+  const {
+    saveTemplate,
+    saveRanks,
+    loadTemplate,
+    loadRanks,
+    syncCurrentJsonToPostgres,
+  } = createSharedConfigStore({
+    templatePath,
+    ranksPath,
+    exportSharedDeckTemplateJson,
+    exportSharedRanksJson,
+    getCardCatalog,
+    importSharedDeckTemplateJson,
+    importSharedRanksJson,
+    resetSharedRanks,
+    storageMode: sharedConfigStorageMode,
+    databaseUrl,
+  });
+
   // Initialize database and services
   const dbServices = await initializeDatabase(
     {
@@ -200,6 +220,7 @@ void (async () => {
       bugReportsPath,
       bugReportImagesDir,
       matchDbCutoverMode,
+      sharedConfigStore: { loadTemplate, loadRanks },
     },
     {
       logLine,
@@ -229,26 +250,6 @@ void (async () => {
     getUserStore: () => userStore,
   });
   const adminAudit = createAdminAuditLogger({ getPool: () => userPool, logLine });
-
-  // Create shared config store
-  const {
-    saveTemplate,
-    saveRanks,
-    loadTemplate,
-    loadRanks,
-    syncCurrentJsonToPostgres,
-  } = createSharedConfigStore({
-    templatePath,
-    ranksPath,
-    exportSharedDeckTemplateJson,
-    exportSharedRanksJson,
-    getCardCatalog,
-    importSharedDeckTemplateJson,
-    importSharedRanksJson,
-    resetSharedRanks,
-    storageMode: sharedConfigStorageMode,
-    databaseUrl,
-  });
 
   // Register all routes
   if (router) {

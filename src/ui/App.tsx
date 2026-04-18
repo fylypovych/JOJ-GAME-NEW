@@ -397,6 +397,9 @@ export const App = () => {
     onResetMatch,
     onDeleteMatch,
     onStopGame,
+    refreshAdminMatches,
+    adminMatches,
+    adminMatchesLoading,
   } = useAdminMatchControls({
     adminMatchID,
     adminFetch,
@@ -729,8 +732,11 @@ export const App = () => {
               onResetRanks={onResetRanks}
               onStopGame={onStopGame}
               runGameSimulations={(players, simulations, options) =>
-                runGameSimulations(players, simulations, 0, options)
+                runGameSimulations(players, simulations, 0, options ? { ...options, gameMode: options.gameMode as any } : undefined)
               }
+              refreshAdminMatches={refreshAdminMatches}
+              adminMatches={adminMatches}
+              adminMatchesLoading={adminMatchesLoading}
             />
 
             <AuthErrorFeature

@@ -83,6 +83,9 @@ type AdminPageContainerProps = {
   onResetRanks: AdminPageProps['onResetRanks'];
   onStopGame: AdminPageProps['onStopGame'];
   runGameSimulations: AdminPageProps['onRunSimulations'];
+  refreshAdminMatches: () => Promise<void>;
+  adminMatches: Array<{ matchID: string; metadata: Record<string, unknown> }>;
+  adminMatchesLoading: boolean;
   Component: ComponentType<AdminPageProps>;
 };
 
@@ -134,7 +137,6 @@ export const AdminPageContainer = ({
   dbSyncMigrationsError,
   dbSyncMigrationsRunning,
   syncDbMigrations,
-  matches,
   adminMatchID,
   setAdminSelectedMatchID,
   snapshot,
@@ -162,6 +164,9 @@ export const AdminPageContainer = ({
   onResetRanks,
   onStopGame,
   runGameSimulations,
+  refreshAdminMatches,
+  adminMatches,
+  adminMatchesLoading,
   Component,
 }: AdminPageContainerProps) => {
   if (!enabled) return null;
@@ -213,13 +218,13 @@ export const AdminPageContainer = ({
         dbRestoreBackupStatus={dbRestoreBackupStatus}
         dbRestoreBackupError={dbRestoreBackupError}
         dbRestoreBackupRunning={dbRestoreBackupRunning}
-        matches={matches.map((m) => ({
+        matches={adminMatches.map((m) => ({
           id: m.matchID,
           createdAt:
-            typeof m.createdAt === 'number'
-              ? m.createdAt
-              : typeof m.createdAt === 'string'
-                ? Date.parse(m.createdAt) || 0
+            typeof m.metadata?.updatedAt === 'number'
+              ? m.metadata.updatedAt
+              : typeof m.metadata?.updatedAt === 'string'
+                ? Date.parse(m.metadata.updatedAt) || 0
                 : 0,
         }))}
         activeMatchId={adminMatchID}
@@ -260,6 +265,8 @@ export const AdminPageContainer = ({
         onResetRanks={onResetRanks}
         onStopGame={onStopGame}
         onRunSimulations={runGameSimulations}
+        refreshAdminMatches={refreshAdminMatches}
+        adminMatchesLoading={adminMatchesLoading}
       />
     </Suspense>
   );

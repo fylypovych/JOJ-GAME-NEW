@@ -17,6 +17,10 @@ export interface DatabaseConfig {
   bugReportsPath: string;
   bugReportImagesDir: string;
   matchDbCutoverMode: 'auto' | 'skip';
+  sharedConfigStore?: {
+    loadTemplate: () => Promise<void>;
+    loadRanks: () => Promise<void>;
+  };
 }
 
 export interface DatabaseServices {
@@ -57,6 +61,7 @@ export const initializeDatabase = async (
     bugReportsPath,
     bugReportImagesDir,
     matchDbCutoverMode,
+    sharedConfigStore,
   } = config;
 
   const { logLine, matchRuntimeSync } = deps;
@@ -107,6 +112,23 @@ export const initializeDatabase = async (
       await bugReportStore.ensureSchema();
       postgresAvailableForApp = true;
       await logLine('INFO', 'user auth/profile schema ready');
+      
+      // Load shared config from PostgreSQL
+      if (sharedConfigStore) {
+        try {
+          await sharedConfigStore.loadTemplate();
+          await logLine('INFO', 'shared deck template loaded from postgres');
+        } catch (error) {
+          await logLine('WARN', `failed to load shared deck template from postgres: ${String(error instanceof Error ? error.message : error)}`);
+        }
+        try {
+          await sharedConfigStore.loadRanks();
+          await logLine('INFO', 'shared ranks loaded from postgres');
+        } catch (error) {
+          await logLine('WARN', `failed to load shared ranks from postgres: ${String(error instanceof Error ? error.message : error)}`);
+        }
+      }
+      
       await matchRuntimeSync.syncMatchStateMirror();
       backgroundHealth.matchMirror = { ok: true, lastRunAt: new Date().toISOString(), mode: 'ok', details: 'initial sync complete' };
       setInterval(async () => {

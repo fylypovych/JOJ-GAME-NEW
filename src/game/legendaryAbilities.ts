@@ -130,6 +130,21 @@ const legendaryAbilityRegistry: Record<string, LegendaryAbilityHandler> = {
     G.ignoreSeatLimitForPromotionUntilTurn[playerID] = untilTurn;
     return `🐱 ${playerLabel} отримує Котєйку ЗСУ! Ігнорує ліміт місць на звання до наступного ходу.`;
   },
+  'legendary-17': ({ d, G, playerID, selectedResource }) => {
+    const playerLabel = d.getPlayerLabel(G, playerID);
+    if (!selectedResource || !d.resourceKeys.includes(selectedResource)) return d.INVALID_MOVE;
+    // Поточний гравець отримує +1
+    G.resources[playerID][selectedResource] = (G.resources[playerID][selectedResource] ?? 0) + 1;
+    d.clampNonNegativeResources(G.resources[playerID]);
+    d.syncPlayerState(G, playerID);
+    // Всі інші гравці отримують -1
+    Object.keys(G.players).filter((pid) => pid !== playerID).forEach((pid) => {
+      G.resources[pid][selectedResource] = (G.resources[pid][selectedResource] ?? 0) - 1;
+      d.clampNonNegativeResources(G.resources[pid]);
+      d.syncPlayerState(G, pid);
+    });
+    return `🌊 ${playerLabel} отримує Нептун! Обрано ${d.resourceLabelsUk[selectedResource]}: +1 для себе, -1 для інших.`;
+  },
 };
 
 export const applyLegendaryAbility = (

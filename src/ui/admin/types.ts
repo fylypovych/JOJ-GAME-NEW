@@ -1,5 +1,5 @@
-import type { DeckModuleDefinition, DeckTarget, SharedGameSetup, SimulationReport } from '../../game/jojGame';
-import type { CardCategory, CardDefinition, GameMode, RankDefinition } from '../../game/types';
+import type { DeckModuleDefinition, DeckTarget, SharedGameSetup } from '../../game/jojGame';
+import type { CardCategory, CardDefinition, RankDefinition } from '../../game/types';
 import type { Language } from '../i18n';
 export type AdminStorageMode = 'file' | 'db';
 export type AdminDbConfigDraft = {
@@ -187,8 +187,14 @@ export type AdminPageProps = {
   onRunSimulations: (
     players: number,
     simulations: number,
-    options?: { gameMode?: GameMode; gameSetup?: Partial<SharedGameSetup> },
-  ) => SimulationReport;
+    options?: {
+      gameMode?: string;
+      seed?: number;
+      optionalModuleIds?: string[];
+    },
+  ) => void;
+  refreshAdminMatches?: () => Promise<void>;
+  adminMatchesLoading?: boolean;
 };
 
 export type ImportCategoryMode = CardCategory | 'AS_IS';

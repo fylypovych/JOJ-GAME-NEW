@@ -2103,7 +2103,8 @@
     "legendary-12",
     "legendary-14",
     "legendary-15",
-    "legendary-16"
+    "legendary-16",
+    "legendary-17"
   ],
   "rankTrackIds": [],
   "deck": [
@@ -3889,6 +3890,14 @@
         }
       ],
       "flavor": "Видається разом із позицією. Оформлення не потребує. Доступ має всюди."
+    },
+    {
+      "id": "legendary-17",
+      "title": "Нептун",
+      "category": "LEGENDARY",
+      "image": "/cards/card-1772961126046.webp",
+      "effects": [],
+      "flavor": "«Не тягнув стакан за звання.»"
     }
   ],
   "rankTrack": [],
@@ -4071,7 +4080,7 @@
       "name": "2026.LEGENDARY.MODULE",
       "moduleType": "SEPARATE_DECK_MODULE",
       "category": "LEGENDARY",
-      "cardCount": 15,
+      "cardCount": 16,
       "enabled": true,
       "target": "legendaryDeck",
       "cardIds": [
@@ -4089,7 +4098,8 @@
         "legendary-12",
         "legendary-14",
         "legendary-15",
-        "legendary-16"
+        "legendary-16",
+        "legendary-17"
       ],
       "defaultCategory": "LEGENDARY"
     },
