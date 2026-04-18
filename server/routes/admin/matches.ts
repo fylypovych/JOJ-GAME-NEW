@@ -209,4 +209,34 @@ export const registerAdminMatchRoutes = ({
     await logLine('WARN', `admin deleted match matchID=${matchID}`);
     routeOk(ctx, { matchID, deleted: true });
   });
+
+  router.get('/api/admin/matches', async (ctx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/matches'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-matches', 30, 60_000))) return;
+
+    const db = getMatchDb(ctx);
+    if (!db || typeof db.listMatches !== 'function') {
+      routeError(ctx, 500, 'Database is unavailable');
+      return;
+    }
+
+    try {
+      const matchIds = await db.listMatches();
+      const matches = [];
+      for (const matchId of matchIds) {
+        const fetched = typeof db.fetch === 'function'
+          ? await db.fetch(matchId, { metadata: true })
+          : null;
+        if (fetched?.metadata) {
+          matches.push({
+            matchID: matchId,
+            metadata: fetched.metadata,
+          });
+        }
+      }
+      routeOk(ctx, { matches });
+    } catch (error) {
+      routeError(ctx, 500, String(error instanceof Error ? error.message : error));
+    }
+  });
 };

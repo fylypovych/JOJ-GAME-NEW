@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import type { Snapshot } from './model';
 
 export interface UseAdminMatchControlsArgs {
@@ -13,6 +13,7 @@ export interface UseAdminMatchControlsArgs {
   ADMIN_MATCH_STOP_API: string;
   ADMIN_MATCH_RESET_API: string;
   ADMIN_MATCH_DELETE_API: string;
+  ADMIN_MATCHES_API: string;
 }
 
 export interface UseAdminMatchControlsResult {
@@ -21,6 +22,9 @@ export interface UseAdminMatchControlsResult {
   onDeleteMatch: () => Promise<void>;
   onStopGame: (matchID: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   onGetMatchState: () => Promise<Snapshot | null>;
+  refreshAdminMatches: () => Promise<void>;
+  adminMatches: Array<{ matchID: string; metadata: Record<string, unknown> }>;
+  adminMatchesLoading: boolean;
 }
 
 export const useAdminMatchControls = (args: UseAdminMatchControlsArgs): UseAdminMatchControlsResult => {
@@ -36,7 +40,11 @@ export const useAdminMatchControls = (args: UseAdminMatchControlsArgs): UseAdmin
     ADMIN_MATCH_STOP_API,
     ADMIN_MATCH_RESET_API,
     ADMIN_MATCH_DELETE_API,
+    ADMIN_MATCHES_API,
   } = args;
+
+  const [adminMatches, setAdminMatches] = useState<Array<{ matchID: string; metadata: Record<string, unknown> }>>([]);
+  const [adminMatchesLoading, setAdminMatchesLoading] = useState(false);
 
   const onRestartServer = useCallback(async (): Promise<boolean> => {
     try {
@@ -89,12 +97,27 @@ export const useAdminMatchControls = (args: UseAdminMatchControlsArgs): UseAdmin
       setSnapshot(null);
       setAdminSelectedMatchID('');
       await refreshMatches();
+      await refreshAdminMatches();
     } catch {
       // ignore UI toast for now
     } finally {
       if (setDeletingAdminMatch) setDeletingAdminMatch(false);
     }
   }, [adminMatchID, adminFetch, setSnapshot, setAdminSelectedMatchID, refreshMatches, setDeletingAdminMatch, ADMIN_MATCH_DELETE_API]);
+
+  const refreshAdminMatches = useCallback(async () => {
+    setAdminMatchesLoading(true);
+    try {
+      const response = await adminFetch(ADMIN_MATCHES_API, { method: 'GET' });
+      if (!response.ok) return;
+      const payload = await response.json() as { matches?: Array<{ matchID: string; metadata: Record<string, unknown> }> };
+      setAdminMatches(payload.matches ?? []);
+    } catch {
+      // ignore error
+    } finally {
+      setAdminMatchesLoading(false);
+    }
+  }, [adminFetch, ADMIN_MATCHES_API]);
 
   const onStopGame = useCallback(async (matchID: string): Promise<{ ok: true } | { ok: false; error: string }> => {
     try {
@@ -124,5 +147,8 @@ export const useAdminMatchControls = (args: UseAdminMatchControlsArgs): UseAdmin
     onDeleteMatch,
     onStopGame,
     onGetMatchState,
+    refreshAdminMatches,
+    adminMatches,
+    adminMatchesLoading,
   };
 };

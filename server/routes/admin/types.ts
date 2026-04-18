@@ -50,6 +50,7 @@ export type MatchDbLike = {
   setState?: (matchID: string, state: unknown, deltalog?: unknown[]) => Promise<unknown>;
   setMetadata?: (matchID: string, metadata: unknown) => Promise<void>;
   wipe?: (matchID: string) => Promise<void>;
+  listMatches?: () => Promise<string[]>;
 };
 
 export type AdminRoutesDeps = {

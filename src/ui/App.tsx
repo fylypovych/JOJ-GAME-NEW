@@ -50,6 +50,7 @@ const ADMIN_MATCH_STATE_API = `${SERVER_URL}/api/admin/match-state`;
 const ADMIN_MATCH_STOP_API = `${SERVER_URL}/api/admin/match-stop`;
 const ADMIN_MATCH_RESET_API = `${SERVER_URL}/api/admin/match-reset`;
 const ADMIN_MATCH_DELETE_API = `${SERVER_URL}/api/admin/match-delete`;
+const ADMIN_MATCHES_API = `${SERVER_URL}/api/admin/matches`;
 
 export const App = () => {
   const buildLabel = __APP_BUILD_LABEL__;
@@ -408,6 +409,7 @@ export const App = () => {
     ADMIN_MATCH_STOP_API,
     ADMIN_MATCH_RESET_API,
     ADMIN_MATCH_DELETE_API,
+    ADMIN_MATCHES_API,
   });
 
   // Deck handlers (simplified - imports directly from sharedConfig)
