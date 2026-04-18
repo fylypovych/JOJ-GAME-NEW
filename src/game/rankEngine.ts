@@ -54,7 +54,10 @@ export const createRankEngine = ({
     const occupied = Object.entries(G.ranks)
       .filter(([pid, rankId]) => pid !== playerID && rankId === nextRank.id)
       .length;
-    if (occupied >= seatLimitForRank(playerCount, nextRank.id, ranks)) return false;
+    
+    // Перевіряємо, чи активний флаг ігнорування seat limits для поточного гравця
+    const ignoreSeatLimit = G.ignoreSeatLimitForPromotionUntilTurn?.[playerID] > 0;
+    if (!ignoreSeatLimit && occupied >= seatLimitForRank(playerCount, nextRank.id, ranks)) return false;
 
     const playerResources = G.resources[playerID];
     if (!hasResources(playerResources, nextRank.requirement)) return false;
@@ -64,6 +67,12 @@ export const createRankEngine = ({
     clampNonNegativeResources(playerResources);
     G.ranks[playerID] = nextRank.id;
     G.promotedThisTurn[playerID] = true;
+    
+    // Скидаємо флаг після використання
+    if (ignoreSeatLimit) {
+      delete G.ignoreSeatLimitForPromotionUntilTurn[playerID];
+    }
+    
     onRankChanged?.(G, playerID, currentRankId, nextRank.id);
     syncPlayerState(G, playerID);
     return true;

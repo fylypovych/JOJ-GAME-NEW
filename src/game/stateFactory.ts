@@ -52,6 +52,7 @@ export const createEmptyGameState = (args: {
   extraHandPlayTokens: {},
   sukhpayZsuWatchUntilTurn: {},
   sukhpayZsuPendingBonus: {},
+  ignoreSeatLimitForPromotionUntilTurn: {},
   gameStats: {
     turnsCompleted: 0,
     resourcesGainedTotal: 0,
@@ -115,6 +116,7 @@ export const initializePlayerInGameState = (args: {
   G.extraHandPlayTokens[playerID] = 0;
   G.sukhpayZsuWatchUntilTurn[playerID] = 0;
   G.sukhpayZsuPendingBonus[playerID] = false;
+  G.ignoreSeatLimitForPromotionUntilTurn[playerID] = 0;
   G.legendaryDraftCompleted[playerID] = legendaryDraftCompleted;
   G.playerGameStats[playerID] = createBasePlayerGameStats();
   if (!G.skippedTurnCounts) G.skippedTurnCounts = {};

@@ -156,6 +156,7 @@ export const createBoardgamePostgresDb = (pool: Pool) => {
 
   const wipe = async (matchID: string) => {
     await pool.query('DELETE FROM live_matches WHERE match_id = $1', [matchID]);
+    await pool.query('DELETE FROM match_records WHERE id = $1', [matchID]);
   };
 
   const listMatches = async (opts?: ListMatchesOpts) => {

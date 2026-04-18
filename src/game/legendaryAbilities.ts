@@ -123,6 +123,13 @@ const legendaryAbilityRegistry: Record<string, LegendaryAbilityHandler> = {
     if (!demoted.ok) return d.INVALID_MOVE;
     return d.legendaryTexts.droidDemote(d.getPlayerLabel(G, targetPlayerID), d.rankNameById(demoted.fromRankId), d.rankNameById(demoted.toRankId));
   },
+  'legendary-16': ({ d, G, ctx, playerID }) => {
+    const playerLabel = d.getPlayerLabel(G, playerID);
+    const untilTurn = d.computeShieldUntilNextOwnTurn(ctx, playerID);
+    G.ignoreSeatLimitForPromotionUntilTurn = G.ignoreSeatLimitForPromotionUntilTurn || {};
+    G.ignoreSeatLimitForPromotionUntilTurn[playerID] = untilTurn;
+    return `🐱 ${playerLabel} отримує Котєйку ЗСУ! Ігнорує ліміт місць на звання до наступного ходу.`;
+  },
 };
 
 export const applyLegendaryAbility = (

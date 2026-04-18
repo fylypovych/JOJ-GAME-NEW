@@ -188,6 +188,7 @@ const makeParityState = (): JojGameState => ({
   extraHandPlayTokens: { '0': 0, '1': 0 },
   sukhpayZsuWatchUntilTurn: { '0': 0, '1': 0 },
   sukhpayZsuPendingBonus: { '0': false, '1': false },
+  ignoreSeatLimitForPromotionUntilTurn: { '0': 0, '1': 0 },
   gameStats: {
     turnsCompleted: 0,
     resourcesGainedTotal: 0,

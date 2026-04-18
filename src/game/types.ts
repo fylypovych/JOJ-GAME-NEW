@@ -82,6 +82,7 @@ export interface JOJState {
   extraHandPlayTokens: Record<string, number>;
   sukhpayZsuWatchUntilTurn: Record<string, number>;
   sukhpayZsuPendingBonus: Record<string, boolean>;
+  ignoreSeatLimitForPromotionUntilTurn: Record<string, number>;
   gameStats: {
     turnsCompleted: number;
     resourcesGainedTotal: number;

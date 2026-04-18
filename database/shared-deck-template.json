@@ -2102,7 +2102,8 @@
     "legendary-11",
     "legendary-12",
     "legendary-14",
-    "legendary-15"
+    "legendary-15",
+    "legendary-16"
   ],
   "rankTrackIds": [],
   "deck": [
@@ -3875,6 +3876,19 @@
         }
       ],
       "flavor": "«Новини іноді доходять раніше наказів.»"
+    },
+    {
+      "id": "legendary-16",
+      "title": "Котєйка ЗСУ",
+      "category": "LEGENDARY",
+      "image": "/cards/card-1772961126046.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 2
+        }
+      ],
+      "flavor": "Видається разом із позицією. Оформлення не потребує. Доступ має всюди."
     }
   ],
   "rankTrack": [],
@@ -4074,7 +4088,8 @@
         "legendary-11",
         "legendary-12",
         "legendary-14",
-        "legendary-15"
+        "legendary-15",
+        "legendary-16"
       ],
       "defaultCategory": "LEGENDARY"
     },
