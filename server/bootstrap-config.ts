@@ -44,7 +44,7 @@ if (!existsSync(envPath)) {
 loadEnvFile(envPath);
 
 export const isAdminAuthEnabled = true;
-export const sharedConfigPrimarySource = 'postgres' as const;
+export const sharedConfigPrimarySource = 'file' as const;
 export const requestedSharedConfigStorageMode = sharedConfigPrimarySource;
 export const databaseUrl = (process.env.DATABASE_URL ?? '').trim();
 export const nodeEnv = (process.env.NODE_ENV ?? '').trim().toLowerCase();

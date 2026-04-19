@@ -233,13 +233,19 @@ export const registerAdminMatchRoutes = ({
             'SELECT status FROM match_records WHERE id = $1 LIMIT 1',
             [matchId]
           );
-          if (deletedCheck.rows[0]?.status === 'deleted') {
+          if (deletedCheck.rows.length === 0) {
+            await logLine('WARN', `Admin matches: match ${matchId} has no record in match_records, including anyway`);
+          } else if (deletedCheck.rows[0]?.status === 'deleted') {
+            await logLine('INFO', `Admin matches: skipping deleted match ${matchId}`);
             continue; // Skip deleted matches
           }
         }
         const fetched = typeof db.fetch === 'function'
           ? await db.fetch(matchId, { metadata: true, state: true })
           : null;
+        if (!fetched?.state && !fetched?.metadata) {
+          await logLine('WARN', `Admin matches: match ${matchId} has no state or metadata, including anyway`);
+        }
         matches.push({
           matchID: matchId,
           metadata: fetched?.metadata ?? {},
@@ -264,6 +270,7 @@ export const registerAdminMatchRoutes = ({
 
     try {
       const matchIds = await db.listMatches();
+      await logLine('INFO', `Lobby matches: total matchIds from listMatches: ${matchIds.length}`);
       const matches = [];
       for (const matchId of matchIds) {
         // Check if match is deleted in match_records
@@ -272,7 +279,10 @@ export const registerAdminMatchRoutes = ({
             'SELECT status FROM match_records WHERE id = $1 LIMIT 1',
             [matchId]
           );
-          if (deletedCheck.rows[0]?.status === 'deleted') {
+          if (deletedCheck.rows.length === 0) {
+            await logLine('WARN', `Lobby matches: match ${matchId} has no record in match_records, including anyway`);
+          } else if (deletedCheck.rows[0]?.status === 'deleted') {
+            await logLine('INFO', `Lobby matches: skipping deleted match ${matchId}`);
             continue; // Skip deleted matches
           }
         }
@@ -282,6 +292,7 @@ export const registerAdminMatchRoutes = ({
         const metadata = fetched?.metadata as { gameover?: unknown; updatedAt?: number | string } | null;
         // Skip gameover matches for lobby
         if (metadata?.gameover) {
+          await logLine('INFO', `Lobby matches: skipping gameover match ${matchId}`);
           continue;
         }
         matches.push({
@@ -289,6 +300,7 @@ export const registerAdminMatchRoutes = ({
           metadata: metadata ?? {},
         });
       }
+      await logLine('INFO', `Lobby matches: showing ${matches.length}`);
       routeOk(ctx, { matches });
     } catch (error) {
       routeError(ctx, 500, String(error instanceof Error ? error.message : error));
