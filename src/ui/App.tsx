@@ -219,6 +219,7 @@ export const App = () => {
     serverUrl: SERVER_URL,
     sharedTemplateStorageKey: SHARED_TEMPLATE_STORAGE_KEY,
     ranksStorageKey: RANKS_STORAGE_KEY,
+    adminFetch,
   });
 
   // Admin snapshot (must be before useAdminMatchControls)

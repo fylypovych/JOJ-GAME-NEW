@@ -126,6 +126,7 @@ export const bootstrapRoutes = async (deps: RouteBootstrapDeps) => {
     gameUiConfigPath,
     importJsonConfigToDb,
     syncJsonToPostgresIncremental,
+    loadSharedConfigFromDb: async () => {},
     userStore,
     pool,
     prepareBackupSnapshot,
@@ -146,7 +147,7 @@ export const bootstrapRoutes = async (deps: RouteBootstrapDeps) => {
       matchDb: { ok: true, backend: 'postgres', cutoverMode: 'auto', migratedMatches: 0 },
       assetSync: { ok: true, lastRunAt: null, mode: 'ok', details: '' },
       matchMirror: { ok: true, lastRunAt: null, mode: 'ok', details: '' },
-      bugReports: { ok: true, storage: pool ? 'postgres+files' : 'files' },
+      bugReports: { ok: Boolean(pool), storage: 'postgres' },
     }),
     auditAdminAction: adminAudit,
   });
@@ -185,6 +186,7 @@ export const bootstrapRoutes = async (deps: RouteBootstrapDeps) => {
     resetSharedDeckTemplate: async () => {},
     saveRanksToDisk: async () => {},
     saveTemplateToDisk: async () => {},
+    pool,
     auditAdminAction: adminAudit,
   });
 

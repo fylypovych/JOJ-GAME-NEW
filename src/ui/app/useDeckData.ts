@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { RankDefinition } from '../../game/types';
 import { useSharedConfigSync } from './useSharedConfigSync';
 import { formatModuleDisplayName } from '../moduleDisplay';
@@ -18,6 +18,7 @@ export interface UseDeckDataArgs {
   serverUrl: string;
   sharedTemplateStorageKey: string;
   ranksStorageKey: string;
+  adminFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
   saveTemplateToPostgres?: (templateJson: string, ranksJson: string) => Promise<boolean>;
 }
 
@@ -42,14 +43,7 @@ export interface UseDeckDataResult {
 }
 
 export const useDeckData = (args: UseDeckDataArgs): UseDeckDataResult => {
-  const { serverUrl, sharedTemplateStorageKey, ranksStorageKey, saveTemplateToPostgres } = args;
-
-  // Admin fetch placeholder
-  const adminFetch = useMemo(() => {
-    return async (input: string | URL | Request, init?: RequestInit) => {
-      return fetch(input, init);
-    };
-  }, []);
+  const { serverUrl, sharedTemplateStorageKey, ranksStorageKey, adminFetch, saveTemplateToPostgres } = args;
 
   const TEMPLATE_API = (server: string) => `${server}/api/shared-deck-template`;
   const RANKS_API = (server: string) => `${server}/api/shared-ranks`;

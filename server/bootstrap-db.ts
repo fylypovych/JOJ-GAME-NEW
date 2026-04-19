@@ -1,4 +1,5 @@
-import { createMemoryPostgresPool, createPostgresPool } from './db/postgres';
+import { createPostgresPool } from './db/postgres';
+import path from 'node:path';
 import { runSqlMigrations } from './db/migrations';
 import { createUserStore } from './services/user-store';
 import { createAssetStore } from './services/asset-store';
@@ -7,10 +8,6 @@ import { createBugReportStore } from './services/bug-report-store';
 import {
   databaseUrl,
   uploadsDir,
-  bugReportsPath,
-  bugReportImagesDir,
-  nodeEnv,
-  allowInMemoryUserStore,
 } from './bootstrap-config';
 import type { LogLine } from './routes/types';
 
@@ -30,54 +27,36 @@ export const bootstrapDatabase = async (logLine: LogLine): Promise<DbBootstrapRe
   let assetStore = null as ReturnType<typeof createAssetStore> | null;
   let postgresAvailableForApp = false;
 
-  if (databaseUrl) {
-    try {
-      userPool = createPostgresPool(databaseUrl);
-      await runSqlMigrations(userPool, './db/migrations');
-      userStore = createUserStore(userPool);
-      await userStore.ensureSchema();
-      await userStore.deleteExpiredSessions();
-      assetStore = createAssetStore(userPool);
-      await assetStore.ensureSchema();
-      await assetStore.syncDirectory(uploadsDir);
-      matchStateStore = createMatchStateStore(userPool);
-      await matchStateStore.ensureSchema();
-      postgresAvailableForApp = true;
-      await logLine('INFO', 'user auth/profile schema ready');
-    } catch (error) {
-      userPool = null;
-      userStore = null;
-      await logLine('WARN', `user auth/profile postgres unavailable: ${String(error instanceof Error ? error.message : error)}`);
-    }
-  } else {
-    await logLine('WARN', 'user auth/profile postgres is not configured (DATABASE_URL is empty)');
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is required. In-memory fallback is disabled.');
   }
 
-  if (!userStore && nodeEnv !== 'production' && allowInMemoryUserStore) {
-    try {
-      userPool = await createMemoryPostgresPool();
-      userStore = createUserStore(userPool);
-      await userStore.ensureSchema();
-      await userStore.deleteExpiredSessions();
-      assetStore = createAssetStore(userPool);
-      await assetStore.ensureSchema();
-      await assetStore.syncDirectory(uploadsDir);
-      matchStateStore = createMatchStateStore(userPool);
-      await matchStateStore.ensureSchema();
-      postgresAvailableForApp = true;
-      await logLine('WARN', 'user auth/profile module running on in-memory fallback for local/dev mode');
-    } catch (error) {
-      userPool = null;
-      userStore = null;
-      await logLine('WARN', `user auth/profile module disabled (memory fallback failed): ${String(error instanceof Error ? error.message : error)}`);
-    }
-  } else if (!userStore && nodeEnv !== 'production') {
-    await logLine('WARN', 'user auth/profile memory fallback is disabled (set ALLOW_IN_MEMORY_USER_STORE=1 to enable it locally)');
+  try {
+    userPool = createPostgresPool(databaseUrl);
+    await runSqlMigrations(userPool, './db/migrations');
+    userStore = createUserStore(userPool);
+    await userStore.ensureSchema();
+    await userStore.deleteExpiredSessions();
+    assetStore = createAssetStore(userPool);
+    await assetStore.ensureSchema();
+    await assetStore.syncDirectory(uploadsDir, 'card-image', '/public/card-assets');
+    await assetStore.syncDirectory(path.resolve(uploadsDir, '..', 'profile-image'), 'avatar-image', '/profile-image');
+    await assetStore.syncDirectory(path.resolve(uploadsDir, '..', 'sys.icons'), 'system-icon', '/sys.icons');
+    matchStateStore = createMatchStateStore(userPool);
+    await matchStateStore.ensureSchema();
+    postgresAvailableForApp = true;
+    await logLine('INFO', 'user auth/profile schema ready');
+  } catch (error) {
+    userPool = null;
+    userStore = null;
+    await logLine('WARN', `user auth/profile postgres unavailable: ${String(error instanceof Error ? error.message : error)}`);
+  }
+
+  if (!userPool) {
+    throw new Error('PostgreSQL pool is required for bug report store.');
   }
 
   const bugReportStore = createBugReportStore({
-    storePath: bugReportsPath,
-    imagesDir: bugReportImagesDir,
     pool: userPool,
   });
   await bugReportStore.ensureSchema();

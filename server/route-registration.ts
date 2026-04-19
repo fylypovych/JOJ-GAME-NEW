@@ -50,7 +50,6 @@ export interface RouteRegistrationServices {
   matchStateStore: ReturnType<typeof import('./services/match-state-store').createMatchStateStore> | null;
   bugReportStore: ReturnType<typeof import('./services/bug-report-store').createBugReportStore>;
   currentMatchDbBackend: MatchDbBackend;
-  flatFileMatchDb: MatchDbBackend;
   matchDbCutoverSummary: { mode: 'auto' | 'skip'; migratedMatches: number };
   postgresAvailableForApp: boolean;
   backgroundHealth: {
@@ -77,6 +76,8 @@ export interface RouteRegistrationDeps {
   };
   adminAudit: ReturnType<typeof createAdminAuditLogger>;
   sharedConfigStore: {
+    loadTemplate: () => Promise<void>;
+    loadRanks: () => Promise<void>;
     syncCurrentJsonToPostgres: () => Promise<void>;
     syncJsonToPostgresIncremental: () => Promise<void>;
     saveRanks: () => Promise<void>;
@@ -119,7 +120,6 @@ export const registerAllRoutes = (
     assetStore,
     matchStateStore,
     bugReportStore,
-    currentMatchDbBackend,
     matchDbCutoverSummary,
     backgroundHealth,
   } = services;
@@ -186,6 +186,10 @@ export const registerAllRoutes = (
     gameUiConfigPath,
     importJsonConfigToDb: sharedConfigStore.syncCurrentJsonToPostgres,
     syncJsonToPostgresIncremental: sharedConfigStore.syncJsonToPostgresIncremental,
+    loadSharedConfigFromDb: async () => {
+      await sharedConfigStore.loadTemplate();
+      await sharedConfigStore.loadRanks();
+    },
     userStore,
     pool,
     prepareBackupSnapshot: matchRuntimeSync.syncMatchStateMirror,
@@ -212,13 +216,13 @@ export const registerAllRoutes = (
       },
       matchDb: {
         ok: true,
-        backend: currentMatchDbBackend === services.flatFileMatchDb ? 'flatfile' : 'postgres',
+        backend: 'postgres',
         cutoverMode: matchDbCutoverSummary.mode,
         migratedMatches: matchDbCutoverSummary.migratedMatches,
       },
       assetSync: backgroundHealth.assetSync,
       matchMirror: backgroundHealth.matchMirror,
-      bugReports: { ok: true, storage: pool ? 'postgres+files' : 'files' },
+      bugReports: { ok: Boolean(pool), storage: 'postgres' },
     }),
     auditAdminAction: adminAudit,
   });
@@ -257,6 +261,7 @@ export const registerAllRoutes = (
     resetSharedDeckTemplate: gameAdapter.resetSharedDeckTemplate as typeof resetSharedDeckTemplate,
     saveRanksToDisk: sharedConfigStore.saveRanks,
     saveTemplateToDisk: sharedConfigStore.saveTemplate,
+    pool,
     auditAdminAction: adminAudit,
   });
 

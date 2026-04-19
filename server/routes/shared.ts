@@ -1,6 +1,7 @@
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from './types';
 import { requireAdminMutationAuth } from '../admin-auth';
 import type { RankDefinition } from '../../src/game/types';
+import { loadAppSettingJson } from '../services/app-settings-store';
 
 type SharedRoutesDeps = {
   router: RouterLike;
@@ -19,6 +20,7 @@ type SharedRoutesDeps = {
   resetSharedDeckTemplate: () => void;
   saveRanksToDisk: () => Promise<void>;
   saveTemplateToDisk: () => Promise<void>;
+  pool?: import('pg').Pool | null;
   auditAdminAction?: (input: {
     action: string;
     ctx: RouteCtx;
@@ -44,19 +46,51 @@ export const registerSharedRoutes = ({
   resetSharedDeckTemplate,
   saveRanksToDisk,
   saveTemplateToDisk,
+  pool,
   auditAdminAction,
 }: SharedRoutesDeps) => {
+  void resetSharedRanks;
+  void resetSharedDeckTemplate;
   const requireAdminWriteAccess = (ctx: RouteCtx, routeLabel: string) =>
     requireAdminMutationAuth(ctx, routeLabel, requireAdminAuth);
 
-  router.get('/api/shared-deck-template', (ctx: RouteCtx) => {
+  const loadSharedConfigFromDb = async (): Promise<boolean> => {
+    if (!pool) return false;
+    const [templateValue, ranksValue] = await Promise.all([
+      loadAppSettingJson<unknown>(pool, 'shared_deck_template'),
+      loadAppSettingJson<unknown>(pool, 'shared_ranks'),
+    ]);
+    if (!templateValue || !ranksValue) return false;
+    const templateResult = importSharedDeckTemplateJson(JSON.stringify(templateValue));
+    if (!templateResult.ok) return false;
+    const ranks = Array.isArray(ranksValue)
+      ? ranksValue
+      : ((ranksValue as { ranks?: unknown } | null)?.ranks);
+    if (!Array.isArray(ranks)) return false;
+    if (!setSharedRanks(ranks as RankDefinition[])) return false;
+    return true;
+  };
+
+  router.get('/api/shared-deck-template', async (ctx: RouteCtx) => {
+    const loaded = await loadSharedConfigFromDb();
+    if (!loaded) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'Shared config is not available from PostgreSQL.' };
+      return;
+    }
     ctx.body = {
       json: exportSharedDeckTemplateJson(),
       stats: getSharedDeckTemplateStats(),
     };
   });
 
-  router.get('/api/shared-ranks', (ctx: RouteCtx) => {
+  router.get('/api/shared-ranks', async (ctx: RouteCtx) => {
+    const loaded = await loadSharedConfigFromDb();
+    if (!loaded) {
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'Shared ranks are not available from PostgreSQL.' };
+      return;
+    }
     ctx.body = { ranks: getSharedRanks() };
   });
 
@@ -87,10 +121,15 @@ export const registerSharedRoutes = ({
   router.post('/api/shared-ranks/reset', async (ctx: RouteCtx) => {
     if (!(await requireAdminWriteAccess(ctx, '/api/shared-ranks/reset'))) return;
     if (!(await enforceRateLimit(ctx, 'shared-ranks-reset', 10, 60_000))) return;
-    resetSharedRanks();
-    await saveRanksToDisk();
-    await logLine('INFO', 'shared-ranks reset to default');
-    await auditAdminAction?.({ action: 'shared.ranks.reset', ctx, success: true });
+    const loaded = await loadSharedConfigFromDb();
+    if (!loaded) {
+      await auditAdminAction?.({ action: 'shared.ranks.reset', ctx, success: false, details: { reason: 'db-load-failed' } });
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'Shared ranks are not available from PostgreSQL.' };
+      return;
+    }
+    await logLine('INFO', 'shared-ranks reloaded from postgres');
+    await auditAdminAction?.({ action: 'shared.ranks.reset', ctx, success: true, details: { source: 'postgres' } });
     ctx.body = { ok: true, ranks: getSharedRanks() };
   });
 
@@ -121,10 +160,19 @@ export const registerSharedRoutes = ({
   router.post('/api/shared-deck-template/reset', async (ctx: RouteCtx) => {
     if (!(await requireAdminWriteAccess(ctx, '/api/shared-deck-template/reset'))) return;
     if (!(await enforceRateLimit(ctx, 'template-reset', 10, 60_000))) return;
-    resetSharedDeckTemplate();
-    await saveTemplateToDisk();
-    await logLine('INFO', 'shared-deck-template reset to default');
-    await auditAdminAction?.({ action: 'shared.template.reset', ctx, success: true });
-    ctx.body = { ok: true, stats: getSharedDeckTemplateStats() };
+    const loaded = await loadSharedConfigFromDb();
+    if (!loaded) {
+      await auditAdminAction?.({ action: 'shared.template.reset', ctx, success: false, details: { reason: 'db-load-failed' } });
+      ctx.status = 503;
+      ctx.body = { ok: false, error: 'Shared config is not available from PostgreSQL.' };
+      return;
+    }
+    await logLine('INFO', 'shared-deck-template reloaded from postgres');
+    await auditAdminAction?.({ action: 'shared.template.reset', ctx, success: true, details: { source: 'postgres' } });
+    ctx.body = {
+      ok: true,
+      json: exportSharedDeckTemplateJson(),
+      stats: getSharedDeckTemplateStats(),
+    };
   });
 };

@@ -24,6 +24,24 @@ const inferMime = (fileName: string) => {
 };
 
 export const createAssetStore = (pool: Pool) => {
+  const listRelativeFiles = async (rootDir: string, prefix = ''): Promise<string[]> => {
+    const entries = await readdir(rootDir, { withFileTypes: true }).catch(() => []);
+    const files: string[] = [];
+    for (const entry of entries) {
+      const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+      const absPath = path.join(rootDir, entry.name);
+      if (entry.isDirectory()) {
+        files.push(...await listRelativeFiles(absPath, relativePath));
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      const fileStat = await stat(absPath).catch(() => null);
+      if (!fileStat?.isFile()) continue;
+      files.push(relativePath.replace(/\\/g, '/'));
+    }
+    return files;
+  };
+
   const ensureSchema = async () => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS uploaded_assets (
@@ -218,17 +236,17 @@ export const createAssetStore = (pool: Pool) => {
     return new Set(result.rows.map((row) => row.path));
   };
 
-  const syncDirectory = async (uploadsDir: string, kind = 'card-image') => {
-    const entries = await readdir(uploadsDir, { withFileTypes: true }).catch(() => []);
-    for (const entry of entries) {
-      if (!entry.isFile()) continue;
-      const absPath = path.join(uploadsDir, entry.name);
+  const syncDirectory = async (uploadsDir: string, kind = 'card-image', basePath = '/card-assets') => {
+    const relativeFiles = await listRelativeFiles(uploadsDir);
+    for (const relativeFile of relativeFiles) {
+      const absPath = path.join(uploadsDir, relativeFile);
       const fileStat = await stat(absPath).catch(() => null);
       if (!fileStat?.isFile()) continue;
+      const normalizedRelative = relativeFile.replace(/\\/g, '/');
       await upsertAsset({
-        assetPath: `/card-assets/${entry.name}`,
-        fileName: entry.name,
-        mime: inferMime(entry.name),
+        assetPath: `${basePath.replace(/\/+$/, '')}/${normalizedRelative}`,
+        fileName: path.basename(normalizedRelative),
+        mime: inferMime(normalizedRelative),
         sizeBytes: fileStat.size,
         kind,
         source: 'filesystem-sync',

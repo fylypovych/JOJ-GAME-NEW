@@ -1,4 +1,5 @@
-import { createMemoryPostgresPool, createPostgresPool } from './db/postgres';
+import { createPostgresPool } from './db/postgres';
+import path from 'node:path';
 import { runSqlMigrations } from './db/migrations';
 import { createAssetStore } from './services/asset-store';
 import { createBoardgamePostgresDb } from './services/boardgame-postgres-db';
@@ -11,11 +12,8 @@ import type { LogLine } from './file-logger';
 export interface DatabaseConfig {
   databaseUrl: string;
   nodeEnv: string;
-  allowInMemoryUserStore: boolean;
   dbMigrationsDir: string;
   uploadsDir: string;
-  bugReportsPath: string;
-  bugReportImagesDir: string;
   matchDbCutoverMode: 'auto' | 'skip';
   sharedConfigStore?: {
     loadTemplate: () => Promise<void>;
@@ -54,12 +52,8 @@ export const initializeDatabase = async (
 ): Promise<DatabaseServices> => {
   const {
     databaseUrl,
-    nodeEnv,
-    allowInMemoryUserStore,
     dbMigrationsDir,
     uploadsDir,
-    bugReportsPath,
-    bugReportImagesDir,
     matchDbCutoverMode,
     sharedConfigStore,
   } = config;
@@ -80,113 +74,84 @@ export const initializeDatabase = async (
     matchMirror: { ok: true, lastRunAt: null as string | null, mode: 'pending' as 'pending' | 'ok' | 'error', details: '' },
   };
 
-  let bugReportStore = createBugReportStore({
-    storePath: bugReportsPath,
-    imagesDir: bugReportImagesDir,
-    pool: null,
-  });
+  let bugReportStore: ReturnType<typeof createBugReportStore> | null = null;
 
-  if (databaseUrl) {
-    try {
-      userPool = createPostgresPool(databaseUrl);
-      await runSqlMigrations(userPool, dbMigrationsDir);
-      userStore = createUserStore(userPool);
-      await userStore.ensureSchema();
-      await userStore.deleteExpiredSessions();
-      assetStore = createAssetStore(userPool);
-      await assetStore.ensureSchema();
-      await assetStore.syncDirectory(uploadsDir);
-      backgroundHealth.assetSync = { ok: true, lastRunAt: new Date().toISOString(), mode: 'ok', details: 'initial sync complete' };
-      matchStateStore = createMatchStateStore(userPool);
-      await matchStateStore.ensureSchema();
-      liveMirrorUserStore = userStore;
-      liveMirrorMatchStateStore = matchStateStore;
-      const postgresMatchDb = createBoardgamePostgresDb(userPool) as MatchDbBackend & { ensureSchema?: () => Promise<void> };
-      await postgresMatchDb.ensureSchema?.();
-      matchDbCutoverSummary = await matchRuntimeSync.cutoverToPostgres(postgresMatchDb, matchDbCutoverMode);
-      bugReportStore = createBugReportStore({
-        storePath: bugReportsPath,
-        imagesDir: bugReportImagesDir,
-        pool: userPool,
-      });
-      await bugReportStore.ensureSchema();
-      postgresAvailableForApp = true;
-      await logLine('INFO', 'user auth/profile schema ready');
-      
-      // Load shared config from PostgreSQL
-      if (sharedConfigStore) {
-        try {
-          await sharedConfigStore.loadTemplate();
-          await logLine('INFO', 'shared deck template loaded from postgres');
-        } catch (error) {
-          await logLine('WARN', `failed to load shared deck template from postgres: ${String(error instanceof Error ? error.message : error)}`);
-        }
-        try {
-          await sharedConfigStore.loadRanks();
-          await logLine('INFO', 'shared ranks loaded from postgres');
-        } catch (error) {
-          await logLine('WARN', `failed to load shared ranks from postgres: ${String(error instanceof Error ? error.message : error)}`);
-        }
-      }
-      
-      await matchRuntimeSync.syncMatchStateMirror();
-      backgroundHealth.matchMirror = { ok: true, lastRunAt: new Date().toISOString(), mode: 'ok', details: 'initial sync complete' };
-      setInterval(async () => {
-        try {
-          await matchRuntimeSync.syncMatchStateMirror();
-          backgroundHealth.matchMirror = { ok: true, lastRunAt: new Date().toISOString(), mode: 'ok', details: 'scheduled sync complete' };
-        } catch (error) {
-          backgroundHealth.matchMirror = {
-            ok: false,
-            lastRunAt: new Date().toISOString(),
-            mode: 'error',
-            details: String(error instanceof Error ? error.message : error),
-          };
-          await logLine('WARN', `user match persistence sweep failed: ${String(error instanceof Error ? error.message : error)}`);
-        }
-      }, 60_000).unref?.();
-    } catch (error) {
-      userPool = null;
-      userStore = null;
-      await logLine('WARN', `user auth/profile postgres unavailable: ${String(error instanceof Error ? error.message : error)}`);
-    }
-  } else {
-    await logLine('WARN', 'user auth/profile postgres is not configured (DATABASE_URL is empty)');
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is required. File/in-memory fallback is disabled.');
   }
 
-  if (!userStore && nodeEnv !== 'production' && allowInMemoryUserStore) {
-    try {
-      userPool = await createMemoryPostgresPool();
-      userStore = createUserStore(userPool);
-      await userStore.ensureSchema();
-      await userStore.deleteExpiredSessions();
-      assetStore = createAssetStore(userPool);
-      await assetStore.ensureSchema();
-      await assetStore.syncDirectory(uploadsDir);
-      backgroundHealth.assetSync = { ok: true, lastRunAt: new Date().toISOString(), mode: 'ok', details: 'memory fallback sync complete' };
-      matchStateStore = createMatchStateStore(userPool);
-      await matchStateStore.ensureSchema();
-      liveMirrorUserStore = userStore;
-      liveMirrorMatchStateStore = matchStateStore;
-      const postgresMatchDb = createBoardgamePostgresDb(userPool) as MatchDbBackend & { ensureSchema?: () => Promise<void> };
-      await postgresMatchDb.ensureSchema?.();
+  try {
+    userPool = createPostgresPool(databaseUrl);
+    await runSqlMigrations(userPool, dbMigrationsDir);
+    userStore = createUserStore(userPool);
+    await userStore.ensureSchema();
+    await userStore.deleteExpiredSessions();
+    assetStore = createAssetStore(userPool);
+    await assetStore.ensureSchema();
+    await assetStore.syncDirectory(uploadsDir, 'card-image', '/public/card-assets');
+    await assetStore.syncDirectory(path.resolve(uploadsDir, '..', 'profile-image'), 'avatar-image', '/profile-image');
+    await assetStore.syncDirectory(path.resolve(uploadsDir, '..', 'sys.icons'), 'system-icon', '/sys.icons');
+    backgroundHealth.assetSync = { ok: true, lastRunAt: new Date().toISOString(), mode: 'ok', details: 'initial sync complete' };
+    matchStateStore = createMatchStateStore(userPool);
+    await matchStateStore.ensureSchema();
+    liveMirrorUserStore = userStore;
+    liveMirrorMatchStateStore = matchStateStore;
+    const postgresMatchDb = createBoardgamePostgresDb(userPool) as MatchDbBackend & { ensureSchema?: () => Promise<void> };
+    await postgresMatchDb.ensureSchema?.();
+    const cutoverFlagRaw = await userPool.query<{ value: unknown }>(
+      "SELECT value FROM app_settings WHERE key = 'match_db_cutover_completed' LIMIT 1",
+    );
+    const cutoverAlreadyCompleted = Boolean(cutoverFlagRaw.rows[0]?.value);
+    if (cutoverAlreadyCompleted) {
+      matchDbCutoverSummary = { mode: 'skip', migratedMatches: 0 };
+      await matchRuntimeSync.cutoverToPostgres(postgresMatchDb, 'skip');
+      await logLine('INFO', 'match db cutover skipped (already completed before)');
+    } else {
       matchDbCutoverSummary = await matchRuntimeSync.cutoverToPostgres(postgresMatchDb, matchDbCutoverMode);
-      bugReportStore = createBugReportStore({
-        storePath: bugReportsPath,
-        imagesDir: bugReportImagesDir,
-        pool: userPool,
-      });
-      await bugReportStore.ensureSchema();
-      await matchRuntimeSync.syncMatchStateMirror();
-      backgroundHealth.matchMirror = { ok: true, lastRunAt: new Date().toISOString(), mode: 'ok', details: 'memory fallback sync complete' };
-      await logLine('WARN', 'user auth/profile module running on in-memory fallback for local/dev mode');
-    } catch (error) {
-      userPool = null;
-      userStore = null;
-      await logLine('WARN', `user auth/profile module disabled (memory fallback failed): ${String(error instanceof Error ? error.message : error)}`);
+      await userPool.query(
+        `INSERT INTO app_settings (key, value, updated_by)
+         VALUES ('match_db_cutover_completed', 'true'::jsonb, 'server-match-cutover')
+         ON CONFLICT (key) DO UPDATE
+         SET value = EXCLUDED.value, updated_by = EXCLUDED.updated_by, updated_at = now()`,
+      );
     }
-  } else if (!userStore && nodeEnv !== 'production') {
-    await logLine('WARN', 'user auth/profile memory fallback is disabled (set ALLOW_IN_MEMORY_USER_STORE=1 to enable it locally)');
+    bugReportStore = createBugReportStore({
+      pool: userPool,
+    });
+    await bugReportStore.ensureSchema();
+    postgresAvailableForApp = true;
+    await logLine('INFO', 'user auth/profile schema ready');
+
+    // Load shared config from PostgreSQL
+    if (sharedConfigStore) {
+      await sharedConfigStore.loadTemplate();
+      await logLine('INFO', 'shared deck template loaded from postgres');
+      await sharedConfigStore.loadRanks();
+      await logLine('INFO', 'shared ranks loaded from postgres');
+    }
+
+    await matchRuntimeSync.syncMatchStateMirror();
+    backgroundHealth.matchMirror = { ok: true, lastRunAt: new Date().toISOString(), mode: 'ok', details: 'initial sync complete' };
+    setInterval(async () => {
+      try {
+        await matchRuntimeSync.syncMatchStateMirror();
+        backgroundHealth.matchMirror = { ok: true, lastRunAt: new Date().toISOString(), mode: 'ok', details: 'scheduled sync complete' };
+      } catch (error) {
+        backgroundHealth.matchMirror = {
+          ok: false,
+          lastRunAt: new Date().toISOString(),
+          mode: 'error',
+          details: String(error instanceof Error ? error.message : error),
+        };
+        await logLine('WARN', `user match persistence sweep failed: ${String(error instanceof Error ? error.message : error)}`);
+      }
+    }, 60_000).unref?.();
+  } catch (error) {
+    throw new Error(`PostgreSQL initialization failed: ${String(error instanceof Error ? error.message : error)}`);
+  }
+
+  if (!bugReportStore) {
+    throw new Error('PostgreSQL initialization failed: bug report store is unavailable.');
   }
 
   return {

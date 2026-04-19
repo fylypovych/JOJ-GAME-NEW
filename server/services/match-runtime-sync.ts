@@ -19,7 +19,6 @@ type MatchFetchForMirror = {
 };
 
 export const createMatchRuntimeSync = (args: {
-  flatFileMatchDb: MatchDbBackend;
   getCurrentBackend: () => MatchDbBackend;
   setCurrentBackend: (backend: MatchDbBackend) => void;
   getUserStore: () => { persistMatchResultIfFinished: (matchId: string, state: never) => Promise<unknown> } | null;
@@ -34,7 +33,6 @@ export const createMatchRuntimeSync = (args: {
   logLine: LogLine;
 }) => {
   const {
-    flatFileMatchDb,
     getCurrentBackend,
     setCurrentBackend,
     getUserStore,
@@ -82,33 +80,15 @@ export const createMatchRuntimeSync = (args: {
   };
 
   const cutoverToPostgres = async (postgresMatchDb: MatchDbBackend, mode: 'auto' | 'skip') => {
-    if (mode === 'skip') {
-      setCurrentBackend(postgresMatchDb);
-      await logLine('INFO', 'match db cutover skipped flatfile migration by policy');
-      return { migratedMatches: 0, mode };
-    }
-    const matchIds = await flatFileMatchDb.listMatches?.() ?? [];
-    let migratedMatches = 0;
-    for (const matchId of matchIds) {
-      const fetched = await flatFileMatchDb.fetch?.(matchId, {
-        state: true,
-        metadata: true,
-        initialState: true,
-        log: true,
-      }) as MatchFetchForMirror | null;
-      const initialState = fetched?.initialState;
-      const metadata = (fetched?.metadata as Record<string, unknown> | null | undefined) ?? null;
-      if (!initialState || !metadata) continue;
-      await postgresMatchDb.createMatch?.(matchId, { initialState, metadata });
-      if (typeof fetched?.state !== 'undefined') {
-        await postgresMatchDb.setState?.(matchId, fetched.state, Array.isArray(fetched.log) ? fetched.log : []);
-      }
-      await postgresMatchDb.setMetadata?.(matchId, metadata);
-      migratedMatches += 1;
-    }
     setCurrentBackend(postgresMatchDb);
-    await logLine('INFO', `match db cutover migrated ${migratedMatches} matches`);
-    return { migratedMatches, mode };
+    const nextMode: 'skip' = 'skip';
+    await logLine(
+      'INFO',
+      mode === 'skip'
+        ? 'match db cutover skipped by policy'
+        : 'match db flatfile migration is disabled; using postgres backend only',
+    );
+    return { migratedMatches: 0, mode: nextMode };
   };
 
   return {

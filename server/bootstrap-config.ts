@@ -16,10 +16,7 @@ const parseCsvEnv = (value: string | undefined, fallback: string[]) => {
 };
 
 export const logsPath = path.resolve(appRootDir, 'logs', 'server.log');
-export const matchesDbDir = path.resolve(appRootDir, 'database', 'matches');
 export const envPath = path.resolve(appRootDir, '.env');
-export const templatePath = path.resolve(appRootDir, 'database', 'shared-deck-template.json');
-export const ranksPath = path.resolve(appRootDir, 'database', 'shared-ranks.json');
 export const uploadsDir = path.resolve(appRootDir, 'public', 'card-assets');
 export const repoDir = appRootDir;
 export const devRestartTouchPath = path.resolve(appRootDir, 'server', 'restart.touch');
@@ -27,8 +24,6 @@ export const dbSchemaPath = path.resolve(appRootDir, 'db', 'schema', 'db.sql');
 export const dbMigrationsDir = path.resolve(appRootDir, 'db', 'migrations');
 export const adminDbUiConfigPath = path.resolve(appRootDir, 'database', 'admin-db-ui-config.json');
 export const passwordResetHealthPath = path.resolve(appRootDir, 'database', 'password-reset-health.json');
-export const bugReportsPath = path.resolve(appRootDir, 'database', 'bug-reports.json');
-export const bugReportImagesDir = path.resolve(appRootDir, 'database', 'bug-report-images');
 export const bugReportUiConfigPath = path.resolve(appRootDir, 'database', 'bug-report-ui-config.json');
 export const gameUiConfigPath = path.resolve(appRootDir, 'database', 'game-ui-config.json');
 
@@ -44,15 +39,11 @@ if (!existsSync(envPath)) {
 loadEnvFile(envPath);
 
 export const isAdminAuthEnabled = true;
-export const sharedConfigPrimarySource: 'file' | 'postgres' = 'file';
-export const requestedSharedConfigStorageMode: 'file' | 'postgres' = sharedConfigPrimarySource;
+export const sharedConfigPrimarySource: 'postgres' = 'postgres';
+export const requestedSharedConfigStorageMode: 'postgres' = sharedConfigPrimarySource;
 export const databaseUrl = (process.env.DATABASE_URL ?? '').trim();
 export const nodeEnv = (process.env.NODE_ENV ?? '').trim().toLowerCase();
-export const allowInMemoryUserStore = /^(1|true|yes)$/i.test((process.env.ALLOW_IN_MEMORY_USER_STORE ?? '').trim());
-export const matchDbCutoverMode = ((): 'auto' | 'skip' => {
-  const raw = (process.env.MATCH_DB_CUTOVER_MODE ?? '').trim().toLowerCase();
-  return raw === 'skip' ? 'skip' : 'auto';
-})();
+export const matchDbCutoverMode: 'auto' = 'auto';
 export const port = Number(process.env.PORT ?? 8000);
 
 // Validate critical environment variables

@@ -35,11 +35,8 @@ import { registerAllRoutes } from './route-registration';
 import { startServer } from './server-startup';
 import {
   adminDbUiConfigPath,
-  allowInMemoryUserStore,
   allowedFrontendOrigins,
-  bugReportImagesDir,
   bugReportUiConfigPath,
-  bugReportsPath,
   cspConnectSrcExtras,
   cspFontSrc,
   cspImgSrc,
@@ -52,7 +49,6 @@ import {
   dbSchemaPath,
   devRestartTouchPath,
   gameUiConfigPath,
-  hasPsqlCli,
   IMAGE_UPLOAD_BODY_LIMIT,
   isAdminAuthEnabled,
   isPortAvailable,
@@ -60,32 +56,13 @@ import {
   LARGE_JSON_BODY_LIMIT,
   logsPath,
   matchDbCutoverMode,
-  matchesDbDir,
   nodeEnv,
-  passwordResetHealthPath,
   port,
-  ranksPath,
   repoDir,
   requestedSharedConfigStorageMode,
-  templatePath,
   uploadsDir,
 } from './bootstrap-config';
 
-const require = createRequire(import.meta.url);
-const { Server, FlatFile } = require('boardgame.io/server') as {
-  FlatFile: new (args: { dir: string; logging?: boolean }) => {
-    connect?: () => Promise<void>;
-    createMatch?: (matchID: string, opts: { initialState: unknown; metadata: Record<string, unknown> | null }) => Promise<void>;
-    setState?: (matchID: string, state: unknown, deltalog?: unknown[]) => Promise<void>;
-    setMetadata?: (matchID: string, metadata: unknown) => Promise<void>;
-    fetch?: (matchID: string, opts: { state?: boolean; metadata?: boolean; initialState?: boolean; log?: boolean }) => Promise<Record<string, unknown>>;
-    wipe?: (matchID: string) => Promise<void>;
-    listMatches?: (opts?: { gameName?: string; where?: { isGameover?: boolean; updatedBefore?: number; updatedAfter?: number } }) => Promise<string[]>;
-  };
-  Server: (args: { games: unknown[]; origins?: string[]; db?: unknown }) => {
-    run: (port: number, callback?: () => void) => void;
-  };
-};
 
 const rateLimitState = new Map<string, { count: number; resetAt: number }>();
 
@@ -95,12 +72,26 @@ if (adminRuntimePolicy.startupError) {
   throw new Error(adminRuntimePolicy.startupError);
 }
 
-const flatFileMatchDb = new FlatFile({ dir: matchesDbDir, logging: false }) as MatchDbBackend;
-let currentMatchDbBackend: MatchDbBackend = flatFileMatchDb;
+const require = createRequire(import.meta.url);
+const { Server } = require('boardgame.io/server') as {
+  Server: (args: { games: unknown[]; origins?: string[]; db?: unknown }) => {
+    run: (port: number, callback?: () => void) => void;
+  };
+};
+
+const unavailableMatchDbBackend: MatchDbBackend = {
+  connect: async () => {},
+  createMatch: async () => { throw new Error('Match DB backend is unavailable.'); },
+  setState: async () => { throw new Error('Match DB backend is unavailable.'); },
+  setMetadata: async () => { throw new Error('Match DB backend is unavailable.'); },
+  fetch: async () => ({}),
+  wipe: async () => {},
+  listMatches: async () => [],
+};
+let currentMatchDbBackend: MatchDbBackend = unavailableMatchDbBackend;
 let liveMirrorUserStore: ReturnType<typeof import('./services/user-store').createUserStore> | null = null;
 let liveMirrorMatchStateStore: ReturnType<typeof import('./services/match-state-store').createMatchStateStore> | null = null;
 const matchRuntimeSync = createMatchRuntimeSync({
-  flatFileMatchDb,
   getCurrentBackend: () => currentMatchDbBackend,
   setCurrentBackend: (backend) => { currentMatchDbBackend = backend; },
   getUserStore: () => liveMirrorUserStore,
@@ -165,25 +156,18 @@ setupMiddleware(app ?? null, router ?? null, {
 });
 
 const enforceRateLimit = createRateLimiter({ rateLimitState, logLine });
-const gitCredentialStore = createGitCredentialStore(repoDir);
-const { runGit, runShellCommand, spawnDetachedShell } = createCommandRunners(repoDir, gitCredentialStore);
 
 void (async () => {
-  await flatFileMatchDb.connect?.();
   for (const warning of adminRuntimePolicy.warnings) {
     await logLine('WARN', warning);
   }
-  await initializePasswordResetDeliveryHealth({ statePath: passwordResetHealthPath });
+  await initializePasswordResetDeliveryHealth();
   const sharedConfigStorageMode = requestedSharedConfigStorageMode;
 
   // Validate shared config storage mode
   if (sharedConfigStorageMode === 'postgres') {
     if (!databaseUrl) {
       const errorText = 'shared config postgres mode requires a working PostgreSQL connection; file fallback is disabled';
-      await logLine('ERROR', errorText);
-      throw new Error(errorText);
-    } else if (!hasPsqlCli()) {
-      const errorText = 'shared config postgres mode requires psql CLI; file fallback is disabled';
       await logLine('ERROR', errorText);
       throw new Error(errorText);
     }
@@ -198,8 +182,6 @@ void (async () => {
     syncCurrentJsonToPostgres,
     syncJsonToPostgresIncremental,
   } = createSharedConfigStore({
-    templatePath,
-    ranksPath,
     exportSharedDeckTemplateJson,
     exportSharedRanksJson,
     getCardCatalog,
@@ -215,11 +197,8 @@ void (async () => {
     {
       databaseUrl,
       nodeEnv,
-      allowInMemoryUserStore,
       dbMigrationsDir,
       uploadsDir,
-      bugReportsPath,
-      bugReportImagesDir,
       matchDbCutoverMode,
       sharedConfigStore: { loadTemplate, loadRanks },
     },
@@ -241,6 +220,11 @@ void (async () => {
     liveMirrorMatchStateStore: newLiveMirrorMatchStateStore,
     backgroundHealth,
   } = dbServices;
+
+  await initializePasswordResetDeliveryHealth({ pool: userPool });
+
+  const gitCredentialStore = createGitCredentialStore({ getPool: () => userPool });
+  const { runGit, runShellCommand, spawnDetachedShell } = createCommandRunners(repoDir, gitCredentialStore);
 
   liveMirrorUserStore = newLiveMirrorUserStore;
   liveMirrorMatchStateStore = newLiveMirrorMatchStateStore;
@@ -275,7 +259,6 @@ void (async () => {
         matchStateStore,
         bugReportStore,
         currentMatchDbBackend,
-        flatFileMatchDb,
         matchDbCutoverSummary,
         postgresAvailableForApp,
         backgroundHealth,
@@ -294,7 +277,14 @@ void (async () => {
         autoStashRuntimeNoise,
         matchRuntimeSync,
         adminAudit,
-        sharedConfigStore: { syncCurrentJsonToPostgres, syncJsonToPostgresIncremental, saveRanks, saveTemplate },
+        sharedConfigStore: {
+          loadTemplate,
+          loadRanks,
+          syncCurrentJsonToPostgres,
+          syncJsonToPostgresIncremental,
+          saveRanks,
+          saveTemplate,
+        },
         gameAdapter: {
           exportSharedDeckTemplateJson,
           getSharedDeckTemplateStats,

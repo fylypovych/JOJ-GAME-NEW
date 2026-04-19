@@ -1,5 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import path from 'node:path';
+import type { Pool } from 'pg';
 
 export type PasswordResetDeliveryHealth = {
   status: 'unknown' | 'healthy' | 'degraded';
@@ -24,8 +23,9 @@ const createInitialState = (now = new Date().toISOString()): PasswordResetDelive
 });
 
 const state: PasswordResetDeliveryHealth = createInitialState();
-let persistencePath = '';
+let healthPool: Pool | null = null;
 let pendingWrite = Promise.resolve();
+const HEALTH_KEY = 'password_reset_delivery_health';
 
 const normalizePersistedState = (value: unknown): Partial<PasswordResetDeliveryHealth> => {
   if (!value || typeof value !== 'object') return {};
@@ -41,13 +41,19 @@ const normalizePersistedState = (value: unknown): Partial<PasswordResetDeliveryH
 };
 
 const queuePersist = () => {
-  if (!persistencePath) return pendingWrite;
+  if (!healthPool) return pendingWrite;
   const snapshot: PasswordResetDeliveryHealth = { ...state };
   pendingWrite = pendingWrite
     .catch(() => undefined)
     .then(async () => {
-      await mkdir(path.dirname(persistencePath), { recursive: true });
-      await writeFile(persistencePath, `${JSON.stringify(snapshot, null, 2)}\n`, 'utf8');
+      if (!healthPool) return;
+      await healthPool.query(
+        `INSERT INTO app_settings (key, value, updated_by)
+         VALUES ($1, $2::jsonb, 'password-reset-health')
+         ON CONFLICT (key) DO UPDATE
+         SET value = EXCLUDED.value, updated_by = EXCLUDED.updated_by, updated_at = now()`,
+        [HEALTH_KEY, JSON.stringify(snapshot)],
+      );
     });
   return pendingWrite;
 };
@@ -63,18 +69,21 @@ const replaceState = (nextState: PasswordResetDeliveryHealth) => {
 };
 
 export const initializePasswordResetDeliveryHealth = async (args?: {
-  statePath?: string;
+  pool?: Pool | null;
   now?: string;
 }) => {
   const now = args?.now ?? new Date().toISOString();
-  persistencePath = args?.statePath ?? '';
+  healthPool = args?.pool ?? null;
   const nextState = createInitialState(now);
-  if (persistencePath) {
+  if (healthPool) {
     try {
-      const raw = await readFile(persistencePath, 'utf8');
-      Object.assign(nextState, normalizePersistedState(JSON.parse(raw)));
+      const result = await healthPool.query<{ value: unknown }>(
+        'SELECT value FROM app_settings WHERE key = $1 LIMIT 1',
+        [HEALTH_KEY],
+      );
+      Object.assign(nextState, normalizePersistedState(result.rows[0]?.value));
     } catch {
-      // Missing or invalid state file should not block server startup.
+      // Missing or invalid state should not block server startup.
     }
   }
   replaceState(nextState);
@@ -85,9 +94,9 @@ export const flushPasswordResetDeliveryHealthWrites = () => pendingWrite.catch((
 
 export const resetPasswordResetDeliveryHealthForTests = (args?: {
   now?: string;
-  statePath?: string;
+  pool?: Pool | null;
 }) => {
-  persistencePath = args?.statePath ?? '';
+  healthPool = args?.pool ?? null;
   replaceState(createInitialState(args?.now));
   pendingWrite = Promise.resolve();
 };

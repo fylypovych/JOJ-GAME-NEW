@@ -9,18 +9,17 @@ import {
   addCustomCardToSharedDeckTemplate,
   updateCardAtInSharedDeckTemplate,
   removeCardAtFromSharedDeckTemplate,
-  resetSharedDeckTemplate,
   setSharedDeckBackImage,
   exportSharedRanksJson,
   getSharedRanks,
   importSharedRanksJson,
   setSharedRanks,
-  resetSharedRanks,
 } from '../../game/sharedConfig';
 import { SERVER_URL } from './clientConfig';
 import { createBrowserApiClient } from './httpClient';
 
 const RANKS_API = `${SERVER_URL}/api/shared-ranks`;
+const TEMPLATE_API = `${SERVER_URL}/api/shared-deck-template`;
 
 export interface UseDeckHandlersArgs {
   refreshSharedDeckTemplate: (force?: boolean) => Promise<boolean>;
@@ -108,10 +107,18 @@ export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResul
   }, [applyTemplateChange]);
 
   const onResetDeck = useCallback(() => {
-    void applyTemplateChange(() => {
-      resetSharedDeckTemplate();
-    });
-  }, [applyTemplateChange]);
+    const previousJson = exportSharedDeckTemplateJson();
+    void api.postJson<{ ok?: boolean; json?: string }>(`${TEMPLATE_API}/reset`, {}, { csrf: 'admin' })
+      .then((payload) => {
+        if (typeof payload?.json !== 'string') throw new Error('Missing template payload');
+        const importResult = importSharedDeckTemplateJson(payload.json);
+        if (!importResult.ok) throw new Error(importResult.error);
+        void refreshSharedDeckTemplate(false);
+      })
+      .catch(() => {
+        rollbackTemplate(previousJson);
+      });
+  }, [api, refreshSharedDeckTemplate, rollbackTemplate]);
 
   const onSetBack = useCallback((path?: string) => {
     void applyTemplateChange(() => {
@@ -179,12 +186,16 @@ export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResul
 
   const onResetRanks = useCallback(() => {
     const previousRanks = (sharedRanks ?? []).map((rank) => ({ ...rank }));
-    resetSharedRanks();
-    const normalized = getSharedRanks();
-    setSharedRanksState(normalized);
-    void api.postJson(`${RANKS_API}/reset`, {}, { csrf: 'admin' }).catch(() => {
-      rollbackRanks(previousRanks);
-    });
+    void api.postJson<{ ok?: boolean; ranks?: RankDefinition[] }>(`${RANKS_API}/reset`, {}, { csrf: 'admin' })
+      .then((payload) => {
+        if (!Array.isArray(payload?.ranks) || !setSharedRanks(payload.ranks)) {
+          throw new Error('Invalid ranks payload');
+        }
+        setSharedRanksState(getSharedRanks());
+      })
+      .catch(() => {
+        rollbackRanks(previousRanks);
+      });
     // Auto-save to PostgreSQL if available
     if (saveTemplateToPostgres) {
       const templateJson = exportSharedDeckTemplateJson();

@@ -28,6 +28,7 @@ type AdminDbToolsDeps = {
   migrationsPath: string;
   importJsonConfigToDb: (draft?: DbConnInput) => Promise<void>;
   syncJsonToPostgresIncremental: (draft?: DbConnInput) => Promise<void>;
+  loadSharedConfigFromDb?: () => Promise<void>;
   pool?: Pool | null;
   prepareBackupSnapshot?: () => Promise<void>;
   backupRootDir?: string;
@@ -76,22 +77,13 @@ const parseDbConnInput = (body: Record<string, unknown>): DbConnInput | { error:
 };
 
 const loadStoredAdminDbUiConfig = async (
-  adminDbUiConfigPath: string,
+  _adminDbUiConfigPath: string,
   pool?: Pool | null,
 ): Promise<StoredAdminDbUiConfig | null> => {
+  void _adminDbUiConfigPath;
+  if (!pool) return null;
   const stored = await loadAppSettingJson<StoredAdminDbUiConfig>(pool, ADMIN_DB_UI_CONFIG_KEY);
-  if (stored) return stored;
-  try {
-    const raw = await readFile(adminDbUiConfigPath, 'utf8');
-    const parsed = JSON.parse(raw) as StoredAdminDbUiConfig;
-    if (!(parsed && typeof parsed === 'object')) return null;
-    if (pool) {
-      await saveAppSettingJson(pool, ADMIN_DB_UI_CONFIG_KEY, parsed, 'migration-admin-db-ui');
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
+  return stored ?? null;
 };
 
 const buildDbConnInputForExecution = async (
@@ -257,6 +249,7 @@ export const registerAdminDbToolRoutes = ({
   migrationsPath,
   importJsonConfigToDb,
   syncJsonToPostgresIncremental,
+  loadSharedConfigFromDb,
   pool,
   prepareBackupSnapshot,
   backupRootDir,
@@ -325,25 +318,15 @@ export const registerAdminDbToolRoutes = ({
       sslMode: rawDbConfig.sslMode === 'require' ? 'require' : 'disable',
     } satisfies DbConnInput;
     try {
-      await mkdir(new URL('.', `file://${adminDbUiConfigPath.replace(/\\/g, '/')}`).pathname, { recursive: true }).catch(() => {});
-    } catch { /* noop */ }
-    try {
+      if (!pool) {
+        throw new Error('PostgreSQL pool is required for admin DB UI config.');
+      }
       const storedPayload = {
         storageMode: 'db',
         dbConfig: normalizedDbConfig,
         updatedAt: Date.now(),
       };
-      if (pool) {
-        await saveAppSettingJson(pool, ADMIN_DB_UI_CONFIG_KEY, storedPayload, 'admin-db-ui');
-      } else {
-        const dir = adminDbUiConfigPath.replace(/[\\/][^\\/]+$/, '');
-        await mkdir(dir, { recursive: true });
-        await writeFile(
-          adminDbUiConfigPath,
-          JSON.stringify(storedPayload, null, 2),
-          'utf8',
-        );
-      }
+      await saveAppSettingJson(pool, ADMIN_DB_UI_CONFIG_KEY, storedPayload, 'admin-db-ui');
       ctx.body = { ok: true, message: 'Admin DB UI config saved', hasSavedPassword: Boolean(normalizedDbConfig.password) };
     } catch (error) {
       fail(ctx, 500, 'Failed to save admin DB UI config', String(error));
@@ -420,36 +403,13 @@ export const registerAdminDbToolRoutes = ({
     if ('error' in parsed) return fail(ctx, 400, parsed.error);
 
     try {
-      const targetUrl = parsed ? buildPostgresUrlFromDraft(parsed) : undefined;
+      const targetUrl = buildPostgresUrlFromDraft(parsed);
       if (!targetUrl) return fail(ctx, 400, 'PostgreSQL connection is not configured');
-
-      // Load template from PostgreSQL
-      const templateResult = await runPsqlScalar(
-        parsed,
-        "SELECT COALESCE(value::text, '') FROM app_settings WHERE key = 'shared_deck_template' LIMIT 1;"
-      );
-      if (!templateResult.ok) return fail(ctx, 400, 'Failed to load template from PostgreSQL', templateResult.error);
-      const templateJson = templateResult.value;
-
-      // Load ranks from PostgreSQL
-      const ranksResult = await runPsqlScalar(
-        parsed,
-        "SELECT COALESCE(value::text, '') FROM app_settings WHERE key = 'shared_ranks' LIMIT 1;"
-      );
-      if (!ranksResult.ok) return fail(ctx, 400, 'Failed to load ranks from PostgreSQL', ranksResult.error);
-      const ranksJson = ranksResult.value;
-
-      // Write to local JSON files
-      const repoRoot = path.dirname(path.dirname(path.dirname(dbSchemaPath)));
-      const sharedDeckPath = path.join(repoRoot, 'database', 'shared-deck-template.json');
-      const sharedRanksPath = path.join(repoRoot, 'database', 'shared-ranks.json');
-
-      await writeFile(sharedDeckPath, templateJson, 'utf8');
-      await writeFile(sharedRanksPath, ranksJson, 'utf8');
+      await loadSharedConfigFromDb?.();
 
       ctx.body = {
         ok: true,
-        message: 'Data loaded from PostgreSQL to local JSON files successfully',
+        message: 'Shared config reloaded from PostgreSQL successfully',
       };
     } catch (error) {
       const details = String(error instanceof Error ? error.message : error);
@@ -503,8 +463,8 @@ export const registerAdminDbToolRoutes = ({
       );
       if (!updateHashResult.ok) return fail(ctx, 400, 'Failed to update sync hash', (updateHashResult.stderr || updateHashResult.error || updateHashResult.stdout || '').trim());
 
-      // Reload local state from PostgreSQL
-      await importJsonConfigToDb(parsed);
+      // Reload runtime shared config from PostgreSQL
+      await loadSharedConfigFromDb?.();
 
       ctx.body = {
         ok: true,
@@ -586,14 +546,19 @@ WHERE r.is_active = true;`);
       } = null;
 
       if (compareJson) {
-        const repoRoot = path.dirname(path.dirname(path.dirname(dbSchemaPath)));
-        const sharedDeckPath = path.join(repoRoot, 'database', 'shared-deck-template.json');
-        const sharedRanksPath = path.join(repoRoot, 'database', 'shared-ranks.json');
-
         try {
-          const deckRaw = await readFile(sharedDeckPath, 'utf8');
-          const ranksRaw = await readFile(sharedRanksPath, 'utf8');
-          const deckJson = JSON.parse(deckRaw) as {
+          const templateDocRaw = await runPsqlScalar(
+            parsed,
+            "SELECT COALESCE(value::text, '{}') FROM app_settings WHERE key = 'shared_deck_template' LIMIT 1;",
+          );
+          if (!templateDocRaw.ok) return fail(ctx, 400, 'Failed to read shared_deck_template from app_settings', templateDocRaw.error);
+          const ranksDocRaw = await runPsqlScalar(
+            parsed,
+            "SELECT COALESCE(value::text, '[]') FROM app_settings WHERE key = 'shared_ranks' LIMIT 1;",
+          );
+          if (!ranksDocRaw.ok) return fail(ctx, 400, 'Failed to read shared_ranks from app_settings', ranksDocRaw.error);
+
+          const deckJson = JSON.parse(templateDocRaw.value) as {
             deck?: unknown[];
             legendaryDeck?: unknown[];
             rankTrack?: unknown[];
@@ -601,7 +566,7 @@ WHERE r.is_active = true;`);
             legendaryDeckIds?: unknown[];
             rankTrackIds?: unknown[];
           };
-          const ranksJson = JSON.parse(ranksRaw) as unknown;
+          const ranksJson = JSON.parse(ranksDocRaw.value) as unknown;
           const deckCount = Array.isArray(deckJson.deck) ? deckJson.deck.length : (Array.isArray(deckJson.deckIds) ? deckJson.deckIds.length : 0);
           const legendaryDeckCount = Array.isArray(deckJson.legendaryDeck)
             ? deckJson.legendaryDeck.length
@@ -622,12 +587,12 @@ WHERE r.is_active = true;`);
             rankDefinitions: rankDefinitionsCount,
           };
 
-          if (dbDeckCount !== deckCount) mismatches.push(`deck count mismatch: db=${dbDeckCount} json=${deckCount}`);
-          if (dbLegendaryCount !== legendaryDeckCount) mismatches.push(`legendaryDeck count mismatch: db=${dbLegendaryCount} json=${legendaryDeckCount}`);
-          if (dbRankTrackCount !== rankTrackCount) mismatches.push(`rankTrack count mismatch: db=${dbRankTrackCount} json=${rankTrackCount}`);
-          if (dbRankDefinitionsCount !== rankDefinitionsCount) mismatches.push(`rank definitions mismatch: db=${dbRankDefinitionsCount} json=${rankDefinitionsCount}`);
+          if (dbDeckCount !== deckCount) mismatches.push(`deck count mismatch: db=${dbDeckCount} app_settings=${deckCount}`);
+          if (dbLegendaryCount !== legendaryDeckCount) mismatches.push(`legendaryDeck count mismatch: db=${dbLegendaryCount} app_settings=${legendaryDeckCount}`);
+          if (dbRankTrackCount !== rankTrackCount) mismatches.push(`rankTrack count mismatch: db=${dbRankTrackCount} app_settings=${rankTrackCount}`);
+          if (dbRankDefinitionsCount !== rankDefinitionsCount) mismatches.push(`rank definitions mismatch: db=${dbRankDefinitionsCount} app_settings=${rankDefinitionsCount}`);
         } catch (error) {
-          mismatches.push(`Failed to compare with local JSON mirror: ${String(error instanceof Error ? error.message : error)}`);
+          mismatches.push(`Failed to compare with app_settings mirror: ${String(error instanceof Error ? error.message : error)}`);
         }
       }
 

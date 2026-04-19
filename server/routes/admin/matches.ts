@@ -261,24 +261,27 @@ export const registerAdminMatchRoutes = ({
       await logLine('INFO', `Admin matches: total matchIds from listMatches: ${matchIds.length}`);
       const matches = [];
       for (const matchId of matchIds) {
-        // Check if match is deleted in match_records
+        // Check match lifecycle in match_records first.
         if (pool) {
           const deletedCheck = await pool.query<{ status: string }>(
             'SELECT status FROM match_records WHERE id = $1 LIMIT 1',
             [matchId]
           );
           if (deletedCheck.rows.length === 0) {
-            await logLine('WARN', `Admin matches: match ${matchId} has no record in match_records, including anyway`);
-          } else if (deletedCheck.rows[0]?.status === 'deleted') {
+            await logLine('WARN', `Admin matches: skipping orphan live match ${matchId} (no match_records row)`);
+            continue;
+          }
+          if (deletedCheck.rows[0]?.status === 'deleted') {
             await logLine('INFO', `Admin matches: skipping deleted match ${matchId}`);
-            continue; // Skip deleted matches
+            continue;
           }
         }
         const fetched = typeof db.fetch === 'function'
           ? await db.fetch(matchId, { metadata: true, state: true })
           : null;
         if (!fetched?.state && !fetched?.metadata) {
-          await logLine('WARN', `Admin matches: match ${matchId} has no state or metadata, including anyway`);
+          await logLine('WARN', `Admin matches: skipping broken match ${matchId} (no state and no metadata)`);
+          continue;
         }
         matches.push({
           matchID: matchId,
@@ -307,31 +310,58 @@ export const registerAdminMatchRoutes = ({
       await logLine('INFO', `Lobby matches: total matchIds from listMatches: ${matchIds.length}`);
       const matches = [];
       for (const matchId of matchIds) {
-        // Check if match is deleted in match_records
+        // Check match lifecycle in match_records first.
         if (pool) {
           const deletedCheck = await pool.query<{ status: string }>(
             'SELECT status FROM match_records WHERE id = $1 LIMIT 1',
             [matchId]
           );
           if (deletedCheck.rows.length === 0) {
-            await logLine('WARN', `Lobby matches: match ${matchId} has no record in match_records, including anyway`);
-          } else if (deletedCheck.rows[0]?.status === 'deleted') {
+            await logLine('WARN', `Lobby matches: skipping orphan live match ${matchId} (no match_records row)`);
+            continue;
+          }
+          if (deletedCheck.rows[0]?.status === 'deleted') {
             await logLine('INFO', `Lobby matches: skipping deleted match ${matchId}`);
-            continue; // Skip deleted matches
+            continue;
           }
         }
         const fetched = typeof db.fetch === 'function'
           ? await db.fetch(matchId, { metadata: true, state: true })
           : null;
-        const metadata = fetched?.metadata as { gameover?: unknown; updatedAt?: number | string } | null;
+        if (!fetched?.state && !fetched?.metadata) {
+          await logLine('WARN', `Lobby matches: skipping broken match ${matchId} (no state and no metadata)`);
+          continue;
+        }
+        const metadata = fetched?.metadata as {
+          gameover?: unknown;
+          updatedAt?: number | string;
+          setupData?: unknown;
+          players?: Record<string, { name?: string | null }>;
+        } | null;
         // Skip gameover matches for lobby
         if (metadata?.gameover) {
           await logLine('INFO', `Lobby matches: skipping gameover match ${matchId}`);
           continue;
         }
+        const players = metadata?.players && typeof metadata.players === 'object'
+          ? Object.entries(metadata.players).reduce<Array<{ id: number; name?: string }>>((acc, [playerId, playerMeta]) => {
+            const id = Number.parseInt(playerId, 10);
+            if (!Number.isFinite(id)) return acc;
+            acc.push({
+              id,
+              name: typeof playerMeta?.name === 'string' ? playerMeta.name : undefined,
+            });
+            return acc;
+          }, []).sort((a, b) => a.id - b.id)
+          : [];
         matches.push({
           matchID: matchId,
           metadata: metadata ?? {},
+          players,
+          setupData: metadata?.setupData && typeof metadata.setupData === 'object'
+            ? metadata.setupData
+            : undefined,
+          gameover: Boolean(metadata?.gameover),
         });
       }
       await logLine('INFO', `Lobby matches: showing ${matches.length}`);

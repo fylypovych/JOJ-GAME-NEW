@@ -82,13 +82,24 @@ export const useLobbySession = (args: {
       if (lobbyClient.serverUrl) {
         const response = await fetch(`${lobbyClient.serverUrl}/api/lobby/matches`);
         if (!response.ok) throw new Error('Failed to fetch matches');
-        const payload = await response.json() as { matches?: Array<{ matchID: string; metadata: Record<string, unknown> }> };
+        const payload = await response.json() as {
+          matches?: Array<{
+            matchID: string;
+            metadata: Record<string, unknown>;
+            players?: Array<{ id: number; name?: string }>;
+            setupData?: LobbyMatch['setupData'];
+            gameover?: boolean;
+          }>;
+        };
         // Convert to LobbyMatch format
         const lobbyMatches: LobbyMatch[] = (payload.matches ?? []).map((m) => ({
           matchID: m.matchID,
-          createdAt: typeof m.metadata?.updatedAt === 'number' ? m.metadata.updatedAt : undefined,
-          players: [], // Will be populated from metadata if needed
-          setupData: undefined, // Will be populated from metadata if needed
+          createdAt: typeof m.metadata?.updatedAt === 'number' || typeof m.metadata?.updatedAt === 'string'
+            ? m.metadata.updatedAt
+            : undefined,
+          players: Array.isArray(m.players) ? m.players : [],
+          setupData: m.setupData,
+          gameover: m.gameover === true,
         }));
         setMatches(lobbyMatches);
       } else {

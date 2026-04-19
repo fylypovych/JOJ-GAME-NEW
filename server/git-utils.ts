@@ -1,6 +1,5 @@
 import { execFile, spawn } from 'node:child_process';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import path from 'node:path';
+import type { Pool } from 'pg';
 import type { LogLine } from './file-logger';
 
 type CmdResult = { ok: true; stdout: string; stderr: string } | { ok: false; error: string };
@@ -50,14 +49,24 @@ const buildGitProcessEnv = (credentials: StoredGitCredentials | null) => {
 };
 
 export const createGitCredentialStore = (
-  repoDir: string,
-  relativePath = path.join('database', '.admin-git-credentials.json'),
+  args: {
+    getPool: () => Pool | null | undefined;
+    settingKey?: string;
+  },
 ): GitCredentialStore => {
-  const credentialsPath = path.join(repoDir, relativePath);
+  const { getPool, settingKey = 'admin_git_credentials' } = args;
+  const credentialsPath = `app_settings:${settingKey}`;
   return {
     load: async () => {
+      const pool = getPool();
+      if (!pool) return null;
       try {
-        const payload = JSON.parse(await readFile(credentialsPath, 'utf8')) as Partial<StoredGitCredentials>;
+        const result = await pool.query<{ value: unknown }>(
+          'SELECT value FROM app_settings WHERE key = $1 LIMIT 1',
+          [settingKey],
+        );
+        const payload = (result.rows[0]?.value ?? null) as Partial<StoredGitCredentials> | null;
+        if (!payload || typeof payload !== 'object') return null;
         const username = normalizeGitCredential(payload.username ?? '');
         const token = normalizeGitCredential(payload.token ?? '');
         if (!username || !token) return null;
@@ -67,14 +76,23 @@ export const createGitCredentialStore = (
       }
     },
     save: async (credentials) => {
+      const pool = getPool();
+      if (!pool) throw new Error('PostgreSQL pool is required for Git credentials.');
       const username = normalizeGitCredential(credentials.username);
       const token = normalizeGitCredential(credentials.token);
       if (!username || !token) throw new Error('GitHub username and token are required.');
-      await mkdir(path.dirname(credentialsPath), { recursive: true });
-      await writeFile(credentialsPath, `${JSON.stringify({ username, token }, null, 2)}\n`, { encoding: 'utf8', mode: 0o600 });
+      await pool.query(
+        `INSERT INTO app_settings (key, value, updated_by)
+         VALUES ($1, $2::jsonb, 'admin-git')
+         ON CONFLICT (key) DO UPDATE
+         SET value = EXCLUDED.value, updated_by = EXCLUDED.updated_by, updated_at = now()`,
+        [settingKey, JSON.stringify({ username, token })],
+      );
     },
     clear: async () => {
-      await rm(credentialsPath, { force: true });
+      const pool = getPool();
+      if (!pool) return;
+      await pool.query('DELETE FROM app_settings WHERE key = $1', [settingKey]);
     },
     getCredentialsPath: () => credentialsPath,
   };
@@ -204,4 +222,3 @@ export const getGitAuthStatus = async (
     remoteAuthMode,
   };
 };
-

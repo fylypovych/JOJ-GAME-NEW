@@ -1,8 +1,6 @@
 import type { PostgresConnDraft } from '../../db/psql';
 
 export type SharedConfigStoreDeps = {
-  templatePath: string;
-  ranksPath: string;
   exportSharedDeckTemplateJson: () => string;
   exportSharedRanksJson: () => string;
   getCardCatalog: () => unknown[];
@@ -28,5 +26,5 @@ export type SharedConfigStore = {
 
 export type SharedConfigCoreDeps = Pick<
   SharedConfigStoreDeps,
-  'templatePath' | 'ranksPath' | 'exportSharedDeckTemplateJson' | 'exportSharedRanksJson' | 'getCardCatalog' | 'importSharedDeckTemplateJson' | 'importSharedRanksJson' | 'resetSharedRanks'
+  'exportSharedDeckTemplateJson' | 'exportSharedRanksJson' | 'getCardCatalog' | 'importSharedDeckTemplateJson' | 'importSharedRanksJson' | 'resetSharedRanks'
 >;

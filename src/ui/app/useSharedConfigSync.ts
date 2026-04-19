@@ -104,9 +104,15 @@ export const useSharedConfigSync = (args: {
   useEffect(() => {
     void (async () => {
       const loadedFromServer = await loadTemplateFromServer();
-      if (!loadedFromServer) return setSharedConfigLoaded(true);
+      if (!loadedFromServer) {
+        setSharedConfigLoaded(false);
+        return;
+      }
       const loadedRanksFromServer = await loadRanksFromServer();
-      if (!loadedRanksFromServer) return setSharedConfigLoaded(true);
+      if (!loadedRanksFromServer) {
+        setSharedConfigLoaded(false);
+        return;
+      }
       setSharedConfigLoaded(true);
     })();
   }, []);

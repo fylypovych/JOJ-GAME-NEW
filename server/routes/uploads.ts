@@ -83,14 +83,14 @@ export const registerUploadRoutes = ({
     if (targetPath !== uploadsRoot && !targetPath.startsWith(`${uploadsRoot}${path.sep}`)) return null;
     return { targetPath, normalizedRelative };
   };
-  const listCardAssetRelativeFiles = async (rootDir: string, prefix = ''): Promise<string[]> => {
+  const listRelativeFiles = async (rootDir: string, prefix = ''): Promise<string[]> => {
     const entries = await readdir(rootDir, { withFileTypes: true }).catch(() => []);
     const files: string[] = [];
     for (const entry of entries) {
       const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
       const absPath = path.join(rootDir, entry.name);
       if (entry.isDirectory()) {
-        files.push(...await listCardAssetRelativeFiles(absPath, relativePath));
+        files.push(...await listRelativeFiles(absPath, relativePath));
         continue;
       }
       if (!entry.isFile()) continue;
@@ -107,6 +107,11 @@ export const registerUploadRoutes = ({
     return `${CARD_ASSET_BASE_PATH}${fileName}`;
   };
   const toAvatarPath = (fileName: string) => `${AVATAR_ASSET_BASE_PATH}${fileName}`;
+  const buildCardAssetAliases = (normalizedRelative: string) => ([
+    `/public/card-assets/${normalizedRelative}`,
+    `/card-assets/${normalizedRelative}`,
+    `/cards/${normalizedRelative}`,
+  ]);
   const serveAvatarFile = async (ctx: RouteCtx) => {
     const fileName = typeof (ctx as RouteCtx & { params?: Record<string, unknown> }).params?.fileName === 'string'
       ? String((ctx as RouteCtx & { params?: Record<string, unknown> }).params?.fileName).trim()
@@ -376,27 +381,48 @@ export const registerUploadRoutes = ({
       ctx.body = { ok: false, error: 'Asset metadata store is unavailable.' };
       return;
     }
-    const fileNames = await listCardAssetRelativeFiles(uploadsDir);
-    const existingPaths = new Set(fileNames.map((name) => `/card-assets/${name}`));
+    const descriptors = [
+      { rootDir: uploadsDir, basePath: '/public/card-assets', kind: 'card-image' as const },
+      { rootDir: avatarUploadsDir, basePath: '/profile-image', kind: 'avatar-image' },
+      { rootDir: systemIconsDir, basePath: '/sys.icons', kind: 'system-icon' },
+    ] as const;
 
     if (mode === 'records') {
-      const cleaned = await assetStore.purgeMissingFiles(existingPaths, 'card-image');
+      let cleaned = 0;
+      for (const descriptor of descriptors) {
+        const fileNames = await listRelativeFiles(descriptor.rootDir);
+        const existingPaths = new Set<string>();
+        for (const name of fileNames) {
+          const normalizedName = name.replace(/\\/g, '/');
+          if (descriptor.kind === 'card-image') {
+            buildCardAssetAliases(normalizedName).forEach((alias) => existingPaths.add(alias));
+          } else {
+            existingPaths.add(`${descriptor.basePath}/${normalizedName}`);
+          }
+        }
+        cleaned += await assetStore.purgeMissingFiles(existingPaths, descriptor.kind);
+      }
       await auditAdminAction?.({ action: 'uploads.assets.cleanup', ctx, success: true, details: { mode, cleaned } });
       ctx.body = { ok: true, mode, cleaned };
       return;
     }
 
-    const knownPaths = await assetStore.listKnownPaths('card-image');
     let cleaned = 0;
-    for (const assetPath of existingPaths) {
-      if (knownPaths.has(assetPath)) continue;
-      const resolvedAsset = resolveCardAssetTargetPath(assetPath);
-      if (!resolvedAsset) continue;
-      try {
-        await unlink(resolvedAsset.targetPath);
-        cleaned += 1;
-      } catch {
-        // ignore missing/locked file and continue cleanup
+    for (const descriptor of descriptors) {
+      const knownPaths = await assetStore.listKnownPaths(descriptor.kind);
+      const fileNames = await listRelativeFiles(descriptor.rootDir);
+      for (const relativeName of fileNames) {
+        const normalizedRelative = relativeName.replace(/\\/g, '/');
+        const known = descriptor.kind === 'card-image'
+          ? buildCardAssetAliases(normalizedRelative).some((alias) => knownPaths.has(alias))
+          : knownPaths.has(`${descriptor.basePath}/${normalizedRelative}`);
+        if (known) continue;
+        try {
+          await unlink(path.join(descriptor.rootDir, normalizedRelative));
+          cleaned += 1;
+        } catch {
+          // ignore missing/locked file and continue cleanup
+        }
       }
     }
     await auditAdminAction?.({ action: 'uploads.assets.cleanup', ctx, success: true, details: { mode, cleaned } });

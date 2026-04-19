@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Pool } from 'pg';
 import { getClientIp } from '../request-utils';
@@ -106,7 +106,27 @@ export const registerBugReportRoutes = (args: {
     details?: Record<string, unknown>;
   }) => Promise<void>;
 }) => {
-  const isCardAssetPath = (value: string) => value.startsWith('/card-assets/') || value.startsWith('/cards/');
+  const isCardAssetPath = (value: string) =>
+    value.startsWith('/public/card-assets/')
+    || value.startsWith('/card-assets/')
+    || value.startsWith('/cards/');
+  const toCardAssetRelativePath = (assetPath: string) => {
+    const normalized = assetPath.replace(/\\/g, '/').trim();
+    if (normalized.startsWith('/public/card-assets/')) return normalized.slice('/public/card-assets/'.length);
+    if (normalized.startsWith('/card-assets/')) return normalized.slice('/card-assets/'.length);
+    if (normalized.startsWith('/cards/')) return normalized.slice('/cards/'.length);
+    return '';
+  };
+  const resolveCardAssetAbsolutePath = (assetPath: string) => {
+    const relativePath = toCardAssetRelativePath(assetPath);
+    if (!relativePath || relativePath === '.' || relativePath === '..') return null;
+    const normalizedRelative = path.normalize(relativePath);
+    if (!normalizedRelative || normalizedRelative.startsWith('..') || path.isAbsolute(normalizedRelative)) return null;
+    const targetPath = path.resolve(uploadsDir, normalizedRelative);
+    const uploadsRoot = path.resolve(uploadsDir);
+    if (targetPath !== uploadsRoot && !targetPath.startsWith(`${uploadsRoot}${path.sep}`)) return null;
+    return targetPath;
+  };
   const {
     router,
     requireAdminAuth,
@@ -116,7 +136,6 @@ export const registerBugReportRoutes = (args: {
     JSON_BODY_LIMIT,
     IMAGE_UPLOAD_BODY_LIMIT,
     bugReportStore,
-    bugReportUiConfigPath,
     uploadsDir,
     userStore,
     pool,
@@ -125,25 +144,18 @@ export const registerBugReportRoutes = (args: {
   } = args;
 
   const readBugReportUiConfig = async () => {
+    if (!pool) {
+      throw new Error('PostgreSQL pool is required for bug report UI config.');
+    }
     const stored = await loadAppSettingJson<{ imagePath?: string }>(pool, BUG_REPORT_UI_CONFIG_KEY);
     if (stored) {
       return {
         imagePath: typeof stored.imagePath === 'string' ? stored.imagePath.trim() : '',
       };
     }
-    try {
-      const raw = await readFile(bugReportUiConfigPath, 'utf8');
-      const parsed = JSON.parse(raw) as { imagePath?: string };
-      const migrated = {
-        imagePath: typeof parsed.imagePath === 'string' ? parsed.imagePath.trim() : '',
-      };
-      if (pool) {
-        await saveAppSettingJson(pool, BUG_REPORT_UI_CONFIG_KEY, { ...migrated, updatedAt: Date.now() }, 'migration-bug-report-ui');
-      }
-      return migrated;
-    } catch {
-      return { imagePath: '' };
-    }
+    const initial = { imagePath: '' };
+    await saveAppSettingJson(pool, BUG_REPORT_UI_CONFIG_KEY, { ...initial, updatedAt: Date.now() }, 'init-bug-report-ui');
+    return initial;
   };
 
   router.get('/api/bug-reports/ui-config', async (ctx: RouteCtx) => {
@@ -159,20 +171,22 @@ export const registerBugReportRoutes = (args: {
       routeError(ctx, 404, 'Bug report image is not configured.');
       return;
     }
-    const fileName = path.basename(imagePath);
-    if (!fileName || fileName === '.' || fileName === '..') {
+    const resolvedPath = resolveCardAssetAbsolutePath(imagePath);
+    if (!resolvedPath) {
       routeError(ctx, 400, 'Invalid bug report image path.');
       return;
     }
-    const assetMeta = await assetStore?.getByPath(imagePath) ?? await assetStore?.getByPath(`/card-assets/${fileName}`);
+    const fileName = path.basename(resolvedPath);
+    const assetMeta = await assetStore?.getByPath(imagePath)
+      ?? await assetStore?.getByPath(`/public/card-assets/${fileName}`)
+      ?? await assetStore?.getByPath(`/card-assets/${fileName}`);
     if (assetMeta?.deletedAt) {
       routeError(ctx, 404, 'Bug report image was deleted.');
       return;
     }
-    const absPath = path.join(uploadsDir, fileName);
     let fileBuffer: Buffer;
     try {
-      fileBuffer = await readFile(absPath);
+      fileBuffer = await readFile(resolvedPath);
     } catch {
       routeError(ctx, 404, 'Bug report image file not found.');
       return;
@@ -322,19 +336,10 @@ export const registerBugReportRoutes = (args: {
     if (!body) return;
     const imagePath = typeof body.imagePath === 'string' ? body.imagePath.trim() : '';
     try {
-      if (pool) {
-        await saveAppSettingJson(pool, BUG_REPORT_UI_CONFIG_KEY, { imagePath, updatedAt: Date.now() }, 'admin-bug-report-ui');
-        await auditAdminAction?.({ action: 'bug-report.ui-config.save', ctx, success: true, details: { imagePath } });
-        routeOk(ctx, { imagePath });
-        return;
+      if (!pool) {
+        throw new Error('PostgreSQL pool is required for bug report UI config.');
       }
-      const dir = bugReportUiConfigPath.replace(/[\\/][^\\/]+$/, '');
-      await mkdir(dir, { recursive: true });
-      await writeFile(
-        bugReportUiConfigPath,
-        `${JSON.stringify({ imagePath, updatedAt: Date.now() }, null, 2)}\n`,
-        'utf8',
-      );
+      await saveAppSettingJson(pool, BUG_REPORT_UI_CONFIG_KEY, { imagePath, updatedAt: Date.now() }, 'admin-bug-report-ui');
       await auditAdminAction?.({ action: 'bug-report.ui-config.save', ctx, success: true, details: { imagePath } });
       routeOk(ctx, { imagePath });
     } catch (error) {

@@ -1,49 +1,19 @@
-import sharedDeckTemplateJson from '../../database/shared-deck-template.json';
-import sharedRanksJson from '../../database/shared-ranks.json';
 import { cloneCard, cloneRank } from './cloneUtils';
-import { normalizeSharedRanks } from './sharedConfigRanks';
-import { parseImportedRanksPayload } from './sharedConfigSchema';
 import type { CardDefinition, RankDefinition } from './types';
 
-type SharedDeckTemplateJsonShape = {
-  catalog?: CardDefinition[];
-  deck?: CardDefinition[];
-  legendaryDeck?: CardDefinition[];
-  rankTrack?: CardDefinition[];
-  deckBackImage?: string;
-  modules?: unknown;
-  gameSetup?: unknown;
-};
-
-const rawTemplate = sharedDeckTemplateJson as SharedDeckTemplateJsonShape;
-const importedRanks = parseImportedRanksPayload(sharedRanksJson);
-
 export const defaultSharedDeckTemplateSeed = {
-  deck: Array.isArray(rawTemplate.deck) ? rawTemplate.deck.map(cloneCard) : [],
-  legendaryDeck: Array.isArray(rawTemplate.legendaryDeck) ? rawTemplate.legendaryDeck.map(cloneCard) : [],
-  rankTrack: Array.isArray(rawTemplate.rankTrack) ? rawTemplate.rankTrack.map(cloneCard) : [],
-  extraCatalog: Array.isArray(rawTemplate.catalog) ? rawTemplate.catalog.map(cloneCard) : [],
-  deckBackImage: rawTemplate.deckBackImage,
-  modules: Array.isArray(rawTemplate.modules) ? rawTemplate.modules : undefined,
-  gameSetup: rawTemplate.gameSetup && typeof rawTemplate.gameSetup === 'object'
-    ? rawTemplate.gameSetup
-    : undefined,
+  deck: [] as CardDefinition[],
+  legendaryDeck: [] as CardDefinition[],
+  rankTrack: [] as CardDefinition[],
+  extraCatalog: [] as CardDefinition[],
+  deckBackImage: undefined as string | undefined,
+  modules: undefined,
+  gameSetup: undefined,
 };
 
-const seededCardIds = new Set([
-  ...defaultSharedDeckTemplateSeed.deck.map((card) => card.id),
-  ...defaultSharedDeckTemplateSeed.legendaryDeck.map((card) => card.id),
-  ...defaultSharedDeckTemplateSeed.rankTrack.map((card) => card.id),
-]);
+export const defaultSharedExtraCatalogSeed: CardDefinition[] = [];
 
-export const defaultSharedExtraCatalogSeed: CardDefinition[] = Array.isArray(rawTemplate.catalog)
-  ? rawTemplate.catalog
-    .filter((card): card is CardDefinition => Boolean(card && typeof card.id === 'string' && card.id.trim()))
-    .filter((card) => !seededCardIds.has(card.id))
-    .map(cloneCard)
-  : [];
-
-export const defaultSharedRanksSeed: RankDefinition[] = normalizeSharedRanks(importedRanks ?? []);
+export const defaultSharedRanksSeed: RankDefinition[] = [];
 
 export const defaultBaseDeck = defaultSharedDeckTemplateSeed.deck.map(cloneCard);
 export const defaultLegendaryCards = defaultSharedDeckTemplateSeed.legendaryDeck.map(cloneCard);

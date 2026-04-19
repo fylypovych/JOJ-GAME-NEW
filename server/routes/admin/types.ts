@@ -92,6 +92,7 @@ export type AdminRoutesDeps = {
     password?: string;
     sslMode?: 'disable' | 'require';
   }) => Promise<void>;
+  loadSharedConfigFromDb?: () => Promise<void>;
   userStore?: UserStore | null;
   pool?: Pool | null;
   prepareBackupSnapshot?: () => Promise<void>;
