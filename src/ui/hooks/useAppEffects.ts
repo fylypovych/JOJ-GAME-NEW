@@ -39,7 +39,6 @@ interface UseAppEffectsProps {
   bindMatchSession: (params: { matchID: string; playerID: string; credentials: string; playerName: string }) => void;
   adminSelectedMatchID: string;
   setAdminSelectedMatchID: (id: string) => void;
-  matches: Array<{ matchID: string }>;
   adminMatches: Array<{ matchID: string }>;
   isAdminRoute: boolean;
   gameTitle: string;
@@ -71,7 +70,6 @@ export const useAppEffects = ({
   bindMatchSession,
   adminSelectedMatchID,
   setAdminSelectedMatchID,
-  matches,
   adminMatches,
   isAdminRoute,
   gameTitle,

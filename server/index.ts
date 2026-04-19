@@ -174,7 +174,7 @@ void (async () => {
     await logLine('WARN', warning);
   }
   await initializePasswordResetDeliveryHealth({ statePath: passwordResetHealthPath });
-  const sharedConfigStorageMode: 'postgres' = requestedSharedConfigStorageMode;
+  const sharedConfigStorageMode = requestedSharedConfigStorageMode;
 
   // Validate shared config storage mode
   if (sharedConfigStorageMode === 'postgres') {
