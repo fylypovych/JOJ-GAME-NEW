@@ -224,7 +224,10 @@ export const registerAdminMatchRoutes = ({
 
     try {
       const matchIds = await db.listMatches();
+      await logLine('INFO', `Admin matches: total matchIds from listMatches: ${matchIds.length}`);
       const matches = [];
+      let skippedNoMetadata = 0;
+      let skippedNoState = 0;
       for (const matchId of matchIds) {
         // Check if match is deleted in match_records
         if (pool) {
@@ -239,13 +242,20 @@ export const registerAdminMatchRoutes = ({
         const fetched = typeof db.fetch === 'function'
           ? await db.fetch(matchId, { metadata: true, state: true })
           : null;
-        if (fetched?.metadata && fetched?.state) {
-          matches.push({
-            matchID: matchId,
-            metadata: fetched.metadata,
-          });
+        if (!fetched?.metadata) {
+          skippedNoMetadata++;
+          continue;
         }
+        if (!fetched?.state) {
+          skippedNoState++;
+          continue;
+        }
+        matches.push({
+          matchID: matchId,
+          metadata: fetched.metadata,
+        });
       }
+      await logLine('INFO', `Admin matches: showing ${matches.length}, skipped no metadata: ${skippedNoMetadata}, skipped no state: ${skippedNoState}`);
       routeOk(ctx, { matches });
     } catch (error) {
       routeError(ctx, 500, String(error instanceof Error ? error.message : error));
