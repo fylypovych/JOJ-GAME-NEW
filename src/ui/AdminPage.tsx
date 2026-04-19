@@ -117,6 +117,7 @@ export const AdminPage = ({
   onCreateMatch,
   onResetMatch,
   onDeleteMatch,
+  onDeleteAllMatches,
   deletingMatch,
   onResetAll,
   onRestartServer,
@@ -801,6 +802,7 @@ export const AdminPage = ({
             onCreateMatch={onCreateMatch}
             onResetMatch={onResetMatch}
             onDeleteMatch={onDeleteMatch}
+            onDeleteAllMatches={onDeleteAllMatches}
             canDelete={matches.length > 0}
             deletingMatch={deletingMatch}
           />

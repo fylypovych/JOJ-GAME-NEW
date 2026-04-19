@@ -69,6 +69,7 @@ export const uiEnData = {
   createMatch: 'Create match',
   resetMatch: 'Reset match',
   deleteMatch: 'Delete match',
+  deleteAllMatches: 'Delete all matches',
   resetAll: 'Reset session',
   restartServer: 'Restart server',
   restartingServer: 'Restarting server...',

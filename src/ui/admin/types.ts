@@ -171,6 +171,7 @@ export type AdminPageProps = {
   onCreateMatch: () => void;
   onResetMatch: () => boolean | Promise<boolean>;
   onDeleteMatch: () => void;
+  onDeleteAllMatches: () => void;
   deletingMatch: boolean;
   onResetAll: () => void;
   onRestartServer: () => Promise<boolean>;

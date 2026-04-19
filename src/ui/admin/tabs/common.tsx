@@ -85,6 +85,7 @@ export const AdminMatchesTab = ({
   onCreateMatch,
   onResetMatch,
   onDeleteMatch,
+  onDeleteAllMatches,
   canDelete,
   deletingMatch,
 }: {
@@ -97,6 +98,7 @@ export const AdminMatchesTab = ({
   onCreateMatch: () => void;
   onResetMatch: () => boolean | Promise<boolean>;
   onDeleteMatch: () => void;
+  onDeleteAllMatches: () => void;
   canDelete: boolean;
   deletingMatch: boolean;
 }) => (
@@ -118,6 +120,9 @@ export const AdminMatchesTab = ({
       <button type="button" onClick={onResetMatch}>{t.resetMatch}</button>
       <button type="button" onClick={onDeleteMatch} disabled={!canDelete || deletingMatch}>
         {deletingMatch ? `${t.deleteMatch}...` : t.deleteMatch}
+      </button>
+      <button type="button" onClick={onDeleteAllMatches} disabled={!canDelete || deletingMatch}>
+        {deletingMatch ? `${t.deleteAllMatches}...` : t.deleteAllMatches}
       </button>
     </p>
   </>

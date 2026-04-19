@@ -70,6 +70,7 @@ export const uiUkData = {
   createMatch: 'Створити матч',
   resetMatch: 'Скинути матч',
   deleteMatch: 'Видалити матч',
+  deleteAllMatches: 'Видалити всі матчі',
   resetAll: 'Скинути сесію',
   restartServer: 'Рестарт сервера',
   restartingServer: 'Перезапуск сервера...',

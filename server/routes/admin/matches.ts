@@ -212,6 +212,40 @@ export const registerAdminMatchRoutes = ({
     routeOk(ctx, { matchID, deleted: true });
   });
 
+  router.post('/api/admin/matches-delete-all', async (ctx) => {
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/matches-delete-all'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-matches-delete-all', 3, 60_000))) return;
+
+    const db = getMatchDb(ctx);
+    if (!db || typeof db.listMatches !== 'function' || typeof db.wipe !== 'function') {
+      routeError(ctx, 500, 'Database delete-all controls are unavailable');
+      return;
+    }
+
+    try {
+      const matchIds = await db.listMatches();
+      let deleted = 0;
+      const failed: string[] = [];
+      for (const matchId of matchIds) {
+        try {
+          await db.wipe(matchId);
+          await markMatchDeleted?.(matchId);
+          deleted += 1;
+        } catch {
+          failed.push(matchId);
+        }
+      }
+      await logLine('WARN', `admin deleted all matches requested=${matchIds.length} deleted=${deleted} failed=${failed.length}`);
+      routeOk(ctx, {
+        requested: matchIds.length,
+        deleted,
+        failed,
+      });
+    } catch (error) {
+      routeError(ctx, 500, String(error instanceof Error ? error.message : error));
+    }
+  });
+
   router.get('/api/admin/matches', async (ctx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/matches'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-matches', 30, 60_000))) return;

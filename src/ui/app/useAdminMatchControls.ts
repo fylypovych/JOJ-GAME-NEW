@@ -13,6 +13,7 @@ export interface UseAdminMatchControlsArgs {
   ADMIN_MATCH_STOP_API: string;
   ADMIN_MATCH_RESET_API: string;
   ADMIN_MATCH_DELETE_API: string;
+  ADMIN_MATCHES_DELETE_ALL_API: string;
   ADMIN_MATCHES_API: string;
 }
 
@@ -20,6 +21,7 @@ export interface UseAdminMatchControlsResult {
   onRestartServer: () => Promise<boolean>;
   onResetMatch: () => Promise<boolean>;
   onDeleteMatch: () => Promise<void>;
+  onDeleteAllMatches: () => Promise<void>;
   onStopGame: (matchID: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   onGetMatchState: () => Promise<Snapshot | null>;
   refreshAdminMatches: () => Promise<void>;
@@ -40,6 +42,7 @@ export const useAdminMatchControls = (args: UseAdminMatchControlsArgs): UseAdmin
     ADMIN_MATCH_STOP_API,
     ADMIN_MATCH_RESET_API,
     ADMIN_MATCH_DELETE_API,
+    ADMIN_MATCHES_DELETE_ALL_API,
     ADMIN_MATCHES_API,
   } = args;
 
@@ -113,6 +116,22 @@ export const useAdminMatchControls = (args: UseAdminMatchControlsArgs): UseAdmin
     }
   }, [adminMatchID, adminFetch, setSnapshot, setAdminSelectedMatchID, refreshMatches, setDeletingAdminMatch, ADMIN_MATCH_DELETE_API]);
 
+  const onDeleteAllMatches = useCallback(async () => {
+    if (setDeletingAdminMatch) setDeletingAdminMatch(true);
+    try {
+      const response = await adminFetch(ADMIN_MATCHES_DELETE_ALL_API, { method: 'POST' });
+      if (!response.ok) return;
+      setSnapshot(null);
+      setAdminSelectedMatchID('');
+      await refreshMatches();
+      await refreshAdminMatches();
+    } catch {
+      // ignore UI toast for now
+    } finally {
+      if (setDeletingAdminMatch) setDeletingAdminMatch(false);
+    }
+  }, [adminFetch, setSnapshot, setAdminSelectedMatchID, refreshMatches, setDeletingAdminMatch, ADMIN_MATCHES_DELETE_ALL_API]);
+
   const refreshAdminMatches = useCallback(async () => {
     setAdminMatchesLoading(true);
     try {
@@ -153,6 +172,7 @@ export const useAdminMatchControls = (args: UseAdminMatchControlsArgs): UseAdmin
     onRestartServer,
     onResetMatch,
     onDeleteMatch,
+    onDeleteAllMatches,
     onStopGame,
     onGetMatchState,
     refreshAdminMatches,

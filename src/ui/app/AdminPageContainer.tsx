@@ -69,6 +69,7 @@ type AdminPageContainerProps = {
   createRoom: () => void | Promise<void>;
   onResetMatch: () => boolean | Promise<boolean>;
   onDeleteMatch: () => void | Promise<void>;
+  onDeleteAllMatches: () => void | Promise<void>;
   deletingAdminMatch: boolean;
   clearSessionState: AdminPageProps['onResetAll'];
   onRestartServer: AdminPageProps['onRestartServer'];
@@ -153,6 +154,7 @@ export const AdminPageContainer = ({
   createRoom,
   onResetMatch,
   onDeleteMatch,
+  onDeleteAllMatches,
   deletingAdminMatch,
   clearSessionState,
   onRestartServer,
@@ -264,6 +266,9 @@ export const AdminPageContainer = ({
         }}
         onDeleteMatch={() => {
           void onDeleteMatch();
+        }}
+        onDeleteAllMatches={() => {
+          void onDeleteAllMatches();
         }}
         deletingMatch={deletingAdminMatch}
         onResetAll={clearSessionState}
