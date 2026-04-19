@@ -332,6 +332,7 @@ export const App = () => {
     adminSelectedMatchID,
     setAdminSelectedMatchID,
     matches,
+    adminMatches,
     isAdminRoute,
     gameTitle: t.gameTitle,
     adminTitle: t.adminTitle,

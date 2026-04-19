@@ -40,6 +40,7 @@ interface UseAppEffectsProps {
   adminSelectedMatchID: string;
   setAdminSelectedMatchID: (id: string) => void;
   matches: Array<{ matchID: string }>;
+  adminMatches: Array<{ matchID: string }>;
   isAdminRoute: boolean;
   gameTitle: string;
   adminTitle: string;
@@ -71,6 +72,7 @@ export const useAppEffects = ({
   adminSelectedMatchID,
   setAdminSelectedMatchID,
   matches,
+  adminMatches,
   isAdminRoute,
   gameTitle,
   adminTitle,
@@ -169,9 +171,9 @@ export const useAppEffects = ({
       setAdminSelectedMatchID(session.matchID);
       return;
     }
-    if (adminSelectedMatchID && matches.some((m) => m.matchID === adminSelectedMatchID)) return;
-    setAdminSelectedMatchID(matches[0]?.matchID ?? '');
-  }, [adminSelectedMatchID, matches, session?.matchID, setAdminSelectedMatchID]);
+    if (adminSelectedMatchID && adminMatches.some((m) => m.matchID === adminSelectedMatchID)) return;
+    setAdminSelectedMatchID(adminMatches[0]?.matchID ?? '');
+  }, [adminSelectedMatchID, adminMatches, session?.matchID, setAdminSelectedMatchID]);
 
   // Update document title
   useEffect(() => {
