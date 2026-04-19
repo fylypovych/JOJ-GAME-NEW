@@ -349,6 +349,7 @@ LIMIT 1;`;
       return;
     }
 
+    // Force sync from local JSON to PostgreSQL
     await saveTemplateToPostgresIncremental(targetUrl);
     await saveRanksToPostgresIncremental(targetUrl);
 

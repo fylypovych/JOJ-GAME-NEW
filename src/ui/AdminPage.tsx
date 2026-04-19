@@ -77,7 +77,6 @@ export const AdminPage = ({
   dbConnectionTestRunning,
   onExportDbSchema,
   onImportDbSchema,
-  onImportJsonConfigToDb,
   onSyncJsonToPostgresIncremental,
   onLoadFromPostgres,
   onSaveTemplateToPostgres,
@@ -1119,7 +1118,6 @@ export const AdminPage = ({
             dbConnectionTestRunning={dbConnectionTestRunning}
             onExportDbSchema={onExportDbSchema}
             onImportDbSchema={onImportDbSchema}
-            onImportJsonConfigToDb={onImportJsonConfigToDb}
             onSyncJsonToPostgresIncremental={onSyncJsonToPostgresIncremental}
             onLoadFromPostgres={onLoadFromPostgres}
             onSaveTemplateToPostgres={onSaveTemplateToPostgres}

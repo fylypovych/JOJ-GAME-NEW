@@ -18,7 +18,6 @@ export const AdminDatabaseTab = ({
   dbConnectionTestRunning,
   onExportDbSchema,
   onImportDbSchema,
-  onImportJsonConfigToDb,
   onSyncJsonToPostgresIncremental,
   onLoadFromPostgres,
   onCheckDbConfigSync,
@@ -60,7 +59,6 @@ export const AdminDatabaseTab = ({
   dbConnectionTestRunning: boolean;
   onExportDbSchema: () => Promise<void> | void;
   onImportDbSchema: () => Promise<void> | void;
-  onImportJsonConfigToDb: () => Promise<void> | void;
   onSyncJsonToPostgresIncremental: () => Promise<void> | void;
   onLoadFromPostgres: () => Promise<void> | void;
   onSaveTemplateToPostgres: (templateJson: string, ranksJson: string) => Promise<boolean>;
@@ -157,9 +155,6 @@ export const AdminDatabaseTab = ({
         <p className="admin-controls">
           <button type="button" onClick={() => void onCheckDbConfigSync()} disabled={dbCheckSyncRunning}>
             {dbCheckSyncRunning ? t.dbCheckSyncRunning : t.dbCheckSync}
-          </button>
-          <button type="button" onClick={() => void onImportJsonConfigToDb()} disabled={dbImportJsonConfigRunning}>
-            {dbImportJsonConfigRunning ? t.dbImportJsonConfigRunning : t.dbImportJsonConfig}
           </button>
           <button type="button" onClick={() => void onSyncJsonToPostgresIncremental()} disabled={dbImportJsonConfigRunning}>
             {dbImportJsonConfigRunning ? t.dbImportJsonConfigRunning : t.dbSyncIncremental}

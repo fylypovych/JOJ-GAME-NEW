@@ -503,6 +503,9 @@ export const registerAdminDbToolRoutes = ({
       );
       if (!updateHashResult.ok) return fail(ctx, 400, 'Failed to update sync hash', (updateHashResult.stderr || updateHashResult.error || updateHashResult.stdout || '').trim());
 
+      // Reload local state from PostgreSQL
+      await importJsonConfigToDb(parsed);
+
       ctx.body = {
         ok: true,
         message: 'Data saved to PostgreSQL successfully',
@@ -771,12 +774,12 @@ WHERE r.is_active = true;`);
 
         if (result.ok) {
           // Record migration as applied
+          const escapedFile = file.replace(/'/g, "''");
           await runDbCommand(
             'psql',
-            ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database, '-c', `INSERT INTO schema_migrations (migration_name) VALUES ($1) ON CONFLICT (migration_name) DO NOTHING;`],
+            ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database, '-c', `INSERT INTO schema_migrations (migration_name) VALUES ('${escapedFile}') ON CONFLICT (migration_name) DO NOTHING;`],
             parsed,
             15_000,
-            file,
           );
           newlyAppliedMigrations.push(file);
         } else {

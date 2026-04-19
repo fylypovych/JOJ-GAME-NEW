@@ -185,7 +185,6 @@ export const App = () => {
     testDbConnection,
     exportDbSchema,
     importDbSchema,
-    importJsonConfigToDb,
     syncJsonToPostgresIncremental,
     loadFromPostgres,
     saveTemplateToPostgres,
@@ -673,7 +672,6 @@ export const App = () => {
               testDbConnection={testDbConnection}
               exportDbSchema={exportDbSchema}
               importDbSchema={importDbSchema}
-              importJsonConfigToDb={importJsonConfigToDb}
               syncJsonToPostgresIncremental={syncJsonToPostgresIncremental}
               loadFromPostgres={loadFromPostgres}
               saveTemplateToPostgres={saveTemplateToPostgres}
