@@ -152,7 +152,13 @@ export const AdminDeckTab = ({
     const source = target === 'legendaryDeck' ? sharedDeckTemplate.legendaryDeck : sharedDeckTemplate.deck;
     const sourceById = new Map(source.map((card, index) => [card.id, { card, index }] as const));
     const catalogById = new Map(cardCatalog.map((card) => [card.id, card] as const));
-    return selectedCardModule.cardIds.map((id) => {
+    const moduleAndTargetIds = Array.from(
+      new Set([
+        ...selectedCardModule.cardIds,
+        ...source.map((card) => card.id),
+      ]),
+    );
+    return moduleAndTargetIds.map((id) => {
       const fromTarget = sourceById.get(id);
       const fromCatalog = catalogById.get(id);
       const card = fromTarget?.card ?? fromCatalog ?? { id, title: id, image: '' };

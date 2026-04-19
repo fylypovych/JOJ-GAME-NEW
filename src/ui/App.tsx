@@ -656,7 +656,6 @@ export const App = () => {
               setGalleryCategoryFilter={setGalleryCategoryFilter}
               effectLabel={effectLabel}
               uiVariant={gameUiVariant}
-              cardCatalog={cardCatalog}
             />
 
             <RulesFeature visible={!isAdminRoute && activeUserTab === 'rules'} t={t} rules={rules} uiVariant={gameUiVariant} />

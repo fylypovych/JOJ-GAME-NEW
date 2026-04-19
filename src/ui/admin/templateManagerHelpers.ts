@@ -21,6 +21,10 @@ export const syncMissingCardsIntoModules = (args: {
     new Set(sharedDeckTemplate.legendaryDeck.map((card) => card.id).filter((id) => !moduleIdsByTarget.legendaryDeck.has(id))),
   );
   const missingRankIds = Array.from(new Set(sharedDeckTemplate.rankTrack.map((card) => card.id).filter((id) => !moduleIdsByTarget.rankTrack.has(id))));
+  const fallbackLegendaryModuleId = setup.legendaryModuleId
+    ?? modules.find((m) => m.target === 'legendaryDeck' && m.category === 'LEGENDARY')?.id;
+  const fallbackRankModuleId = setup.rankModuleId
+    ?? modules.find((m) => m.target === 'rankTrack' && m.category === 'RANK')?.id;
 
   const targetByDeckCategory = (category: CardCategory): string | undefined => {
     if (category === 'LYAP') return setup.lyapModuleId;
@@ -46,8 +50,8 @@ export const syncMissingCardsIntoModules = (args: {
     const card = sharedDeckTemplate.deck.find((row) => row.id === cardId);
     if (card) queue(targetByDeckCategory(card.category), cardId);
   });
-  missingLegendaryIds.forEach((cardId) => queue(setup.legendaryModuleId, cardId));
-  missingRankIds.forEach((cardId) => queue(setup.rankModuleId, cardId));
+  missingLegendaryIds.forEach((cardId) => queue(fallbackLegendaryModuleId, cardId));
+  missingRankIds.forEach((cardId) => queue(fallbackRankModuleId, cardId));
 
   return addByModuleId;
 };

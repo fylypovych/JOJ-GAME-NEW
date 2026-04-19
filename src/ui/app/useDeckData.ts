@@ -11,7 +11,6 @@ import {
   importSharedDeckTemplateJson,
   importSharedRanksJson,
   setSharedRanks,
-  getSharedDeckTemplateStats,
 } from '../../game/jojGame';
 
 export interface UseDeckDataArgs {
@@ -33,7 +32,7 @@ export interface UseDeckDataResult {
   syncRanksToServer: ReturnType<typeof useSharedConfigSync>['syncRanksToServer'];
   
   // Derived
-  sharedDeckStats: ReturnType<typeof getSharedDeckTemplateStats>;
+  sharedDeckStats: { deck: number; legendary: number; rankTrack: number };
   optionalLobbyModules: Array<{ id: string; name: string; alwaysOn: boolean }>;
   
   // Helpers
@@ -72,7 +71,14 @@ export const useDeckData = (args: UseDeckDataArgs): UseDeckDataResult => {
     setSharedRanks,
   });
 
-  const sharedDeckStats = useMemo(() => getSharedDeckTemplateStats(), []);
+  const sharedDeckStats = useMemo(
+    () => ({
+      deck: sharedDeckTemplate.deck.length,
+      legendary: sharedDeckTemplate.legendaryDeck.length,
+      rankTrack: sharedDeckTemplate.rankTrack.length,
+    }),
+    [sharedDeckTemplate.deck, sharedDeckTemplate.legendaryDeck, sharedDeckTemplate.rankTrack],
+  );
 
   const optionalLobbyModules = useMemo(
     () => (sharedDeckTemplate.modules ?? [])

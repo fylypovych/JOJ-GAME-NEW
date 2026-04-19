@@ -18,7 +18,6 @@ type GallerySectionProps = {
     resource: 'time' | 'reputation' | 'discipline' | 'documents' | 'tech' | 'rank',
   ) => string;
   uiVariant?: 'v1' | 'v2';
-  cardCatalog?: CardDefinition[]; // Added to calculate categories from full catalog
 };
 
 export const GallerySection = ({
@@ -28,17 +27,16 @@ export const GallerySection = ({
   setGalleryCategoryFilter,
   effectLabel,
   uiVariant = 'v2',
-  cardCatalog = [],
 }: GallerySectionProps) => {
   const { galleryCards } = useGallery();
 
-  // Derive categories from full card catalog, not filtered galleryCards
+  // Derive categories from active gallery cards.
   const derivedCategories = useMemo(() => {
-    const cats = new Set(cardCatalog.map((c) => c.category));
+    const cats = new Set(galleryCards.map((c) => c.category));
     return galleryCategories.filter(
       (c) => cats.has(c as CardDefinition['category']) || c === 'RANK' || c === 'ALL'
     );
-  }, [cardCatalog]);
+  }, [galleryCards]);
   
   const [openPreviewKey, setOpenPreviewKey] = useState<string | null>(null);
   const togglePreview = (key: string) =>

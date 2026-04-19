@@ -6,6 +6,8 @@ import { normalizeImagePath } from '../../game/imagePaths';
 export interface UseGalleryDataArgs {
   cardCatalog: CardDefinition[];
   sharedDeckTemplate: {
+    deck: Array<{ id: string }>;
+    legendaryDeck: Array<{ id: string }>;
     modules?: Array<{
       id: string;
       name: string;
@@ -28,11 +30,18 @@ export const useGalleryData = (args: UseGalleryDataArgs): UseGalleryDataResult =
   const { cardCatalog, sharedDeckTemplate, galleryCategoryFilter } = args;
 
   const galleryCards = useMemo(() => {
+    const activeIds = new Set<string>([
+      ...sharedDeckTemplate.deck.map((card) => card.id),
+      ...sharedDeckTemplate.legendaryDeck.map((card) => card.id),
+      ...sharedDeckTemplate.rankTrack.map((card) => card.id),
+      ...((sharedDeckTemplate.modules ?? []).flatMap((module) => module.cardIds ?? [])),
+    ]);
     const rankTrackIds = new Set(sharedDeckTemplate.rankTrack.map((card) => card.id));
     const rankModule = sharedDeckTemplate.modules?.find((m) => m.id === 'rank_default');
     const rankModuleIds = new Set(rankModule?.cardIds ?? []);
     const rankCardIds = new Set([...rankTrackIds, ...rankModuleIds]);
     return [...cardCatalog]
+      .filter((card) => activeIds.has(card.id) || card.category === 'LEGENDARY')
       .filter((card) => {
         if (galleryCategoryFilter === 'RANK') {
           return rankCardIds.has(card.id);
@@ -43,7 +52,7 @@ export const useGalleryData = (args: UseGalleryDataArgs): UseGalleryDataResult =
         return card.category === galleryCategoryFilter && !rankCardIds.has(card.id);
       })
       .sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
-  }, [cardCatalog, sharedDeckTemplate.rankTrack, sharedDeckTemplate.modules, galleryCategoryFilter]);
+  }, [cardCatalog, sharedDeckTemplate.deck, sharedDeckTemplate.legendaryDeck, sharedDeckTemplate.rankTrack, sharedDeckTemplate.modules, galleryCategoryFilter]);
 
   const cardImageById = useMemo<Record<string, string>>(
     () =>
