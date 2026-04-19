@@ -196,11 +196,11 @@ export const AdminPageContainer = ({
         onTestDbConnection={testDbConnection}
         onExportDbSchema={exportDbSchema}
         onImportDbSchema={importDbSchema}
-        onImportJsonConfigToDb={() => {
-          void importJsonConfigToDb();
+        onImportJsonConfigToDb={async () => {
+          await importJsonConfigToDb();
         }}
-        onSyncJsonToPostgresIncremental={() => {
-          void syncJsonToPostgresIncremental();
+        onSyncJsonToPostgresIncremental={async () => {
+          await syncJsonToPostgresIncremental();
         }}
         onCheckDbConfigSync={checkDbConfigSync}
         onExportDbBackup={exportDbBackup}

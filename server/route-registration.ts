@@ -78,6 +78,7 @@ export interface RouteRegistrationDeps {
   adminAudit: ReturnType<typeof createAdminAuditLogger>;
   sharedConfigStore: {
     syncCurrentJsonToPostgres: () => Promise<void>;
+    syncJsonToPostgresIncremental: () => Promise<void>;
     saveRanks: () => Promise<void>;
     saveTemplate: () => Promise<void>;
   };

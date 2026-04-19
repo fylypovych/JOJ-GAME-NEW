@@ -43,6 +43,7 @@ export type RouteBootstrapDeps = {
   runShellCommand: ReturnType<typeof createCommandRunners>['runShellCommand'];
   spawnDetachedShell: ReturnType<typeof createCommandRunners>['spawnDetachedShell'];
   importJsonConfigToDb: () => Promise<void>;
+  syncJsonToPostgresIncremental: () => Promise<void>;
   prepareBackupSnapshot: () => Promise<void>;
   backupRootDir: string;
   backupAssetDirs: string[];
@@ -70,6 +71,7 @@ export const bootstrapRoutes = async (deps: RouteBootstrapDeps) => {
     runShellCommand,
     spawnDetachedShell,
     importJsonConfigToDb,
+    syncJsonToPostgresIncremental,
     prepareBackupSnapshot,
     backupRootDir,
     backupAssetDirs,
@@ -123,6 +125,7 @@ export const bootstrapRoutes = async (deps: RouteBootstrapDeps) => {
     adminDbUiConfigPath,
     gameUiConfigPath,
     importJsonConfigToDb,
+    syncJsonToPostgresIncremental,
     userStore,
     pool,
     prepareBackupSnapshot,

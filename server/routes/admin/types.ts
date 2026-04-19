@@ -84,6 +84,14 @@ export type AdminRoutesDeps = {
     password?: string;
     sslMode?: 'disable' | 'require';
   }) => Promise<void>;
+  syncJsonToPostgresIncremental: (draft?: {
+    host: string;
+    port: string;
+    database: string;
+    user: string;
+    password?: string;
+    sslMode?: 'disable' | 'require';
+  }) => Promise<void>;
   userStore?: UserStore | null;
   pool?: Pool | null;
   prepareBackupSnapshot?: () => Promise<void>;

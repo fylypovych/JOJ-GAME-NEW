@@ -255,6 +255,7 @@ export const registerAdminDbToolRoutes = ({
   adminDbUiConfigPath,
   migrationsPath,
   importJsonConfigToDb,
+  syncJsonToPostgresIncremental,
   pool,
   prepareBackupSnapshot,
   backupRootDir,

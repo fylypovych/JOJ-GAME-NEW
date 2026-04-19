@@ -196,6 +196,7 @@ void (async () => {
     loadTemplate,
     loadRanks,
     syncCurrentJsonToPostgres,
+    syncJsonToPostgresIncremental,
   } = createSharedConfigStore({
     templatePath,
     ranksPath,
@@ -293,7 +294,7 @@ void (async () => {
         autoStashRuntimeNoise,
         matchRuntimeSync,
         adminAudit,
-        sharedConfigStore: { syncCurrentJsonToPostgres, saveRanks, saveTemplate },
+        sharedConfigStore: { syncCurrentJsonToPostgres, syncJsonToPostgresIncremental, saveRanks, saveTemplate },
         gameAdapter: {
           exportSharedDeckTemplateJson,
           getSharedDeckTemplateStats,
