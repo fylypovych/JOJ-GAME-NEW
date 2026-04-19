@@ -95,7 +95,7 @@ export const AdminMatchesTab = ({
   onActiveMatchIdChange: (matchID: string) => void;
   activeMatchCreatedAt?: number;
   onCreateMatch: () => void;
-  onResetMatch: () => void;
+  onResetMatch: () => boolean | Promise<boolean>;
   onDeleteMatch: () => void;
   canDelete: boolean;
   deletingMatch: boolean;

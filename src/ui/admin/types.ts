@@ -169,7 +169,7 @@ export type AdminPageProps = {
   sharedRanks: RankDefinition[];
   sharedConfigLoaded: boolean;
   onCreateMatch: () => void;
-  onResetMatch: () => void;
+  onResetMatch: () => boolean | Promise<boolean>;
   onDeleteMatch: () => void;
   deletingMatch: boolean;
   onResetAll: () => void;

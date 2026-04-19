@@ -67,7 +67,7 @@ type AdminPageContainerProps = {
   sharedRanks: AdminPageProps['sharedRanks'];
   sharedConfigLoaded: boolean;
   createRoom: () => void | Promise<void>;
-  onResetMatch: () => void | Promise<void>;
+  onResetMatch: () => boolean | Promise<boolean>;
   onDeleteMatch: () => void | Promise<void>;
   deletingAdminMatch: boolean;
   clearSessionState: AdminPageProps['onResetAll'];
@@ -259,8 +259,8 @@ export const AdminPageContainer = ({
         onCreateMatch={() => {
           void createRoom();
         }}
-        onResetMatch={() => {
-          void onResetMatch();
+        onResetMatch={async () => {
+          return await onResetMatch();
         }}
         onDeleteMatch={() => {
           void onDeleteMatch();

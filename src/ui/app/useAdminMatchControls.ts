@@ -18,7 +18,7 @@ export interface UseAdminMatchControlsArgs {
 
 export interface UseAdminMatchControlsResult {
   onRestartServer: () => Promise<boolean>;
-  onResetMatch: () => Promise<void>;
+  onResetMatch: () => Promise<boolean>;
   onDeleteMatch: () => Promise<void>;
   onStopGame: (matchID: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   onGetMatchState: () => Promise<Snapshot | null>;
@@ -71,17 +71,25 @@ export const useAdminMatchControls = (args: UseAdminMatchControlsArgs): UseAdmin
   }, [adminMatchID, adminFetch, ADMIN_MATCH_STATE_API]);
 
   const onResetMatch = useCallback(async () => {
-    if (!adminMatchID) return;
+    if (!adminMatchID) {
+      console.error('Cannot reset match: no matchID selected');
+      return false;
+    }
     try {
       const response = await adminFetch(
         `${ADMIN_MATCH_RESET_API}?matchID=${encodeURIComponent(adminMatchID)}`,
         { method: 'POST' }
       );
-      if (!response.ok) return;
+      if (!response.ok) {
+        console.error('Failed to reset match:', response.status, response.statusText);
+        return false;
+      }
       const payload = (await response.json()) as { snapshot?: Snapshot };
       if (payload.snapshot) setSnapshot(payload.snapshot);
-    } catch {
-      // ignore UI toast for now
+      return true;
+    } catch (error) {
+      console.error('Error resetting match:', error);
+      return false;
     }
   }, [adminMatchID, adminFetch, setSnapshot, ADMIN_MATCH_RESET_API]);
 
