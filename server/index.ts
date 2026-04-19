@@ -133,11 +133,7 @@ const matchDb = {
   },
   listMatches: async (opts?: { gameName?: string; where?: { isGameover?: boolean; updatedBefore?: number; updatedAfter?: number } }) => {
     try {
-      // Default to filtering out gameover matches unless explicitly requested
-      const finalOpts = opts?.where?.isGameover !== undefined
-        ? opts
-        : { ...opts, where: { ...opts?.where, isGameover: false } };
-      return await currentMatchDbBackend.listMatches?.(finalOpts) ?? [];
+      return await currentMatchDbBackend.listMatches?.(opts) ?? [];
     } catch (error) {
       if (error instanceof TypeError && String(error.message).includes('endsWith')) {
         await logLine('WARN', `matchDb listMatches recovered from invalid key entry: ${error.message}`);

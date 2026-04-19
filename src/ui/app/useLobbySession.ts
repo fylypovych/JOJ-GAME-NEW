@@ -78,7 +78,9 @@ export const useLobbySession = (args: {
     setError('');
     try {
       const response = await lobbyClient.listMatches(gameName);
-      setMatches(response.matches ?? []);
+      // Filter out gameover matches
+      const activeMatches = (response.matches ?? []).filter((match) => !match.gameover);
+      setMatches(activeMatches);
       setMatchesSynced(true);
     } catch {
       setError(serverUnavailableText);

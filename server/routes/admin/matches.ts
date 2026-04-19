@@ -240,10 +240,6 @@ export const registerAdminMatchRoutes = ({
           ? await db.fetch(matchId, { metadata: true, state: true })
           : null;
         if (fetched?.metadata && fetched?.state) {
-          // Skip gameover matches
-          if ((fetched.metadata as { gameover?: unknown })?.gameover) {
-            continue;
-          }
           matches.push({
             matchID: matchId,
             metadata: fetched.metadata,

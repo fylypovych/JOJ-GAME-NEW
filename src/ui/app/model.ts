@@ -73,6 +73,7 @@ export type LobbyMatch = {
       profile?: BotProfile;
     } | null;
   };
+  gameover?: boolean;
 };
 
 export type SharedDeckTemplate = {
