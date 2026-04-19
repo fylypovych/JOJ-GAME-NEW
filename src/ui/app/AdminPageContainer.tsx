@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import type { ComponentType } from 'react';
 import type { AdminPageProps } from '../admin';
 
@@ -169,6 +169,12 @@ export const AdminPageContainer = ({
   adminMatchesLoading,
   Component,
 }: AdminPageContainerProps) => {
+  useEffect(() => {
+    if (enabled) {
+      void refreshAdminMatches();
+    }
+  }, [enabled, refreshAdminMatches]);
+
   if (!enabled) return null;
   return (
     <Suspense fallback={<p>{loadingLabel}</p>}>

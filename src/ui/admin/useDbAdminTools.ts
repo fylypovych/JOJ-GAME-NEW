@@ -86,7 +86,12 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
     let cancelled = false;
     const loadServerDbUiConfig = async () => {
       try {
-        const response = await adminFetchRef.current(api.uiConfig);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const response = await adminFetchRef.current(api.uiConfig, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
         const payload = (await response.json()) as {
           ok?: boolean;
           storageMode?: 'file' | 'db';
@@ -132,23 +137,26 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
     })();
   }, [api.uiConfig, adminStorageMode, adminDbConfigDraft, enabled]);
 
-  const saveDbConfigDraftAndServer = () => {
+  const saveDbConfigDraftAndServer = async () => {
     saveDbConfigDraft();
-    void (async () => {
-      try {
-        await adminFetch(api.uiConfig, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            storageMode: 'db',
-            dbConfig: adminDbConfigDraft,
-          }),
-        });
-        setDbConfigSaveStatus(dbText.browserAndServerSave);
-      } catch {
-        // keep local success message if server save failed
-      }
-    })();
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const response = await adminFetch(api.uiConfig, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storageMode: 'db',
+          dbConfig: adminDbConfigDraft,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error('Server save failed');
+      setDbConfigSaveStatus(dbText.browserAndServerSave);
+    } catch (error) {
+      setDbConfigSaveStatus(dbText.localSave + ' (сервер недоступний)');
+    }
   };
 
   const testDbConnection = async () => {

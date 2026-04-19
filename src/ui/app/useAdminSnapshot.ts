@@ -29,7 +29,12 @@ export const useAdminSnapshot = ({
     let cancelled = false;
     const fetchSnapshot = async () => {
       try {
-        const response = await adminFetch(`${adminMatchStateApi}?matchID=${encodeURIComponent(adminMatchID)}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const response = await adminFetch(`${adminMatchStateApi}?matchID=${encodeURIComponent(adminMatchID)}`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
         if (!response.ok) {
           if (!cancelled) setSnapshot(null);
           return;
