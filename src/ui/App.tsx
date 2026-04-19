@@ -220,6 +220,39 @@ export const App = () => {
     ranksStorageKey: RANKS_STORAGE_KEY,
   });
 
+  // Admin snapshot (must be before useAdminMatchControls)
+  const { snapshot, setSnapshot } = useAdminSnapshot({
+    isAdminRoute,
+    adminAuthorized,
+    adminMatchID: '', // Will be updated after useLobbyData
+    adminFetch,
+    adminMatchStateApi: ADMIN_MATCH_STATE_API,
+  });
+
+  // Admin match controls (must be before useLobbyData for adminMatches)
+  const {
+    onRestartServer,
+    onResetMatch,
+    onDeleteMatch,
+    onStopGame,
+    refreshAdminMatches,
+    adminMatches,
+    adminMatchesLoading,
+  } = useAdminMatchControls({
+    adminMatchID: '', // Will be updated after useLobbyData
+    adminFetch,
+    setSnapshot,
+    setAdminSelectedMatchID,
+    refreshMatches: () => Promise.resolve(), // Will be updated after useLobbyData
+    setDeletingAdminMatch,
+    ADMIN_RESTART_API,
+    ADMIN_MATCH_STATE_API,
+    ADMIN_MATCH_STOP_API,
+    ADMIN_MATCH_RESET_API,
+    ADMIN_MATCH_DELETE_API,
+    ADMIN_MATCHES_API,
+  });
+
   const {
     matches,
     session,
@@ -252,6 +285,7 @@ export const App = () => {
     botProfile,
     selectedOptionalModuleIds,
     adminSelectedMatchID,
+    adminMatches,
     t: {
       serverUnavailable: t.serverUnavailable,
       enterName: t.enterName,
@@ -319,13 +353,6 @@ export const App = () => {
     setServerUrlDraft(DEFAULT_SERVER_URL);
     window.location.reload();
   };
-  const { snapshot, setSnapshot } = useAdminSnapshot({
-    isAdminRoute,
-    adminAuthorized,
-    adminMatchID,
-    adminFetch,
-    adminMatchStateApi: ADMIN_MATCH_STATE_API,
-  });
 
   const canOpenAdmin = Boolean(user && user.role === 'administrator');
 
@@ -391,30 +418,6 @@ export const App = () => {
     adminSelectedMatchID,
     bindMatchSession,
     setAdminSelectedMatchID,
-  });
-
-  // Admin match controls
-  const {
-    onRestartServer,
-    onResetMatch,
-    onDeleteMatch,
-    onStopGame,
-    refreshAdminMatches,
-    adminMatches,
-    adminMatchesLoading,
-  } = useAdminMatchControls({
-    adminMatchID,
-    adminFetch,
-    setSnapshot,
-    setAdminSelectedMatchID,
-    refreshMatches,
-    setDeletingAdminMatch,
-    ADMIN_RESTART_API,
-    ADMIN_MATCH_STATE_API,
-    ADMIN_MATCH_STOP_API,
-    ADMIN_MATCH_RESET_API,
-    ADMIN_MATCH_DELETE_API,
-    ADMIN_MATCHES_API,
   });
 
   // Deck handlers (simplified - imports directly from sharedConfig)

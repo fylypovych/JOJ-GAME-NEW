@@ -141,6 +141,7 @@ export const AdminPageContainer = ({
   dbSyncMigrationsError,
   dbSyncMigrationsRunning,
   syncDbMigrations,
+  adminMatches,
   adminMatchID,
   setAdminSelectedMatchID,
   snapshot,
@@ -169,7 +170,6 @@ export const AdminPageContainer = ({
   onStopGame,
   runGameSimulations,
   refreshAdminMatches,
-  adminMatches,
   adminMatchesLoading,
   Component,
 }: AdminPageContainerProps) => {
@@ -234,7 +234,7 @@ export const AdminPageContainer = ({
         dbRestoreBackupStatus={dbRestoreBackupStatus}
         dbRestoreBackupError={dbRestoreBackupError}
         dbRestoreBackupRunning={dbRestoreBackupRunning}
-        matches={adminMatches.map((m) => ({
+        matches={(adminMatches ?? []).map((m) => ({
           id: m.matchID,
           createdAt:
             typeof m.metadata?.updatedAt === 'number'

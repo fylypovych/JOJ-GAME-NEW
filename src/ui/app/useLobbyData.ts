@@ -37,6 +37,7 @@ export interface UseLobbyDataArgs {
   botProfile: BotProfile;
   selectedOptionalModuleIds: string[];
   adminSelectedMatchID: string;
+  adminMatches?: Array<{ matchID: string; metadata: Record<string, unknown> }>;
   t: {
     serverUnavailable: string;
     enterName: string;
@@ -98,12 +99,16 @@ export const useLobbyData = (args: UseLobbyDataArgs): UseLobbyDataResult => {
     botProfile,
     selectedOptionalModuleIds,
     adminSelectedMatchID,
+    adminMatches,
     t,
     bindMatchSession,
   } = args;
 
   // Lobby client
-  const lobbyClient = useMemo(() => new LobbyClient({ server: serverUrl }), [serverUrl]);
+  const lobbyClient = useMemo(() => {
+    const client = new LobbyClient({ server: serverUrl });
+    return Object.assign(client, { serverUrl }) as typeof client & { serverUrl: string };
+  }, [serverUrl]);
   const api = useMemo(() => createBrowserApiClient(serverUrl), [serverUrl]);
 
   // Lobby UI config
@@ -177,9 +182,13 @@ export const useLobbyData = (args: UseLobbyDataArgs): UseLobbyDataResult => {
   // Computed values
   const adminMatchID = useMemo(() => {
     if (session?.matchID) return session.matchID;
-    if (adminSelectedMatchID && matches.some((m) => m.matchID === adminSelectedMatchID)) return adminSelectedMatchID;
-    return matches[0]?.matchID ?? '';
-  }, [adminSelectedMatchID, matches, session?.matchID]);
+    // Use adminMatches if available (for admin panel), otherwise use matches (for lobby)
+    const matchList = adminMatches && adminMatches.length > 0
+      ? adminMatches.map((m) => ({ matchID: m.matchID }))
+      : matches;
+    if (adminSelectedMatchID && matchList.some((m) => m.matchID === adminSelectedMatchID)) return adminSelectedMatchID;
+    return matchList[0]?.matchID ?? '';
+  }, [adminSelectedMatchID, adminMatches, matches, session?.matchID]);
 
   const activeSessionMatch = useMemo(() =>
     session ? matches.find((match) => match.matchID === session.matchID) ?? null : null,

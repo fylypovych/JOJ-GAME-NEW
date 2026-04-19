@@ -226,8 +226,6 @@ export const registerAdminMatchRoutes = ({
       const matchIds = await db.listMatches();
       await logLine('INFO', `Admin matches: total matchIds from listMatches: ${matchIds.length}`);
       const matches = [];
-      let skippedNoMetadata = 0;
-      let skippedNoState = 0;
       for (const matchId of matchIds) {
         // Check if match is deleted in match_records
         if (pool) {
@@ -242,20 +240,55 @@ export const registerAdminMatchRoutes = ({
         const fetched = typeof db.fetch === 'function'
           ? await db.fetch(matchId, { metadata: true, state: true })
           : null;
-        if (!fetched?.metadata) {
-          skippedNoMetadata++;
-          continue;
+        matches.push({
+          matchID: matchId,
+          metadata: fetched?.metadata ?? {},
+        });
+      }
+      await logLine('INFO', `Admin matches: showing ${matches.length}`);
+      routeOk(ctx, { matches });
+    } catch (error) {
+      routeError(ctx, 500, String(error instanceof Error ? error.message : error));
+    }
+  });
+
+  // Public endpoint for lobby to get matches from DB
+  router.get('/api/lobby/matches', async (ctx) => {
+    if (!(await enforceRateLimit(ctx, 'lobby-matches', 30, 60_000))) return;
+
+    const db = getMatchDb(ctx);
+    if (!db || typeof db.listMatches !== 'function') {
+      routeError(ctx, 500, 'Database is unavailable');
+      return;
+    }
+
+    try {
+      const matchIds = await db.listMatches();
+      const matches = [];
+      for (const matchId of matchIds) {
+        // Check if match is deleted in match_records
+        if (pool) {
+          const deletedCheck = await pool.query<{ status: string }>(
+            'SELECT status FROM match_records WHERE id = $1 LIMIT 1',
+            [matchId]
+          );
+          if (deletedCheck.rows[0]?.status === 'deleted') {
+            continue; // Skip deleted matches
+          }
         }
-        if (!fetched?.state) {
-          skippedNoState++;
+        const fetched = typeof db.fetch === 'function'
+          ? await db.fetch(matchId, { metadata: true, state: true })
+          : null;
+        const metadata = fetched?.metadata as { gameover?: unknown; updatedAt?: number | string } | null;
+        // Skip gameover matches for lobby
+        if (metadata?.gameover) {
           continue;
         }
         matches.push({
           matchID: matchId,
-          metadata: fetched.metadata,
+          metadata: metadata ?? {},
         });
       }
-      await logLine('INFO', `Admin matches: showing ${matches.length}, skipped no metadata: ${skippedNoMetadata}, skipped no state: ${skippedNoState}`);
       routeOk(ctx, { matches });
     } catch (error) {
       routeError(ctx, 500, String(error instanceof Error ? error.message : error));

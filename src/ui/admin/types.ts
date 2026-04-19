@@ -197,6 +197,7 @@ export type AdminPageProps = {
   ) => void;
   refreshAdminMatches?: () => Promise<void>;
   adminMatchesLoading?: boolean;
+  adminMatches?: Array<{ matchID: string; metadata: Record<string, unknown> }>;
 };
 
 export type ImportCategoryMode = CardCategory | 'AS_IS';

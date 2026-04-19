@@ -9,6 +9,7 @@ type LobbyClientLike = {
   createMatch: (gameName: string, args: { numPlayers: number; setupData: unknown }) => Promise<{ matchID: string }>;
   joinMatch: (gameName: string, matchID: string, args: { playerID: string; playerName: string }) => Promise<{ playerID: string; playerCredentials: string }>;
   leaveMatch: (gameName: string, matchID: string, args: { playerID: string; credentials: string }) => Promise<void>;
+  serverUrl?: string;
 };
 
 export const useLobbySession = (args: {
@@ -77,10 +78,24 @@ export const useLobbySession = (args: {
     setLoading(true);
     setError('');
     try {
-      const response = await lobbyClient.listMatches(gameName);
-      // Filter out gameover matches
-      const activeMatches = (response.matches ?? []).filter((match) => !match.gameover);
-      setMatches(activeMatches);
+      // Use custom endpoint from DB instead of boardgame.io
+      if (lobbyClient.serverUrl) {
+        const response = await fetch(`${lobbyClient.serverUrl}/api/lobby/matches`);
+        if (!response.ok) throw new Error('Failed to fetch matches');
+        const payload = await response.json() as { matches?: Array<{ matchID: string; metadata: Record<string, unknown> }> };
+        // Convert to LobbyMatch format
+        const lobbyMatches: LobbyMatch[] = (payload.matches ?? []).map((m) => ({
+          matchID: m.matchID,
+          createdAt: typeof m.metadata?.updatedAt === 'number' ? m.metadata.updatedAt : undefined,
+          players: [], // Will be populated from metadata if needed
+          setupData: undefined, // Will be populated from metadata if needed
+        }));
+        setMatches(lobbyMatches);
+      } else {
+        // Fallback to boardgame.io
+        const response = await lobbyClient.listMatches(gameName);
+        setMatches(response.matches ?? []);
+      }
       setMatchesSynced(true);
     } catch {
       setError(serverUnavailableText);
