@@ -19,6 +19,7 @@ export const AdminDatabaseTab = ({
   onExportDbSchema,
   onImportDbSchema,
   onImportJsonConfigToDb,
+  onSyncJsonToPostgresIncremental,
   onCheckDbConfigSync,
   onExportDbBackup,
   onRestoreDbBackup,
@@ -59,6 +60,7 @@ export const AdminDatabaseTab = ({
   onExportDbSchema: () => Promise<void> | void;
   onImportDbSchema: () => Promise<void> | void;
   onImportJsonConfigToDb: () => Promise<void> | void;
+  onSyncJsonToPostgresIncremental: () => Promise<void> | void;
   onCheckDbConfigSync: () => Promise<void> | void;
   onExportDbBackup: () => Promise<void> | void;
   onRestoreDbBackup: (file: File | null) => Promise<void> | void;
@@ -155,6 +157,9 @@ export const AdminDatabaseTab = ({
           </button>
           <button type="button" onClick={() => void onImportJsonConfigToDb()} disabled={dbImportJsonConfigRunning}>
             {dbImportJsonConfigRunning ? t.dbImportJsonConfigRunning : t.dbImportJsonConfig}
+          </button>
+          <button type="button" onClick={() => void onSyncJsonToPostgresIncremental()} disabled={dbImportJsonConfigRunning}>
+            {dbImportJsonConfigRunning ? t.dbImportJsonConfigRunning : t.dbSyncIncremental}
           </button>
         </p>
         {dbCheckSyncStatus ? <p className="admin-success">{dbCheckSyncStatus}</p> : null}

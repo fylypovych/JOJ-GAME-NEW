@@ -131,6 +131,51 @@ COMMIT;`;
     if (!result.ok) throw new Error(result.error);
   };
 
+  const saveTemplateToPostgresIncremental = async (targetDatabaseUrl: string) => {
+    if (!targetDatabaseUrl) throw new Error('DATABASE_URL is required for postgres sync');
+    const templatePayload = exportSharedDeckTemplateJson();
+    const parsedPayload = JSON.parse(templatePayload) as { deck?: unknown[]; legendaryDeck?: unknown[] };
+    const deck = Array.isArray(parsedPayload.deck) ? parsedPayload.deck : [];
+    const legendaryDeck = Array.isArray(parsedPayload.legendaryDeck) ? parsedPayload.legendaryDeck : [];
+    const rows: string[] = [];
+    deck.forEach((card, index) => {
+      const row = (card && typeof card === 'object') ? (card as Record<string, unknown>) : {};
+      const id = typeof row.id === 'string' ? row.id : `card-${index}`;
+      rows.push(`(
+        (SELECT id FROM deck_templates WHERE template_key='shared-default' LIMIT 1),
+        'deck',
+        ${sqlString(id)},
+        ${index},
+        ${sqlJson(row)}
+      )`);
+    });
+    legendaryDeck.forEach((card, index) => {
+      const row = (card && typeof card === 'object') ? (card as Record<string, unknown>) : {};
+      const id = typeof row.id === 'string' ? row.id : `legendary-${index}`;
+      rows.push(`(
+        (SELECT id FROM deck_templates WHERE template_key='shared-default' LIMIT 1),
+        'legendaryDeck',
+        ${sqlString(id)},
+        ${index},
+        ${sqlJson(row)}
+      )`);
+    });
+
+    const sql = `
+BEGIN;
+INSERT INTO deck_templates (template_key, title, payload, is_active)
+VALUES ('shared-default', 'Shared Deck Template', ${sqlJson(parsedPayload)}, true)
+ON CONFLICT (template_key) DO NOTHING;
+${rows.length > 0 ? `
+INSERT INTO deck_template_entries (deck_template_id, deck_target, card_id, sort_index, card_snapshot)
+VALUES ${rows.join(',\n')}
+ON CONFLICT (deck_template_id, deck_target, sort_index) DO NOTHING;` : ''}
+COMMIT;`;
+
+    const result = await runPsqlSql(targetDatabaseUrl, sql);
+    if (!result.ok) throw new Error(result.error);
+  };
+
   const saveRanksToPostgresWithUrl = async (targetDatabaseUrl: string) => {
     if (!targetDatabaseUrl) throw new Error('DATABASE_URL is required for postgres sync');
     const ranksPayload = exportSharedRanksJson();
@@ -196,6 +241,52 @@ COMMIT;`;
     if (!result.ok) throw new Error(result.error);
   };
 
+  const saveRanksToPostgresIncremental = async (targetDatabaseUrl: string) => {
+    if (!targetDatabaseUrl) throw new Error('DATABASE_URL is required for postgres sync');
+    const ranksPayload = exportSharedRanksJson();
+    const parsedPayload = JSON.parse(ranksPayload) as { ranks?: unknown[] };
+    const ranks = Array.isArray(parsedPayload.ranks) ? parsedPayload.ranks : [];
+    const rows: string[] = [];
+    ranks.forEach((rank, index) => {
+      const row = (rank && typeof rank === 'object') ? (rank as Record<string, unknown>) : {};
+      const id = typeof row.id === 'string' ? row.id : `rank-${index}`;
+      const name = typeof row.name === 'string' ? row.name : id;
+      const requirements = row.requirement && typeof row.requirement === 'object'
+        ? row.requirement
+        : (row.requirements && typeof row.requirements === 'object' ? row.requirements : {});
+      const cost = row.cost && typeof row.cost === 'object' ? row.cost : {};
+      const bonus = row.bonus && typeof row.bonus === 'object' ? row.bonus : {};
+      const image = typeof row.image === 'string' ? row.image : null;
+      rows.push(`(
+        (SELECT id FROM rank_sets WHERE rank_set_key='shared-default' LIMIT 1),
+        ${sqlString(id)},
+        ${sqlString(name)},
+        ${index},
+        ${sqlJson(requirements)},
+        ${sqlJson(cost)},
+        ${sqlJson(bonus)},
+        ${sqlNullableString(image)},
+        ${sqlJson({ source: 'shared-ranks' })}
+      )`);
+    });
+
+    const sql = `
+BEGIN;
+INSERT INTO rank_sets (rank_set_key, title, payload, is_active)
+VALUES ('shared-default', 'Shared Ranks', ${sqlJson(parsedPayload)}, true)
+ON CONFLICT (rank_set_key) DO NOTHING;
+${rows.length > 0 ? `
+INSERT INTO rank_definitions (
+  rank_set_id, rank_code, display_name, sort_order, requirements, promotion_cost, bonus, image_path, metadata
+)
+VALUES ${rows.join(',\n')}
+ON CONFLICT (rank_set_id, rank_code) DO NOTHING;` : ''}
+COMMIT;`;
+
+    const result = await runPsqlSql(targetDatabaseUrl, sql);
+    if (!result.ok) throw new Error(result.error);
+  };
+
   const loadTemplateFromPostgres = async () => {
     const sql = `
 SELECT COALESCE(value::text, '')
@@ -236,6 +327,13 @@ LIMIT 1;`;
     if (!importResult.ok) throw new Error(`invalid ranks schema in postgres payload: ${importResult.error}`);
   };
 
+  const syncJsonToPostgresIncremental = async (draft?: PostgresConnDraft) => {
+    const targetUrl = draft ? buildPostgresUrlFromDraft(draft) : deps.databaseUrl;
+    if (!targetUrl) throw new Error('PostgreSQL connection is not configured');
+    await saveTemplateToPostgresIncremental(targetUrl);
+    await saveRanksToPostgresIncremental(targetUrl);
+  };
+
   const syncCurrentJsonToPostgres = async (draft?: PostgresConnDraft) => {
     const targetUrl = draft ? buildPostgresUrlFromDraft(draft) : deps.databaseUrl;
     if (!targetUrl) throw new Error('PostgreSQL connection is not configured');
@@ -249,5 +347,6 @@ LIMIT 1;`;
     loadTemplateFromPostgres,
     loadRanksFromPostgres,
     syncCurrentJsonToPostgres,
+    syncJsonToPostgresIncremental,
   };
 };

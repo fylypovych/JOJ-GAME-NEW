@@ -26,6 +26,7 @@ type AdminDbToolsDeps = {
   adminDbUiConfigPath: string;
   migrationsPath: string;
   importJsonConfigToDb: (draft?: DbConnInput) => Promise<void>;
+  syncJsonToPostgresIncremental: (draft?: DbConnInput) => Promise<void>;
   pool?: Pool | null;
   prepareBackupSnapshot?: () => Promise<void>;
   backupRootDir?: string;
@@ -378,17 +379,33 @@ export const registerAdminDbToolRoutes = ({
 
   router.post('/api/admin/db/import-json-config', async (ctx: RouteCtx) => {
     if (!(await requireAdminWriteAccess(ctx, '/api/admin/db/import-json-config'))) return;
-    if (!(await enforceRateLimit(ctx, 'admin-db-import-json-config', 5, 60_000))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-db-import-json-config', 20, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/import-json-config', maxBytes: JSON_BODY_LIMIT, logLine });
     if (!body) return;
     const parsed = await buildDbConnInputForExecution(body, adminDbUiConfigPath, pool);
     if ('error' in parsed) return fail(ctx, 400, parsed.error);
+
     try {
       await importJsonConfigToDb(parsed);
-      await logLine('INFO', 'admin imported shared JSON config into postgres');
-      ctx.body = { ok: true, message: 'Shared JSON config imported into database' };
+      ctx.body = { ok: true, message: 'JSON config imported to PostgreSQL successfully' };
     } catch (error) {
-      fail(ctx, 400, 'Failed to import shared JSON config into database', String(error));
+      fail(ctx, 500, 'Failed to import JSON config to PostgreSQL', String(error));
+    }
+  });
+
+  router.post('/api/admin/db/sync-incremental', async (ctx: RouteCtx) => {
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/db/sync-incremental'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-db-sync-incremental', 20, 60_000))) return;
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/sync-incremental', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const parsed = await buildDbConnInputForExecution(body, adminDbUiConfigPath, pool);
+    if ('error' in parsed) return fail(ctx, 400, parsed.error);
+
+    try {
+      await syncJsonToPostgresIncremental(parsed);
+      ctx.body = { ok: true, message: 'JSON config synced incrementally to PostgreSQL successfully' };
+    } catch (error) {
+      fail(ctx, 500, 'Failed to sync JSON config incrementally to PostgreSQL', String(error));
     }
   });
 

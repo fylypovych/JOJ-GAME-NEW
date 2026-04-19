@@ -128,6 +128,7 @@ export type AdminPageProps = {
   onExportDbSchema: () => Promise<void>;
   onImportDbSchema: () => Promise<void>;
   onImportJsonConfigToDb: () => Promise<void>;
+  onSyncJsonToPostgresIncremental: () => Promise<void>;
   onCheckDbConfigSync: () => Promise<void>;
   onExportDbBackup: () => Promise<void>;
   onRestoreDbBackup: (file: File | null) => Promise<void>;

@@ -23,6 +23,7 @@ export type SharedConfigStore = {
   loadTemplateFromDisk: () => Promise<void>;
   loadRanksFromDisk: () => Promise<void>;
   syncCurrentJsonToPostgres: (draft?: PostgresConnDraft) => Promise<void>;
+  syncJsonToPostgresIncremental: (draft?: PostgresConnDraft) => Promise<void>;
 };
 
 export type SharedConfigCoreDeps = Pick<

@@ -43,6 +43,7 @@ export interface UseAppAdminStateResult {
   exportDbSchema: ReturnType<typeof useDbAdminTools>['exportDbSchema'];
   importDbSchema: ReturnType<typeof useDbAdminTools>['importDbSchema'];
   importJsonConfigToDb: ReturnType<typeof useDbAdminTools>['importJsonConfigToDb'];
+  syncJsonToPostgresIncremental: ReturnType<typeof useDbAdminTools>['syncJsonToPostgresIncremental'];
   checkDbConfigSync: ReturnType<typeof useDbAdminTools>['checkDbConfigSync'];
   exportDbBackup: ReturnType<typeof useDbAdminTools>['exportDbBackup'];
   restoreDbBackup: ReturnType<typeof useDbAdminTools>['restoreDbBackup'];
@@ -67,5 +68,6 @@ export const useAppAdminState = (args: UseAppAdminStateArgs): UseAppAdminStateRe
     dbSyncMigrationsError: result.dbSyncMigrationsError,
     dbSyncMigrationsRunning: result.dbSyncMigrationsRunning,
     syncDbMigrations: result.syncDbMigrations,
+    syncJsonToPostgresIncremental: result.syncJsonToPostgresIncremental,
   };
 };

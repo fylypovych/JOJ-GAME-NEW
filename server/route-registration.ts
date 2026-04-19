@@ -184,6 +184,7 @@ export const registerAllRoutes = (
     adminDbUiConfigPath,
     gameUiConfigPath,
     importJsonConfigToDb: sharedConfigStore.syncCurrentJsonToPostgres,
+    syncJsonToPostgresIncremental: sharedConfigStore.syncJsonToPostgresIncremental,
     userStore,
     pool,
     prepareBackupSnapshot: matchRuntimeSync.syncMatchStateMirror,

@@ -37,6 +37,7 @@ export const createSharedConfigStore = (deps: SharedConfigStoreDeps): SharedConf
       await postgresStore.loadRanksFromPostgres();
     },
     syncCurrentJsonToPostgres: postgresStore.syncCurrentJsonToPostgres,
+    syncJsonToPostgresIncremental: postgresStore.syncJsonToPostgresIncremental,
   };
 };
 

@@ -186,6 +186,7 @@ export const App = () => {
     exportDbSchema,
     importDbSchema,
     importJsonConfigToDb,
+    syncJsonToPostgresIncremental,
     checkDbConfigSync,
     exportDbBackup,
     restoreDbBackup,
@@ -668,6 +669,7 @@ export const App = () => {
               exportDbSchema={exportDbSchema}
               importDbSchema={importDbSchema}
               importJsonConfigToDb={importJsonConfigToDb}
+              syncJsonToPostgresIncremental={syncJsonToPostgresIncremental}
               checkDbConfigSync={checkDbConfigSync}
               exportDbBackup={exportDbBackup}
               restoreDbBackup={restoreDbBackup}

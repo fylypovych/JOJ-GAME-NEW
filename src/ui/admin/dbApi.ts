@@ -40,6 +40,7 @@ export const createAdminDbApiUrls = (serverUrl: string) => ({
   schema: `${serverUrl}/api/admin/db/schema`,
   importSchema: `${serverUrl}/api/admin/db/import-schema`,
   importJsonConfig: `${serverUrl}/api/admin/db/import-json-config`,
+  syncIncremental: `${serverUrl}/api/admin/db/sync-incremental`,
   exportBackup: `${serverUrl}/api/admin/db/export-backup`,
   restoreBackup: `${serverUrl}/api/admin/db/restore-backup`,
 });

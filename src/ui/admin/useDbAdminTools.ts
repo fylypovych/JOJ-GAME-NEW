@@ -257,6 +257,31 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
     }
   };
 
+  const syncJsonToPostgresIncremental = async () => {
+    setDbImportSchemaStatus('');
+    setDbImportSchemaError('');
+    setDbImportJsonConfigStatus('');
+    setDbImportJsonConfigError('');
+    setDbImportJsonConfigRunning(true);
+    try {
+      const response = await adminFetch(api.syncIncremental, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(adminDbConfigDraft),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
+      if (!response.ok || !payload.ok) {
+        setDbImportJsonConfigError(payload.details ?? payload.error ?? dbText.importJsonFailed);
+        return;
+      }
+      setDbImportJsonConfigStatus(payload.message ?? dbText.importJsonOk);
+    } catch {
+      setDbImportJsonConfigError(dbText.importJsonFailed);
+    } finally {
+      setDbImportJsonConfigRunning(false);
+    }
+  };
+
   const checkDbConfigSync = async () => {
     setDbImportSchemaStatus('');
     setDbImportSchemaError('');
@@ -411,6 +436,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
     exportDbSchema,
     importDbSchema,
     importJsonConfigToDb,
+    syncJsonToPostgresIncremental,
     checkDbConfigSync,
     exportDbBackup,
     restoreDbBackup,
