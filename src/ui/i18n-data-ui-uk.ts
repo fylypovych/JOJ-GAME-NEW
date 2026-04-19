@@ -220,6 +220,7 @@ export const uiUkData = {
   dbImportSchemaRunning: 'Імпорт схеми...',
   dbImportJsonConfig: 'Перезаписати дані з JSON',
   dbSyncIncremental: 'Синхронізувати дані з JSON',
+  dbLoadFromPostgres: 'Завантажити з БД в JSON',
   dbImportJsonConfigRunning: 'Імпорт JSON-даних у БД...',
   dbCheckSync: 'Перевірити синхронізацію з БД',
   dbCheckSyncRunning: 'Перевірка синхронізації...',

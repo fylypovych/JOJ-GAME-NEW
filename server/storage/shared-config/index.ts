@@ -19,10 +19,16 @@ export const createSharedConfigStore = (deps: SharedConfigStoreDeps): SharedConf
       await postgresStore.saveRanksToPostgresWithUrl(databaseUrl);
     },
     loadTemplate: async () => {
-      await postgresStore.loadTemplateFromPostgres();
+      const loadedFromPostgres = await postgresStore.loadTemplateFromPostgres();
+      if (!loadedFromPostgres) {
+        throw new Error('Failed to load shared deck template from PostgreSQL. Please ensure data exists in the database.');
+      }
     },
     loadRanks: async () => {
-      await postgresStore.loadRanksFromPostgres();
+      const loadedFromPostgres = await postgresStore.loadRanksFromPostgres();
+      if (!loadedFromPostgres) {
+        throw new Error('Failed to load shared ranks from PostgreSQL. Please ensure data exists in the database.');
+      }
     },
     saveTemplateToDisk: async () => {
       await postgresStore.saveTemplateToPostgresWithUrl(databaseUrl);

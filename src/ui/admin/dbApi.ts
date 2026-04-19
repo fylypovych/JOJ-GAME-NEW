@@ -41,6 +41,8 @@ export const createAdminDbApiUrls = (serverUrl: string) => ({
   importSchema: `${serverUrl}/api/admin/db/import-schema`,
   importJsonConfig: `${serverUrl}/api/admin/db/import-json-config`,
   syncIncremental: `${serverUrl}/api/admin/db/sync-incremental`,
+  loadFromPostgres: `${serverUrl}/api/admin/db/load-from-postgres`,
+  saveTemplateToPostgres: `${serverUrl}/api/admin/db/save-template-to-postgres`,
   exportBackup: `${serverUrl}/api/admin/db/export-backup`,
   restoreBackup: `${serverUrl}/api/admin/db/restore-backup`,
 });

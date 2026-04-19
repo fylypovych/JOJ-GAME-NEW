@@ -26,7 +26,6 @@ export const createPostgresSharedConfigStore = (
     exportSharedDeckTemplateJson,
     exportSharedRanksJson,
     getCardCatalog,
-    importSharedDeckTemplateJson,
     importSharedRanksJson,
   } = deps;
 
@@ -287,51 +286,79 @@ COMMIT;`;
     if (!result.ok) throw new Error(result.error);
   };
 
-  const loadTemplateFromPostgres = async () => {
+  const loadTemplateFromPostgres = async (): Promise<boolean> => {
     const sql = `
 SELECT COALESCE(value::text, '')
 FROM app_settings
 WHERE key = 'shared_deck_template'
 LIMIT 1;`;
     const result = await runPsqlSql(deps.databaseUrl, sql);
-    if (!result.ok) throw new Error(result.error);
+    if (!result.ok) return false;
     const raw = result.stdout.trim();
     if (!raw) {
-      throw new Error('shared deck template is missing in postgres');
+      return false;
     }
-    const importResult = importSharedDeckTemplateJson(raw);
+    const importResult = deps.importSharedDeckTemplateJson(raw);
     if (!importResult.ok) {
-      throw new Error(`invalid template payload in postgres: ${importResult.error}`);
+      return false;
     }
+    return true;
   };
 
-  const loadRanksFromPostgres = async () => {
+  const loadRanksFromPostgres = async (): Promise<boolean> => {
     const sql = `
 SELECT COALESCE(value::text, '')
 FROM app_settings
 WHERE key = 'shared_ranks'
 LIMIT 1;`;
     const result = await runPsqlSql(deps.databaseUrl, sql);
-    if (!result.ok) throw new Error(result.error);
+    if (!result.ok) return false;
     const raw = result.stdout.trim();
     if (!raw) {
-      throw new Error('shared ranks payload is missing in postgres');
+      return false;
     }
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);
     } catch (error) {
-      throw new Error(`invalid ranks JSON in postgres: ${String(error)}`);
+      return false;
     }
     const importResult = importSharedRanksJson(JSON.stringify(parsed));
-    if (!importResult.ok) throw new Error(`invalid ranks schema in postgres payload: ${importResult.error}`);
+    if (!importResult.ok) return false;
+    return true;
   };
 
   const syncJsonToPostgresIncremental = async (draft?: PostgresConnDraft) => {
     const targetUrl = draft ? buildPostgresUrlFromDraft(draft) : deps.databaseUrl;
     if (!targetUrl) throw new Error('PostgreSQL connection is not configured');
+
+    // Calculate hash of current JSON data
+    const deckPayload = exportSharedDeckTemplateJson();
+    const ranksPayload = exportSharedRanksJson();
+    const combinedHash = Buffer.from(`${deckPayload}:${ranksPayload}`).toString('base64');
+
+    // Check if already synced with same hash
+    const checkHashSql = `
+SELECT COALESCE(value::text, '') as hash
+FROM app_settings
+WHERE key = 'shared_config_sync_hash'
+LIMIT 1;`;
+    const checkResult = await runPsqlSql(targetUrl, checkHashSql);
+    if (checkResult.ok && checkResult.stdout.trim() === combinedHash) {
+      // Already synced with same data, skip
+      return;
+    }
+
     await saveTemplateToPostgresIncremental(targetUrl);
     await saveRanksToPostgresIncremental(targetUrl);
+
+    // Update sync hash
+    const updateHashSql = `
+INSERT INTO app_settings (key, value)
+VALUES ('shared_config_sync_hash', '${combinedHash.replace(/'/g, "''")}'::text)
+ON CONFLICT (key) DO UPDATE
+SET value = EXCLUDED.value;`;
+    await runPsqlSql(targetUrl, updateHashSql);
   };
 
   const syncCurrentJsonToPostgres = async (draft?: PostgresConnDraft) => {

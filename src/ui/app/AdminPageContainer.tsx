@@ -27,6 +27,8 @@ type AdminPageContainerProps = {
   importDbSchema: AdminPageProps['onImportDbSchema'];
   importJsonConfigToDb: AdminPageProps['onImportJsonConfigToDb'];
   syncJsonToPostgresIncremental: AdminPageProps['onSyncJsonToPostgresIncremental'];
+  loadFromPostgres: AdminPageProps['onLoadFromPostgres'];
+  saveTemplateToPostgres: AdminPageProps['onSaveTemplateToPostgres'];
   checkDbConfigSync: AdminPageProps['onCheckDbConfigSync'];
   exportDbBackup: AdminPageProps['onExportDbBackup'];
   restoreDbBackup: AdminPageProps['onRestoreDbBackup'];
@@ -110,6 +112,8 @@ export const AdminPageContainer = ({
   importDbSchema,
   importJsonConfigToDb,
   syncJsonToPostgresIncremental,
+  loadFromPostgres,
+  saveTemplateToPostgres,
   checkDbConfigSync,
   exportDbBackup,
   restoreDbBackup,
@@ -202,6 +206,10 @@ export const AdminPageContainer = ({
         onSyncJsonToPostgresIncremental={async () => {
           await syncJsonToPostgresIncremental();
         }}
+        onLoadFromPostgres={async () => {
+          await loadFromPostgres();
+        }}
+        onSaveTemplateToPostgres={saveTemplateToPostgres}
         onCheckDbConfigSync={checkDbConfigSync}
         onExportDbBackup={exportDbBackup}
         onRestoreDbBackup={restoreDbBackup}

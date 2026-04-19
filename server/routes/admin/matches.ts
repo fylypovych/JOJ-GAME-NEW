@@ -16,6 +16,7 @@ type AdminMatchRoutesDeps = Pick<AdminRouteSharedDeps, 'router' | 'requireAdminA
     snapshotKind?: 'initial' | 'autosave' | 'manual' | 'admin_stop' | 'admin_reset' | 'final';
   }) => Promise<boolean> | boolean;
   markMatchDeleted?: (matchId: string) => Promise<void> | void;
+  pool?: import('pg').Pool | null;
 };
 
 const getMatchDb = (ctx: Parameters<AdminRouteSharedDeps['router']['get']>[1] extends (ctx: infer T) => unknown ? T : never) => {
@@ -31,6 +32,7 @@ export const registerAdminMatchRoutes = ({
   logLine,
   persistMatchSnapshot,
   markMatchDeleted,
+  pool,
 }: AdminMatchRoutesDeps) => {
   router.get('/api/admin/match-state', async (ctx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/match-state'))) return;
@@ -224,10 +226,20 @@ export const registerAdminMatchRoutes = ({
       const matchIds = await db.listMatches();
       const matches = [];
       for (const matchId of matchIds) {
+        // Check if match is deleted in match_records
+        if (pool) {
+          const deletedCheck = await pool.query<{ status: string }>(
+            'SELECT status FROM match_records WHERE id = $1 LIMIT 1',
+            [matchId]
+          );
+          if (deletedCheck.rows[0]?.status === 'deleted') {
+            continue; // Skip deleted matches
+          }
+        }
         const fetched = typeof db.fetch === 'function'
-          ? await db.fetch(matchId, { metadata: true })
+          ? await db.fetch(matchId, { metadata: true, state: true })
           : null;
-        if (fetched?.metadata) {
+        if (fetched?.metadata && fetched?.state) {
           matches.push({
             matchID: matchId,
             metadata: fetched.metadata,

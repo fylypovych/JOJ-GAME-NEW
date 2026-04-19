@@ -219,6 +219,7 @@ export const uiEnData = {
   dbImportSchemaRunning: 'Importing schema...',
   dbImportJsonConfig: 'Overwrite data from JSON',
   dbSyncIncremental: 'Sync data from JSON',
+  dbLoadFromPostgres: 'Load from DB to JSON',
   dbImportJsonConfigRunning: 'Importing JSON data to DB...',
   dbCheckSync: 'Check DB sync',
   dbCheckSyncRunning: 'Checking synchronization...',

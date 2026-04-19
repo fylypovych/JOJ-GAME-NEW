@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { Pool } from 'pg';
 import { requireAdminMutationAuth } from '../admin-auth';
 import { loadAppSettingJson, saveAppSettingJson } from './app-settings-store';
+import { buildPostgresUrlFromDraft } from '../db/psql';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from '../routes/types';
 
 export type DbConnInput = {
@@ -410,6 +411,109 @@ export const registerAdminDbToolRoutes = ({
     }
   });
 
+  router.post('/api/admin/db/load-from-postgres', async (ctx: RouteCtx) => {
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/db/load-from-postgres'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-db-load-from-postgres', 5, 60_000))) return;
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/load-from-postgres', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const parsed = await buildDbConnInputForExecution(body, adminDbUiConfigPath, pool);
+    if ('error' in parsed) return fail(ctx, 400, parsed.error);
+
+    try {
+      const targetUrl = parsed ? buildPostgresUrlFromDraft(parsed) : undefined;
+      if (!targetUrl) return fail(ctx, 400, 'PostgreSQL connection is not configured');
+
+      // Load template from PostgreSQL
+      const templateResult = await runPsqlScalar(
+        parsed,
+        "SELECT COALESCE(value::text, '') FROM app_settings WHERE key = 'shared_deck_template' LIMIT 1;"
+      );
+      if (!templateResult.ok) return fail(ctx, 400, 'Failed to load template from PostgreSQL', templateResult.error);
+      const templateJson = templateResult.value;
+
+      // Load ranks from PostgreSQL
+      const ranksResult = await runPsqlScalar(
+        parsed,
+        "SELECT COALESCE(value::text, '') FROM app_settings WHERE key = 'shared_ranks' LIMIT 1;"
+      );
+      if (!ranksResult.ok) return fail(ctx, 400, 'Failed to load ranks from PostgreSQL', ranksResult.error);
+      const ranksJson = ranksResult.value;
+
+      // Write to local JSON files
+      const repoRoot = path.dirname(path.dirname(path.dirname(dbSchemaPath)));
+      const sharedDeckPath = path.join(repoRoot, 'database', 'shared-deck-template.json');
+      const sharedRanksPath = path.join(repoRoot, 'database', 'shared-ranks.json');
+
+      await writeFile(sharedDeckPath, templateJson, 'utf8');
+      await writeFile(sharedRanksPath, ranksJson, 'utf8');
+
+      ctx.body = {
+        ok: true,
+        message: 'Data loaded from PostgreSQL to local JSON files successfully',
+      };
+    } catch (error) {
+      const details = String(error instanceof Error ? error.message : error);
+      await logLine('ERROR', `Failed to load data from PostgreSQL: ${details}`);
+      return fail(ctx, 500, 'Failed to load data from PostgreSQL', details);
+    }
+  });
+
+  router.post('/api/admin/db/save-template-to-postgres', async (ctx: RouteCtx) => {
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/db/save-template-to-postgres'))) return;
+    if (!(await enforceRateLimit(ctx, 'admin-db-save-template-to-postgres', 10, 60_000))) return;
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/save-template-to-postgres', maxBytes: JSON_BODY_LIMIT, logLine });
+    if (!body) return;
+    const parsed = await buildDbConnInputForExecution(body, adminDbUiConfigPath, pool);
+    if ('error' in parsed) return fail(ctx, 400, parsed.error);
+
+    try {
+      const templateJson = typeof body.templateJson === 'string' ? body.templateJson : '';
+      const ranksJson = typeof body.ranksJson === 'string' ? body.ranksJson : '';
+
+      if (!templateJson || !ranksJson) return fail(ctx, 400, 'Missing templateJson or ranksJson');
+
+      // Save template to PostgreSQL
+      const templateResult = await runDbCommand(
+        'psql',
+        ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database],
+        parsed,
+        15_000,
+        `INSERT INTO app_settings (key, value) VALUES ('shared_deck_template', '${templateJson.replace(/'/g, "''")}'::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;`
+      );
+      if (!templateResult.ok) return fail(ctx, 400, 'Failed to save template to PostgreSQL', (templateResult.stderr || templateResult.error || templateResult.stdout || '').trim());
+
+      // Save ranks to PostgreSQL
+      const ranksResult = await runDbCommand(
+        'psql',
+        ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database],
+        parsed,
+        15_000,
+        `INSERT INTO app_settings (key, value) VALUES ('shared_ranks', '${ranksJson.replace(/'/g, "''")}'::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;`
+      );
+      if (!ranksResult.ok) return fail(ctx, 400, 'Failed to save ranks to PostgreSQL', (ranksResult.stderr || ranksResult.error || ranksResult.stdout || '').trim());
+
+      // Update sync hash
+      const combinedHash = Buffer.from(`${templateJson}:${ranksJson}`).toString('base64');
+      const updateHashResult = await runDbCommand(
+        'psql',
+        ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database],
+        parsed,
+        15_000,
+        `INSERT INTO app_settings (key, value) VALUES ('shared_config_sync_hash', '${combinedHash.replace(/'/g, "''")}'::text) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;`
+      );
+      if (!updateHashResult.ok) return fail(ctx, 400, 'Failed to update sync hash', (updateHashResult.stderr || updateHashResult.error || updateHashResult.stdout || '').trim());
+
+      ctx.body = {
+        ok: true,
+        message: 'Data saved to PostgreSQL successfully',
+      };
+    } catch (error) {
+      const details = String(error instanceof Error ? error.message : error);
+      await logLine('ERROR', `Failed to save data to PostgreSQL: ${details}`);
+      return fail(ctx, 500, 'Failed to save data to PostgreSQL', details);
+    }
+  });
+
   router.post('/api/admin/db/check-config-sync', async (ctx: RouteCtx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/db/check-config-sync'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-db-check-config-sync', 20, 60_000))) return;
@@ -618,19 +722,45 @@ WHERE r.is_active = true;`);
       const parsed = await buildDbConnInputForExecution(body, adminDbUiConfigPath, pool);
       if ('error' in parsed) return fail(ctx, 400, parsed.error);
 
+      // Ensure schema_migrations table exists
+      await runDbCommand(
+        'psql',
+        ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database],
+        parsed,
+        15_000,
+        `CREATE TABLE IF NOT EXISTS schema_migrations (migration_name TEXT PRIMARY KEY, applied_at TIMESTAMPTZ DEFAULT NOW());`,
+      );
+
+      // Get already applied migrations
+      const appliedResult = await runDbCommand(
+        'psql',
+        ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database, '-tA', '-c', 'SELECT migration_name FROM schema_migrations ORDER BY migration_name;'],
+        parsed,
+        15_000,
+      );
+      const appliedMigrationsSet = new Set(
+        appliedResult.ok ? appliedResult.stdout.split('\n').filter(Boolean) : []
+      );
+
       const migrationsDir = migrationsPath;
       const migrationFiles = await readdir(migrationsDir);
       const sqlFiles = migrationFiles
         .filter((f) => f.endsWith('.sql'))
         .sort((a, b) => a.localeCompare(b));
 
-      const appliedMigrations: string[] = [];
+      const newlyAppliedMigrations: string[] = [];
+      const skippedMigrations: string[] = [];
       const errors: string[] = [];
 
       for (const file of sqlFiles) {
+        if (appliedMigrationsSet.has(file)) {
+          skippedMigrations.push(file);
+          continue;
+        }
+
         const filePath = path.join(migrationsDir, file);
         const sql = await readFile(filePath, 'utf-8');
-        
+
         const result = await runDbCommand(
           'psql',
           ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database, '-v', 'ON_ERROR_STOP=1'],
@@ -640,7 +770,15 @@ WHERE r.is_active = true;`);
         );
 
         if (result.ok) {
-          appliedMigrations.push(file);
+          // Record migration as applied
+          await runDbCommand(
+            'psql',
+            ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database, '-c', `INSERT INTO schema_migrations (migration_name) VALUES ($1) ON CONFLICT (migration_name) DO NOTHING;`],
+            parsed,
+            15_000,
+            file,
+          );
+          newlyAppliedMigrations.push(file);
         } else {
           errors.push(`${file}: ${result.stderr || result.error || result.stdout || ''}`);
         }
@@ -652,8 +790,13 @@ WHERE r.is_active = true;`);
 
       ctx.body = {
         ok: true,
-        message: `Successfully applied ${appliedMigrations.length} migrations`,
-        appliedMigrations,
+        message: newlyAppliedMigrations.length > 0
+          ? `Successfully applied ${newlyAppliedMigrations.length} new migrations`
+          : skippedMigrations.length > 0
+            ? `All ${skippedMigrations.length} migrations already applied`
+            : 'No migrations to apply',
+        newlyAppliedMigrations,
+        skippedMigrations,
       };
     } catch (error) {
       const details = String(error instanceof Error ? error.message : error);

@@ -44,6 +44,8 @@ export interface UseAppAdminStateResult {
   importDbSchema: ReturnType<typeof useDbAdminTools>['importDbSchema'];
   importJsonConfigToDb: ReturnType<typeof useDbAdminTools>['importJsonConfigToDb'];
   syncJsonToPostgresIncremental: ReturnType<typeof useDbAdminTools>['syncJsonToPostgresIncremental'];
+  loadFromPostgres: ReturnType<typeof useDbAdminTools>['loadFromPostgres'];
+  saveTemplateToPostgres: ReturnType<typeof useDbAdminTools>['saveTemplateToPostgres'];
   checkDbConfigSync: ReturnType<typeof useDbAdminTools>['checkDbConfigSync'];
   exportDbBackup: ReturnType<typeof useDbAdminTools>['exportDbBackup'];
   restoreDbBackup: ReturnType<typeof useDbAdminTools>['restoreDbBackup'];
@@ -69,5 +71,8 @@ export const useAppAdminState = (args: UseAppAdminStateArgs): UseAppAdminStateRe
     dbSyncMigrationsRunning: result.dbSyncMigrationsRunning,
     syncDbMigrations: result.syncDbMigrations,
     syncJsonToPostgresIncremental: result.syncJsonToPostgresIncremental,
+    loadFromPostgres: result.loadFromPostgres,
+    saveTemplateToPostgres: result.saveTemplateToPostgres,
+    checkDbConfigSync: result.checkDbConfigSync,
   };
 };

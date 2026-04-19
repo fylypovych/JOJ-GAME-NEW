@@ -79,6 +79,8 @@ export const AdminPage = ({
   onImportDbSchema,
   onImportJsonConfigToDb,
   onSyncJsonToPostgresIncremental,
+  onLoadFromPostgres,
+  onSaveTemplateToPostgres,
   onCheckDbConfigSync,
   onExportDbBackup,
   onRestoreDbBackup,
@@ -1119,6 +1121,8 @@ export const AdminPage = ({
             onImportDbSchema={onImportDbSchema}
             onImportJsonConfigToDb={onImportJsonConfigToDb}
             onSyncJsonToPostgresIncremental={onSyncJsonToPostgresIncremental}
+            onLoadFromPostgres={onLoadFromPostgres}
+            onSaveTemplateToPostgres={onSaveTemplateToPostgres}
             onCheckDbConfigSync={onCheckDbConfigSync}
             onExportDbBackup={onExportDbBackup}
             onRestoreDbBackup={onRestoreDbBackup}

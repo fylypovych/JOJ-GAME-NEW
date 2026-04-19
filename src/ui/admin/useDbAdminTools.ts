@@ -282,6 +282,50 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
     }
   };
 
+  const loadFromPostgres = async () => {
+    setDbImportSchemaStatus('');
+    setDbImportSchemaError('');
+    setDbImportJsonConfigStatus('');
+    setDbImportJsonConfigError('');
+    setDbImportJsonConfigRunning(true);
+    try {
+      const response = await adminFetch(api.loadFromPostgres, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(adminDbConfigDraft),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
+      if (!response.ok || !payload.ok) {
+        setDbImportJsonConfigError(payload.details ?? payload.error ?? dbText.importJsonFailed);
+        return;
+      }
+      setDbImportJsonConfigStatus(payload.message ?? dbText.importJsonOk);
+    } catch {
+      setDbImportJsonConfigError(dbText.importJsonFailed);
+    } finally {
+      setDbImportJsonConfigRunning(false);
+    }
+  };
+
+  const saveTemplateToPostgres = async (templateJson: string, ranksJson: string) => {
+    try {
+      const response = await adminFetch(api.saveTemplateToPostgres, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...adminDbConfigDraft, templateJson, ranksJson }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
+      if (!response.ok || !payload.ok) {
+        console.error('Failed to save template to PostgreSQL:', payload.details ?? payload.error);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('Failed to save template to PostgreSQL:', error);
+      return false;
+    }
+  };
+
   const checkDbConfigSync = async () => {
     setDbImportSchemaStatus('');
     setDbImportSchemaError('');
@@ -437,6 +481,8 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
     importDbSchema,
     importJsonConfigToDb,
     syncJsonToPostgresIncremental,
+    loadFromPostgres,
+    saveTemplateToPostgres,
     checkDbConfigSync,
     exportDbBackup,
     restoreDbBackup,

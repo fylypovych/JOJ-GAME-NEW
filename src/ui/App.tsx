@@ -187,6 +187,8 @@ export const App = () => {
     importDbSchema,
     importJsonConfigToDb,
     syncJsonToPostgresIncremental,
+    loadFromPostgres,
+    saveTemplateToPostgres,
     checkDbConfigSync,
     exportDbBackup,
     restoreDbBackup,
@@ -433,6 +435,7 @@ export const App = () => {
     sharedRanks,
     refreshSharedDeckTemplate,
     setSharedRanksState,
+    saveTemplateToPostgres,
   });
 
   const shellUiVariant = isAdminRoute ? adminUiVariant : gameUiVariant;
@@ -478,11 +481,13 @@ export const App = () => {
     rollbackTemplate,
     applyTemplateChange,
     rollbackRanks,
+    saveTemplateToPostgres,
   }), [
     sharedDeckTemplate, cardCatalog, sharedRanks, sharedConfigLoaded,
     sharedDeckStats, optionalLobbyModules,
     setSharedRanksState, refreshSharedDeckTemplate, syncRanksToServer,
     rollbackTemplate, applyTemplateChange, rollbackRanks,
+    saveTemplateToPostgres,
   ]);
 
   const galleryContextValue = useMemo(() => ({
@@ -670,6 +675,8 @@ export const App = () => {
               importDbSchema={importDbSchema}
               importJsonConfigToDb={importJsonConfigToDb}
               syncJsonToPostgresIncremental={syncJsonToPostgresIncremental}
+              loadFromPostgres={loadFromPostgres}
+              saveTemplateToPostgres={saveTemplateToPostgres}
               checkDbConfigSync={checkDbConfigSync}
               exportDbBackup={exportDbBackup}
               restoreDbBackup={restoreDbBackup}

@@ -18,6 +18,7 @@ export interface UseDeckDataArgs {
   serverUrl: string;
   sharedTemplateStorageKey: string;
   ranksStorageKey: string;
+  saveTemplateToPostgres?: (templateJson: string, ranksJson: string) => Promise<boolean>;
 }
 
 export interface UseDeckDataResult {
@@ -41,7 +42,7 @@ export interface UseDeckDataResult {
 }
 
 export const useDeckData = (args: UseDeckDataArgs): UseDeckDataResult => {
-  const { serverUrl, sharedTemplateStorageKey, ranksStorageKey } = args;
+  const { serverUrl, sharedTemplateStorageKey, ranksStorageKey, saveTemplateToPostgres } = args;
 
   // Admin fetch placeholder
   const adminFetch = useMemo(() => {
@@ -99,8 +100,14 @@ export const useDeckData = (args: UseDeckDataArgs): UseDeckDataResult => {
     mutate();
     const ok = await refreshSharedDeckTemplate();
     if (!ok) rollbackTemplate(previousJson);
+    // Auto-save to PostgreSQL if available
+    if (saveTemplateToPostgres) {
+      const templateJson = exportSharedDeckTemplateJson();
+      const ranksJson = exportSharedRanksJson();
+      void saveTemplateToPostgres(templateJson, ranksJson);
+    }
     return ok;
-  }, [refreshSharedDeckTemplate, rollbackTemplate]);
+  }, [refreshSharedDeckTemplate, rollbackTemplate, saveTemplateToPostgres]);
 
   const rollbackRanks = useCallback((previousRanks: RankDefinition[]) => {
     if (!setSharedRanks(previousRanks)) return;

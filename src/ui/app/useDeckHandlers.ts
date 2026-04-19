@@ -26,6 +26,7 @@ export interface UseDeckHandlersArgs {
   refreshSharedDeckTemplate: (force?: boolean) => Promise<boolean>;
   setSharedRanksState: (ranks: RankDefinition[]) => void;
   sharedRanks: RankDefinition[];
+  saveTemplateToPostgres?: (templateJson: string, ranksJson: string) => Promise<boolean>;
 }
 
 export interface UseDeckHandlersResult {
@@ -45,10 +46,11 @@ export interface UseDeckHandlersResult {
   onImportRanks: (json: string) => string | null;
   onSetRanks: (nextRanks: RankDefinition[]) => boolean;
   onResetRanks: () => void;
+  saveTemplateToPostgres?: (templateJson: string, ranksJson: string) => Promise<boolean>;
 }
 
 export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResult => {
-  const { refreshSharedDeckTemplate, setSharedRanksState, sharedRanks } = args;
+  const { refreshSharedDeckTemplate, setSharedRanksState, sharedRanks, saveTemplateToPostgres } = args;
   const api = createBrowserApiClient(SERVER_URL);
 
   const rollbackTemplate = useCallback((json: string) => {
@@ -59,9 +61,18 @@ export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResul
   const applyTemplateChange = useCallback(async (mutate: () => void, previousJson = exportSharedDeckTemplateJson()) => {
     mutate();
     const ok = await refreshSharedDeckTemplate();
-    if (!ok) rollbackTemplate(previousJson);
+    if (!ok) {
+      rollbackTemplate(previousJson);
+      return false;
+    }
+    // Auto-save to PostgreSQL if available
+    if (saveTemplateToPostgres) {
+      const templateJson = exportSharedDeckTemplateJson();
+      const ranksJson = exportSharedRanksJson();
+      void saveTemplateToPostgres(templateJson, ranksJson);
+    }
     return ok;
-  }, [rollbackTemplate]);
+  }, [rollbackTemplate, saveTemplateToPostgres]);
 
   const onShuffleDeck = useCallback(() => {
     void applyTemplateChange(() => {
@@ -140,8 +151,14 @@ export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResul
     void api.postJson(RANKS_API, { ranks: normalized }, { csrf: 'admin' }).catch(() => {
       rollbackRanks(previousRanks);
     });
+    // Auto-save to PostgreSQL if available
+    if (saveTemplateToPostgres) {
+      const templateJson = exportSharedDeckTemplateJson();
+      const ranksJson = exportSharedRanksJson();
+      void saveTemplateToPostgres(templateJson, ranksJson);
+    }
     return null;
-  }, [sharedRanks, setSharedRanksState, rollbackRanks, api]);
+  }, [sharedRanks, setSharedRanksState, rollbackRanks, api, saveTemplateToPostgres]);
 
   const onSetRanks = useCallback((nextRanks: RankDefinition[]): boolean => {
     const previousRanks = (sharedRanks ?? []).map((rank) => ({ ...rank }));
@@ -151,8 +168,14 @@ export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResul
     void api.postJson(RANKS_API, { ranks: normalized }, { csrf: 'admin' }).catch(() => {
       rollbackRanks(previousRanks);
     });
+    // Auto-save to PostgreSQL if available
+    if (saveTemplateToPostgres) {
+      const templateJson = exportSharedDeckTemplateJson();
+      const ranksJson = exportSharedRanksJson();
+      void saveTemplateToPostgres(templateJson, ranksJson);
+    }
     return true;
-  }, [sharedRanks, setSharedRanksState, rollbackRanks, api]);
+  }, [sharedRanks, setSharedRanksState, rollbackRanks, api, saveTemplateToPostgres]);
 
   const onResetRanks = useCallback(() => {
     const previousRanks = (sharedRanks ?? []).map((rank) => ({ ...rank }));
@@ -162,7 +185,13 @@ export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResul
     void api.postJson(`${RANKS_API}/reset`, {}, { csrf: 'admin' }).catch(() => {
       rollbackRanks(previousRanks);
     });
-  }, [sharedRanks, setSharedRanksState, rollbackRanks, api]);
+    // Auto-save to PostgreSQL if available
+    if (saveTemplateToPostgres) {
+      const templateJson = exportSharedDeckTemplateJson();
+      const ranksJson = exportSharedRanksJson();
+      void saveTemplateToPostgres(templateJson, ranksJson);
+    }
+  }, [sharedRanks, setSharedRanksState, rollbackRanks, api, saveTemplateToPostgres]);
 
   return {
     rollbackTemplate,
@@ -181,5 +210,6 @@ export const useDeckHandlers = (args: UseDeckHandlersArgs): UseDeckHandlersResul
     onImportRanks,
     onSetRanks,
     onResetRanks,
+    saveTemplateToPostgres,
   };
 };
