@@ -36,6 +36,7 @@ import { startServer } from './server-startup';
 import {
   adminDbUiConfigPath,
   allowedFrontendOrigins,
+  appRootDir,
   bugReportUiConfigPath,
   cspConnectSrcExtras,
   cspFontSrc,
@@ -181,6 +182,7 @@ void (async () => {
     loadRanks,
     syncCurrentJsonToPostgres,
     syncJsonToPostgresIncremental,
+    syncAdditionalJsonConfigsToPostgres,
   } = createSharedConfigStore({
     exportSharedDeckTemplateJson,
     exportSharedRanksJson,
@@ -190,7 +192,7 @@ void (async () => {
     resetSharedRanks,
     storageMode: sharedConfigStorageMode,
     databaseUrl,
-  });
+  }, appRootDir);
 
   // Initialize database and services
   const dbServices = await initializeDatabase(
@@ -200,7 +202,8 @@ void (async () => {
       dbMigrationsDir,
       uploadsDir,
       matchDbCutoverMode,
-      sharedConfigStore: { loadTemplate, loadRanks },
+      sharedConfigStore: { loadTemplate, loadRanks, syncAdditionalJsonConfigsToPostgres },
+      appRootDir,
     },
     {
       logLine,

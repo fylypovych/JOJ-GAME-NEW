@@ -1,7 +1,8 @@
 import { createPostgresSharedConfigStore } from './postgres';
-import type { SharedConfigStore, SharedConfigStoreDeps } from './types';
+import type { SharedConfigStore, SharedConfigStoreDeps, SyncAdditionalConfigsResult } from './types';
+import path from 'node:path';
 
-export const createSharedConfigStore = (deps: SharedConfigStoreDeps): SharedConfigStore => {
+export const createSharedConfigStore = (deps: SharedConfigStoreDeps, appRootDir?: string): SharedConfigStore => {
   const storageMode = deps.storageMode ?? 'postgres';
   const databaseUrl = deps.databaseUrl ?? '';
 
@@ -45,9 +46,14 @@ export const createSharedConfigStore = (deps: SharedConfigStoreDeps): SharedConf
     loadRanksFromDisk: async () => {
       await postgresStore.loadRanksFromPostgres();
     },
-    syncCurrentJsonToPostgres: postgresStore.syncCurrentJsonToPostgres,
+    syncCurrentJsonToPostgres: async (draft?) => {
+      await postgresStore.syncCurrentJsonToPostgres(draft, appRootDir);
+    },
     syncJsonToPostgresIncremental: postgresStore.syncJsonToPostgresIncremental,
+    syncAdditionalJsonConfigsToPostgres: async (targetUrl: string, rootDir?: string) => {
+      return postgresStore.syncAdditionalJsonConfigsToPostgres(targetUrl, rootDir || appRootDir);
+    },
   };
 };
 
-export type { SharedConfigStore, SharedConfigStoreDeps } from './types';
+export type { SharedConfigStore, SharedConfigStoreDeps, SyncAdditionalConfigsResult } from './types';

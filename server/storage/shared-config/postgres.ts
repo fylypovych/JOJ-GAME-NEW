@@ -1,6 +1,9 @@
 import type { PostgresConnDraft } from '../../db/psql';
 import { buildPostgresUrlFromDraft, runPsqlSql } from '../../db/psql';
 import type { SharedConfigCoreDeps } from './types';
+import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 
 type DeckTemplateShape = {
   kind?: string;
@@ -18,6 +21,42 @@ const sqlString = (value: string) => `'${value.replace(/'/g, "''")}'`;
 const sqlNullableString = (value?: string | null) => (value ? sqlString(value) : 'NULL');
 const sqlJson = (value: unknown) => `${sqlString(JSON.stringify(value))}::jsonb`;
 const ensureArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
+
+// JSON config file paths (relative to app root)
+const JSON_CONFIG_PATHS = {
+  gameUi: 'database/game-ui-config.json',
+  bugReport: 'database/bug-report-ui-config.json',
+  simulationBaselines: 'database/simulation-baselines.json',
+  adminDbUi: 'database/admin-db-ui-config.json',
+};
+
+const readJsonFileSafe = async <T = unknown>(filePath: string): Promise<T | null> => {
+  try {
+    if (!existsSync(filePath)) return null;
+    const content = await readFile(filePath, 'utf-8');
+    return JSON.parse(content) as T;
+  } catch {
+    return null;
+  }
+};
+
+const saveJsonConfigToPostgres = async (
+  targetDatabaseUrl: string,
+  key: string,
+  value: unknown,
+  updatedBy = 'json-config-import',
+): Promise<boolean> => {
+  if (!targetDatabaseUrl || value === null) return false;
+  const sql = `
+INSERT INTO app_settings (key, value, updated_by)
+VALUES (${sqlString(key)}, ${sqlJson(value)}, ${sqlString(updatedBy)})
+ON CONFLICT (key) DO UPDATE
+SET value = EXCLUDED.value,
+    updated_by = EXCLUDED.updated_by,
+    updated_at = now();`;
+  const result = await runPsqlSql(targetDatabaseUrl, sql);
+  return result.ok;
+};
 
 export const createPostgresSharedConfigStore = (
   deps: SharedConfigCoreDeps & { databaseUrl: string },
@@ -362,11 +401,71 @@ SET value = EXCLUDED.value;`;
     await runPsqlSql(targetUrl, updateHashSql);
   };
 
-  const syncCurrentJsonToPostgres = async (draft?: PostgresConnDraft) => {
+  const syncAdditionalJsonConfigsToPostgres = async (targetUrl: string, appRootDir?: string) => {
+    const rootDir = appRootDir || process.cwd();
+    const results: Record<string, boolean> = {};
+
+    // Import game-ui-config.json
+    const gameUiPath = path.resolve(rootDir, JSON_CONFIG_PATHS.gameUi);
+    const gameUiData = await readJsonFileSafe(gameUiPath);
+    if (gameUiData) {
+      results.game_ui_config = await saveJsonConfigToPostgres(
+        targetUrl,
+        'game_ui_config',
+        gameUiData,
+        'json-config-import-game-ui',
+      );
+    }
+
+    // Import bug-report-ui-config.json
+    const bugReportPath = path.resolve(rootDir, JSON_CONFIG_PATHS.bugReport);
+    const bugReportData = await readJsonFileSafe(bugReportPath);
+    if (bugReportData) {
+      results.bug_report_ui_config = await saveJsonConfigToPostgres(
+        targetUrl,
+        'bug_report_ui_config',
+        bugReportData,
+        'json-config-import-bug-report',
+      );
+    }
+
+    // Import simulation-baselines.json
+    const simulationPath = path.resolve(rootDir, JSON_CONFIG_PATHS.simulationBaselines);
+    const simulationData = await readJsonFileSafe(simulationPath);
+    if (simulationData) {
+      results.simulation_baselines = await saveJsonConfigToPostgres(
+        targetUrl,
+        'simulation_baselines',
+        simulationData,
+        'json-config-import-simulation',
+      );
+    }
+
+    // Import admin-db-ui-config.json (migrate from file to DB if not already in DB)
+    const adminDbPath = path.resolve(rootDir, JSON_CONFIG_PATHS.adminDbUi);
+    const adminDbData = await readJsonFileSafe(adminDbPath);
+    if (adminDbData) {
+      // Only import if it has dbConfig (meaning it's a valid config)
+      if (adminDbData.dbConfig) {
+        results.admin_db_ui_config = await saveJsonConfigToPostgres(
+          targetUrl,
+          'admin_db_ui_config',
+          adminDbData,
+          'json-config-import-admin-db',
+        );
+      }
+    }
+
+    return results;
+  };
+
+  const syncCurrentJsonToPostgres = async (draft?: PostgresConnDraft, appRootDir?: string) => {
     const targetUrl = draft ? buildPostgresUrlFromDraft(draft) : deps.databaseUrl;
     if (!targetUrl) throw new Error('PostgreSQL connection is not configured');
     await saveTemplateToPostgresWithUrl(targetUrl);
     await saveRanksToPostgresWithUrl(targetUrl);
+    // Also sync additional JSON configs
+    await syncAdditionalJsonConfigsToPostgres(targetUrl, appRootDir);
   };
 
   return {

@@ -18,7 +18,9 @@ export interface DatabaseConfig {
   sharedConfigStore?: {
     loadTemplate: () => Promise<void>;
     loadRanks: () => Promise<void>;
+    syncAdditionalJsonConfigsToPostgres?: (targetUrl: string) => Promise<Record<string, boolean>>;
   };
+  appRootDir?: string;
 }
 
 export interface DatabaseServices {
@@ -128,6 +130,21 @@ export const initializeDatabase = async (
       await logLine('INFO', 'shared deck template loaded from postgres');
       await sharedConfigStore.loadRanks();
       await logLine('INFO', 'shared ranks loaded from postgres');
+
+      // Auto-import additional JSON configs if they exist and not already in DB
+      if (sharedConfigStore.syncAdditionalJsonConfigsToPostgres) {
+        try {
+          const importResults = await sharedConfigStore.syncAdditionalJsonConfigsToPostgres(databaseUrl);
+          const importedKeys = Object.entries(importResults)
+            .filter(([, success]) => success)
+            .map(([key]) => key);
+          if (importedKeys.length > 0) {
+            await logLine('INFO', `auto-imported JSON configs to postgres: ${importedKeys.join(', ')}`);
+          }
+        } catch (importError) {
+          await logLine('WARN', `auto-import of JSON configs failed (non-critical): ${String(importError instanceof Error ? importError.message : importError)}`);
+        }
+      }
     }
 
     await matchRuntimeSync.syncMatchStateMirror();
