@@ -1,6 +1,5 @@
 import { createPostgresSharedConfigStore } from './postgres';
-import type { SharedConfigStore, SharedConfigStoreDeps, SyncAdditionalConfigsResult } from './types';
-import path from 'node:path';
+import type { SharedConfigStore, SharedConfigStoreDeps } from './types';
 
 export const createSharedConfigStore = (deps: SharedConfigStoreDeps, appRootDir?: string): SharedConfigStore => {
   const storageMode = deps.storageMode ?? 'postgres';
@@ -57,3 +56,4 @@ export const createSharedConfigStore = (deps: SharedConfigStoreDeps, appRootDir?
 };
 
 export type { SharedConfigStore, SharedConfigStoreDeps, SyncAdditionalConfigsResult } from './types';
+// Re-export SyncAdditionalConfigsResult for consumers that need it

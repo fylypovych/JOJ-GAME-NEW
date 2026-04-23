@@ -446,7 +446,7 @@ SET value = EXCLUDED.value;`;
     const adminDbData = await readJsonFileSafe(adminDbPath);
     if (adminDbData) {
       // Only import if it has dbConfig (meaning it's a valid config)
-      if (adminDbData.dbConfig) {
+      if (typeof adminDbData === 'object' && adminDbData !== null && 'dbConfig' in adminDbData) {
         results.admin_db_ui_config = await saveJsonConfigToPostgres(
           targetUrl,
           'admin_db_ui_config',
@@ -475,5 +475,6 @@ SET value = EXCLUDED.value;`;
     loadRanksFromPostgres,
     syncCurrentJsonToPostgres,
     syncJsonToPostgresIncremental,
+    syncAdditionalJsonConfigsToPostgres,
   };
 };
