@@ -368,7 +368,7 @@
 
 .game-ui-layout-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.95fr) minmax(210px, 0.72fr);
+  grid-template-columns: minmax(0, 1fr) 15%;
   gap: 14px;
 }
 
@@ -380,7 +380,7 @@
 }
 
 .game-ui-layout-side {
-  max-width: 15%;
+  /* Width controlled by parent grid: 15% */
 }
 
 .game-ui-layout-command {

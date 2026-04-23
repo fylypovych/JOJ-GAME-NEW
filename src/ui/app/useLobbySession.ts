@@ -195,6 +195,29 @@ export const useLobbySession = (args: {
       setError(enterNameText);
       return;
     }
+    // Check if player is already in this match (recovery after re-login/crash)
+    const existingPlayer = match.players.find((player) => player.name?.trim() === name);
+    if (existingPlayer && joinOwnedSession) {
+      setLoading(true);
+      setError('');
+      try {
+        const nextSession = await joinOwnedSession({
+          matchID: match.matchID,
+          playerID: String(existingPlayer.id),
+          playerName: name,
+        });
+        setSession(nextSession);
+        window.localStorage.setItem(sessionStorageKey, JSON.stringify(nextSession));
+        await onSessionEstablished?.(nextSession, name);
+        await refreshMatches();
+      } catch (nextError) {
+        const message = String(nextError instanceof Error ? nextError.message : nextError).trim();
+        setError(message || joinFailedText);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     const freePlayer = match.players.find((player) => !player.name);
     if (!freePlayer) {
       setError(roomFullText);
