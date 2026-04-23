@@ -759,10 +759,8 @@ WHERE r.is_active = true;`);
       ctx.body = {
         ok: true,
         message: newlyAppliedMigrations.length > 0
-          ? `Successfully applied ${newlyAppliedMigrations.length} new migrations`
-          : skippedMigrations.length > 0
-            ? `All ${skippedMigrations.length} migrations already applied`
-            : 'No migrations to apply',
+          ? `Successfully applied ${newlyAppliedMigrations.length} new migration${newlyAppliedMigrations.length === 1 ? '' : 's'}`
+          : 'No new migrations to apply',
         newlyAppliedMigrations,
         skippedMigrations,
       };

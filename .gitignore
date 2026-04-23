@@ -13,3 +13,8 @@ pnpm-debug.log*
 /.continue
 /.claude
 /.vscode
+
+# Runtime data (not for git)
+database/matches/
+*.log
+/tmp
