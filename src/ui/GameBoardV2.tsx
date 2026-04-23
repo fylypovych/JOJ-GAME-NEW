@@ -608,7 +608,7 @@ export const GameBoardV2 = ({
       </section>
       ) : null}
 
-      <div className="game-ui-v2-grid game-ui-layout-grid">
+      <div className="game-ui-layout-grid">
         <div className="game-ui-v2-main game-ui-layout-main">
           {isSpectator && spectatorView === 'summary' ? (
             <section className="game-ui-v2-panel game-ui-layout-panel game-ui-v2-command game-ui-layout-command">

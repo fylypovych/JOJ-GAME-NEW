@@ -3,6 +3,7 @@
   "version": "0.0.3.61",
   "private": true,
   "type": "module",
+  "preferGlobal": true,
   "scripts": {
     "prebuild": "node scripts/sync-version-from-commit.cjs --no-stage",
     "dev": "vite",
@@ -33,7 +34,11 @@
     "set:version": "node scripts/sync-version-from-commit.cjs",
     "check:version-sync": "node scripts/check-version-sync.cjs",
     "seed:shared-config": "node scripts/seed-shared-config-to-db.cjs",
-    "migrate:images": "tsx scripts/migrate-images.ts"
+    "migrate:images": "tsx scripts/migrate-images.ts",
+    "joj": "node scripts/joj-cli.js"
+  },
+  "bin": {
+    "joj": "./scripts/joj-cli.js"
   },
   "dependencies": {
     "boardgame.io": "^0.50.2",

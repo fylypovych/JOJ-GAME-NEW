@@ -2,11 +2,30 @@ import { ui } from './i18n-data-ui';
 export { ui };
 
 export const ranksById = {
-  cadet: { uk: 'Кадет', en: 'Cadet' },
+  // Soldier ranks (3)
+  recruit: { uk: 'Рекрут', en: 'Recruit' },
+  soldier: { uk: 'Солдат', en: 'Soldier' },
+  senior_soldier: { uk: 'Старший солдат', en: 'Senior Soldier' },
+  // Sergeant ranks (9)
+  junior_sergeant: { uk: 'Молодший сержант', en: 'Junior Sergeant' },
+  sergeant: { uk: 'Сержант', en: 'Sergeant' },
+  senior_sergeant: { uk: 'Старший сержант', en: 'Senior Sergeant' },
+  chief_sergeant: { uk: 'Головний сержант', en: 'Chief Sergeant' },
+  staff_sergeant: { uk: 'Штаб-сержант', en: 'Staff Sergeant' },
+  master_sergeant: { uk: 'Майстер-сержант', en: 'Master Sergeant' },
+  senior_master_sergeant: { uk: 'Старший майстер-сержант', en: 'Senior Master Sergeant' },
+  chief_master_sergeant: { uk: 'Головний майстер-сержант', en: 'Chief Master Sergeant' },
+  // Officer ranks (10)
+  junior_lieutenant: { uk: 'Молодший лейтенант', en: 'Junior Lieutenant' },
   lieutenant: { uk: 'Лейтенант', en: 'Lieutenant' },
+  senior_lieutenant: { uk: 'Старший лейтенант', en: 'Senior Lieutenant' },
   captain: { uk: 'Капітан', en: 'Captain' },
   major: { uk: 'Майор', en: 'Major' },
+  lieutenant_colonel: { uk: 'Підполковник', en: 'Lieutenant Colonel' },
   colonel: { uk: 'Полковник', en: 'Colonel' },
+  brigadier_general: { uk: 'Бригадний генерал', en: 'Brigadier General' },
+  major_general: { uk: 'Генерал-майор', en: 'Major General' },
+  lieutenant_general: { uk: 'Генерал-лейтенант', en: 'Lieutenant General' },
   general: { uk: 'Генерал', en: 'General' },
 } as const;
 
