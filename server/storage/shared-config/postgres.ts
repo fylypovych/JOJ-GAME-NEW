@@ -175,7 +175,6 @@ COMMIT;`;
     const parsedPayload = JSON.parse(templatePayload) as { deck?: unknown[]; legendaryDeck?: unknown[]; catalog?: unknown[] };
     const deck = Array.isArray(parsedPayload.deck) ? parsedPayload.deck : [];
     const legendaryDeck = Array.isArray(parsedPayload.legendaryDeck) ? parsedPayload.legendaryDeck : [];
-    const catalog = Array.isArray(parsedPayload.catalog) ? parsedPayload.catalog : [];
     const rows: string[] = [];
 
     // Build card_catalog rows from all cards
