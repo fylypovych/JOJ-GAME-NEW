@@ -18,6 +18,13 @@ type AdminAward = {
   sortOrder: number;
 };
 
+type RuntimeDbInfo = {
+  database: string;
+  user: string;
+  serverAddr: string | null;
+  serverPort: number | null;
+};
+
 const createAdminAwardsErrors = (lang: Language) => ({
   loadAwards: lang === 'uk' ? 'Не вдалося завантажити нагороди' : 'Failed to load awards',
   saveAward: lang === 'uk' ? 'Не вдалося зберегти нагороду' : 'Failed to save award',
@@ -34,6 +41,7 @@ export const useAdminAwards = (args: {
   const [adminAwards, setAdminAwards] = useState<AdminAward[]>([]);
   const [adminAwardsLoading, setAdminAwardsLoading] = useState(false);
   const [adminAwardsError, setAdminAwardsError] = useState('');
+  const [adminAwardsRuntimeDb, setAdminAwardsRuntimeDb] = useState<RuntimeDbInfo | null>(null);
   const [selectedAdminAwardId, setSelectedAdminAwardId] = useState('');
   const [adminAwardDraft, setAdminAwardDraft] = useState({
     id: '',
@@ -55,9 +63,10 @@ export const useAdminAwards = (args: {
     setAdminAwardsError('');
     try {
       const response = await adminJsonFetch(`${serverUrl}/api/admin/awards`);
-      const payload = (await response.json()) as { ok?: boolean; error?: string; awards?: AdminAward[] };
+      const payload = (await response.json()) as { ok?: boolean; error?: string; awards?: AdminAward[]; runtimeDb?: RuntimeDbInfo };
       if (!response.ok || !payload.ok) throw new Error(payload.error || errors.loadAwards);
       setAdminAwards(payload.awards ?? []);
+      setAdminAwardsRuntimeDb(payload.runtimeDb ?? null);
     } catch (error) {
       setAdminAwardsError(String(error instanceof Error ? error.message : error));
     } finally {
@@ -159,6 +168,7 @@ export const useAdminAwards = (args: {
     adminAwards,
     adminAwardsLoading,
     adminAwardsError,
+    adminAwardsRuntimeDb,
     selectedAdminAwardId,
     adminAwardDraft,
     setAdminAwardDraft,

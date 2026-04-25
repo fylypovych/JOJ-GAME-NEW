@@ -30,6 +30,7 @@ export type SharedConfigStore = {
   syncCurrentJsonToPostgres: (draft?: PostgresConnDraft, appRootDir?: string) => Promise<void>;
   syncJsonToPostgresIncremental: (draft?: PostgresConnDraft, jsonPayload?: string) => Promise<void>;
   syncAdditionalJsonConfigsToPostgres?: (targetUrl: string, appRootDir?: string) => Promise<SyncAdditionalConfigsResult>;
+  syncAdditionalPostgresConfigsToJson?: (targetUrl: string, appRootDir?: string) => Promise<SyncAdditionalConfigsResult>;
 };
 
 export type SharedConfigCoreDeps = Pick<

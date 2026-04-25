@@ -65,6 +65,22 @@ export const createUserStore = (pool: Pool) => {
     }
   };
 
+  const getRuntimeDatabaseInfo = async () => {
+    const result = await pool.query<{
+      database: string;
+      user: string;
+      serverAddr: string | null;
+      serverPort: number | null;
+    }>(`
+      SELECT
+        current_database() AS database,
+        current_user AS "user",
+        inet_server_addr()::text AS "serverAddr",
+        inet_server_port() AS "serverPort"
+    `);
+    return result.rows[0] ?? { database: '', user: '', serverAddr: null, serverPort: null };
+  };
+
   const authStore = createUserAuthStore({ pool, withTransaction });
   const {
     getUserById,
@@ -136,6 +152,7 @@ export const createUserStore = (pool: Pool) => {
 
   return {
     ensureSchema,
+    getRuntimeDatabaseInfo,
     withTransaction,
     createUser,
     authenticateUser,

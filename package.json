@@ -34,6 +34,7 @@
     "set:version": "node scripts/sync-version-from-commit.cjs",
     "check:version-sync": "node scripts/check-version-sync.cjs",
     "seed:shared-config": "node scripts/seed-shared-config-to-db.cjs",
+    "fix:storage-mode-postgres": "tsx scripts/fix-storage-mode-postgres.ts",
     "migrate:images": "tsx scripts/migrate-images.ts",
     "joj": "node scripts/joj-cli.mjs"
   },

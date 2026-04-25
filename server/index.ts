@@ -183,6 +183,7 @@ void (async () => {
     syncCurrentJsonToPostgres,
     syncJsonToPostgresIncremental,
     syncAdditionalJsonConfigsToPostgres,
+    syncAdditionalPostgresConfigsToJson,
   } = createSharedConfigStore({
     exportSharedDeckTemplateJson,
     exportSharedRanksJson,
@@ -202,7 +203,7 @@ void (async () => {
       dbMigrationsDir,
       uploadsDir,
       matchDbCutoverMode,
-      sharedConfigStore: { loadTemplate, loadRanks, syncAdditionalJsonConfigsToPostgres },
+      sharedConfigStore: { loadTemplate, loadRanks, syncAdditionalJsonConfigsToPostgres, syncAdditionalPostgresConfigsToJson },
       appRootDir,
     },
     {
@@ -287,6 +288,7 @@ void (async () => {
           syncJsonToPostgresIncremental,
           saveRanks,
           saveTemplate,
+          syncAdditionalPostgresConfigsToJson: () => syncAdditionalPostgresConfigsToJson?.(databaseUrl, appRootDir) ?? Promise.resolve({}),
         },
         gameAdapter: {
           exportSharedDeckTemplateJson,

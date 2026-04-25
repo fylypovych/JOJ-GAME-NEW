@@ -34,6 +34,7 @@ export const AdminAwardsTab = ({
   awards,
   loading,
   error,
+  runtimeDbInfo,
   selectedAwardId,
   onSelectAwardId,
   draft,
@@ -46,6 +47,7 @@ export const AdminAwardsTab = ({
   awards: AwardDefinition[];
   loading: boolean;
   error: string;
+  runtimeDbInfo: { database: string; user: string; serverAddr: string | null; serverPort: number | null } | null;
   selectedAwardId: string;
   onSelectAwardId: (value: string) => void;
   draft: {
@@ -83,6 +85,11 @@ export const AdminAwardsTab = ({
   <>
     <h3>{t.adminAwardsTitle}</h3>
     <p>{t.adminAwardsHint}</p>
+    {runtimeDbInfo ? (
+      <p className="admin-muted">
+        DB: {runtimeDbInfo.database} @ {runtimeDbInfo.serverAddr ?? 'unknown'}:{runtimeDbInfo.serverPort ?? '?'} ({runtimeDbInfo.user})
+      </p>
+    ) : null}
     {error ? <p className="admin-error">{error}</p> : null}
     <div className="lobby-layout">
       <div className="lobby-col">

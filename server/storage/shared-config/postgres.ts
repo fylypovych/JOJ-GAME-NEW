@@ -1,7 +1,7 @@
 import type { PostgresConnDraft } from '../../db/psql';
 import { buildPostgresUrlFromDraft, runPsqlSql } from '../../db/psql';
 import type { SharedConfigCoreDeps } from './types';
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
@@ -56,6 +56,62 @@ SET value = EXCLUDED.value,
     updated_at = now();`;
   const result = await runPsqlSql(targetDatabaseUrl, sql);
   return result.ok;
+};
+
+const writeJsonFileSafe = async (filePath: string, value: unknown): Promise<boolean> => {
+  try {
+    await mkdir(path.dirname(filePath), { recursive: true });
+    await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const appSettingExists = async (targetDatabaseUrl: string, key: string): Promise<boolean> => {
+  if (!targetDatabaseUrl) return false;
+  const sql = `
+SELECT EXISTS (
+  SELECT 1
+  FROM app_settings
+  WHERE key = ${sqlString(key)}
+)::text;`;
+  const result = await runPsqlSql(targetDatabaseUrl, sql);
+  if (!result.ok) return false;
+  return result.stdout.trim().toLowerCase() === 'true';
+};
+
+const loadJsonConfigFromPostgres = async <T = unknown>(
+  targetDatabaseUrl: string,
+  key: string,
+): Promise<T | null> => {
+  if (!targetDatabaseUrl) return null;
+  const sql = `
+SELECT COALESCE(value::text, '')
+FROM app_settings
+WHERE key = ${sqlString(key)}
+LIMIT 1;`;
+  const result = await runPsqlSql(targetDatabaseUrl, sql);
+  if (!result.ok) return null;
+  const raw = result.stdout.trim();
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+};
+
+const saveJsonConfigToPostgresIfMissing = async (
+  targetDatabaseUrl: string,
+  key: string,
+  value: unknown,
+  updatedBy = 'json-config-import',
+): Promise<boolean> => {
+  if (!targetDatabaseUrl || value === null) return false;
+  const exists = await appSettingExists(targetDatabaseUrl, key);
+  if (exists) return false;
+  return saveJsonConfigToPostgres(targetDatabaseUrl, key, value, updatedBy);
 };
 
 export const createPostgresSharedConfigStore = (
@@ -172,14 +228,26 @@ COMMIT;`;
   const saveTemplateToPostgresIncremental = async (targetDatabaseUrl: string, jsonPayload?: string) => {
     if (!targetDatabaseUrl) throw new Error('DATABASE_URL is required for postgres sync');
     const templatePayload = jsonPayload ?? exportSharedDeckTemplateJson();
-    const parsedPayload = JSON.parse(templatePayload) as { deck?: unknown[]; legendaryDeck?: unknown[]; catalog?: unknown[] };
+    const parsedPayload = JSON.parse(templatePayload) as Partial<DeckTemplateShape>;
     const deck = Array.isArray(parsedPayload.deck) ? parsedPayload.deck : [];
     const legendaryDeck = Array.isArray(parsedPayload.legendaryDeck) ? parsedPayload.legendaryDeck : [];
+    const rankTrack = Array.isArray(parsedPayload.rankTrack) ? parsedPayload.rankTrack : [];
+    const catalog = ensureArray(parsedPayload.catalog ?? getCardCatalog());
+    const payload: DeckTemplateShape = {
+      kind: typeof parsedPayload.kind === 'string' ? parsedPayload.kind : undefined,
+      version: typeof parsedPayload.version === 'number' ? parsedPayload.version : undefined,
+      catalog,
+      deck,
+      legendaryDeck,
+      rankTrack,
+      deckBackImage: typeof parsedPayload.deckBackImage === 'string' ? parsedPayload.deckBackImage : undefined,
+      modules: ensureArray(parsedPayload.modules),
+      gameSetup: parsedPayload.gameSetup,
+    };
     const rows: string[] = [];
 
-    // Build card_catalog rows from all cards
-    const allCards = [...deck, ...legendaryDeck];
-    const cardCatalogRows = allCards.map((card) => {
+    // Build card_catalog rows from the exported catalog mirror.
+    const cardCatalogRows = catalog.map((card) => {
       const cardObj = (card && typeof card === 'object') ? (card as Record<string, unknown>) : {};
       const cardId = typeof cardObj.id === 'string' ? cardObj.id : '';
       if (!cardId) return '';
@@ -222,12 +290,38 @@ COMMIT;`;
         ${sqlJson(row)}
       )`);
     });
+    rankTrack.forEach((card, index) => {
+      const row = (card && typeof card === 'object') ? (card as Record<string, unknown>) : {};
+      const id = typeof row.id === 'string' ? row.id : `rank-track-${index}`;
+      rows.push(`(
+        (SELECT id FROM deck_templates WHERE template_key='shared-default' LIMIT 1),
+        'rankTrack',
+        ${sqlString(id)},
+        ${index},
+        ${sqlJson(row)}
+      )`);
+    });
 
     const sql = `
 BEGIN;
-INSERT INTO deck_templates (template_key, title, payload, is_active)
-VALUES ('shared-default', 'Shared Deck Template', ${sqlJson(parsedPayload)}, true)
-ON CONFLICT (template_key) DO NOTHING;
+INSERT INTO app_settings (key, value, updated_by)
+VALUES ('shared_deck_template', ${sqlJson(payload)}, 'shared-config-postgres-incremental')
+ON CONFLICT (key) DO UPDATE
+SET value = EXCLUDED.value,
+    updated_by = EXCLUDED.updated_by,
+    updated_at = now();
+INSERT INTO deck_templates (template_key, title, deck_back_image_path, payload, is_active)
+VALUES ('shared-default', 'Shared Deck Template', ${sqlNullableString(payload.deckBackImage)}, ${sqlJson(payload)}, true)
+ON CONFLICT (template_key) DO UPDATE
+SET title = EXCLUDED.title,
+    deck_back_image_path = EXCLUDED.deck_back_image_path,
+    payload = EXCLUDED.payload,
+    is_active = true,
+    updated_at = now();
+UPDATE deck_templates SET is_active = false WHERE template_key <> 'shared-default' AND is_active = true;
+DELETE FROM deck_template_entries
+WHERE deck_template_id = (SELECT id FROM deck_templates WHERE template_key='shared-default' LIMIT 1)
+  AND deck_target IN ('deck', 'legendaryDeck', 'rankTrack');
 ${cardCatalogRows.length > 0 ? `
 INSERT INTO card_catalog (id, title, category, image_path, flavor, effects, tags, metadata)
 VALUES ${cardCatalogRows.join(',\n')}
@@ -243,7 +337,10 @@ SET title = EXCLUDED.title,
 ${rows.length > 0 ? `
 INSERT INTO deck_template_entries (deck_template_id, deck_target, card_id, sort_index, card_snapshot)
 VALUES ${rows.join(',\n')}
-ON CONFLICT (deck_template_id, deck_target, sort_index) DO NOTHING;` : ''}
+ON CONFLICT (deck_template_id, deck_target, sort_index) DO UPDATE
+SET card_id = EXCLUDED.card_id,
+    card_snapshot = EXCLUDED.card_snapshot,
+    updated_at = now();` : ''}
 COMMIT;`;
 
     const result = await runPsqlSql(targetDatabaseUrl, sql);
@@ -346,15 +443,36 @@ COMMIT;`;
 
     const sql = `
 BEGIN;
+INSERT INTO app_settings (key, value, updated_by)
+VALUES ('shared_ranks', ${sqlJson(parsedPayload)}, 'shared-config-postgres-incremental')
+ON CONFLICT (key) DO UPDATE
+SET value = EXCLUDED.value,
+    updated_by = EXCLUDED.updated_by,
+    updated_at = now();
 INSERT INTO rank_sets (rank_set_key, title, payload, is_active)
 VALUES ('shared-default', 'Shared Ranks', ${sqlJson(parsedPayload)}, true)
-ON CONFLICT (rank_set_key) DO NOTHING;
+ON CONFLICT (rank_set_key) DO UPDATE
+SET title = EXCLUDED.title,
+    payload = EXCLUDED.payload,
+    is_active = true,
+    updated_at = now();
+UPDATE rank_sets SET is_active = false WHERE rank_set_key <> 'shared-default' AND is_active = true;
+DELETE FROM rank_definitions
+WHERE rank_set_id = (SELECT id FROM rank_sets WHERE rank_set_key='shared-default' LIMIT 1);
 ${rows.length > 0 ? `
 INSERT INTO rank_definitions (
   rank_set_id, rank_code, display_name, sort_order, requirements, promotion_cost, bonus, image_path, metadata
 )
 VALUES ${rows.join(',\n')}
-ON CONFLICT (rank_set_id, rank_code) DO NOTHING;` : ''}
+ON CONFLICT (rank_set_id, rank_code) DO UPDATE
+SET display_name = EXCLUDED.display_name,
+    sort_order = EXCLUDED.sort_order,
+    requirements = EXCLUDED.requirements,
+    promotion_cost = EXCLUDED.promotion_cost,
+    bonus = EXCLUDED.bonus,
+    image_path = EXCLUDED.image_path,
+    metadata = EXCLUDED.metadata,
+    updated_at = now();` : ''}
 COMMIT;`;
 
     const result = await runPsqlSql(targetDatabaseUrl, sql);
@@ -445,7 +563,7 @@ SET value = EXCLUDED.value;`;
     const gameUiPath = path.resolve(rootDir, JSON_CONFIG_PATHS.gameUi);
     const gameUiData = await readJsonFileSafe(gameUiPath);
     if (gameUiData) {
-      results.game_ui_config = await saveJsonConfigToPostgres(
+      results.game_ui_config = await saveJsonConfigToPostgresIfMissing(
         targetUrl,
         'game_ui_config',
         gameUiData,
@@ -457,7 +575,7 @@ SET value = EXCLUDED.value;`;
     const bugReportPath = path.resolve(rootDir, JSON_CONFIG_PATHS.bugReport);
     const bugReportData = await readJsonFileSafe(bugReportPath);
     if (bugReportData) {
-      results.bug_report_ui_config = await saveJsonConfigToPostgres(
+      results.bug_report_ui_config = await saveJsonConfigToPostgresIfMissing(
         targetUrl,
         'bug_report_ui_config',
         bugReportData,
@@ -469,7 +587,7 @@ SET value = EXCLUDED.value;`;
     const simulationPath = path.resolve(rootDir, JSON_CONFIG_PATHS.simulationBaselines);
     const simulationData = await readJsonFileSafe(simulationPath);
     if (simulationData) {
-      results.simulation_baselines = await saveJsonConfigToPostgres(
+      results.simulation_baselines = await saveJsonConfigToPostgresIfMissing(
         targetUrl,
         'simulation_baselines',
         simulationData,
@@ -483,13 +601,44 @@ SET value = EXCLUDED.value;`;
     if (adminDbData) {
       // Only import if it has dbConfig (meaning it's a valid config)
       if (typeof adminDbData === 'object' && adminDbData !== null && 'dbConfig' in adminDbData) {
-        results.admin_db_ui_config = await saveJsonConfigToPostgres(
+        results.admin_db_ui_config = await saveJsonConfigToPostgresIfMissing(
           targetUrl,
           'admin_db_ui_config',
           adminDbData,
           'json-config-import-admin-db',
         );
       }
+    }
+
+    return results;
+  };
+
+  const syncAdditionalPostgresConfigsToJson = async (targetUrl: string, appRootDir?: string) => {
+    const rootDir = appRootDir || process.cwd();
+    const results: Record<string, boolean> = {};
+
+    const gameUiData = await loadJsonConfigFromPostgres(targetUrl, 'game_ui_config');
+    if (gameUiData !== null) {
+      const gameUiPath = path.resolve(rootDir, JSON_CONFIG_PATHS.gameUi);
+      results.game_ui_config = await writeJsonFileSafe(gameUiPath, gameUiData);
+    }
+
+    const bugReportData = await loadJsonConfigFromPostgres(targetUrl, 'bug_report_ui_config');
+    if (bugReportData !== null) {
+      const bugReportPath = path.resolve(rootDir, JSON_CONFIG_PATHS.bugReport);
+      results.bug_report_ui_config = await writeJsonFileSafe(bugReportPath, bugReportData);
+    }
+
+    const simulationData = await loadJsonConfigFromPostgres(targetUrl, 'simulation_baselines');
+    if (simulationData !== null) {
+      const simulationPath = path.resolve(rootDir, JSON_CONFIG_PATHS.simulationBaselines);
+      results.simulation_baselines = await writeJsonFileSafe(simulationPath, simulationData);
+    }
+
+    const adminDbData = await loadJsonConfigFromPostgres(targetUrl, 'admin_db_ui_config');
+    if (adminDbData !== null) {
+      const adminDbPath = path.resolve(rootDir, JSON_CONFIG_PATHS.adminDbUi);
+      results.admin_db_ui_config = await writeJsonFileSafe(adminDbPath, adminDbData);
     }
 
     return results;
@@ -512,5 +661,6 @@ SET value = EXCLUDED.value;`;
     syncCurrentJsonToPostgres,
     syncJsonToPostgresIncremental,
     syncAdditionalJsonConfigsToPostgres,
+    syncAdditionalPostgresConfigsToJson,
   };
 };

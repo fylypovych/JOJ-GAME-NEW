@@ -31,7 +31,14 @@ export const registerAdminAwardsRoutes = ({
       routeError(ctx, 503, 'User module is unavailable.');
       return;
     }
-    routeOk(ctx, { awards: await userStore.listAwardDefinitions() });
+    const runtimeDb = await userStore.getRuntimeDatabaseInfo();
+    let awards = await userStore.listAwardDefinitions();
+    if (awards.length === 0) {
+      // Self-heal: in case startup seeding was skipped, force ensure and reload.
+      await userStore.ensureSchema();
+      awards = await userStore.listAwardDefinitions();
+    }
+    routeOk(ctx, { awards, runtimeDb });
   });
 
   router.post('/api/admin/awards/save', async (ctx) => {

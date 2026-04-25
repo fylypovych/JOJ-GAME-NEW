@@ -5,6 +5,7 @@ import { createUserStore } from './services/user-store';
 import { createAssetStore } from './services/asset-store';
 import { createMatchStateStore } from './services/match-state-store';
 import { createBugReportStore } from './services/bug-report-store';
+import { ensurePostgresStorageModeSettings } from './services/storage-mode-settings';
 import {
   databaseUrl,
   uploadsDir,
@@ -34,6 +35,7 @@ export const bootstrapDatabase = async (logLine: LogLine): Promise<DbBootstrapRe
   try {
     userPool = createPostgresPool(databaseUrl);
     await runSqlMigrations(userPool, './db/migrations');
+    await ensurePostgresStorageModeSettings(userPool, 'server-postgres-init');
     userStore = createUserStore(userPool);
     await userStore.ensureSchema();
     await userStore.deleteExpiredSessions();

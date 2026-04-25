@@ -295,6 +295,7 @@ export const AdminPage = ({
     adminAwards,
     adminAwardsLoading,
     adminAwardsError,
+    adminAwardsRuntimeDb,
     selectedAdminAwardId,
     adminAwardDraft,
     setAdminAwardDraft,
@@ -1199,6 +1200,7 @@ export const AdminPage = ({
             awards={adminAwards}
             loading={adminAwardsLoading}
             error={adminAwardsError}
+            runtimeDbInfo={adminAwardsRuntimeDb}
             selectedAwardId={selectedAdminAwardId}
             onSelectAwardId={selectAdminAward}
             draft={adminAwardDraft}

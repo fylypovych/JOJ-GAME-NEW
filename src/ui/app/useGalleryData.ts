@@ -41,7 +41,7 @@ export const useGalleryData = (args: UseGalleryDataArgs): UseGalleryDataResult =
     const rankModuleIds = new Set(rankModule?.cardIds ?? []);
     const rankCardIds = new Set([...rankTrackIds, ...rankModuleIds]);
     return [...cardCatalog]
-      .filter((card) => activeIds.has(card.id) || card.category === 'LEGENDARY')
+      .filter((card) => activeIds.has(card.id))
       .filter((card) => {
         if (galleryCategoryFilter === 'RANK') {
           return rankCardIds.has(card.id);

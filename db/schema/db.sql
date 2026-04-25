@@ -404,8 +404,8 @@ CREATE INDEX IF NOT EXISTS idx_persisted_match_participants_match_id ON persiste
 
 INSERT INTO app_settings (key, value, updated_by)
 VALUES
-  ('storage_mode', '{"mode":"file"}'::jsonb, 'bootstrap'),
-  ('storage_backend_capabilities', '{"file":true,"postgres":false,"mysql":false}'::jsonb, 'bootstrap')
+  ('storage_mode', '{"mode":"postgres"}'::jsonb, 'bootstrap'),
+  ('storage_backend_capabilities', '{"file":false,"postgres":true,"mysql":false}'::jsonb, 'bootstrap')
 ON CONFLICT (key) DO NOTHING;
 
 COMMIT;

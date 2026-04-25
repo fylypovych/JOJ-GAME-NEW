@@ -20,6 +20,18 @@ type Args = {
   enabled: boolean;
 };
 
+const extractApiErrorText = (
+  payload: { error?: string; details?: string | { mismatches?: string[] } },
+  fallback: string,
+) => {
+  if (payload.details && typeof payload.details === 'object' && Array.isArray(payload.details.mismatches)) {
+    return payload.details.mismatches.length > 0 ? payload.details.mismatches.join('; ') : fallback;
+  }
+  if (typeof payload.details === 'string' && payload.details.length > 0) return payload.details;
+  if (typeof payload.error === 'string' && payload.error.length > 0) return payload.error;
+  return fallback;
+};
+
 export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) => {
   const api = createAdminDbApiUrls(serverUrl);
   const dbText = dbAdminText(lang);
@@ -246,7 +258,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
       if (!response.ok || !payload.ok) {
-        setDbImportJsonConfigError(payload.details ?? payload.error ?? dbText.importJsonFailed);
+        setDbImportJsonConfigError(extractApiErrorText(payload, dbText.importJsonFailed));
         return;
       }
       setDbImportJsonConfigStatus(payload.message ?? dbText.importJsonOk);
@@ -269,9 +281,9 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(adminDbConfigDraft),
       });
-      const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
+      const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string | { mismatches?: string[] }; message?: string };
       if (!response.ok || !payload.ok) {
-        setDbImportJsonConfigError(payload.details ?? payload.error ?? dbText.importJsonFailed);
+        setDbImportJsonConfigError(extractApiErrorText(payload, dbText.importJsonFailed));
         return;
       }
       setDbImportJsonConfigStatus(payload.message ?? dbText.importJsonOk);
@@ -294,9 +306,9 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(adminDbConfigDraft),
       });
-      const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
+      const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string | { mismatches?: string[] }; message?: string };
       if (!response.ok || !payload.ok) {
-        setDbImportJsonConfigError(payload.details ?? payload.error ?? dbText.importJsonFailed);
+        setDbImportJsonConfigError(extractApiErrorText(payload, dbText.importJsonFailed));
         return;
       }
       setDbImportJsonConfigStatus(payload.message ?? dbText.importJsonOk);
@@ -314,9 +326,9 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...adminDbConfigDraft, templateJson, ranksJson }),
       });
-      const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string; message?: string };
+      const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string | { mismatches?: string[] }; message?: string };
       if (!response.ok || !payload.ok) {
-        console.error('Failed to save template to PostgreSQL:', payload.details ?? payload.error);
+        console.error('Failed to save template to PostgreSQL:', extractApiErrorText(payload, 'sync mismatch'));
         return false;
       }
       return true;
@@ -347,14 +359,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
         message?: string;
       };
       if (!response.ok || !payload.ok) {
-        if (payload.details && typeof payload.details === 'object' && Array.isArray(payload.details.mismatches)) {
-          const mismatchText = payload.details.mismatches.length > 0
-            ? payload.details.mismatches.join('; ')
-            : dbText.syncCheckFailed;
-          setDbCheckSyncError(mismatchText);
-          return;
-        }
-        setDbCheckSyncError((typeof payload.details === 'string' ? payload.details : '') || payload.error || dbText.syncCheckFailed);
+        setDbCheckSyncError(extractApiErrorText(payload, dbText.syncCheckFailed));
         return;
       }
       setDbCheckSyncStatus(payload.message ?? dbText.syncCheckOk);

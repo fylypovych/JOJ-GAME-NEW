@@ -39,7 +39,7 @@ type CmdExecResult = { ok: boolean; stdout: string; stderr: string; error?: stri
 
 type StoredAdminDbUiConfig = {
   storageMode?: 'db';
-  dbConfig?: Partial<DbConnInput>;
+  dbConfig?: Omit<Partial<DbConnInput>, 'password'>;
   updatedAt?: number;
 };
 
@@ -94,9 +94,9 @@ const buildDbConnInputForExecution = async (
   const parsed = parseDbConnInput(body);
   if ('error' in parsed) return parsed;
   if (parsed.password) return parsed;
-  const stored = await loadStoredAdminDbUiConfig(adminDbUiConfigPath, pool);
-  const storedPassword = typeof stored?.dbConfig?.password === 'string' ? stored.dbConfig.password : '';
-  return { ...parsed, password: storedPassword };
+  void adminDbUiConfigPath;
+  void pool;
+  return { ...parsed, password: getDatabaseUrlPasswordFallback() };
 };
 
 const runDbCommand = async (
@@ -154,6 +154,236 @@ const runPsqlScalar = async (conn: DbConnInput, sql: string): Promise<{ ok: true
     .map((line) => line.trim())
     .find((line) => line.length > 0) ?? '';
   return { ok: true, value };
+};
+
+const parseCsvIds = (value: string): string[] => (
+  value
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0)
+);
+
+const readTemplateSectionIds = (
+  payload: unknown,
+  sectionKey: 'deck' | 'legendaryDeck' | 'rankTrack',
+): string[] => {
+  if (!payload || typeof payload !== 'object') return [];
+  const doc = payload as Record<string, unknown>;
+  const sectionRaw = doc[sectionKey];
+  if (Array.isArray(sectionRaw)) {
+    return sectionRaw
+      .map((item) => (item && typeof item === 'object' ? (item as Record<string, unknown>).id : null))
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+  }
+  const legacyIdsKey = `${sectionKey}Ids`;
+  const idsRaw = doc[legacyIdsKey];
+  if (!Array.isArray(idsRaw)) return [];
+  return idsRaw.filter((id): id is string => typeof id === 'string' && id.length > 0);
+};
+
+const readRankIds = (payload: unknown): string[] => {
+  const ranksRaw = Array.isArray(payload)
+    ? payload
+    : (payload && typeof payload === 'object' && Array.isArray((payload as { ranks?: unknown[] }).ranks)
+      ? (payload as { ranks: unknown[] }).ranks
+      : []);
+  return ranksRaw
+    .map((item) => (item && typeof item === 'object' ? (item as Record<string, unknown>).id : null))
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
+};
+
+const compareOrderedIds = (label: string, dbIds: string[], jsonIds: string[], mismatches: string[]) => {
+  if (dbIds.length !== jsonIds.length) {
+    mismatches.push(`${label} id count mismatch: db=${dbIds.length} app_settings=${jsonIds.length}`);
+  }
+  if (dbIds.join('|') !== jsonIds.join('|')) {
+    const dbOnly = dbIds.filter((id) => !jsonIds.includes(id));
+    const jsonOnly = jsonIds.filter((id) => !dbIds.includes(id));
+    const dbOnlyPreview = dbOnly.slice(0, 5).join(', ');
+    const jsonOnlyPreview = jsonOnly.slice(0, 5).join(', ');
+    mismatches.push(
+      `${label} id sequence mismatch` +
+      `${dbOnly.length > 0 ? `; missing in app_settings: [${dbOnlyPreview}${dbOnly.length > 5 ? ', ...' : ''}]` : ''}` +
+      `${jsonOnly.length > 0 ? `; missing in db: [${jsonOnlyPreview}${jsonOnly.length > 5 ? ', ...' : ''}]` : ''}`,
+    );
+  }
+};
+
+type SharedConfigSyncDiagnostics = {
+  ok: boolean;
+  message: string;
+  details: {
+    activeTemplateKey: string;
+    activeRankSetKey: string;
+    dbCounts: {
+      deck: number;
+      legendaryDeck: number;
+      rankTrack: number;
+      rankDefinitions: number;
+    };
+    jsonCounts: null | {
+      deck: number;
+      legendaryDeck: number;
+      rankTrack: number;
+      rankDefinitions: number;
+    };
+    compareJson: boolean;
+    mismatches: string[];
+  };
+};
+
+const collectSharedConfigSyncDiagnostics = async (
+  parsed: DbConnInput,
+  compareJson: boolean,
+): Promise<SharedConfigSyncDiagnostics | { error: string }> => {
+  const mismatches: string[] = [];
+
+  const activeTemplateCountRaw = await runPsqlScalar(parsed, "SELECT count(*) FROM deck_templates WHERE is_active = true;");
+  if (!activeTemplateCountRaw.ok) return { error: `Failed to read active deck template count: ${activeTemplateCountRaw.error}` };
+  const activeRankSetCountRaw = await runPsqlScalar(parsed, "SELECT count(*) FROM rank_sets WHERE is_active = true;");
+  if (!activeRankSetCountRaw.ok) return { error: `Failed to read active rank set count: ${activeRankSetCountRaw.error}` };
+  const templateKeyRaw = await runPsqlScalar(parsed, "SELECT template_key FROM deck_templates WHERE is_active = true ORDER BY updated_at DESC LIMIT 1;");
+  if (!templateKeyRaw.ok) return { error: `Failed to read active template key: ${templateKeyRaw.error}` };
+  const rankSetKeyRaw = await runPsqlScalar(parsed, "SELECT rank_set_key FROM rank_sets WHERE is_active = true ORDER BY updated_at DESC LIMIT 1;");
+  if (!rankSetKeyRaw.ok) return { error: `Failed to read active rank set key: ${rankSetKeyRaw.error}` };
+
+  const dbDeckCountRaw = await runPsqlScalar(parsed, `
+SELECT count(*)
+FROM deck_template_entries e
+JOIN deck_templates t ON t.id = e.deck_template_id
+WHERE t.is_active = true AND e.deck_target = 'deck';`);
+  if (!dbDeckCountRaw.ok) return { error: `Failed to read deck entry count: ${dbDeckCountRaw.error}` };
+  const dbLegendaryCountRaw = await runPsqlScalar(parsed, `
+SELECT count(*)
+FROM deck_template_entries e
+JOIN deck_templates t ON t.id = e.deck_template_id
+WHERE t.is_active = true AND e.deck_target = 'legendaryDeck';`);
+  if (!dbLegendaryCountRaw.ok) return { error: `Failed to read legendaryDeck entry count: ${dbLegendaryCountRaw.error}` };
+  const dbRankTrackCountRaw = await runPsqlScalar(parsed, `
+SELECT count(*)
+FROM deck_template_entries e
+JOIN deck_templates t ON t.id = e.deck_template_id
+WHERE t.is_active = true AND e.deck_target = 'rankTrack';`);
+  if (!dbRankTrackCountRaw.ok) return { error: `Failed to read rankTrack entry count: ${dbRankTrackCountRaw.error}` };
+  const dbRankDefinitionsCountRaw = await runPsqlScalar(parsed, `
+SELECT count(*)
+FROM rank_definitions d
+JOIN rank_sets r ON r.id = d.rank_set_id
+WHERE r.is_active = true;`);
+  if (!dbRankDefinitionsCountRaw.ok) return { error: `Failed to read rank definitions count: ${dbRankDefinitionsCountRaw.error}` };
+
+  const dbDeckIdsRaw = await runPsqlScalar(parsed, `
+SELECT COALESCE(string_agg(COALESCE(e.card_id, ''), ',' ORDER BY e.sort_index), '')
+FROM deck_template_entries e
+JOIN deck_templates t ON t.id = e.deck_template_id
+WHERE t.is_active = true AND e.deck_target = 'deck';`);
+  if (!dbDeckIdsRaw.ok) return { error: `Failed to read deck ids: ${dbDeckIdsRaw.error}` };
+  const dbLegendaryIdsRaw = await runPsqlScalar(parsed, `
+SELECT COALESCE(string_agg(COALESCE(e.card_id, ''), ',' ORDER BY e.sort_index), '')
+FROM deck_template_entries e
+JOIN deck_templates t ON t.id = e.deck_template_id
+WHERE t.is_active = true AND e.deck_target = 'legendaryDeck';`);
+  if (!dbLegendaryIdsRaw.ok) return { error: `Failed to read legendaryDeck ids: ${dbLegendaryIdsRaw.error}` };
+  const dbRankTrackIdsRaw = await runPsqlScalar(parsed, `
+SELECT COALESCE(string_agg(COALESCE(e.card_id, ''), ',' ORDER BY e.sort_index), '')
+FROM deck_template_entries e
+JOIN deck_templates t ON t.id = e.deck_template_id
+WHERE t.is_active = true AND e.deck_target = 'rankTrack';`);
+  if (!dbRankTrackIdsRaw.ok) return { error: `Failed to read rankTrack ids: ${dbRankTrackIdsRaw.error}` };
+  const dbRankIdsRaw = await runPsqlScalar(parsed, `
+SELECT COALESCE(string_agg(d.rank_code, ',' ORDER BY d.sort_order), '')
+FROM rank_definitions d
+JOIN rank_sets r ON r.id = d.rank_set_id
+WHERE r.is_active = true;`);
+  if (!dbRankIdsRaw.ok) return { error: `Failed to read rank ids: ${dbRankIdsRaw.error}` };
+
+  const activeTemplateCount = Number.parseInt(activeTemplateCountRaw.value, 10) || 0;
+  const activeRankSetCount = Number.parseInt(activeRankSetCountRaw.value, 10) || 0;
+  const dbDeckCount = Number.parseInt(dbDeckCountRaw.value, 10) || 0;
+  const dbLegendaryCount = Number.parseInt(dbLegendaryCountRaw.value, 10) || 0;
+  const dbRankTrackCount = Number.parseInt(dbRankTrackCountRaw.value, 10) || 0;
+  const dbRankDefinitionsCount = Number.parseInt(dbRankDefinitionsCountRaw.value, 10) || 0;
+  const templateKey = templateKeyRaw.value;
+  const rankSetKey = rankSetKeyRaw.value;
+
+  if (activeTemplateCount !== 1) {
+    mismatches.push(`Expected exactly 1 active deck template, got ${activeTemplateCount}.`);
+  }
+  if (activeRankSetCount !== 1) {
+    mismatches.push(`Expected exactly 1 active rank set, got ${activeRankSetCount}.`);
+  }
+
+  const dbDeckIds = parseCsvIds(dbDeckIdsRaw.value);
+  const dbLegendaryIds = parseCsvIds(dbLegendaryIdsRaw.value);
+  const dbRankTrackIds = parseCsvIds(dbRankTrackIdsRaw.value);
+  const dbRankIds = parseCsvIds(dbRankIdsRaw.value);
+
+  let jsonCounts: null | {
+    deck: number;
+    legendaryDeck: number;
+    rankTrack: number;
+    rankDefinitions: number;
+  } = null;
+
+  if (compareJson) {
+    const templateDocRaw = await runPsqlScalar(
+      parsed,
+      "SELECT COALESCE(value::text, '{}') FROM app_settings WHERE key = 'shared_deck_template' LIMIT 1;",
+    );
+    if (!templateDocRaw.ok) return { error: `Failed to read shared_deck_template from app_settings: ${templateDocRaw.error}` };
+    const ranksDocRaw = await runPsqlScalar(
+      parsed,
+      "SELECT COALESCE(value::text, '[]') FROM app_settings WHERE key = 'shared_ranks' LIMIT 1;",
+    );
+    if (!ranksDocRaw.ok) return { error: `Failed to read shared_ranks from app_settings: ${ranksDocRaw.error}` };
+
+    try {
+      const deckJson = JSON.parse(templateDocRaw.value) as unknown;
+      const ranksJson = JSON.parse(ranksDocRaw.value) as unknown;
+      const jsonDeckIds = readTemplateSectionIds(deckJson, 'deck');
+      const jsonLegendaryIds = readTemplateSectionIds(deckJson, 'legendaryDeck');
+      const jsonRankTrackIds = readTemplateSectionIds(deckJson, 'rankTrack');
+      const jsonRankIds = readRankIds(ranksJson);
+
+      jsonCounts = {
+        deck: jsonDeckIds.length,
+        legendaryDeck: jsonLegendaryIds.length,
+        rankTrack: jsonRankTrackIds.length,
+        rankDefinitions: jsonRankIds.length,
+      };
+
+      if (dbDeckCount !== jsonDeckIds.length) mismatches.push(`deck count mismatch: db=${dbDeckCount} app_settings=${jsonDeckIds.length}`);
+      if (dbLegendaryCount !== jsonLegendaryIds.length) mismatches.push(`legendaryDeck count mismatch: db=${dbLegendaryCount} app_settings=${jsonLegendaryIds.length}`);
+      if (dbRankTrackCount !== jsonRankTrackIds.length) mismatches.push(`rankTrack count mismatch: db=${dbRankTrackCount} app_settings=${jsonRankTrackIds.length}`);
+      if (dbRankDefinitionsCount !== jsonRankIds.length) mismatches.push(`rank definitions mismatch: db=${dbRankDefinitionsCount} app_settings=${jsonRankIds.length}`);
+
+      compareOrderedIds('deck', dbDeckIds, jsonDeckIds, mismatches);
+      compareOrderedIds('legendaryDeck', dbLegendaryIds, jsonLegendaryIds, mismatches);
+      compareOrderedIds('rankTrack', dbRankTrackIds, jsonRankTrackIds, mismatches);
+      compareOrderedIds('rankDefinitions', dbRankIds, jsonRankIds, mismatches);
+    } catch (error) {
+      mismatches.push(`Failed to compare with app_settings mirror: ${String(error instanceof Error ? error.message : error)}`);
+    }
+  }
+
+  const ok = mismatches.length === 0;
+  return {
+    ok,
+    message: ok ? 'Shared config sync check passed.' : 'Shared config sync check failed.',
+    details: {
+      activeTemplateKey: templateKey,
+      activeRankSetKey: rankSetKey,
+      dbCounts: {
+        deck: dbDeckCount,
+        legendaryDeck: dbLegendaryCount,
+        rankTrack: dbRankTrackCount,
+        rankDefinitions: dbRankDefinitionsCount,
+      },
+      jsonCounts,
+      compareJson,
+      mismatches,
+    },
+  };
 };
 
 const collectFilesRecursive = async (dirPath: string): Promise<string[]> => {
@@ -294,10 +524,10 @@ export const registerAdminDbToolRoutes = ({
             password: '',
           }
           : null,
-        hasSavedPassword: Boolean(parsed.dbConfig?.password),
+        hasSavedPassword: Boolean(getDatabaseUrlPasswordFallback()),
       };
     } catch {
-      ctx.body = { ok: true, storageMode: 'db', dbConfig: null, hasSavedPassword: false };
+      ctx.body = { ok: true, storageMode: 'db', dbConfig: null, hasSavedPassword: Boolean(getDatabaseUrlPasswordFallback()) };
     }
   });
 
@@ -307,16 +537,13 @@ export const registerAdminDbToolRoutes = ({
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/db/ui-config', maxBytes: JSON_BODY_LIMIT, logLine });
     if (!body) return;
     const rawDbConfig = (body.dbConfig && typeof body.dbConfig === 'object') ? (body.dbConfig as Record<string, unknown>) : {};
-    const existingConfig = await loadStoredAdminDbUiConfig(adminDbUiConfigPath, pool);
-    const storedPassword = typeof existingConfig?.dbConfig?.password === 'string' ? existingConfig.dbConfig.password : '';
     const normalizedDbConfig = {
       host: typeof rawDbConfig.host === 'string' ? rawDbConfig.host : '127.0.0.1',
       port: typeof rawDbConfig.port === 'string' ? rawDbConfig.port : '5432',
       database: typeof rawDbConfig.database === 'string' ? rawDbConfig.database : 'joj_game',
       user: typeof rawDbConfig.user === 'string' ? rawDbConfig.user : 'joj_user',
-      password: typeof rawDbConfig.password === 'string' && rawDbConfig.password.length > 0 ? rawDbConfig.password : storedPassword,
       sslMode: rawDbConfig.sslMode === 'require' ? 'require' : 'disable',
-    } satisfies DbConnInput;
+    } satisfies Omit<DbConnInput, 'password'>;
     try {
       if (!pool) {
         throw new Error('PostgreSQL pool is required for admin DB UI config.');
@@ -327,7 +554,7 @@ export const registerAdminDbToolRoutes = ({
         updatedAt: Date.now(),
       };
       await saveAppSettingJson(pool, ADMIN_DB_UI_CONFIG_KEY, storedPayload, 'admin-db-ui');
-      ctx.body = { ok: true, message: 'Admin DB UI config saved', hasSavedPassword: Boolean(normalizedDbConfig.password) };
+      ctx.body = { ok: true, message: 'Admin DB UI config saved', hasSavedPassword: Boolean(getDatabaseUrlPasswordFallback()) };
     } catch (error) {
       fail(ctx, 500, 'Failed to save admin DB UI config', String(error));
     }
@@ -388,6 +615,15 @@ export const registerAdminDbToolRoutes = ({
 
     try {
       await syncJsonToPostgresIncremental(parsed);
+      const diagnostics = await collectSharedConfigSyncDiagnostics(parsed, true);
+      if ('error' in diagnostics) {
+        return fail(ctx, 500, 'Failed to verify shared config sync after incremental sync', diagnostics.error);
+      }
+      if (!diagnostics.ok) {
+        ctx.status = 409;
+        ctx.body = diagnostics;
+        return;
+      }
       ctx.body = { ok: true, message: 'JSON config synced incrementally to PostgreSQL successfully' };
     } catch (error) {
       fail(ctx, 500, 'Failed to sync JSON config incrementally to PostgreSQL', String(error));
@@ -406,6 +642,15 @@ export const registerAdminDbToolRoutes = ({
       const targetUrl = buildPostgresUrlFromDraft(parsed);
       if (!targetUrl) return fail(ctx, 400, 'PostgreSQL connection is not configured');
       await loadSharedConfigFromDb?.();
+      const diagnostics = await collectSharedConfigSyncDiagnostics(parsed, true);
+      if ('error' in diagnostics) {
+        return fail(ctx, 500, 'Failed to verify shared config sync after loading from PostgreSQL', diagnostics.error);
+      }
+      if (!diagnostics.ok) {
+        ctx.status = 409;
+        ctx.body = diagnostics;
+        return;
+      }
 
       ctx.body = {
         ok: true,
@@ -467,7 +712,17 @@ export const registerAdminDbToolRoutes = ({
       await loadSharedConfigFromDb?.();
 
       // Sync to normalized tables (card_catalog, deck_template_entries) using the provided JSON
-      await syncJsonToPostgresIncremental?.(parsed, templateJson);
+      await syncJsonToPostgresIncremental?.(parsed);
+
+      const diagnostics = await collectSharedConfigSyncDiagnostics(parsed, true);
+      if ('error' in diagnostics) {
+        return fail(ctx, 500, 'Failed to verify shared config sync after saving to PostgreSQL', diagnostics.error);
+      }
+      if (!diagnostics.ok) {
+        ctx.status = 409;
+        ctx.body = diagnostics;
+        return;
+      }
 
       ctx.body = {
         ok: true,
@@ -489,134 +744,12 @@ export const registerAdminDbToolRoutes = ({
     if ('error' in parsed) return fail(ctx, 400, parsed.error);
 
     const compareJson = body.compareJson !== false;
-    const mismatches: string[] = [];
     try {
-      const activeTemplateCountRaw = await runPsqlScalar(parsed, "SELECT count(*) FROM deck_templates WHERE is_active = true;");
-      if (!activeTemplateCountRaw.ok) return fail(ctx, 400, 'Failed to read active deck template count', activeTemplateCountRaw.error);
-      const activeRankSetCountRaw = await runPsqlScalar(parsed, "SELECT count(*) FROM rank_sets WHERE is_active = true;");
-      if (!activeRankSetCountRaw.ok) return fail(ctx, 400, 'Failed to read active rank set count', activeRankSetCountRaw.error);
-      const templateKeyRaw = await runPsqlScalar(parsed, "SELECT template_key FROM deck_templates WHERE is_active = true ORDER BY updated_at DESC LIMIT 1;");
-      if (!templateKeyRaw.ok) return fail(ctx, 400, 'Failed to read active template key', templateKeyRaw.error);
-      const rankSetKeyRaw = await runPsqlScalar(parsed, "SELECT rank_set_key FROM rank_sets WHERE is_active = true ORDER BY updated_at DESC LIMIT 1;");
-      if (!rankSetKeyRaw.ok) return fail(ctx, 400, 'Failed to read active rank set key', rankSetKeyRaw.error);
-
-      const dbDeckCountRaw = await runPsqlScalar(parsed, `
-SELECT count(*)
-FROM deck_template_entries e
-JOIN deck_templates t ON t.id = e.deck_template_id
-WHERE t.is_active = true AND e.deck_target = 'deck';`);
-      if (!dbDeckCountRaw.ok) return fail(ctx, 400, 'Failed to read deck entry count', dbDeckCountRaw.error);
-      const dbLegendaryCountRaw = await runPsqlScalar(parsed, `
-SELECT count(*)
-FROM deck_template_entries e
-JOIN deck_templates t ON t.id = e.deck_template_id
-WHERE t.is_active = true AND e.deck_target = 'legendaryDeck';`);
-      if (!dbLegendaryCountRaw.ok) return fail(ctx, 400, 'Failed to read legendaryDeck entry count', dbLegendaryCountRaw.error);
-      const dbRankTrackCountRaw = await runPsqlScalar(parsed, `
-SELECT count(*)
-FROM deck_template_entries e
-JOIN deck_templates t ON t.id = e.deck_template_id
-WHERE t.is_active = true AND e.deck_target = 'rankTrack';`);
-      if (!dbRankTrackCountRaw.ok) return fail(ctx, 400, 'Failed to read rankTrack entry count', dbRankTrackCountRaw.error);
-      const dbRankDefinitionsCountRaw = await runPsqlScalar(parsed, `
-SELECT count(*)
-FROM rank_definitions d
-JOIN rank_sets r ON r.id = d.rank_set_id
-WHERE r.is_active = true;`);
-      if (!dbRankDefinitionsCountRaw.ok) return fail(ctx, 400, 'Failed to read rank definitions count', dbRankDefinitionsCountRaw.error);
-
-      const activeTemplateCount = Number.parseInt(activeTemplateCountRaw.value, 10) || 0;
-      const activeRankSetCount = Number.parseInt(activeRankSetCountRaw.value, 10) || 0;
-      const dbDeckCount = Number.parseInt(dbDeckCountRaw.value, 10) || 0;
-      const dbLegendaryCount = Number.parseInt(dbLegendaryCountRaw.value, 10) || 0;
-      const dbRankTrackCount = Number.parseInt(dbRankTrackCountRaw.value, 10) || 0;
-      const dbRankDefinitionsCount = Number.parseInt(dbRankDefinitionsCountRaw.value, 10) || 0;
-      const templateKey = templateKeyRaw.value;
-      const rankSetKey = rankSetKeyRaw.value;
-
-      if (activeTemplateCount !== 1) {
-        mismatches.push(`Expected exactly 1 active deck template, got ${activeTemplateCount}.`);
+      const diagnostics = await collectSharedConfigSyncDiagnostics(parsed, compareJson);
+      if ('error' in diagnostics) {
+        return fail(ctx, 400, 'Failed to run shared config sync check', diagnostics.error);
       }
-      if (activeRankSetCount !== 1) {
-        mismatches.push(`Expected exactly 1 active rank set, got ${activeRankSetCount}.`);
-      }
-
-      let jsonCounts: null | {
-        deck: number;
-        legendaryDeck: number;
-        rankTrack: number;
-        rankDefinitions: number;
-      } = null;
-
-      if (compareJson) {
-        try {
-          const templateDocRaw = await runPsqlScalar(
-            parsed,
-            "SELECT COALESCE(value::text, '{}') FROM app_settings WHERE key = 'shared_deck_template' LIMIT 1;",
-          );
-          if (!templateDocRaw.ok) return fail(ctx, 400, 'Failed to read shared_deck_template from app_settings', templateDocRaw.error);
-          const ranksDocRaw = await runPsqlScalar(
-            parsed,
-            "SELECT COALESCE(value::text, '[]') FROM app_settings WHERE key = 'shared_ranks' LIMIT 1;",
-          );
-          if (!ranksDocRaw.ok) return fail(ctx, 400, 'Failed to read shared_ranks from app_settings', ranksDocRaw.error);
-
-          const deckJson = JSON.parse(templateDocRaw.value) as {
-            deck?: unknown[];
-            legendaryDeck?: unknown[];
-            rankTrack?: unknown[];
-            deckIds?: unknown[];
-            legendaryDeckIds?: unknown[];
-            rankTrackIds?: unknown[];
-          };
-          const ranksJson = JSON.parse(ranksDocRaw.value) as unknown;
-          const deckCount = Array.isArray(deckJson.deck) ? deckJson.deck.length : (Array.isArray(deckJson.deckIds) ? deckJson.deckIds.length : 0);
-          const legendaryDeckCount = Array.isArray(deckJson.legendaryDeck)
-            ? deckJson.legendaryDeck.length
-            : (Array.isArray(deckJson.legendaryDeckIds) ? deckJson.legendaryDeckIds.length : 0);
-          const rankTrackCount = Array.isArray(deckJson.rankTrack)
-            ? deckJson.rankTrack.length
-            : (Array.isArray(deckJson.rankTrackIds) ? deckJson.rankTrackIds.length : 0);
-          const rankDefinitionsCount = Array.isArray(ranksJson)
-            ? ranksJson.length
-            : (ranksJson && typeof ranksJson === 'object' && Array.isArray((ranksJson as { ranks?: unknown[] }).ranks)
-              ? ((ranksJson as { ranks: unknown[] }).ranks.length)
-              : 0);
-
-          jsonCounts = {
-            deck: deckCount,
-            legendaryDeck: legendaryDeckCount,
-            rankTrack: rankTrackCount,
-            rankDefinitions: rankDefinitionsCount,
-          };
-
-          if (dbDeckCount !== deckCount) mismatches.push(`deck count mismatch: db=${dbDeckCount} app_settings=${deckCount}`);
-          if (dbLegendaryCount !== legendaryDeckCount) mismatches.push(`legendaryDeck count mismatch: db=${dbLegendaryCount} app_settings=${legendaryDeckCount}`);
-          if (dbRankTrackCount !== rankTrackCount) mismatches.push(`rankTrack count mismatch: db=${dbRankTrackCount} app_settings=${rankTrackCount}`);
-          if (dbRankDefinitionsCount !== rankDefinitionsCount) mismatches.push(`rank definitions mismatch: db=${dbRankDefinitionsCount} app_settings=${rankDefinitionsCount}`);
-        } catch (error) {
-          mismatches.push(`Failed to compare with app_settings mirror: ${String(error instanceof Error ? error.message : error)}`);
-        }
-      }
-
-      const ok = mismatches.length === 0;
-      ctx.body = {
-        ok,
-        message: ok ? 'Shared config sync check passed.' : 'Shared config sync check failed.',
-        details: {
-          activeTemplateKey: templateKey,
-          activeRankSetKey: rankSetKey,
-          dbCounts: {
-            deck: dbDeckCount,
-            legendaryDeck: dbLegendaryCount,
-            rankTrack: dbRankTrackCount,
-            rankDefinitions: dbRankDefinitionsCount,
-          },
-          jsonCounts,
-          compareJson,
-          mismatches,
-        },
-      };
+      ctx.body = diagnostics;
     } catch (error) {
       fail(ctx, 500, 'Failed to run shared config sync check', String(error instanceof Error ? error.message : error));
     }
@@ -776,3 +909,13 @@ WHERE r.is_active = true;`);
 };
 
 export { parseDbConnInput };
+const getDatabaseUrlPasswordFallback = () => {
+  const raw = (process.env.DATABASE_URL ?? '').trim();
+  if (!raw) return '';
+  try {
+    const parsed = new URL(raw);
+    return decodeURIComponent(parsed.password ?? '');
+  } catch {
+    return '';
+  }
+};

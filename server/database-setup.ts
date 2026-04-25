@@ -6,6 +6,8 @@ import { createBoardgamePostgresDb } from './services/boardgame-postgres-db';
 import { createBugReportStore } from './services/bug-report-store';
 import { createMatchStateStore } from './services/match-state-store';
 import { createUserStore } from './services/user-store';
+import { ensurePostgresStorageModeSettings } from './services/storage-mode-settings';
+import { assertSharedConfigConsistency } from './services/shared-config-consistency';
 import type { MatchDbBackend } from './services/match-runtime-sync';
 import type { LogLine } from './file-logger';
 
@@ -19,6 +21,7 @@ export interface DatabaseConfig {
     loadTemplate: () => Promise<void>;
     loadRanks: () => Promise<void>;
     syncAdditionalJsonConfigsToPostgres?: (targetUrl: string) => Promise<Record<string, boolean>>;
+    syncAdditionalPostgresConfigsToJson?: (targetUrl: string) => Promise<Record<string, boolean>>;
   };
   appRootDir?: string;
 }
@@ -85,6 +88,7 @@ export const initializeDatabase = async (
   try {
     userPool = createPostgresPool(databaseUrl);
     await runSqlMigrations(userPool, dbMigrationsDir);
+    await ensurePostgresStorageModeSettings(userPool, 'server-postgres-init');
     userStore = createUserStore(userPool);
     await userStore.ensureSchema();
     await userStore.deleteExpiredSessions();
@@ -131,6 +135,20 @@ export const initializeDatabase = async (
       await sharedConfigStore.loadRanks();
       await logLine('INFO', 'shared ranks loaded from postgres');
 
+      if (sharedConfigStore.syncAdditionalPostgresConfigsToJson) {
+        try {
+          const mirrorResults = await sharedConfigStore.syncAdditionalPostgresConfigsToJson(databaseUrl);
+          const mirroredKeys = Object.entries(mirrorResults)
+            .filter(([, success]) => success)
+            .map(([key]) => key);
+          if (mirroredKeys.length > 0) {
+            await logLine('INFO', `mirrored postgres configs to JSON: ${mirroredKeys.join(', ')}`);
+          }
+        } catch (mirrorError) {
+          await logLine('WARN', `postgres->json mirror sync failed (non-critical): ${String(mirrorError instanceof Error ? mirrorError.message : mirrorError)}`);
+        }
+      }
+
       // Auto-import additional JSON configs if they exist and not already in DB
       if (sharedConfigStore.syncAdditionalJsonConfigsToPostgres) {
         try {
@@ -145,6 +163,9 @@ export const initializeDatabase = async (
           await logLine('WARN', `auto-import of JSON configs failed (non-critical): ${String(importError instanceof Error ? importError.message : importError)}`);
         }
       }
+
+      await assertSharedConfigConsistency(userPool);
+      await logLine('INFO', 'shared config consistency healthcheck passed');
     }
 
     await matchRuntimeSync.syncMatchStateMirror();

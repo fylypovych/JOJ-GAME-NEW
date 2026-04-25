@@ -82,6 +82,7 @@ export interface RouteRegistrationDeps {
     syncJsonToPostgresIncremental: () => Promise<void>;
     saveRanks: () => Promise<void>;
     saveTemplate: () => Promise<void>;
+    syncAdditionalPostgresConfigsToJson?: () => Promise<Record<string, boolean>>;
   };
   gameAdapter: {
     getModules: () => unknown[];
@@ -189,6 +190,7 @@ export const registerAllRoutes = (
     loadSharedConfigFromDb: async () => {
       await sharedConfigStore.loadTemplate();
       await sharedConfigStore.loadRanks();
+      await sharedConfigStore.syncAdditionalPostgresConfigsToJson?.();
     },
     userStore,
     pool,
