@@ -172,10 +172,35 @@ COMMIT;`;
   const saveTemplateToPostgresIncremental = async (targetDatabaseUrl: string) => {
     if (!targetDatabaseUrl) throw new Error('DATABASE_URL is required for postgres sync');
     const templatePayload = exportSharedDeckTemplateJson();
-    const parsedPayload = JSON.parse(templatePayload) as { deck?: unknown[]; legendaryDeck?: unknown[] };
+    const parsedPayload = JSON.parse(templatePayload) as { deck?: unknown[]; legendaryDeck?: unknown[]; catalog?: unknown[] };
     const deck = Array.isArray(parsedPayload.deck) ? parsedPayload.deck : [];
     const legendaryDeck = Array.isArray(parsedPayload.legendaryDeck) ? parsedPayload.legendaryDeck : [];
+    const catalog = Array.isArray(parsedPayload.catalog) ? parsedPayload.catalog : [];
     const rows: string[] = [];
+
+    // Build card_catalog rows from all cards
+    const allCards = [...deck, ...legendaryDeck];
+    const cardCatalogRows = allCards.map((card) => {
+      const cardObj = (card && typeof card === 'object') ? (card as Record<string, unknown>) : {};
+      const cardId = typeof cardObj.id === 'string' ? cardObj.id : '';
+      if (!cardId) return '';
+      const title = typeof cardObj.title === 'string' ? cardObj.title : cardId;
+      const category = typeof cardObj.category === 'string' ? cardObj.category : 'SUPPORT';
+      const imagePath = typeof cardObj.image === 'string' ? cardObj.image : null;
+      const flavor = typeof cardObj.flavor === 'string' ? cardObj.flavor : null;
+      const effects = Array.isArray(cardObj.effects) ? cardObj.effects : [];
+      const tags = Array.isArray(cardObj.tags) ? cardObj.tags : [];
+      return `(
+        ${sqlString(cardId)},
+        ${sqlString(title)},
+        ${sqlString(category)},
+        ${sqlNullableString(imagePath)},
+        ${sqlNullableString(flavor)},
+        ${sqlJson(effects)},
+        ${sqlJson(tags)},
+        ${sqlJson(cardObj)}
+      )`;
+    }).filter(Boolean);
     deck.forEach((card, index) => {
       const row = (card && typeof card === 'object') ? (card as Record<string, unknown>) : {};
       const id = typeof row.id === 'string' ? row.id : `card-${index}`;
@@ -204,6 +229,18 @@ BEGIN;
 INSERT INTO deck_templates (template_key, title, payload, is_active)
 VALUES ('shared-default', 'Shared Deck Template', ${sqlJson(parsedPayload)}, true)
 ON CONFLICT (template_key) DO NOTHING;
+${cardCatalogRows.length > 0 ? `
+INSERT INTO card_catalog (id, title, category, image_path, flavor, effects, tags, metadata)
+VALUES ${cardCatalogRows.join(',\n')}
+ON CONFLICT (id) DO UPDATE
+SET title = EXCLUDED.title,
+    category = EXCLUDED.category,
+    image_path = EXCLUDED.image_path,
+    flavor = EXCLUDED.flavor,
+    effects = EXCLUDED.effects,
+    tags = EXCLUDED.tags,
+    metadata = EXCLUDED.metadata,
+    updated_at = now();` : ''}
 ${rows.length > 0 ? `
 INSERT INTO deck_template_entries (deck_template_id, deck_target, card_id, sort_index, card_snapshot)
 VALUES ${rows.join(',\n')}
