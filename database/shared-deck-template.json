@@ -1984,6 +1984,27 @@
         }
       ],
       "flavor": "«Новини іноді доходять раніше наказів.»"
+    },
+    {
+      "id": "legendary-16",
+      "title": "Котєйка ЗСУ",
+      "category": "LEGENDARY",
+      "image": "/cards/card-1772961126046.webp",
+      "effects": [
+        {
+          "resource": "time",
+          "value": 2
+        }
+      ],
+      "flavor": "Видається разом із позицією. Оформлення не потребує. Доступ має всюди."
+    },
+    {
+      "id": "legendary-17",
+      "title": "Нептун",
+      "category": "LEGENDARY",
+      "image": "/cards/card-1772961126046.webp",
+      "effects": [],
+      "flavor": "«Не тягнув стакан за звання.»"
     }
   ],
   "deckIds": [

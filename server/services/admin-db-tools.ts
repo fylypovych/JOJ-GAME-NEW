@@ -466,9 +466,12 @@ export const registerAdminDbToolRoutes = ({
       // Reload runtime shared config from PostgreSQL
       await loadSharedConfigFromDb?.();
 
+      // Sync to normalized tables (card_catalog, deck_template_entries)
+      await syncJsonToPostgresIncremental?.(parsed);
+
       ctx.body = {
         ok: true,
-        message: 'Data saved to PostgreSQL successfully',
+        message: 'Data saved to PostgreSQL and normalized tables updated successfully',
       };
     } catch (error) {
       const details = String(error instanceof Error ? error.message : error);
