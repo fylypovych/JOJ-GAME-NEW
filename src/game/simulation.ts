@@ -542,7 +542,9 @@ const tryExecuteHandPlanSim = (args: {
       const occupied = Object.entries(G.ranks)
         .filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id)
         .length;
-      if (occupied >= rankSeatLimitForRank(numPlayers, targetRank.id, ranks as never)) return false;
+      // Перевіряємо Котєйку ЗСУ: ігноруємо ліміт місць якщо активний флаг
+      const ignoreSeatLimit = G.ignoreSeatLimitForPromotionUntilTurn?.[playerID] > 0;
+      if (!ignoreSeatLimit && occupied >= rankSeatLimitForRank(numPlayers, targetRank.id, ranks as never)) return false;
       if (!canAffordVvnzCost(G.resources[playerID])) return false;
       const payment = plan.replacementResources ?? selectVvnzPaymentResources(G.resources[playerID]);
       if (!payment || !isValidVvnzPayment(G.resources[playerID], payment)) return false;
@@ -552,6 +554,10 @@ const tryExecuteHandPlanSim = (args: {
       });
       G.ranks[playerID] = targetRank.id;
       G.promotedThisTurn[playerID] = true;
+      // Скидаємо флаг Котєйки ЗСУ після використання
+      if (ignoreSeatLimit) {
+        delete G.ignoreSeatLimitForPromotionUntilTurn[playerID];
+      }
       if (!G.skippedTurnCounts) G.skippedTurnCounts = {};
       G.skippedTurnCounts[playerID] = (G.skippedTurnCounts[playerID] ?? 0) + 1;
       const ok = deps.applyCardEffects(G, playerID, card.effects, []);
