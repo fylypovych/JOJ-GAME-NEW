@@ -169,9 +169,9 @@ COMMIT;`;
     if (!result.ok) throw new Error(result.error);
   };
 
-  const saveTemplateToPostgresIncremental = async (targetDatabaseUrl: string) => {
+  const saveTemplateToPostgresIncremental = async (targetDatabaseUrl: string, jsonPayload?: string) => {
     if (!targetDatabaseUrl) throw new Error('DATABASE_URL is required for postgres sync');
-    const templatePayload = exportSharedDeckTemplateJson();
+    const templatePayload = jsonPayload ?? exportSharedDeckTemplateJson();
     const parsedPayload = JSON.parse(templatePayload) as { deck?: unknown[]; legendaryDeck?: unknown[]; catalog?: unknown[] };
     const deck = Array.isArray(parsedPayload.deck) ? parsedPayload.deck : [];
     const legendaryDeck = Array.isArray(parsedPayload.legendaryDeck) ? parsedPayload.legendaryDeck : [];

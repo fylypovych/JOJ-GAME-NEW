@@ -28,7 +28,7 @@ export type SharedConfigStore = {
   loadTemplateFromDisk: () => Promise<void>;
   loadRanksFromDisk: () => Promise<void>;
   syncCurrentJsonToPostgres: (draft?: PostgresConnDraft, appRootDir?: string) => Promise<void>;
-  syncJsonToPostgresIncremental: (draft?: PostgresConnDraft) => Promise<void>;
+  syncJsonToPostgresIncremental: (draft?: PostgresConnDraft, jsonPayload?: string) => Promise<void>;
   syncAdditionalJsonConfigsToPostgres?: (targetUrl: string, appRootDir?: string) => Promise<SyncAdditionalConfigsResult>;
 };
 

@@ -466,8 +466,8 @@ export const registerAdminDbToolRoutes = ({
       // Reload runtime shared config from PostgreSQL
       await loadSharedConfigFromDb?.();
 
-      // Sync to normalized tables (card_catalog, deck_template_entries)
-      await syncJsonToPostgresIncremental?.(parsed);
+      // Sync to normalized tables (card_catalog, deck_template_entries) using the provided JSON
+      await syncJsonToPostgresIncremental?.(parsed, templateJson);
 
       ctx.body = {
         ok: true,
