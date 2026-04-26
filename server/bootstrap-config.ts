@@ -39,11 +39,11 @@ if (!existsSync(envPath)) {
 loadEnvFile(envPath);
 
 export const isAdminAuthEnabled = true;
-export const sharedConfigPrimarySource: 'postgres' = 'postgres';
-export const requestedSharedConfigStorageMode: 'postgres' = sharedConfigPrimarySource;
+export const sharedConfigPrimarySource = 'postgres' as const;
+export const requestedSharedConfigStorageMode = sharedConfigPrimarySource;
 export const databaseUrl = (process.env.DATABASE_URL ?? '').trim();
 export const nodeEnv = (process.env.NODE_ENV ?? '').trim().toLowerCase();
-export const matchDbCutoverMode: 'auto' = 'auto';
+export const matchDbCutoverMode = 'auto' as const;
 export const port = Number(process.env.PORT ?? 8000);
 
 // Validate critical environment variables
@@ -73,7 +73,6 @@ export const corsAllowedMethods = parseCsvEnv(process.env.CORS_ALLOWED_METHODS, 
 export const corsAllowedHeaders = parseCsvEnv(process.env.CORS_ALLOWED_HEADERS, [
   'content-type',
   'x-csrf-token',
-  'x-admin-token',
   'authorization',
 ]);
 export const cspConnectSrcExtras = parseCsvEnv(process.env.CSP_CONNECT_SRC_EXTRA, []);

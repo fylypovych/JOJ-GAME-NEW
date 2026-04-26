@@ -23,7 +23,7 @@ test('admin mutation auth rejects cookie-backed admin POST without csrf token', 
   assert.equal(ctx.status, 403);
 });
 
-test('admin mutation auth accepts explicit admin token without csrf token', async () => {
+test('admin mutation auth rejects token header without csrf token', async () => {
   const ctx = {
     request: {
       headers: {
@@ -38,7 +38,7 @@ test('admin mutation auth accepts explicit admin token without csrf token', asyn
     async () => true,
   );
 
-  assert.equal(ok, true);
+  assert.equal(ok, false);
 });
 
 test('admin mutation auth accepts cookie-backed admin POST with csrf token', async () => {

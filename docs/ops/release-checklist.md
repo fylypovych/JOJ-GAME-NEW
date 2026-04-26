@@ -7,7 +7,6 @@
 - `npx --no-install tsc -b` passes
 - `npm run build` passes
 - `.env` is configured with required production variables:
-  - `ADMIN_TOKEN` is set
   - `DATABASE_URL` is set
   - `FRONTEND_ORIGIN` is set
   - `NODE_ENV=production`

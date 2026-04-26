@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getAdminRuntimePolicy, getDeprecatedAdminAuthEnvNames } from '../server/runtime-policy';
 
-test('production requires ADMIN_TOKEN', () => {
+test('production no longer requires ADMIN_TOKEN', () => {
   const policy = getAdminRuntimePolicy({
     NODE_ENV: 'production',
     ADMIN_TOKEN: '',
@@ -10,11 +10,11 @@ test('production requires ADMIN_TOKEN', () => {
     FRONTEND_ORIGIN: 'https://joj.example',
   });
 
-  assert.match(policy.startupError, /without ADMIN_TOKEN/);
+  assert.equal(policy.startupError, '');
   assert.ok(policy.warnings.some((warning) => warning.includes('TRUST_PROXY')));
 });
 
-test('production error explains deprecated admin override flags are ignored', () => {
+test('deprecated admin override flags remain ignored and reported as warnings', () => {
   const policy = getAdminRuntimePolicy({
     NODE_ENV: 'production',
     ADMIN_TOKEN: '',
@@ -24,8 +24,9 @@ test('production error explains deprecated admin override flags are ignored', ()
     FRONTEND_ORIGIN: 'https://joj.example',
   });
 
-  assert.match(policy.startupError, /cannot bypass this requirement/);
+  assert.equal(policy.startupError, '');
   assert.deepEqual(policy.deprecatedEnvNames, ['DISABLE_ADMIN_AUTH', 'ALLOW_INSECURE_ADMIN']);
+  assert.ok(policy.warnings.some((warning) => warning.includes('Deprecated admin auth env vars are ignored')));
 });
 
 test('deprecated admin override flags produce warnings but do not block valid startup', () => {

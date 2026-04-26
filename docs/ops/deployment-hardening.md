@@ -22,7 +22,6 @@ Set these in `.env`:
 
 ```env
 NODE_ENV=production
-ADMIN_TOKEN=your-secret-token
 DATABASE_URL=postgresql://user:password@127.0.0.1:5432/joj_game
 FRONTEND_ORIGIN=https://your-domain.com
 TRUST_PROXY=true
@@ -70,4 +69,4 @@ sudo ufw deny 5173/tcp
 - Direct access to `http://your-domain:8000` is blocked.
 - Direct access to `http://your-domain:4173` is blocked.
 - PM2 processes restart automatically after crash/reboot.
-- Server starts without errors (ADMIN_TOKEN, DATABASE_URL, FRONTEND_ORIGIN are set).
+- Server starts without errors (DATABASE_URL, FRONTEND_ORIGIN are set).

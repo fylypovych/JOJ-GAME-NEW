@@ -104,7 +104,7 @@ PORT=8000
 FRONTEND_ORIGIN=http://localhost:5173
 WEB_PORT=4173
 VITE_PREVIEW_ALLOWED_HOSTS=joj.lol,www.joj.lol,localhost,127.0.0.1
-ADMIN_TOKEN=change-me-strong-token
+ADMIN_TOKEN=
 ```
 
 Актуальні важливі змінні середовища:
@@ -113,7 +113,7 @@ ADMIN_TOKEN=change-me-strong-token
 - `FRONTEND_ORIGIN` - дозволений frontend origin
 - `WEB_PORT` - порт для `vite preview`
 - `VITE_PREVIEW_ALLOWED_HOSTS` - allowlist для preview
-- `ADMIN_TOKEN` - обов'язково для production
+- `ADMIN_TOKEN` - опційний legacy-заголовок, не обов'язковий для production
 - `STORAGE_MODE` - `file`, `postgres`, або `db` (`db` нормалізується до `postgres`)
 - `DATABASE_URL` - обов'язково, якщо `STORAGE_MODE=postgres`
 - `NODE_ENV` - стандартна runtime-змінна Node.js
@@ -209,7 +209,7 @@ Admin UI доступний за адресою `/admin`.
 
 - admin API працює через admin auth
 - production startup без admin auth блокується runtime policy
-- `ADMIN_TOKEN` повинен бути заданий у production
+- адмін-доступ має працювати через administrator session + CSRF
 
 Детальніше: [docs/ops/runtime-config-policy.md](docs/ops/runtime-config-policy.md)
 Архітектурний зріз: [docs/dev/architecture.md](docs/dev/architecture.md)
@@ -430,7 +430,7 @@ joj.lol, www.joj.lol {
 
 Небезпечні режими припустимі лише локально:
 
-- порожній `ADMIN_TOKEN`
+- вимкнена/зламана admin session auth
 - пряме публічне відкриття server port без reverse proxy
 
 ## Структура проєкту

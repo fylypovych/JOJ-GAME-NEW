@@ -10,6 +10,8 @@ import type { RouterLike } from './routes/types';
 import type { UserStore } from './services/user-store';
 import type { MatchDbBackend } from './services/match-runtime-sync';
 import type { createAdminAuditLogger } from './services/admin-audit';
+import type { PostgresConnDraft } from './db/psql';
+import { buildPostgresUrlFromDraft } from './db/psql';
 import {
   uploadsDir,
 } from './bootstrap-config';
@@ -76,13 +78,13 @@ export interface RouteRegistrationDeps {
   };
   adminAudit: ReturnType<typeof createAdminAuditLogger>;
   sharedConfigStore: {
-    loadTemplate: () => Promise<void>;
-    loadRanks: () => Promise<void>;
-    syncCurrentJsonToPostgres: () => Promise<void>;
-    syncJsonToPostgresIncremental: () => Promise<void>;
+    loadTemplate: (draft?: PostgresConnDraft) => Promise<void>;
+    loadRanks: (draft?: PostgresConnDraft) => Promise<void>;
+    syncCurrentJsonToPostgres: (draft?: PostgresConnDraft) => Promise<void>;
+    syncJsonToPostgresIncremental: (draft?: PostgresConnDraft) => Promise<void>;
     saveRanks: () => Promise<void>;
     saveTemplate: () => Promise<void>;
-    syncAdditionalPostgresConfigsToJson?: () => Promise<Record<string, boolean>>;
+    syncAdditionalPostgresConfigsToJson?: (targetUrl?: string) => Promise<Record<string, boolean>>;
   };
   gameAdapter: {
     getModules: () => unknown[];
@@ -187,10 +189,14 @@ export const registerAllRoutes = (
     gameUiConfigPath,
     importJsonConfigToDb: sharedConfigStore.syncCurrentJsonToPostgres,
     syncJsonToPostgresIncremental: sharedConfigStore.syncJsonToPostgresIncremental,
-    loadSharedConfigFromDb: async () => {
-      await sharedConfigStore.loadTemplate();
-      await sharedConfigStore.loadRanks();
-      await sharedConfigStore.syncAdditionalPostgresConfigsToJson?.();
+    loadSharedConfigFromDb: async (draft?: PostgresConnDraft) => {
+      await sharedConfigStore.loadTemplate(draft);
+      await sharedConfigStore.loadRanks(draft);
+      if (draft) {
+        await sharedConfigStore.syncAdditionalPostgresConfigsToJson?.(buildPostgresUrlFromDraft(draft));
+      } else {
+        await sharedConfigStore.syncAdditionalPostgresConfigsToJson?.();
+      }
     },
     userStore,
     pool,

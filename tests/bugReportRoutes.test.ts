@@ -23,6 +23,28 @@ const requireAdminAuth = async () => true;
 const readJsonBodySafe = async ({ ctx }: { ctx: RouteCtx }) => (ctx.request?.body as Record<string, unknown>) ?? {};
 const logLine = async () => undefined;
 
+const createSettingsPool = (initial: Record<string, unknown> = {}) => {
+  const store = new Map<string, unknown>(Object.entries(initial));
+  return {
+    query: async (sql: string, params?: unknown[]) => {
+      if (sql.includes('SELECT value FROM app_settings')) {
+        const key = String(params?.[0] ?? '');
+        const value = store.get(key);
+        return value === undefined
+          ? { rowCount: 0, rows: [] }
+          : { rowCount: 1, rows: [{ value }] };
+      }
+      if (sql.includes('INSERT INTO app_settings')) {
+        const key = String(params?.[0] ?? '');
+        const rawValue = String(params?.[1] ?? 'null');
+        store.set(key, JSON.parse(rawValue));
+        return { rowCount: 1, rows: [] };
+      }
+      return { rowCount: 0, rows: [] };
+    },
+  };
+};
+
 test('bug report submit validates description length', async () => {
   const { router, postHandlers } = makeRouter();
   registerBugReportRoutes({
@@ -42,6 +64,7 @@ test('bug report submit validates description length', async () => {
     },
     bugReportUiConfigPath: path.join(await mkdtemp(path.join(os.tmpdir(), 'joj-bug-')), 'bug-report-ui.json'),
     uploadsDir: await mkdtemp(path.join(os.tmpdir(), 'joj-bug-upload-')),
+    pool: createSettingsPool() as never,
   });
 
   const handler = postHandlers.get('/api/bug-reports');
@@ -87,6 +110,7 @@ test('bug report submit stores screenshot and summary', async () => {
     },
     bugReportUiConfigPath: path.join(await mkdtemp(path.join(os.tmpdir(), 'joj-bug-2-')), 'bug-report-ui.json'),
     uploadsDir: await mkdtemp(path.join(os.tmpdir(), 'joj-bug-upload-2-')),
+    pool: createSettingsPool() as never,
   });
 
   const handler = postHandlers.get('/api/bug-reports');
@@ -120,6 +144,9 @@ test('bug report ui image serves configured file', async () => {
   await writeFile(uiConfigPath, JSON.stringify({ imagePath: '/card-assets/bug.webp' }), 'utf8');
   const { router, getHandlers } = makeRouter();
   const headers = new Map<string, string | string[]>();
+  const pool = createSettingsPool({
+    bug_report_ui_config: { imagePath: '/card-assets/bug.webp', updatedAt: Date.now() },
+  });
 
   registerBugReportRoutes({
     router,
@@ -138,6 +165,7 @@ test('bug report ui image serves configured file', async () => {
     },
     bugReportUiConfigPath: uiConfigPath,
     uploadsDir,
+    pool: pool as never,
     assetStore: {
       getByPath: async () => ({ fileName: 'bug.webp', mime: 'image/webp', deletedAt: null }),
     },

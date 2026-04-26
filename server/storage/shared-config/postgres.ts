@@ -217,8 +217,7 @@ INSERT INTO deck_template_entries (deck_template_id, deck_target, card_id, sort_
 VALUES ${rows.join(',\n')}
 ON CONFLICT (deck_template_id, deck_target, sort_index) DO UPDATE
 SET card_id = EXCLUDED.card_id,
-    card_snapshot = EXCLUDED.card_snapshot,
-    updated_at = now();` : ''}
+    card_snapshot = EXCLUDED.card_snapshot;` : ''}
 COMMIT;`;
 
     const result = await runPsqlSql(targetDatabaseUrl, sql);
@@ -339,8 +338,7 @@ INSERT INTO deck_template_entries (deck_template_id, deck_target, card_id, sort_
 VALUES ${rows.join(',\n')}
 ON CONFLICT (deck_template_id, deck_target, sort_index) DO UPDATE
 SET card_id = EXCLUDED.card_id,
-    card_snapshot = EXCLUDED.card_snapshot,
-    updated_at = now();` : ''}
+    card_snapshot = EXCLUDED.card_snapshot;` : ''}
 COMMIT;`;
 
     const result = await runPsqlSql(targetDatabaseUrl, sql);
@@ -479,13 +477,13 @@ COMMIT;`;
     if (!result.ok) throw new Error(result.error);
   };
 
-  const loadTemplateFromPostgres = async (): Promise<boolean> => {
+  const loadTemplateFromPostgres = async (targetDatabaseUrl = deps.databaseUrl): Promise<boolean> => {
     const sql = `
 SELECT COALESCE(value::text, '')
 FROM app_settings
 WHERE key = 'shared_deck_template'
 LIMIT 1;`;
-    const result = await runPsqlSql(deps.databaseUrl, sql);
+    const result = await runPsqlSql(targetDatabaseUrl, sql);
     if (!result.ok) return false;
     const raw = result.stdout.trim();
     if (!raw) {
@@ -498,13 +496,13 @@ LIMIT 1;`;
     return true;
   };
 
-  const loadRanksFromPostgres = async (): Promise<boolean> => {
+  const loadRanksFromPostgres = async (targetDatabaseUrl = deps.databaseUrl): Promise<boolean> => {
     const sql = `
 SELECT COALESCE(value::text, '')
 FROM app_settings
 WHERE key = 'shared_ranks'
 LIMIT 1;`;
-    const result = await runPsqlSql(deps.databaseUrl, sql);
+    const result = await runPsqlSql(targetDatabaseUrl, sql);
     if (!result.ok) return false;
     const raw = result.stdout.trim();
     if (!raw) {
@@ -513,7 +511,7 @@ LIMIT 1;`;
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);
-    } catch (error) {
+    } catch {
       return false;
     }
     const importResult = importSharedRanksJson(JSON.stringify(parsed));
@@ -532,7 +530,7 @@ LIMIT 1;`;
 
     // Check if already synced with same hash
     const checkHashSql = `
-SELECT COALESCE(value::text, '') as hash
+SELECT COALESCE(value->>'hash', '') as hash
 FROM app_settings
 WHERE key = 'shared_config_sync_hash'
 LIMIT 1;`;
@@ -548,11 +546,14 @@ LIMIT 1;`;
 
     // Update sync hash
     const updateHashSql = `
-INSERT INTO app_settings (key, value)
-VALUES ('shared_config_sync_hash', '${combinedHash.replace(/'/g, "''")}'::text)
+INSERT INTO app_settings (key, value, updated_by)
+VALUES ('shared_config_sync_hash', ${sqlJson({ hash: combinedHash })}, 'shared-config-postgres-incremental')
 ON CONFLICT (key) DO UPDATE
-SET value = EXCLUDED.value;`;
-    await runPsqlSql(targetUrl, updateHashSql);
+SET value = EXCLUDED.value,
+    updated_by = EXCLUDED.updated_by,
+    updated_at = now();`;
+    const updateResult = await runPsqlSql(targetUrl, updateHashSql);
+    if (!updateResult.ok) throw new Error(updateResult.error);
   };
 
   const syncAdditionalJsonConfigsToPostgres = async (targetUrl: string, appRootDir?: string) => {

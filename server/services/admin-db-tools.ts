@@ -4,7 +4,6 @@ import path from 'node:path';
 import type { Pool } from 'pg';
 import { requireAdminMutationAuth } from '../admin-auth';
 import { loadAppSettingJson, saveAppSettingJson } from './app-settings-store';
-import { buildPostgresUrlFromDraft } from '../db/psql';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from '../routes/types';
 
 export type DbConnInput = {
@@ -28,7 +27,7 @@ type AdminDbToolsDeps = {
   migrationsPath: string;
   importJsonConfigToDb: (draft?: DbConnInput) => Promise<void>;
   syncJsonToPostgresIncremental: (draft?: DbConnInput) => Promise<void>;
-  loadSharedConfigFromDb?: () => Promise<void>;
+  loadSharedConfigFromDb?: (draft?: DbConnInput) => Promise<void>;
   pool?: Pool | null;
   prepareBackupSnapshot?: () => Promise<void>;
   backupRootDir?: string;
@@ -96,7 +95,19 @@ const buildDbConnInputForExecution = async (
   if (parsed.password) return parsed;
   void adminDbUiConfigPath;
   void pool;
-  return { ...parsed, password: getDatabaseUrlPasswordFallback() };
+  const runtimeConn = getRuntimeDatabaseUrlConnection();
+  if (!runtimeConn) {
+    return { error: 'Password is required for this DB connection.' };
+  }
+  if (!runtimeConn.password) {
+    return { error: 'Password is required for this DB connection.' };
+  }
+  if (!isSameConnectionIdentity(parsed, runtimeConn)) {
+    return {
+      error: 'Password is required for this DB connection (runtime DATABASE_URL password can only be reused for the same host/port/database/user).',
+    };
+  }
+  return { ...parsed, password: runtimeConn.password };
 };
 
 const runDbCommand = async (
@@ -524,10 +535,10 @@ export const registerAdminDbToolRoutes = ({
             password: '',
           }
           : null,
-        hasSavedPassword: Boolean(getDatabaseUrlPasswordFallback()),
+        hasSavedPassword: canUseRuntimeDatabaseUrlPassword(parsed.dbConfig),
       };
     } catch {
-      ctx.body = { ok: true, storageMode: 'db', dbConfig: null, hasSavedPassword: Boolean(getDatabaseUrlPasswordFallback()) };
+      ctx.body = { ok: true, storageMode: 'db', dbConfig: null, hasSavedPassword: false };
     }
   });
 
@@ -554,7 +565,11 @@ export const registerAdminDbToolRoutes = ({
         updatedAt: Date.now(),
       };
       await saveAppSettingJson(pool, ADMIN_DB_UI_CONFIG_KEY, storedPayload, 'admin-db-ui');
-      ctx.body = { ok: true, message: 'Admin DB UI config saved', hasSavedPassword: Boolean(getDatabaseUrlPasswordFallback()) };
+      ctx.body = {
+        ok: true,
+        message: 'Admin DB UI config saved',
+        hasSavedPassword: canUseRuntimeDatabaseUrlPassword(normalizedDbConfig),
+      };
     } catch (error) {
       fail(ctx, 500, 'Failed to save admin DB UI config', String(error));
     }
@@ -639,9 +654,7 @@ export const registerAdminDbToolRoutes = ({
     if ('error' in parsed) return fail(ctx, 400, parsed.error);
 
     try {
-      const targetUrl = buildPostgresUrlFromDraft(parsed);
-      if (!targetUrl) return fail(ctx, 400, 'PostgreSQL connection is not configured');
-      await loadSharedConfigFromDb?.();
+      await loadSharedConfigFromDb?.(parsed);
       const diagnostics = await collectSharedConfigSyncDiagnostics(parsed, true);
       if ('error' in diagnostics) {
         return fail(ctx, 500, 'Failed to verify shared config sync after loading from PostgreSQL', diagnostics.error);
@@ -674,6 +687,8 @@ export const registerAdminDbToolRoutes = ({
     try {
       const templateJson = typeof body.templateJson === 'string' ? body.templateJson : '';
       const ranksJson = typeof body.ranksJson === 'string' ? body.ranksJson : '';
+      const templateJsonB64 = Buffer.from(templateJson, 'utf8').toString('base64');
+      const ranksJsonB64 = Buffer.from(ranksJson, 'utf8').toString('base64');
 
       if (!templateJson || !ranksJson) return fail(ctx, 400, 'Missing templateJson or ranksJson');
 
@@ -683,7 +698,9 @@ export const registerAdminDbToolRoutes = ({
         ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database],
         parsed,
         15_000,
-        `INSERT INTO app_settings (key, value) VALUES ('shared_deck_template', '${templateJson.replace(/'/g, "''")}'::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;`
+        `INSERT INTO app_settings (key, value)
+         VALUES ('shared_deck_template', convert_from(decode('${templateJsonB64}', 'base64'), 'utf8')::jsonb)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;`
       );
       if (!templateResult.ok) return fail(ctx, 400, 'Failed to save template to PostgreSQL', (templateResult.stderr || templateResult.error || templateResult.stdout || '').trim());
 
@@ -693,23 +710,35 @@ export const registerAdminDbToolRoutes = ({
         ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database],
         parsed,
         15_000,
-        `INSERT INTO app_settings (key, value) VALUES ('shared_ranks', '${ranksJson.replace(/'/g, "''")}'::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;`
+        `INSERT INTO app_settings (key, value)
+         VALUES ('shared_ranks', convert_from(decode('${ranksJsonB64}', 'base64'), 'utf8')::jsonb)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;`
       );
       if (!ranksResult.ok) return fail(ctx, 400, 'Failed to save ranks to PostgreSQL', (ranksResult.stderr || ranksResult.error || ranksResult.stdout || '').trim());
 
       // Update sync hash
       const combinedHash = Buffer.from(`${templateJson}:${ranksJson}`).toString('base64');
+      const hashJsonB64 = Buffer.from(JSON.stringify({ hash: combinedHash }), 'utf8').toString('base64');
       const updateHashResult = await runDbCommand(
         'psql',
         ['-h', parsed.host, '-p', parsed.port, '-U', parsed.user, '-d', parsed.database],
         parsed,
         15_000,
-        `INSERT INTO app_settings (key, value) VALUES ('shared_config_sync_hash', '${combinedHash.replace(/'/g, "''")}'::text) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;`
+        `INSERT INTO app_settings (key, value, updated_by)
+         VALUES (
+           'shared_config_sync_hash',
+           convert_from(decode('${hashJsonB64}', 'base64'), 'utf8')::jsonb,
+           'admin-db-ui'
+         )
+         ON CONFLICT (key) DO UPDATE
+         SET value = EXCLUDED.value,
+             updated_by = EXCLUDED.updated_by,
+             updated_at = now();`
       );
       if (!updateHashResult.ok) return fail(ctx, 400, 'Failed to update sync hash', (updateHashResult.stderr || updateHashResult.error || updateHashResult.stdout || '').trim());
 
       // Reload runtime shared config from PostgreSQL
-      await loadSharedConfigFromDb?.();
+      await loadSharedConfigFromDb?.(parsed);
 
       // Sync to normalized tables (card_catalog, deck_template_entries) using the provided JSON
       await syncJsonToPostgresIncremental?.(parsed);
@@ -909,13 +938,51 @@ export const registerAdminDbToolRoutes = ({
 };
 
 export { parseDbConnInput };
-const getDatabaseUrlPasswordFallback = () => {
+
+type RuntimeDatabaseUrlConnection = Omit<DbConnInput, 'sslMode'>;
+
+const normalizeConnValue = (value: string) => value.trim().toLowerCase();
+
+const isSameConnectionIdentity = (
+  a: Pick<DbConnInput, 'host' | 'port' | 'database' | 'user'>,
+  b: Pick<DbConnInput, 'host' | 'port' | 'database' | 'user'>,
+) => (
+  normalizeConnValue(a.host) === normalizeConnValue(b.host)
+  && normalizeConnValue(a.port || '5432') === normalizeConnValue(b.port || '5432')
+  && normalizeConnValue(a.database) === normalizeConnValue(b.database)
+  && normalizeConnValue(a.user) === normalizeConnValue(b.user)
+);
+
+const getRuntimeDatabaseUrlConnection = (): RuntimeDatabaseUrlConnection | null => {
   const raw = (process.env.DATABASE_URL ?? '').trim();
-  if (!raw) return '';
+  if (!raw) return null;
   try {
     const parsed = new URL(raw);
-    return decodeURIComponent(parsed.password ?? '');
+    return {
+      host: parsed.hostname.trim(),
+      port: parsed.port.trim() || '5432',
+      database: decodeURIComponent(parsed.pathname.replace(/^\//, '').trim()),
+      user: decodeURIComponent(parsed.username ?? '').trim(),
+      password: decodeURIComponent(parsed.password ?? ''),
+    };
   } catch {
-    return '';
+    return null;
   }
+};
+
+const canUseRuntimeDatabaseUrlPassword = (
+  dbConfig?: Partial<Pick<DbConnInput, 'host' | 'port' | 'database' | 'user'>>,
+) => {
+  if (!dbConfig?.host || !dbConfig.port || !dbConfig.database || !dbConfig.user) return false;
+  const runtimeConn = getRuntimeDatabaseUrlConnection();
+  if (!runtimeConn || !runtimeConn.password) return false;
+  return isSameConnectionIdentity(
+    {
+      host: dbConfig.host,
+      port: dbConfig.port,
+      database: dbConfig.database,
+      user: dbConfig.user,
+    },
+    runtimeConn,
+  );
 };

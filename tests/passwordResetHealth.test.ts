@@ -1,8 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import os from 'node:os';
-import path from 'node:path';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import {
   flushPasswordResetDeliveryHealthWrites,
   getPasswordResetDeliveryHealth,
@@ -12,13 +9,37 @@ import {
   resetPasswordResetDeliveryHealthForTests,
 } from '../server/services/password-reset-health';
 
+const createSettingsPool = (initial: Record<string, unknown> = {}) => {
+  const store = new Map<string, unknown>(Object.entries(initial));
+  return {
+    pool: {
+      query: async (sql: string, params?: unknown[]) => {
+        if (sql.includes('SELECT value FROM app_settings')) {
+          const key = String(params?.[0] ?? '');
+          const value = store.get(key);
+          return value === undefined
+            ? { rowCount: 0, rows: [] }
+            : { rowCount: 1, rows: [{ value }] };
+        }
+        if (sql.includes('INSERT INTO app_settings')) {
+          const key = String(params?.[0] ?? '');
+          const rawValue = String(params?.[1] ?? 'null');
+          store.set(key, JSON.parse(rawValue));
+          return { rowCount: 1, rows: [] };
+        }
+        return { rowCount: 0, rows: [] };
+      },
+    },
+    getSetting: (key: string) => store.get(key),
+  };
+};
+
 test('password reset delivery health persists degraded state across reinitialization', async () => {
-  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'joj-password-reset-health-'));
-  const statePath = path.join(tempDir, 'password-reset-health.json');
+  const settings = createSettingsPool();
 
   try {
     await initializePasswordResetDeliveryHealth({
-      statePath,
+      pool: settings.pool as never,
       now: '2026-03-25T08:00:00.000Z',
     });
     markPasswordResetDeliveryDegraded({
@@ -28,16 +49,16 @@ test('password reset delivery health persists degraded state across reinitializa
     });
     await flushPasswordResetDeliveryHealthWrites();
 
-    const persisted = JSON.parse(await readFile(statePath, 'utf8')) as Record<string, unknown>;
+    const persisted = settings.getSetting('password_reset_delivery_health') as Record<string, unknown>;
     assert.equal(persisted.status, 'degraded');
     assert.equal(persisted.lastError, 'smtp failed');
 
     resetPasswordResetDeliveryHealthForTests({
       now: '2026-03-25T08:10:00.000Z',
-      statePath: '',
+      pool: null,
     });
     await initializePasswordResetDeliveryHealth({
-      statePath,
+      pool: settings.pool as never,
       now: '2026-03-25T09:00:00.000Z',
     });
 
@@ -53,19 +74,17 @@ test('password reset delivery health persists degraded state across reinitializa
   } finally {
     resetPasswordResetDeliveryHealthForTests({
       now: '2026-03-25T10:00:00.000Z',
-      statePath: '',
+      pool: null,
     });
-    await rm(tempDir, { recursive: true, force: true });
   }
 });
 
 test('password reset delivery health persists healthy state without carrying previous startup time', async () => {
-  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'joj-password-reset-health-'));
-  const statePath = path.join(tempDir, 'password-reset-health.json');
+  const settings = createSettingsPool();
 
   try {
     await initializePasswordResetDeliveryHealth({
-      statePath,
+      pool: settings.pool as never,
       now: '2026-03-25T11:00:00.000Z',
     });
     markPasswordResetDeliveryHealthy('2026-03-25T11:05:00.000Z');
@@ -73,10 +92,10 @@ test('password reset delivery health persists healthy state without carrying pre
 
     resetPasswordResetDeliveryHealthForTests({
       now: '2026-03-25T11:10:00.000Z',
-      statePath: '',
+      pool: null,
     });
     await initializePasswordResetDeliveryHealth({
-      statePath,
+      pool: settings.pool as never,
       now: '2026-03-25T12:00:00.000Z',
     });
 
@@ -86,8 +105,7 @@ test('password reset delivery health persists healthy state without carrying pre
   } finally {
     resetPasswordResetDeliveryHealthForTests({
       now: '2026-03-25T12:30:00.000Z',
-      statePath: '',
+      pool: null,
     });
-    await rm(tempDir, { recursive: true, force: true });
   }
 });

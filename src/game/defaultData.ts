@@ -1,19 +1,43 @@
 import { cloneCard, cloneRank } from './cloneUtils';
 import type { CardDefinition, RankDefinition } from './types';
+import sharedDeckTemplateJson from '../../database/shared-deck-template.json';
+import sharedRanksJson from '../../database/shared-ranks.json';
+
+const templateSource = (
+  sharedDeckTemplateJson && typeof sharedDeckTemplateJson === 'object'
+    ? sharedDeckTemplateJson as Record<string, unknown>
+    : {}
+);
+
+const asCardArray = (value: unknown): CardDefinition[] => (
+  Array.isArray(value)
+    ? value as CardDefinition[]
+    : []
+);
 
 export const defaultSharedDeckTemplateSeed = {
-  deck: [] as CardDefinition[],
-  legendaryDeck: [] as CardDefinition[],
-  rankTrack: [] as CardDefinition[],
-  extraCatalog: [] as CardDefinition[],
-  deckBackImage: undefined as string | undefined,
-  modules: undefined,
-  gameSetup: undefined,
+  deck: asCardArray(templateSource.deck),
+  legendaryDeck: asCardArray(templateSource.legendaryDeck),
+  rankTrack: asCardArray(templateSource.rankTrack),
+  extraCatalog: asCardArray(templateSource.catalog),
+  deckBackImage: typeof templateSource.deckBackImage === 'string' ? templateSource.deckBackImage : undefined,
+  modules: Array.isArray(templateSource.modules) ? templateSource.modules : undefined,
+  gameSetup: templateSource.gameSetup && typeof templateSource.gameSetup === 'object'
+    ? templateSource.gameSetup as Record<string, unknown>
+    : undefined,
 };
 
-export const defaultSharedExtraCatalogSeed: CardDefinition[] = [];
+export const defaultSharedExtraCatalogSeed: CardDefinition[] = defaultSharedDeckTemplateSeed.extraCatalog.map(cloneCard);
 
-export const defaultSharedRanksSeed: RankDefinition[] = [];
+export const defaultSharedRanksSeed: RankDefinition[] = (
+  Array.isArray(sharedRanksJson)
+    ? sharedRanksJson
+    : (
+      sharedRanksJson && typeof sharedRanksJson === 'object' && Array.isArray((sharedRanksJson as { ranks?: unknown[] }).ranks)
+        ? (sharedRanksJson as { ranks: unknown[] }).ranks
+        : []
+    )
+) as RankDefinition[];
 
 export const defaultBaseDeck = defaultSharedDeckTemplateSeed.deck.map(cloneCard);
 export const defaultLegendaryCards = defaultSharedDeckTemplateSeed.legendaryDeck.map(cloneCard);

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { text } from './i18n';
 import { runGameSimulations } from '../game/jojGame';
+import type { GameMode } from '../game/types';
 import { SERVER_URL } from './app/clientConfig';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import {
@@ -54,6 +55,12 @@ const ADMIN_MATCHES_DELETE_ALL_API = `${SERVER_URL}/api/admin/matches-delete-all
 const ADMIN_MATCHES_API = `${SERVER_URL}/api/admin/matches`;
 
 export const App = () => {
+  const normalizeSimulationGameMode = (mode?: string): GameMode | undefined => (
+    mode === 'standard' || mode === 'standard_plus' || mode === 'simplified'
+      ? mode
+      : undefined
+  );
+
   const buildLabel = __APP_BUILD_LABEL__;
   const isAdminRoute = window.location.pathname.startsWith('/admin');
   const {
@@ -746,7 +753,14 @@ export const App = () => {
               onResetRanks={onResetRanks}
               onStopGame={onStopGame}
               runGameSimulations={(players, simulations, options) =>
-                runGameSimulations(players, simulations, 0, options ? { ...options, gameMode: options.gameMode as any } : undefined)
+                runGameSimulations(
+                  players,
+                  simulations,
+                  0,
+                  options
+                    ? { ...options, gameMode: normalizeSimulationGameMode(options.gameMode) }
+                    : undefined,
+                )
               }
               refreshAdminMatches={refreshAdminMatches}
               adminMatches={adminMatches}

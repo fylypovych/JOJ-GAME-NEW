@@ -34,6 +34,28 @@ const baseStore = () => ({
   persistMatchResultIfFinished: async () => true,
 });
 
+const createSettingsPool = (initial: Record<string, unknown> = {}) => {
+  const store = new Map<string, unknown>(Object.entries(initial));
+  return {
+    query: async (sql: string, params?: unknown[]) => {
+      if (sql.includes('SELECT value FROM app_settings')) {
+        const key = String(params?.[0] ?? '');
+        const value = store.get(key);
+        return value === undefined
+          ? { rowCount: 0, rows: [] }
+          : { rowCount: 1, rows: [{ value }] };
+      }
+      if (sql.includes('INSERT INTO app_settings')) {
+        const key = String(params?.[0] ?? '');
+        const rawValue = String(params?.[1] ?? 'null');
+        store.set(key, JSON.parse(rawValue));
+        return { rowCount: 1, rows: [] };
+      }
+      return { rowCount: 0, rows: [] };
+    },
+  };
+};
+
 test('user-lobby join binds owned session after verified join', async () => {
   const { router, postHandlers } = makeRouter();
   const joinCalls: Array<{ gameName: string; matchID: string; playerID: string; playerName: string }> = [];
@@ -42,6 +64,8 @@ test('user-lobby join binds owned session after verified join', async () => {
     userStore: baseStore() as never,
     logLine: async () => undefined,
     jsonBodyLimit: 10_000,
+    gameUiConfigPath: 'unused',
+    pool: createSettingsPool() as never,
     lobbyApiFactory: () => ({
       createMatch: async () => ({ matchID: 'unused' }),
       joinMatch: async (gameName, matchID, args) => {
@@ -92,6 +116,8 @@ test('user-lobby create-and-join creates bot seats and returns session', async (
     userStore: baseStore() as never,
     logLine: async () => undefined,
     jsonBodyLimit: 10_000,
+    gameUiConfigPath: 'unused',
+    pool: createSettingsPool() as never,
     lobbyApiFactory: () => ({
       createMatch: async (gameName, args) => {
         calls.push({ type: 'create', gameName, body: args as unknown as Record<string, unknown> });
@@ -158,6 +184,8 @@ test('user-lobby join returns controlled error when internal lobby api fails', a
     userStore: baseStore() as never,
     logLine: async () => undefined,
     jsonBodyLimit: 10_000,
+    gameUiConfigPath: 'unused',
+    pool: createSettingsPool() as never,
     lobbyApiFactory: () => ({
       createMatch: async () => ({ matchID: 'unused' }),
       joinMatch: async () => {

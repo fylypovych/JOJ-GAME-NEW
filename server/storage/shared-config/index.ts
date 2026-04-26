@@ -1,5 +1,6 @@
 import { createPostgresSharedConfigStore } from './postgres';
 import type { SharedConfigStore, SharedConfigStoreDeps } from './types';
+import { buildPostgresUrlFromDraft } from '../../db/psql';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -32,15 +33,17 @@ export const createSharedConfigStore = (deps: SharedConfigStoreDeps, appRootDir?
       await postgresStore.saveRanksToPostgresWithUrl(databaseUrl);
       await writeJsonMirror(appRootDir, path.join('database', 'shared-ranks.json'), deps.exportSharedRanksJson());
     },
-    loadTemplate: async () => {
-      const loadedFromPostgres = await postgresStore.loadTemplateFromPostgres();
+    loadTemplate: async (draft) => {
+      const targetUrl = draft ? buildPostgresUrlFromDraft(draft) : databaseUrl;
+      const loadedFromPostgres = await postgresStore.loadTemplateFromPostgres(targetUrl);
       if (!loadedFromPostgres) {
         throw new Error('Failed to load shared deck template from PostgreSQL. Please ensure data exists in the database.');
       }
       await writeJsonMirror(appRootDir, path.join('database', 'shared-deck-template.json'), deps.exportSharedDeckTemplateJson());
     },
-    loadRanks: async () => {
-      const loadedFromPostgres = await postgresStore.loadRanksFromPostgres();
+    loadRanks: async (draft) => {
+      const targetUrl = draft ? buildPostgresUrlFromDraft(draft) : databaseUrl;
+      const loadedFromPostgres = await postgresStore.loadRanksFromPostgres(targetUrl);
       if (!loadedFromPostgres) {
         throw new Error('Failed to load shared ranks from PostgreSQL. Please ensure data exists in the database.');
       }
@@ -52,11 +55,13 @@ export const createSharedConfigStore = (deps: SharedConfigStoreDeps, appRootDir?
     saveRanksToDisk: async () => {
       await postgresStore.saveRanksToPostgresWithUrl(databaseUrl);
     },
-    loadTemplateFromDisk: async () => {
-      await postgresStore.loadTemplateFromPostgres();
+    loadTemplateFromDisk: async (draft) => {
+      const targetUrl = draft ? buildPostgresUrlFromDraft(draft) : databaseUrl;
+      await postgresStore.loadTemplateFromPostgres(targetUrl);
     },
-    loadRanksFromDisk: async () => {
-      await postgresStore.loadRanksFromPostgres();
+    loadRanksFromDisk: async (draft) => {
+      const targetUrl = draft ? buildPostgresUrlFromDraft(draft) : databaseUrl;
+      await postgresStore.loadRanksFromPostgres(targetUrl);
     },
     syncCurrentJsonToPostgres: async (draft?) => {
       await postgresStore.syncCurrentJsonToPostgres(draft, appRootDir);

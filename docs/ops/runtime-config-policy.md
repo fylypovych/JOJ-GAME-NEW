@@ -4,13 +4,12 @@ This project treats runtime environment settings as part of deployment safety, n
 
 ### Required Production Rules
 
-- `ADMIN_TOKEN` must be set in production.
 - `DATABASE_URL` must be set in production (required for user auth/profiles).
 - `FRONTEND_ORIGIN` must be set in production.
 - `NODE_ENV` must be set to `production` in production.
 - `TRUST_PROXY` should be set to `true` when running behind a reverse proxy.
 - `STORAGE_MODE` must be one of `file`, `postgres`, or `db` (`db` is normalized to `postgres`).
-- Starting without admin auth in production is blocked.
+- Administrator session auth must remain enabled in production.
 - Legacy admin auth overrides `DISABLE_ADMIN_AUTH` and `ALLOW_INSECURE_ADMIN` are no longer supported and are ignored.
 
 ### Recommended Operational Rules
@@ -35,7 +34,6 @@ This project treats runtime environment settings as part of deployment safety, n
 
 These are acceptable only for local development or tightly controlled temporary test environments:
 
-- empty `ADMIN_TOKEN`
 - empty `DATABASE_URL`
 - empty `FRONTEND_ORIGIN`
 - exposing server ports directly without a reverse proxy

@@ -10,7 +10,7 @@ Checklist for moving from local/LAN testing to public/open testing.
 - [x] 2. Persistent match storage for `boardgame.io` (survives server restarts)
 - [x] 3. Admin auth / access protection for `/admin`
 - [x] 4. Move image upload API to backend server (`:8000`)
-- [x] 5. Runtime config via `.env` (ports, origins, admin token, etc.)
+- [x] 5. Runtime config via `.env` (ports, origins, DB, proxy, etc.)
 - [x] 6. Process manager / service supervision (`pm2` / `systemd`)
 - [x] 7. Basic ops visibility: health-check + server logs
 - [x] 8. Rate limits / payload limits / anti-spam protections
@@ -32,7 +32,7 @@ Checklist for moving from local/LAN testing to public/open testing.
 - PM2 config example (`ecosystem.config.cjs`)
 - Backend request payload limits + rate limits for admin/import/upload routes
 - Firewall / port hardening guide (`DEPLOYMENT_HARDENING.md`)
-- Admin token protection for admin APIs + `/admin` login flow (`ADMIN_TOKEN`)
+- Admin session + CSRF protection for admin APIs and `/admin` flow
 - `.env` runtime loading on server + `.env.example`
 - Updated `README.md` with local/LAN/server notes
 - User authentication with PostgreSQL backend
@@ -40,7 +40,7 @@ Checklist for moving from local/LAN testing to public/open testing.
 - Card gallery with category filtering
 - Awards system for tracking achievements
 - Statistics page for game analytics
-- Runtime policy enforcement (ADMIN_TOKEN, DATABASE_URL, FRONTEND_ORIGIN required in production)
+- Runtime policy enforcement (DATABASE_URL and FRONTEND_ORIGIN required in production)
 
 ## Next Recommended
 

@@ -81,7 +81,7 @@ export const createMatchRuntimeSync = (args: {
 
   const cutoverToPostgres = async (postgresMatchDb: MatchDbBackend, mode: 'auto' | 'skip') => {
     setCurrentBackend(postgresMatchDb);
-    const nextMode: 'skip' = 'skip';
+    const nextMode = 'skip' as const;
     await logLine(
       'INFO',
       mode === 'skip'

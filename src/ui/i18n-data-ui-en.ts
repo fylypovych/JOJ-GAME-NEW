@@ -193,7 +193,7 @@ export const uiEnData = {
     'Shared config, system settings, and bug reports are DB-only now. File fallback for this path is disabled.',
   dbConnectionTitle: 'DB connection settings',
   dbConnectionHint:
-    'These settings are stored on the server and used for connection tests, import, and backup operations.',
+    'These settings are used for connection tests, import, and backups. Runtime app connection is taken from DATABASE_URL.',
   dbConnectionPreview: 'Connection string preview',
   dbHostLabel: 'Host',
   dbPortLabel: 'Port',

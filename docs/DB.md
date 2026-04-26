@@ -25,7 +25,6 @@ Set in `.env`:
 ```env
 STORAGE_MODE=postgres
 DATABASE_URL=postgresql://user:password@127.0.0.1:5432/joj_game
-ADMIN_TOKEN=your-secret-token
 FRONTEND_ORIGIN=http://your-domain.com
 TRUST_PROXY=true
 NODE_ENV=production
@@ -91,9 +90,6 @@ SELECT id, username, role, created_at FROM users;
 `Shared config storage mode is not postgres`:
 - Old server build or old endpoint version. Update code and rebuild.
 - Newer builds allow JSON -> DB import directly via DB connection form values.
-
-`Server cannot start in production without ADMIN_TOKEN`:
-- Set `ADMIN_TOKEN` in `.env`.
 
 `Server cannot start in production without DATABASE_URL`:
 - Set `DATABASE_URL` in `.env`.

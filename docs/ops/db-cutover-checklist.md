@@ -16,7 +16,6 @@ Use this when switching or validating PostgreSQL-backed shared config (`STORAGE_
 ```env
 STORAGE_MODE=postgres
 DATABASE_URL=postgresql://user:password@host:5432/joj_game
-ADMIN_TOKEN=your-secret-token
 FRONTEND_ORIGIN=https://your-domain.com
 NODE_ENV=production
 ```

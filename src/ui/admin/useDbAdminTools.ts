@@ -166,7 +166,7 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
       clearTimeout(timeoutId);
       if (!response.ok) throw new Error('Server save failed');
       setDbConfigSaveStatus(dbText.browserAndServerSave);
-    } catch (error) {
+    } catch {
       setDbConfigSaveStatus(dbText.localSave + ' (сервер недоступний)');
     }
   };
@@ -496,3 +496,6 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
     LEGACY_ADMIN_STORAGE_MODE_STORAGE_KEY,
   };
 };
+
+
+
