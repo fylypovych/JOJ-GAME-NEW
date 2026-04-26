@@ -22,7 +22,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    if (typeof window !== 'undefined' && typeof window.reportError === 'function') {
+      window.reportError(error);
+    }
     this.props.onError?.(error, errorInfo);
   }
 

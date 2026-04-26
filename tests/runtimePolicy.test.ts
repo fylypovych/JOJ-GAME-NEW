@@ -2,10 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getAdminRuntimePolicy, getDeprecatedAdminAuthEnvNames } from '../server/runtime-policy';
 
-test('production no longer requires ADMIN_TOKEN', () => {
+test('production runtime policy validates required env without legacy token auth', () => {
   const policy = getAdminRuntimePolicy({
     NODE_ENV: 'production',
-    ADMIN_TOKEN: '',
     DATABASE_URL: 'postgresql://user:pass@localhost/db',
     FRONTEND_ORIGIN: 'https://joj.example',
   });
@@ -17,7 +16,6 @@ test('production no longer requires ADMIN_TOKEN', () => {
 test('deprecated admin override flags remain ignored and reported as warnings', () => {
   const policy = getAdminRuntimePolicy({
     NODE_ENV: 'production',
-    ADMIN_TOKEN: '',
     ALLOW_INSECURE_ADMIN: '1',
     DISABLE_ADMIN_AUTH: 'true',
     DATABASE_URL: 'postgresql://user:pass@localhost/db',
@@ -32,7 +30,6 @@ test('deprecated admin override flags remain ignored and reported as warnings', 
 test('deprecated admin override flags produce warnings but do not block valid startup', () => {
   const policy = getAdminRuntimePolicy({
     NODE_ENV: 'production',
-    ADMIN_TOKEN: 'secret',
     ALLOW_INSECURE_ADMIN: '1',
     DATABASE_URL: 'postgresql://user:pass@localhost/db',
     FRONTEND_ORIGIN: 'https://joj.example',
@@ -55,7 +52,6 @@ test('deprecated admin override helper returns only populated flags', () => {
 test('production requires DATABASE_URL', () => {
   const policy = getAdminRuntimePolicy({
     NODE_ENV: 'production',
-    ADMIN_TOKEN: 'secret',
     DATABASE_URL: '',
     FRONTEND_ORIGIN: 'https://joj.example',
   });
@@ -66,7 +62,6 @@ test('production requires DATABASE_URL', () => {
 test('production requires FRONTEND_ORIGIN and warns about TRUST_PROXY', () => {
   const policy = getAdminRuntimePolicy({
     NODE_ENV: 'production',
-    ADMIN_TOKEN: 'secret',
     DATABASE_URL: 'postgresql://user:pass@localhost/db',
     FRONTEND_ORIGIN: '',
   });

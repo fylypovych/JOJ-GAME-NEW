@@ -22,7 +22,8 @@ export const loadEnvFile = (envPath: string) => {
   } catch (error) {
     // .env is optional, but log for debugging
     if (process.env.NODE_ENV !== 'production') {
-      console.warn(`[env] Failed to load .env file from ${envPath}:`, error instanceof Error ? error.message : error);
+      const details = error instanceof Error ? error.message : String(error);
+      process.stderr.write(`[env] Failed to load .env file from ${envPath}: ${details}\n`);
     }
   }
 };

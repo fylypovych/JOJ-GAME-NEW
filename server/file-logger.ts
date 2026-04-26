@@ -13,6 +13,6 @@ export const createFileLogger = (logsPath: string): LogLine => async (level, mes
   }
   // Only log to console in development
   if (process.env.NODE_ENV !== 'production') {
-    console.log(line.trimEnd());
+    process.stdout.write(line);
   }
 };

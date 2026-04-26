@@ -104,7 +104,6 @@ PORT=8000
 FRONTEND_ORIGIN=http://localhost:5173
 WEB_PORT=4173
 VITE_PREVIEW_ALLOWED_HOSTS=joj.lol,www.joj.lol,localhost,127.0.0.1
-ADMIN_TOKEN=
 ```
 
 Актуальні важливі змінні середовища:
@@ -113,7 +112,6 @@ ADMIN_TOKEN=
 - `FRONTEND_ORIGIN` - дозволений frontend origin
 - `WEB_PORT` - порт для `vite preview`
 - `VITE_PREVIEW_ALLOWED_HOSTS` - allowlist для preview
-- `ADMIN_TOKEN` - опційний legacy-заголовок, не обов'язковий для production
 - `STORAGE_MODE` - `file`, `postgres`, або `db` (`db` нормалізується до `postgres`)
 - `DATABASE_URL` - обов'язково, якщо `STORAGE_MODE=postgres`
 - `NODE_ENV` - стандартна runtime-змінна Node.js

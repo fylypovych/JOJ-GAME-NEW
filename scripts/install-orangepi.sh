@@ -44,7 +44,7 @@ echo "[4/8] Preparing .env..."
 if [[ ! -f .env ]]; then
   cp .env.example .env
   echo "Created .env from .env.example"
-  echo "IMPORTANT: edit .env and set ADMIN_TOKEN / FRONTEND_ORIGIN before exposing publicly."
+  echo "IMPORTANT: edit .env and set DATABASE_URL / FRONTEND_ORIGIN before exposing publicly."
 else
   echo ".env already exists, keeping it."
 fi

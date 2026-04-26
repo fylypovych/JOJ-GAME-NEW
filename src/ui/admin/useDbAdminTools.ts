@@ -328,12 +328,11 @@ export const useDbAdminTools = ({ lang, adminFetch, serverUrl, enabled }: Args) 
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string; details?: string | { mismatches?: string[] }; message?: string };
       if (!response.ok || !payload.ok) {
-        console.error('Failed to save template to PostgreSQL:', extractApiErrorText(payload, 'sync mismatch'));
         return false;
       }
       return true;
     } catch (error) {
-      console.error('Failed to save template to PostgreSQL:', error);
+      void error;
       return false;
     }
   };

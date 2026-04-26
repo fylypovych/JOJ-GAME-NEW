@@ -33,7 +33,7 @@ export const IMAGE_UPLOAD_BODY_LIMIT = 16 * 1024 * 1024;
 
 // Check if .env file exists before loading
 if (!existsSync(envPath)) {
-  console.warn(`[bootstrap-config] .env file not found at ${envPath}. Using default environment variables.`);
+  process.stderr.write(`[bootstrap-config] .env file not found at ${envPath}. Using default environment variables.\n`);
 }
 
 loadEnvFile(envPath);

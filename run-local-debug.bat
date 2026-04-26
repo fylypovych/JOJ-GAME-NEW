@@ -48,11 +48,7 @@ echo [JOJ] Starting local debug servers...
 echo [JOJ] Web:    http://localhost:5173
 echo [JOJ] Admin:  http://localhost:5173/admin
 echo [JOJ] Server: http://localhost:8000/api/health
-if defined ADMIN_TOKEN (
-  echo [JOJ] Admin auth: enabled from current environment
-) else (
-  echo [JOJ] Admin auth: will be resolved by server from .env or current environment
-)
+echo [JOJ] Admin auth: session-based (cookie + CSRF)
 echo.
 echo [JOJ] Press Ctrl+C to stop.
 echo.
