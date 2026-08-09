@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { executeSimulationHandPlan, executeSimulationLegendaryPlan, runGameSimulationsWithDeps } from '../src/game/simulation';
-import { calculateSimulationTurnLimit } from '../src/game/simulationSetup';
+import { calculateSimulationTurnLimit, createSimulationState } from '../src/game/simulationSetup';
 import type { SimulationDeps } from '../src/game/simulation';
 import { playCardHandler, playLegendaryCardHandler, promoteHandler } from '../src/game/moveHandlers';
 import type { JojMovesDeps, MoveArgs } from '../src/game/moveTypes';
@@ -108,6 +108,25 @@ test('simulation forces simplified mode when legendary deck mode is merged', () 
   assert.equal(report.input.gameMode, 'simplified');
   assert.equal(report.input.useMainDeck, true);
   assert.equal(report.input.useLegendaryDeck, false);
+});
+
+test('standard plus simulation auto-completes draft and deals legendary hands', () => {
+  const card = { id: 'legendary-03', title: 'L', category: 'LEGENDARY', effects: [] } as CardDefinition;
+  const deps = createBaseDeps({
+    getSharedDeckTemplate: () => ({
+      deck: [], legendaryDeck: [card], rankTrack: [], extraCatalog: [],
+      modules: [{ id: 'legendary', name: 'L', moduleType: 'SEPARATE_DECK_MODULE', category: 'LEGENDARY', cardCount: 1, enabled: true, target: 'legendaryDeck', cardIds: [card.id] }],
+      gameSetup: { optionalMainDeckModuleIds: [], legendaryModuleId: 'legendary', legendaryDeckMode: 'separate' },
+    }),
+    drawLegendaryCards: (G, pid, amount, source) => { G.legendaryHands[pid] = [...(source ?? [])].slice(0, amount); },
+    startingLegendaryHandSize: 1,
+  });
+
+  const G = createSimulationState(deps, ['0', '1'], { useMainDeck: true, useLegendaryDeck: true, gameMode: 'standard_plus' });
+
+  assert.deepEqual(G.legendaryDraftCompleted, { '0': true, '1': true });
+  assert.equal(G.legendaryHands['0'].length, 1);
+  assert.equal(G.legendaryHands['1'].length, 1);
 });
 
 test('simulation reports seat bias issue when win rates diverge strongly', () => {
@@ -430,6 +449,29 @@ test('simulation legendary execution stays in parity with live handler', () => {
     playerID: '0',
     playerIDs: ['0', '1'],
     currentTurn: 1,
+  });
+
+  assert.equal(liveResult, undefined);
+  assert.equal(simResult, true);
+  assert.deepEqual(comparableState(sim), comparableState(live));
+});
+
+test('simplified legendary execution applies unique ability in parity with live handler', () => {
+  const live = makeParityState();
+  const sim = makeParityState();
+  live.gameMode = 'simplified';
+  sim.gameMode = 'simplified';
+  const card: CardDefinition = { id: 'legendary-17', title: 'Neptune', category: 'LEGENDARY', effects: [] };
+  live.hands['0'] = [card];
+  sim.hands['0'] = [cloneCard(card)];
+  syncParityPlayerState(live, '0');
+  syncParityPlayerState(sim, '0');
+
+  const liveResult = playCardHandler(createParityMoveDeps(), makePlayArgs(live), card.id, ['time']);
+  const simResult = executeSimulationHandPlan({
+    deps: createParitySimulationDeps(), G: sim,
+    plan: { kind: 'play-card', cardId: card.id, score: 0, replacementResources: ['time'] },
+    playerID: '0', playerIDs: ['0', '1'], currentTurn: 1, numPlayers: 2,
   });
 
   assert.equal(liveResult, undefined);

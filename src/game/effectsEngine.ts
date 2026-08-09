@@ -139,6 +139,9 @@ export const createEffectsEngine = ({
       resources[key] = (resources[key] ?? 0) - (summary.resources[key] ?? 0);
     });
     if (summary.rank !== 0) shiftRank(G, playerID, summary.rank * -1);
+    if (summary.skipsNextTurn && (G.skippedTurnCounts?.[playerID] ?? 0) > 0) {
+      G.skippedTurnCounts![playerID] = Math.max(0, G.skippedTurnCounts![playerID] - 1);
+    }
     clampNonNegativeResources(resources);
   };
 

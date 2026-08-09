@@ -480,6 +480,14 @@ export const jojGame: Game<JojGameState> = {
       Object.keys(G.promotedThisTurn).forEach((pid) => {
         G.promotedThisTurn[pid] = false;
       });
+      if (Number(G.ignoreSeatLimitForPromotionUntilTurn?.[ctx.currentPlayer] ?? 0) <= Number(ctx.turn ?? 0)) {
+        delete G.ignoreSeatLimitForPromotionUntilTurn?.[ctx.currentPlayer];
+      }
+      Object.keys(G.sukhpayZsuPendingBonus ?? {}).forEach((pid) => {
+        if (Number(G.sukhpayZsuWatchUntilTurn?.[pid] ?? -1) < Number(ctx.turn ?? 0)) {
+          G.sukhpayZsuPendingBonus[pid] = false;
+        }
+      });
       if ((G.skippedTurnCounts?.[ctx.currentPlayer] ?? 0) > 0) {
         G.skippedTurnCounts![ctx.currentPlayer] = Math.max(0, (G.skippedTurnCounts?.[ctx.currentPlayer] ?? 0) - 1);
         G.gameStats.turnsCompleted = (G.gameStats.turnsCompleted ?? 0) + 1;

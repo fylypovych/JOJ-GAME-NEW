@@ -150,7 +150,7 @@ export const createRankEngine = ({
   const demoteByOneRankWithSeatCheck = (
     G: JojGameState,
     targetPlayerID: string,
-    playerCount: number,
+    _playerCount: number,
   ): { ok: true; fromRankId: string; toRankId: string } | { ok: false; reason: 'min-rank' | 'no-seat' | 'invalid-rank' } => {
     const ranks = getActiveRanks();
     const currentRankId = G.ranks[targetPlayerID];
@@ -159,11 +159,6 @@ export const createRankEngine = ({
     if (currentRankIdx === 0) return { ok: false, reason: 'min-rank' };
     const lowerRank = ranks[currentRankIdx - 1];
     if (!lowerRank) return { ok: false, reason: 'invalid-rank' };
-
-    const occupied = Object.entries(G.ranks)
-      .filter(([pid, rankId]) => pid !== targetPlayerID && rankId === lowerRank.id)
-      .length;
-    if (occupied >= seatLimitForRank(playerCount, lowerRank.id, ranks)) return { ok: false, reason: 'no-seat' };
 
     G.ranks[targetPlayerID] = lowerRank.id;
     onRankChanged?.(G, targetPlayerID, currentRankId, lowerRank.id);

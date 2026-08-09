@@ -28,7 +28,10 @@ export const cardNeedsTargetSelection = (card: CardDefinition): boolean =>
   getCardPlayBehavior(card) === 'lyap' || card.id === 'legendary-10';
 
 export const cardNeedsResourceSelection = (card: CardDefinition): boolean =>
-  card.id === 'legendary-06' || (card.category === 'VVNZ' && Boolean(card.grantRank));
+  card.id === 'legendary-06'
+  || card.id === 'legendary-09'
+  || card.id === 'legendary-17'
+  || (card.category === 'VVNZ' && Boolean(card.grantRank));
 
 export const cardNeedsMultiTargetReplacement = (card: CardDefinition): boolean =>
   getCardPlayBehavior(card) === 'scandal';

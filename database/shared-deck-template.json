@@ -2004,7 +2004,7 @@
       "category": "LEGENDARY",
       "image": "/cards/card-1772961126046.webp",
       "effects": [],
-      "flavor": "«Не тягнув стакан за звання.»"
+      "flavor": "«Стакан за тих, хто не потягнув стакан за звання.»"
     }
   ],
   "deckIds": [
@@ -2123,7 +2123,6 @@
     "legendary-11",
     "legendary-12",
     "legendary-14",
-    "legendary-15",
     "legendary-16",
     "legendary-17"
   ],
@@ -3879,27 +3878,6 @@
       "flavor": "Головне — повернутись із неї добровільно."
     },
     {
-      "id": "legendary-15",
-      "title": "SLON.FM",
-      "category": "LEGENDARY",
-      "image": "/cards/card-1772961436932.webp",
-      "effects": [
-        {
-          "resource": "reputation",
-          "value": 2
-        },
-        {
-          "resource": "documents",
-          "value": 1
-        },
-        {
-          "resource": "tech",
-          "value": 1
-        }
-      ],
-      "flavor": "«Новини іноді доходять раніше наказів.»"
-    },
-    {
       "id": "legendary-16",
       "title": "Котєйка ЗСУ",
       "category": "LEGENDARY",
@@ -3918,7 +3896,7 @@
       "category": "LEGENDARY",
       "image": "/cards/card-1772961126046.webp",
       "effects": [],
-      "flavor": "«Не тягнув стакан за звання.»"
+      "flavor": "«Стакан за тих, хто не потягнув стакан за звання.»"
     }
   ],
   "rankTrack": [],
@@ -4101,7 +4079,7 @@
       "name": "2026.LEGENDARY.MODULE",
       "moduleType": "SEPARATE_DECK_MODULE",
       "category": "LEGENDARY",
-      "cardCount": 16,
+      "cardCount": 15,
       "enabled": true,
       "target": "legendaryDeck",
       "cardIds": [
@@ -4118,7 +4096,6 @@
         "legendary-11",
         "legendary-12",
         "legendary-14",
-        "legendary-15",
         "legendary-16",
         "legendary-17"
       ],

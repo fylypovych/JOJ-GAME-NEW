@@ -15,8 +15,8 @@ export type PendingSelection =
   | { type: 'hand-scandal'; cardId: string }
   | { type: 'draw-lyap'; cardId: string }
   | { type: 'draw-scandal'; cardId: string }
-  | { type: 'legendary-drone'; cardId: string }
-  | { type: 'legendary-water'; cardId: string }
+  | { type: 'legendary-drone'; cardId: string; fromHand?: boolean }
+  | { type: 'legendary-water'; cardId: string; fromHand?: boolean }
   | { type: 'vvnz-payment'; cardId: string };
 
 export type NoticeKind = 'info' | 'error' | 'success';
@@ -175,6 +175,18 @@ export const usePendingSelection = ({
       setPendingSelection({ type: 'vvnz-payment', cardId: card.id });
       setVvnzSelectedResources([]);
       postNotice('info', `${board.pickTwoResources}: ${cardTitle(card.id, card.title, lang)}`);
+      return false;
+    }
+    if (getCardPlayBehavior(card) === 'legendary' && cardNeedsTargetSelection(card)) {
+      setPendingSelection({ type: 'legendary-drone', cardId: card.id, fromHand: true });
+      setSelectedTargetId(null);
+      postNotice('info', `${board.pickTarget}: ${cardTitle(card.id, card.title, lang)}`);
+      return false;
+    }
+    if (getCardPlayBehavior(card) === 'legendary' && cardNeedsResourceSelection(card)) {
+      setPendingSelection({ type: 'legendary-water', cardId: card.id, fromHand: true });
+      setSelectedResource(null);
+      postNotice('info', `${board.pickResource}: ${cardTitle(card.id, card.title, lang)}`);
       return false;
     }
     moves.playCard(card.id, [], undefined);
@@ -354,11 +366,13 @@ export const usePendingSelection = ({
     }
     if (pendingSelection.type === 'legendary-drone') {
       if (!selectedTargetId) return postNotice('error', board.targetRequired);
-      moves.playLegendaryCard?.(pendingSelection.cardId, selectedTargetId, undefined);
+      if (pendingSelection.fromHand) moves.playCard(pendingSelection.cardId, [], selectedTargetId);
+      else moves.playLegendaryCard?.(pendingSelection.cardId, selectedTargetId, undefined);
     }
     if (pendingSelection.type === 'legendary-water') {
       if (!selectedResource) return postNotice('error', board.resourceRequired);
-      moves.playLegendaryCard?.(pendingSelection.cardId, undefined, selectedResource);
+      if (pendingSelection.fromHand) moves.playCard(pendingSelection.cardId, [selectedResource], undefined);
+      else moves.playLegendaryCard?.(pendingSelection.cardId, undefined, selectedResource);
     }
     clearPendingSelection();
   };

@@ -74,9 +74,17 @@ const legendaryAbilityRegistry: Record<string, LegendaryAbilityHandler> = {
   },
   'legendary-05': ({ d, G, ctx, playerID }) => {
     const playerLabel = d.getPlayerLabel(G, playerID);
-    const untilTurn = d.computeShieldUntilNextOwnTurn(ctx, playerID);
-    G.sukhpayZsuWatchUntilTurn[playerID] = untilTurn;
-    G.sukhpayZsuPendingBonus[playerID] = true;
+    const currentTurn = Number(ctx.turn ?? 0);
+    const scandalAlreadyPlayed = (G.appliedEffectLog ?? []).some(
+      (entry) => entry.sourceCategory === 'SCANDAL' && entry.createdAtTurn === currentTurn,
+    );
+    G.sukhpayZsuWatchUntilTurn[playerID] = currentTurn;
+    G.sukhpayZsuPendingBonus[playerID] = !scandalAlreadyPlayed;
+    if (scandalAlreadyPlayed) {
+      G.resources[playerID].discipline = (G.resources[playerID].discipline ?? 0) + 1;
+      d.clampNonNegativeResources(G.resources[playerID]);
+      d.syncPlayerState(G, playerID);
+    }
     return d.legendaryTexts.sukhpayActivated(playerLabel);
   },
   'legendary-12': ({ d, G, ctx, playerID }) => {
@@ -95,7 +103,7 @@ const legendaryAbilityRegistry: Record<string, LegendaryAbilityHandler> = {
     if (!selectedResource || !d.resourceKeys.includes(selectedResource)) return d.INVALID_MOVE;
     G.resources[playerID][selectedResource] = (G.resources[playerID][selectedResource] ?? 0) + 3;
     Object.keys(G.players).filter((pid) => pid !== playerID).forEach((pid) => {
-      G.resources[pid].discipline = (G.resources[pid].discipline ?? 0) + 1;
+      G.resources[pid].documents = (G.resources[pid].documents ?? 0) + 1;
       d.clampNonNegativeResources(G.resources[pid]);
       d.syncPlayerState(G, pid);
     });
@@ -115,6 +123,16 @@ const legendaryAbilityRegistry: Record<string, LegendaryAbilityHandler> = {
     d.clampNonNegativeResources(G.resources[playerID]);
     d.syncPlayerState(G, playerID);
     return d.legendaryTexts.churchLeadership(playerLabel);
+  },
+  'legendary-09': ({ d, G, playerID, selectedResource }) => {
+    const playerLabel = d.getPlayerLabel(G, playerID);
+    if (!selectedResource || !d.resourceKeys.includes(selectedResource)) return d.INVALID_MOVE;
+    const before = G.resources[playerID][selectedResource] ?? 0;
+    const after = Math.max(before, 3);
+    G.resources[playerID][selectedResource] = after;
+    d.clampNonNegativeResources(G.resources[playerID]);
+    d.syncPlayerState(G, playerID);
+    return d.legendaryTexts.waterRestore(playerLabel, d.resourceLabelsUk[selectedResource], before, after);
   },
   'legendary-10': ({ d, G, ctx, playerID, targetPlayerID }) => {
     if (!targetPlayerID || !(targetPlayerID in G.players) || targetPlayerID === playerID) return d.INVALID_MOVE;

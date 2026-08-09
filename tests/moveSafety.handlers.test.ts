@@ -606,7 +606,7 @@ test('playLegendaryCardHandler keeps draw stage and does not end turn when playe
   assert.equal(G.legendaryDiscard.at(-1)?.id, 'legendary-11');
 });
 
-test('playLegendaryCardHandler applies legendary-09 by card effects without resource selection', () => {
+test('playLegendaryCardHandler restores legendary-09 selected resource to three and grants discipline', () => {
   const G = makeState();
   G.legendaryHands['0'] = [
     {
@@ -649,16 +649,19 @@ test('playLegendaryCardHandler applies legendary-09 by card effects without reso
     }),
     args,
     'legendary-09',
+    undefined,
+    'time',
   );
 
   assert.equal(result, undefined);
+  assert.equal(G.resources['0'].time, 3);
   assert.equal(G.resources['0'].discipline, 2);
   assert.equal(nextStage, 'play');
   assert.equal(G.legendaryHands['0'].length, 0);
   assert.equal(G.legendaryDiscard.at(-1)?.id, 'legendary-09');
 });
 
-test('playLegendaryCardHandler applies legendary-06 selected resource and grants discipline to other players', () => {
+test('playLegendaryCardHandler applies legendary-06 selected resource and grants documents to other players', () => {
   const G = makeState();
   G.playerNames['2'] = 'P3';
   G.players['2'] = {
@@ -722,10 +725,10 @@ test('playLegendaryCardHandler applies legendary-06 selected resource and grants
 
   assert.equal(result, undefined);
   assert.equal(G.resources['0'].tech, 4);
-  assert.equal(G.resources['1'].discipline, 2);
-  assert.equal(G.resources['1'].documents, 1);
-  assert.equal(G.resources['2'].discipline, 2);
-  assert.equal(G.resources['2'].documents, 1);
+  assert.equal(G.resources['1'].discipline, 1);
+  assert.equal(G.resources['1'].documents, 2);
+  assert.equal(G.resources['2'].discipline, 1);
+  assert.equal(G.resources['2'].documents, 2);
   assert.equal(nextStage, 'play');
   assert.equal(G.legendaryHands['0'].length, 0);
   assert.equal(G.legendaryDiscard.at(-1)?.id, 'legendary-06');

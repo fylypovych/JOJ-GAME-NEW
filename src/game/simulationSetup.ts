@@ -82,13 +82,13 @@ export const createSimulationState = (
       startingRankId: deps.getActiveRanks()[0]?.id ?? 'cadet',
       startingHandSize: G.deck.length > 0 ? deps.startingHandSize : 0,
       startingLegendaryHandSize: deps.startingLegendaryHandSize,
-      legendaryDraftCompleted: mode !== 'standard_plus' || legendaryCards.length === 0,
+      legendaryDraftCompleted: true,
       playerName: `P${index + 1}`,
       drawCards: deps.drawCards,
-      drawLegendaryCards: legendaryCards.length > 0 && (mode === 'standard' || (!mode && options.useLegendaryDeck))
+      drawLegendaryCards: legendaryCards.length > 0 && (mode === 'standard' || mode === 'standard_plus' || (!mode && options.useLegendaryDeck))
         ? deps.drawLegendaryCards
         : undefined,
-      legendarySourceCards: legendaryCards.length > 0 && (mode === 'standard' || (!mode && options.useLegendaryDeck))
+      legendarySourceCards: legendaryCards.length > 0 && (mode === 'standard' || mode === 'standard_plus' || (!mode && options.useLegendaryDeck))
         ? legendaryCards
         : undefined,
       syncPlayerState: deps.syncPlayerState,

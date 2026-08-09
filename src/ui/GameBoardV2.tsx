@@ -870,7 +870,7 @@ export const GameBoardV2 = ({
                   effectLabel={effectLabel}
                   badges={(card) => [
                     ...(card.id === 'legendary-10' ? [board.requiresTarget] : []),
-                    ...(card.id === 'legendary-06' ? [board.requiresResource] : []),
+                    ...(['legendary-06', 'legendary-09', 'legendary-17'].includes(card.id) ? [board.requiresResource] : []),
                   ]}
                 />
               </section>

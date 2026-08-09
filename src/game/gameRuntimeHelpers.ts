@@ -84,15 +84,14 @@ export const createGameRuntimeHelpers = (args: {
   const triggerSukhpayZsuOnScandal = (
     G: JojGameState,
     ctx: Ctx | { turn?: number },
-    scandalSourcePlayerID: string,
+    _scandalSourcePlayerID: string,
   ) => {
     const currentTurn = Number(ctx?.turn ?? 0);
     Object.keys(G.players ?? {}).forEach((pid) => {
-      if (pid === scandalSourcePlayerID) return;
       const pending = G.sukhpayZsuPendingBonus?.[pid] ?? false;
-      const untilTurn = Number(G.sukhpayZsuWatchUntilTurn?.[pid] ?? 0);
+      const activationTurn = Number(G.sukhpayZsuWatchUntilTurn?.[pid] ?? -1);
       if (!pending) return;
-      if (!(untilTurn > 0 && currentTurn < untilTurn)) return;
+      if (activationTurn !== currentTurn) return;
       G.resources[pid].discipline = (G.resources[pid].discipline ?? 0) + 1;
       clampNonNegativeResources(G.resources[pid]);
       G.sukhpayZsuPendingBonus[pid] = false;

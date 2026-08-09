@@ -119,6 +119,18 @@ const buildCardPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: string,
       }];
     }
     if (card.category === 'LEGENDARY') {
+      if (card.id === 'legendary-10') {
+        const targetPlayerID = opponents[0];
+        return targetPlayerID ? [{ kind: 'play-card', cardId: card.id, targetPlayerID, score: baseScore + 45 }] : [];
+      }
+      if (['legendary-06', 'legendary-09', 'legendary-17'].includes(card.id)) {
+        return [{
+          kind: 'play-card',
+          cardId: card.id,
+          replacementResources: [chooseStrategicResource(deps, G, playerID)],
+          score: baseScore + 30,
+        }];
+      }
       return [{
         kind: 'play-card',
         cardId: card.id,
@@ -149,7 +161,7 @@ const buildLegendaryPlans = (deps: BotPlannerDeps, G: JojGameState, playerID: st
         if (!targetPlayerID) return null;
         return { kind: 'play-legendary', cardId: card.id, targetPlayerID, score: base + 35 + profileAdjustments.aggressiveAttackBonus };
       }
-      if (card.id === 'legendary-06') {
+      if (['legendary-06', 'legendary-09', 'legendary-17'].includes(card.id)) {
         return {
           kind: 'play-legendary',
           cardId: card.id,

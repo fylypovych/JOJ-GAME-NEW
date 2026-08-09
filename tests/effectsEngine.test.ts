@@ -146,3 +146,21 @@ test('cancelLastScandalForPlayer prefers exact applied effect log when available
   assert.equal(G.resources['0'].documents, 1);
   assert.equal(G.appliedEffectLog?.[0]?.canceled, true);
 });
+
+test('cancelLastScandalForPlayer also cancels a skip caused by that scandal', () => {
+  const G = makeState();
+  G.skippedTurnCounts = { '0': 1 };
+  appendAppliedEffectLog(G, {
+    sourceCardId: 'scandal-skip',
+    sourceCardTitle: 'Skip scandal',
+    sourceCategory: 'SCANDAL',
+    sourcePlayerID: '1',
+    targetPlayerID: '0',
+    summary: { resources: {}, rank: 0, skipsNextTurn: true },
+    createdAtTurn: 3,
+  });
+
+  engine.cancelLastScandalForPlayer(G, '0');
+
+  assert.equal(G.skippedTurnCounts['0'], 0);
+});

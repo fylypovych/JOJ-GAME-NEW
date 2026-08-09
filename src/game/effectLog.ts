@@ -3,6 +3,7 @@ import type { CardDefinition, JojGameState, ResourceKey } from './types';
 export type AppliedEffectSummary = {
   resources: Partial<Record<ResourceKey, number>>;
   rank: number;
+  skipsNextTurn?: boolean;
 };
 
 export type AppliedEffectLogEntry = {
