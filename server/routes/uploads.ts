@@ -321,11 +321,25 @@ export const registerUploadRoutes = ({
       const assetPath = await saveUploadedImage({
         mime: parsed.mime,
         base64: parsed.base64,
-        filename: parsed.filename,
-        fallbackBaseName: `avatar-${user.id}`,
+        // Avatar responses are cached as immutable, so every upload must get a
+        // new URL instead of reusing a browser-cached filename.
+        filename: '',
+        fallbackBaseName: `avatar-${user.id}-${Date.now()}`,
         assetKind: 'avatar-image',
       });
-      ctx.body = { ok: true, path: assetPath, csrfToken: issueUserCsrfToken(ctx) };
+      const updatedUser = await userStore.updateProfile({
+        userId: user.id,
+        displayName: user.displayName,
+        email: user.email,
+        bio: user.bio,
+        avatarUrl: assetPath,
+        preferredLang: user.preferredLang,
+        profilePublic: user.profilePublic,
+        showStatsPublic: user.showStatsPublic,
+        showRecentMatchesPublic: user.showRecentMatchesPublic,
+      });
+      if (!updatedUser) throw new Error('Failed to persist avatar path');
+      ctx.body = { ok: true, path: assetPath, user: updatedUser, csrfToken: issueUserCsrfToken(ctx) };
     } catch (error) {
       await logLine('ERROR', `avatar upload failed: ${String(error)}`);
       ctx.status = 500;

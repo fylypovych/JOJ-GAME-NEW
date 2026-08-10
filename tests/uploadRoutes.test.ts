@@ -5,6 +5,7 @@ import path from 'node:path';
 import { access, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { registerUploadRoutes } from '../server/routes/uploads';
 import type { RouteCtx, RouterLike } from '../server/routes/types';
+import type { UserStore, UserRecord } from '../server/services/user-store';
 
 type Handler = (ctx: RouteCtx) => unknown;
 
@@ -74,6 +75,77 @@ test('upload-card-image stores file and records asset metadata', async () => {
   assert.equal(buffer.toString('utf8'), 'hello');
   assert.equal(upsertCalls.length, 1);
   assert.equal(upsertCalls[0]?.kind, 'card-image');
+});
+
+test('avatar upload creates a new immutable URL and persists it to the user profile', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'joj-avatar-upload-'));
+  const uploadsDir = path.join(rootDir, 'card-assets');
+  await mkdir(uploadsDir, { recursive: true });
+  const { router, postHandlers } = makeRouter();
+  const user: UserRecord = {
+    id: 'user-123',
+    username: 'avatar-user',
+    email: 'avatar@example.com',
+    role: 'user',
+    displayName: 'Avatar User',
+    avatarUrl: '/profile-image/old.webp',
+    bio: 'Profile bio',
+    preferredLang: 'uk',
+    profilePublic: true,
+    showStatsPublic: true,
+    showRecentMatchesPublic: false,
+    createdAt: new Date(0).toISOString(),
+    lastLoginAt: null,
+  };
+  const persistedPaths: string[] = [];
+  const userStore = {
+    getUserBySessionToken: async () => user,
+    updateProfile: async (input: { avatarUrl?: string | null }) => {
+      const avatarUrl = input.avatarUrl ?? null;
+      if (avatarUrl) persistedPaths.push(avatarUrl);
+      return { ...user, avatarUrl };
+    },
+  } as unknown as UserStore;
+
+  registerUploadRoutes({
+    router,
+    requireAdminAuth,
+    enforceRateLimit: allowRateLimit,
+    readJsonBodySafe,
+    logLine,
+    JSON_BODY_LIMIT: 10_000,
+    IMAGE_UPLOAD_BODY_LIMIT: 100_000,
+    uploadsDir,
+    userStore,
+  });
+
+  const handler = postHandlers.get('/api/profile/avatar-upload');
+  assert.ok(handler);
+  const uploadOnce = async () => {
+    const ctx: RouteCtx = {
+      request: {
+        headers: {
+          cookie: 'joj_user_session=session-token; joj_user_csrf=csrf-token',
+          'x-csrf-token': 'csrf-token',
+        },
+        body: {
+          dataUrl: pngDataUrl,
+          filename: 'card-image.webp',
+        },
+      },
+    };
+    await handler?.(ctx);
+    assert.equal((ctx.body as { ok: boolean }).ok, true);
+    return String((ctx.body as { path: string }).path);
+  };
+
+  const firstPath = await uploadOnce();
+  const secondPath = await uploadOnce();
+
+  assert.match(firstPath, /^\/profile-image\/avatar-user-123-\d+\.png$/);
+  assert.match(secondPath, /^\/profile-image\/avatar-user-123-\d+(?:-\d+)?\.png$/);
+  assert.notEqual(secondPath, firstPath);
+  assert.deepEqual(persistedPaths, [firstPath, secondPath]);
 });
 
 test('delete-card-image rejects paths outside /card-assets', async () => {

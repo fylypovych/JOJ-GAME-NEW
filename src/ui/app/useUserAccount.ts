@@ -245,8 +245,7 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
   const uploadAvatar = async (file: File) => {
     setBusy(true);
     try {
-      // Pass empty filename to force server to use fallbackBaseName (avatar-{user.id})
-      const optimized = await optimizeBlobForUpload(file, '', {
+      const optimized = await optimizeBlobForUpload(file, `avatar-${user?.id ?? 'profile'}-${Date.now()}`, {
         maxWidth: 512,
         maxHeight: 512,
         quality: 0.9,
@@ -262,7 +261,10 @@ export const useUserAccount = (args: { serverUrl: string; lang: 'uk' | 'en' }) =
       );
       if (!path) throw new Error(USER_ACCOUNT_ERRORS.genericRequest);
       setError('');
-      setUser((prev) => prev ? { ...prev, avatarUrl: path } : null);
+      const updatedUser = (payload as { user?: AuthUser }).user;
+      setUser((prev) => updatedUser
+        ? { ...updatedUser, avatarUrl: path }
+        : (prev ? { ...prev, avatarUrl: path } : null));
       return path;
     } finally {
       setBusy(false);
