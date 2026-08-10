@@ -313,7 +313,7 @@ export const App = () => {
     bindMatchSession,
   });
 
-  const { galleryCards, cardImageById } = useGalleryData({
+  const { galleryCards, availableGalleryCategories, cardImageById } = useGalleryData({
     cardCatalog,
     sharedDeckTemplate,
     galleryCategoryFilter,
@@ -506,8 +506,9 @@ export const App = () => {
   const galleryContextValue = useMemo(() => ({
     optionalLobbyModules,
     galleryCards,
+    availableGalleryCategories,
     cardImageById,
-  }), [optionalLobbyModules, galleryCards, cardImageById]);
+  }), [optionalLobbyModules, galleryCards, availableGalleryCategories, cardImageById]);
 
   return (
     <ErrorBoundary>
