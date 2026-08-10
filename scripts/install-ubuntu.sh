@@ -331,7 +331,7 @@ PGPASSWORD="$DB_PASSWORD" PGSSLMODE="$DB_SSLMODE" psql --host="$DB_HOST" --port=
 log 'Installing dependencies and building...'
 run_as_app bash -lc 'cd "$1" && npm ci && npm run typecheck && npm test && npm run build' bash "$PROJECT_DIR"
 run_as_app bash -lc 'cd "$1" && npm run db:migrate' bash "$PROJECT_DIR"
-run_as_app bash -lc 'cd "$1" && node --env-file=.env scripts/seed-shared-config-to-db.cjs' bash "$PROJECT_DIR"
+run_as_app bash -lc 'cd "$1" && npm run sync:shared-config-db' bash "$PROJECT_DIR"
 
 if [[ "$SKIP_ADMIN" != 1 ]]; then
   log 'Creating the initial administrator if needed...'
