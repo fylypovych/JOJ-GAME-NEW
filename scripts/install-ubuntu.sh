@@ -262,7 +262,14 @@ if ! command -v node >/dev/null 2>&1 || [[ "$(node --version)" != v24.* ]]; then
   apt-get install -y nodejs
 fi
 [[ "$(node --version)" == v24.* ]] || die 'Node.js 24 installation failed'
-npm install --global pm2
+(
+  umask 022
+  npm install --global --prefix /usr/local pm2
+)
+PM2_ENTRY="/usr/local/lib/node_modules/pm2/bin/pm2"
+[[ -x "$PM2_ENTRY" ]] || die "PM2 entry point not found at ${PM2_ENTRY}"
+ln -sfn "$PM2_ENTRY" /usr/local/bin/pm2
+PM2_BIN=/usr/local/bin/pm2
 
 log 'Preparing application user and files...'
 if ! id "$APP_USER" >/dev/null 2>&1; then
@@ -370,11 +377,12 @@ JOJ_PROJECT_DIR=${PROJECT_DIR}
 JOJ_APP_USER=${APP_USER}
 JOJ_BACKUP_DIR=/var/backups/joj-game
 JOJ_BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS}
+JOJ_PM2_BIN=${PM2_BIN}
 EOF
 chmod 644 /etc/default/joj-game
-run_as_app bash -lc 'cd "$1" && (pm2 start ecosystem.config.cjs --update-env || pm2 restart ecosystem.config.cjs --update-env)' bash "$PROJECT_DIR"
-run_as_app pm2 save
-env PATH="$PATH" pm2 startup systemd -u "$APP_USER" --hp "$APP_HOME"
+run_as_app bash -lc 'cd "$1" && ("$2" start ecosystem.config.cjs --update-env || "$2" restart ecosystem.config.cjs --update-env)' bash "$PROJECT_DIR" "$PM2_BIN"
+run_as_app "$PM2_BIN" save
+env PATH="$PATH" "$PM2_BIN" startup systemd -u "$APP_USER" --hp "$APP_HOME"
 
 log 'Installing the daily backup timer...'
 cat >/etc/systemd/system/joj-backup.service <<EOF
@@ -416,7 +424,7 @@ for _ in {1..20}; do
   sleep 2
 done
 (( health_ok == 1 )) || die 'Backend health check failed; run sudo joj logs server'
-run_as_app pm2 status
+run_as_app "$PM2_BIN" status
 JOJ_PROJECT_DIR="$PROJECT_DIR" JOJ_BACKUP_RETENTION_DAYS="$BACKUP_RETENTION_DAYS" "${PROJECT_DIR}/scripts/backup-production.sh"
 
 cat <<EOF

@@ -8,12 +8,13 @@ fi
 PROJECT_DIR="${JOJ_PROJECT_DIR:-/opt/joj-game}"
 CONFIG_FILE="${PROJECT_DIR}/ecosystem.config.cjs"
 APP_USER="${JOJ_APP_USER:-joj}"
+PM2_BIN="${JOJ_PM2_BIN:-/usr/local/bin/pm2}"
 
 run_pm2() {
   if [[ "$(id -u)" -eq 0 ]]; then
-    runuser -u "$APP_USER" -- env HOME="$(getent passwd "$APP_USER" | cut -d: -f6)" pm2 "$@"
+    runuser -u "$APP_USER" -- env HOME="$(getent passwd "$APP_USER" | cut -d: -f6)" "$PM2_BIN" "$@"
   else
-    pm2 "$@"
+    "$PM2_BIN" "$@"
   fi
 }
 
