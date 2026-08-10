@@ -42,7 +42,7 @@ trap cleanup EXIT
 PGDATABASE="$DATABASE_URL" pg_dump --format=custom --file="${work_dir}/database.dump"
 
 runtime_paths=()
-for candidate in database public/card-assets; do
+for candidate in database public/card-assets public/profile-image; do
   if [[ -e "${PROJECT_DIR}/${candidate}" ]]; then runtime_paths+=("$candidate"); fi
 done
 if (( ${#runtime_paths[@]} > 0 )); then

@@ -20,13 +20,16 @@ type GitCredentialStore = {
   getCredentialsPath: () => string;
 };
 
+export const redactGitCredentials = (value: string) => String(value ?? '')
+  .replace(/(https?:\/\/)[^\s/@]+@/gi, '$1***@');
+
 const formatCommandFailure = (command: string, args: string[], error: unknown, stdout: string, stderr: string) => {
   const err = error as { message?: string; code?: string | number };
-  const parts = [`$ ${command} ${args.join(' ')}`];
-  if (err?.message) parts.push(`message: ${String(err.message)}`);
+  const parts = [`$ ${command} ${redactGitCredentials(args.join(' '))}`];
+  if (err?.message) parts.push(`message: ${redactGitCredentials(String(err.message))}`);
   if (err?.code !== undefined) parts.push(`code: ${String(err.code)}`);
-  if (stdout.trim()) parts.push(`stdout:\n${stdout.trim()}`);
-  if (stderr.trim()) parts.push(`stderr:\n${stderr.trim()}`);
+  if (stdout.trim()) parts.push(`stdout:\n${redactGitCredentials(stdout.trim())}`);
+  if (stderr.trim()) parts.push(`stderr:\n${redactGitCredentials(stderr.trim())}`);
   if (String(err?.code ?? '') === 'ENOENT') parts.push('hint: executable not found in PATH of the server process');
   return parts.join('\n');
 };
@@ -139,7 +142,13 @@ export const createCommandRunners = (repoDir: string, gitCredentialStore?: GitCr
   return { runGit, runShellCommand, spawnDetachedShell };
 };
 
-const runtimeGitIgnorePatterns = [/^logs\/.*\.log$/i, /^database\/matches(\/|$)/i, /^caddy-local-root\.crt$/i];
+const runtimeGitIgnorePatterns = [
+  /^logs\/.*\.log$/i,
+  /^database\/matches(\/|$)/i,
+  /^database\/(?:admin-db-ui-config|bug-report-ui-config)\.json$/i,
+  /^package(?:-lock)?\.json$/i,
+  /^caddy-local-root\.crt$/i,
+];
 const isRuntimeGitNoise = (filePath: string): boolean => runtimeGitIgnorePatterns.some((p) => p.test(filePath.replace(/\\/g, '/')));
 const parseGitPorcelain = (stdout: string): GitPorcelainEntry[] => stdout.split(/\r?\n/).map((line) => line.trimEnd()).filter(Boolean).map((line) => {
   const xy = line.slice(0, 2);
@@ -150,7 +159,8 @@ const parseGitPorcelain = (stdout: string): GitPorcelainEntry[] => stdout.split(
 
 export const autoStashRuntimeNoise = async ({ status, runGit, logLine }: { status: { ignoredRuntimeDirtyFiles?: string[] }; runGit: (args: string[]) => Promise<CmdResult>; logLine: LogLine; }) => {
   if (!Array.isArray(status.ignoredRuntimeDirtyFiles) || status.ignoredRuntimeDirtyFiles.length === 0) return { ok: true as const };
-  const stashRes = await runGit(['stash', 'push', '-u', '-m', 'admin-auto-stash-runtime']);
+  const runtimeFiles = [...new Set(status.ignoredRuntimeDirtyFiles.map((filePath) => filePath.replace(/\\/g, '/')).filter(Boolean))];
+  const stashRes = await runGit(['stash', 'push', '-u', '-m', 'admin-auto-stash-runtime', '--', ...runtimeFiles]);
   if (!stashRes.ok) return { ok: false as const, error: stashRes.error };
   await logLine('INFO', `git runtime auto-stash created (${status.ignoredRuntimeDirtyFiles.length} files)`);
   return { ok: true as const };
@@ -161,7 +171,7 @@ export const getGitUpdateStatus = async (runGit: (args: string[]) => Promise<Cmd
   if (!branchRes.ok) return { ok: false as const, error: branchRes.error };
   const branch = branchRes.stdout.trim();
   const remoteRes = await runGit(['remote', 'get-url', 'origin']);
-  const remote = remoteRes.ok ? remoteRes.stdout.trim() : '';
+  const remote = remoteRes.ok ? redactGitCredentials(remoteRes.stdout.trim()) : '';
   const fetchRes = await runGit(['fetch', '--prune', 'origin']);
   if (!fetchRes.ok) return { ok: false as const, error: fetchRes.error };
   const statusRes = await runGit(['status', '--porcelain', '--untracked-files=all']);

@@ -297,8 +297,10 @@ export const uiEnData = {
     'This will discard local tracked and untracked git changes on the server before pulling from GitHub.',
   githubCommitMessageLabel: 'Commit message',
   githubCommitMessagePlaceholder: 'Save server changes',
-  githubPublish: 'Commit + push',
+  githubPublish: 'Send production content for review',
   githubPublishLoading: 'Committing/pushing...',
+  githubPublishHint:
+    'Creates a separate production-content branch for review. Only shared deck, ranks, game UI, simulation settings, and card images are included; main is not changed directly.',
   githubViewLocalChanges: 'View local changes',
   githubViewLocalChangesLoading: 'Loading changes...',
   githubLocalChangesTitle: 'Local changes (preview)',

@@ -298,8 +298,10 @@ export const uiUkData = {
     'Перед pull з GitHub сервер скине локальні tracked і untracked git-зміни.',
   githubCommitMessageLabel: 'Повідомлення коміту',
   githubCommitMessagePlaceholder: 'Зберегти серверні зміни',
-  githubPublish: 'Commit + push',
+  githubPublish: 'Надіслати production-контент на перевірку',
   githubPublishLoading: 'Commit/push...',
+  githubPublishHint:
+    'Створюється окрема гілка production-content для перевірки. До неї потраплять лише колода, звання, налаштування гри й симуляції та зображення карт; main напряму не змінюється.',
   githubViewLocalChanges: 'Переглянути локальні зміни',
   githubViewLocalChangesLoading: 'Завантаження змін...',
   githubLocalChangesTitle: 'Локальні зміни (preview)',

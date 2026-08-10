@@ -126,6 +126,7 @@ export const AdminGithubTab = ({
         {gitPublishRunning ? t.githubPublishLoading : t.githubPublish}
       </button>
     </p>
+    <p>{t.githubPublishHint}</p>
     <p className="admin-controls">
       <button type="button" onClick={() => void checkGitUpdates()} disabled={gitStatusLoading || gitUpdateRunning || gitDeployRunning}>
         {gitStatusLoading ? t.githubCheckUpdatesLoading : t.githubCheckUpdates}

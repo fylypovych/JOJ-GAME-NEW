@@ -1,4 +1,6 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { access, copyFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { randomBytes } from 'node:crypto';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from '../routes/types';
 import { routeError, routeOk } from '../routes/response';
@@ -35,6 +37,81 @@ type GitLocalChangesPreview = {
   statusText: string;
   diff: string;
   truncated: boolean;
+};
+
+const PRODUCTION_PUBLISH_CONFIG_PATHS = new Set([
+  'database/game-ui-config.json',
+  'database/shared-deck-template.json',
+  'database/shared-ranks.json',
+  'database/simulation-baselines.json',
+]);
+const PRODUCTION_PUBLISH_ASSET_PATTERN = /^public\/card-assets\/.+\.(?:avif|gif|jpe?g|png|webp)$/i;
+
+const normalizeGitPath = (filePath: string) => String(filePath ?? '')
+  .trim()
+  .replace(/\\/g, '/')
+  .replace(/^\.\//, '');
+
+export const isProductionPublishPath = (filePath: string): boolean => {
+  const normalized = normalizeGitPath(filePath);
+  return PRODUCTION_PUBLISH_CONFIG_PATHS.has(normalized)
+    || PRODUCTION_PUBLISH_ASSET_PATTERN.test(normalized);
+};
+
+export const classifyProductionPublishFiles = (files: string[]) => {
+  const unique = [...new Set(files.map(normalizeGitPath).filter(Boolean))];
+  return {
+    publishable: unique.filter(isProductionPublishPath),
+    excluded: unique.filter((filePath) => !isProductionPublishPath(filePath)),
+  };
+};
+
+const readGitFileList = async (runGit: RunGit, args: string[]) => {
+  const result = await runGit(args);
+  if (!result.ok) return result;
+  return {
+    ok: true as const,
+    files: result.stdout.split(/\r?\n/).map(normalizeGitPath).filter(Boolean),
+  };
+};
+
+const findUnpublishedProductionFiles = async (
+  runGit: RunGit,
+  upstream: string,
+): Promise<{ ok: true; files: string[] } | { ok: false; error: string }> => {
+  const statusResult = await runGit(['status', '--porcelain', '--untracked-files=all']);
+  if (!statusResult.ok) return statusResult;
+  const { publishable } = classifyProductionPublishFiles(parsePorcelainFiles(statusResult.stdout));
+  if (publishable.length === 0) return { ok: true, files: [] };
+  if (!upstream) return { ok: true, files: publishable };
+  const matchesUpstream = await runGit(['diff', '--quiet', upstream, '--', ...publishable]);
+  return { ok: true, files: matchesUpstream.ok ? [] : publishable };
+};
+
+const createProductionPublishBranchName = (now = new Date()) => {
+  const stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  return `production-content/${stamp}-${randomBytes(3).toString('hex')}`;
+};
+
+const copyProductionFileToWorktree = async (repoRoot: string, worktreeRoot: string, filePath: string) => {
+  const normalized = normalizeGitPath(filePath);
+  if (!isProductionPublishPath(normalized)) throw new Error(`Publish path is not allowed: ${normalized}`);
+  const source = path.resolve(repoRoot, normalized);
+  const target = path.resolve(worktreeRoot, normalized);
+  const repoPrefix = `${path.resolve(repoRoot)}${path.sep}`;
+  const worktreePrefix = `${path.resolve(worktreeRoot)}${path.sep}`;
+  if (!source.startsWith(repoPrefix) || !target.startsWith(worktreePrefix)) {
+    throw new Error(`Publish path escapes repository root: ${normalized}`);
+  }
+  try {
+    await access(source);
+    await mkdir(path.dirname(target), { recursive: true });
+    await copyFile(source, target);
+  } catch (error) {
+    const code = (error as { code?: string }).code;
+    if (code !== 'ENOENT') throw error;
+    await rm(target, { force: true });
+  }
 };
 
 type GitOpDeps = {
@@ -297,6 +374,18 @@ export const registerAdminGitRoutes = ({
         routeError(ctx, 409, 'Working tree has local changes. Commit or stash before update.', { status });
         return;
       }
+      const unpublished = await findUnpublishedProductionFiles(runGit, status.upstream);
+      if (!unpublished.ok) {
+        routeError(ctx, 500, 'Failed to verify production content before update', { details: unpublished.error, status });
+        return;
+      }
+      if (unpublished.files.length > 0) {
+        routeError(ctx, 409, 'Unpublished production content cannot be ignored. Publish it to a review branch and merge it first.', {
+          status,
+          publishableFiles: unpublished.files,
+        });
+        return;
+      }
       const stashRes = await stashAllLocalGitChanges(runGit);
       if (!stashRes.ok) {
         await logLine('ERROR', `git safe stash failed before update: ${stashRes.error}`);
@@ -374,6 +463,18 @@ export const registerAdminGitRoutes = ({
     if (status.dirty) {
       if (!ignoreLocalChanges) {
         routeError(ctx, 409, 'Working tree has local changes. Commit or stash before deploy.', { status });
+        return;
+      }
+      const unpublished = await findUnpublishedProductionFiles(runGit, status.upstream);
+      if (!unpublished.ok) {
+        routeError(ctx, 500, 'Failed to verify production content before deploy', { details: unpublished.error, status });
+        return;
+      }
+      if (unpublished.files.length > 0) {
+        routeError(ctx, 409, 'Unpublished production content cannot be ignored. Publish it to a review branch and merge it first.', {
+          status,
+          publishableFiles: unpublished.files,
+        });
         return;
       }
       const stashRes = await stashAllLocalGitChanges(runGit);
@@ -513,65 +614,136 @@ export const registerAdminGitRoutes = ({
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/git/publish', maxBytes: JSON_BODY_LIMIT, logLine });
     if (!body) return;
     const commitMessage = String(body.commitMessage ?? '').trim();
-    let status = await getGitUpdateStatus(runGit);
+    if (commitMessage.length > 200 || /[\r\n\0]/.test(commitMessage)) {
+      routeError(ctx, 400, 'Commit message must be a single line of at most 200 characters.');
+      return;
+    }
+    const status = await getGitUpdateStatus(runGit);
     if (!status.ok) {
       await logLine('ERROR', `git pre-publish status failed: ${status.error}`);
       routeError(ctx, 500, 'Failed to read Git status before publish', { details: status.error });
       return;
     }
 
-    const steps: Array<{ step: string; output?: string }> = [];
-    if (status.dirty) {
-      if (!commitMessage) {
-        routeError(ctx, 400, 'Commit message is required when there are local changes.', { status });
-        return;
-      }
-      const addRes = await runGit(['add', '-A']);
-      if (!addRes.ok) {
-        await logLine('ERROR', `git publish add failed: ${addRes.error}`);
-        routeError(ctx, 500, 'Git add failed', { details: addRes.error, status });
-        return;
-      }
-      steps.push({ step: 'git add -A', output: addRes.stdout.trim() || '(ok)' });
+    if (status.behind > 0) {
+      routeError(ctx, 409, 'Production is behind its upstream branch. Update and verify production before publishing content.', { status });
+      return;
+    }
+    if (!status.upstream) {
+      routeError(ctx, 409, 'Production branch has no upstream branch configured.', { status });
+      return;
+    }
 
-      const commitRes = await runGit(['commit', '-m', commitMessage]);
-      if (!commitRes.ok) {
-        await logLine('ERROR', `git publish commit failed: ${commitRes.error}`);
-        routeError(ctx, 500, 'Git commit failed', { details: commitRes.error, status, steps });
-        return;
+    const stagedBefore = await readGitFileList(runGit, ['diff', '--cached', '--name-only']);
+    if (!stagedBefore.ok) {
+      routeError(ctx, 500, 'Failed to inspect staged Git changes before publish', { details: stagedBefore.error, status });
+      return;
+    }
+    if (stagedBefore.files.length > 0) {
+      routeError(ctx, 409, 'Git index already contains staged changes. Unstage and review them before production publish.', {
+        status,
+        stagedFiles: stagedBefore.files,
+      });
+      return;
+    }
+
+    if (status.ahead > 0) {
+      routeError(ctx, 409, 'Production has local commits. Resolve them before publishing a production content branch.', { status });
+      return;
+    }
+
+    const steps: Array<{ step: string; output?: string }> = [];
+    const localStatusRes = await runGit(['status', '--porcelain', '--untracked-files=all']);
+    if (!localStatusRes.ok) {
+      routeError(ctx, 500, 'Failed to inspect production content changes', { details: localStatusRes.error, status });
+      return;
+    }
+    const localFiles = parsePorcelainFiles(localStatusRes.stdout);
+    const classification = classifyProductionPublishFiles(localFiles);
+    if (classification.publishable.length === 0) {
+      routeError(ctx, 400, 'There are no publishable production content changes.', {
+        status,
+        excludedFiles: classification.excluded,
+      });
+      return;
+    }
+    if (!commitMessage) {
+      routeError(ctx, 400, 'Commit message is required when publishing production content.', {
+        status,
+        publishableFiles: classification.publishable,
+        excludedFiles: classification.excluded,
+      });
+      return;
+    }
+
+    const repoRootRes = await runGit(['rev-parse', '--show-toplevel']);
+    if (!repoRootRes.ok) {
+      routeError(ctx, 500, 'Failed to resolve production repository root', { details: repoRootRes.error, status });
+      return;
+    }
+    const repoRoot = path.resolve(repoRootRes.stdout.trim());
+    const worktreeRoot = await mkdtemp(path.join(tmpdir(), 'joj-production-publish-'));
+    const publishBranch = createProductionPublishBranchName();
+    let worktreeRegistered = false;
+    try {
+      const worktreeRes = await runGit(['worktree', 'add', '--detach', worktreeRoot, status.upstream]);
+      if (!worktreeRes.ok) throw new Error(worktreeRes.error);
+      worktreeRegistered = true;
+      steps.push({ step: `git worktree add ${status.upstream}`, output: '(ok)' });
+
+      for (const filePath of classification.publishable) {
+        await copyProductionFileToWorktree(repoRoot, worktreeRoot, filePath);
       }
+      steps.push({
+        step: `copy production content (${classification.publishable.length} files)`,
+        output: classification.publishable.join('\n'),
+      });
+
+      const addRes = await runGit(['-C', worktreeRoot, 'add', '-A', '--', ...classification.publishable]);
+      if (!addRes.ok) throw new Error(addRes.error);
+      const stagedFiles = await readGitFileList(runGit, ['-C', worktreeRoot, 'diff', '--cached', '--name-only']);
+      if (!stagedFiles.ok) throw new Error(stagedFiles.error);
+      const stagedClassification = classifyProductionPublishFiles(stagedFiles.files);
+      if (stagedClassification.excluded.length > 0 || stagedClassification.publishable.length === 0) {
+        throw new Error('Temporary publish commit failed the production content allowlist check.');
+      }
+
+      for (const configPath of stagedClassification.publishable.filter((filePath) => filePath.endsWith('.json'))) {
+        const stagedJson = await runGit(['-C', worktreeRoot, 'show', `:${configPath}`]);
+        if (!stagedJson.ok) throw new Error(`Unable to read staged JSON configuration: ${configPath}`);
+        try {
+          JSON.parse(stagedJson.stdout);
+        } catch {
+          throw new Error(`Invalid JSON configuration blocked from publish: ${configPath}`);
+        }
+      }
+
+      const commitRes = await runGit([
+        '-C', worktreeRoot,
+        '-c', 'user.name=JOJ Production',
+        '-c', 'user.email=production@joj.lol',
+        'commit', '-m', commitMessage,
+      ]);
+      if (!commitRes.ok) throw new Error(commitRes.error);
       steps.push({ step: `git commit -m "${commitMessage}"`, output: commitRes.stdout.trim() || '(ok)' });
 
-      status = await getGitUpdateStatus(runGit);
-      if (!status.ok) {
-        await logLine('ERROR', `git post-commit status failed: ${status.error}`);
-        routeError(ctx, 500, 'Failed to read Git status after commit', { details: status.error, steps });
-        return;
-      }
-    }
-
-    if (status.ahead <= 0) {
-      routeError(ctx, 400, 'There are no local commits to push.', { status, steps });
+      const pushRes = await runGit(['-C', worktreeRoot, 'push', 'origin', `HEAD:refs/heads/${publishBranch}`]);
+      if (!pushRes.ok) throw new Error(pushRes.error);
+      steps.push({
+        step: `git push origin ${publishBranch}`,
+        output: pushRes.stdout.trim() || pushRes.stderr.trim() || '(ok)',
+      });
+    } catch (error) {
+      const details = error instanceof Error ? error.message : String(error);
+      await logLine('ERROR', `git production content publish failed: ${details}`);
+      routeError(ctx, 500, 'Production content publish failed', { details, status, steps });
       return;
+    } finally {
+      if (worktreeRegistered) await runGit(['worktree', 'remove', '--force', worktreeRoot]);
+      await rm(worktreeRoot, { recursive: true, force: true });
     }
 
-    const branch = status.branch || 'main';
-    const pushRes = await runGit(['push', 'origin', branch]);
-    if (!pushRes.ok) {
-      await logLine('ERROR', `git publish push failed: ${pushRes.error}`);
-      routeError(ctx, 500, 'Git push failed', { details: pushRes.error, status, steps });
-      return;
-    }
-    steps.push({ step: `git push origin ${branch}`, output: pushRes.stdout.trim() || pushRes.stderr.trim() || '(ok)' });
-
-    const nextStatus = await getGitUpdateStatus(runGit);
-    if (!nextStatus.ok) {
-      await logLine('ERROR', `git post-push status failed: ${nextStatus.error}`);
-      routeError(ctx, 500, 'Failed to read Git status after push', { details: nextStatus.error, steps });
-      return;
-    }
-
-    await logLine('WARN', `git publish completed on branch=${branch}; push output=${pushRes.stdout.trim() || '(no output)'}`);
+    await logLine('WARN', `production content published to review branch=${publishBranch}`);
     await logLine('INFO', buildAdminDeployLog({
       action: 'publish',
       route: '/api/admin/git/publish',
@@ -579,8 +751,15 @@ export const registerAdminGitRoutes = ({
       actor,
       durationMs: Date.now() - startedAt,
       outcome: 'success',
-      details: { branch, head: nextStatus.head },
+      details: { branch: publishBranch, base: status.upstream, files: classification.publishable },
     }));
-    routeOk(ctx, { message: 'Commit and push completed', steps, status: nextStatus });
+    routeOk(ctx, {
+      message: `Production content pushed to review branch ${publishBranch}`,
+      steps,
+      status,
+      publishBranch,
+      publishableFiles: classification.publishable,
+      excludedFiles: classification.excluded,
+    });
   });
 };

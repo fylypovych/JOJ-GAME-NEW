@@ -1,7 +1,24 @@
 node_modules
 dist
 coverage
+# Local environment files may contain database passwords and API tokens.
 .env
+.env.*
+!.env.example
+.env.save
+
+# Local credentials and private keys.
+.git-credentials
+credentials.json
+secrets/
+.ssh/
+*.key
+*.pem
+*.p12
+*.pfx
+*.ppk
+*.token
+*.secret
 *.tsbuildinfo
 .DS_Store
 npm-debug.log*
@@ -9,12 +26,15 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 /logs
-.env.save
 /.continue
 /.claude
 /.vscode
 
 # Runtime data (not for git)
 database/matches/
+database/admin-db-ui-config.json
 *.log
 /tmp
+
+# User-uploaded avatars are persistent runtime data, not repository content.
+/public/profile-image/*
