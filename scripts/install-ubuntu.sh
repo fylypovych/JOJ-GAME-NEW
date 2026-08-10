@@ -255,6 +255,7 @@ if ! command -v node >/dev/null 2>&1 || [[ "$(node --version)" != v24.* ]]; then
   key_tmp="$(mktemp)"
   curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key -o "$key_tmp"
   gpg --dearmor --yes --output /usr/share/keyrings/nodesource.gpg "$key_tmp"
+  chmod 0644 /usr/share/keyrings/nodesource.gpg
   rm -f "$key_tmp"
   printf 'deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main\n' >/etc/apt/sources.list.d/nodesource.list
   apt-get update
@@ -322,6 +323,7 @@ PGPASSWORD="$DB_PASSWORD" PGSSLMODE="$DB_SSLMODE" psql --host="$DB_HOST" --port=
 
 log 'Installing dependencies and building...'
 run_as_app bash -lc 'cd "$1" && npm ci && npm run typecheck && npm test && npm run build' bash "$PROJECT_DIR"
+run_as_app bash -lc 'cd "$1" && npm run db:migrate' bash "$PROJECT_DIR"
 run_as_app bash -lc 'cd "$1" && node --env-file=.env scripts/seed-shared-config-to-db.cjs' bash "$PROJECT_DIR"
 
 if [[ "$SKIP_ADMIN" != 1 ]]; then
