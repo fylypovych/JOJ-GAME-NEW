@@ -98,7 +98,7 @@ async function main() {
 
   switch (CMD) {
     case 'start':
-      await run('pm2', ['start', 'ecosystem.config.js']);
+      await run('pm2', ['start', 'ecosystem.config.cjs']);
       break;
 
     case 'stop':

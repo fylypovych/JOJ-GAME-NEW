@@ -1,0 +1,18 @@
+{
+  email admin@example.com
+}
+
+example.com, www.example.com {
+  encode zstd gzip
+
+  @backend path /api/* /socket.io/*
+  reverse_proxy @backend 127.0.0.1:8000
+
+  reverse_proxy 127.0.0.1:4173
+
+  header {
+    X-Content-Type-Options nosniff
+    Referrer-Policy strict-origin-when-cross-origin
+    -Server
+  }
+}

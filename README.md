@@ -328,6 +328,14 @@ npm run preview
 
 ## PM2 / deployment
 
+Для нової production VM на Ubuntu Server 24.04 використовуйте інтерактивний інсталятор:
+
+```bash
+sudo bash scripts/install-ubuntu.sh
+```
+
+Він встановлює Node.js/PostgreSQL/Caddy/PM2, налаштовує БД, HTTPS, першого адміністратора, firewall та щоденні backup. Детальна інструкція: [docs/ops/ubuntu-installer.md](docs/ops/ubuntu-installer.md).
+
 Є готовий PM2 config:
 
 - [ecosystem.config.cjs](ecosystem.config.cjs)

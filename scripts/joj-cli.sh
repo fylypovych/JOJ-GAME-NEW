@@ -1,8 +1,36 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ -r /etc/default/joj-game ]]; then
+  # Contains installer-owned, non-secret service paths only.
+  source /etc/default/joj-game
+fi
 PROJECT_DIR="${JOJ_PROJECT_DIR:-/opt/joj-game}"
 CONFIG_FILE="${PROJECT_DIR}/ecosystem.config.cjs"
+APP_USER="${JOJ_APP_USER:-joj}"
+
+run_pm2() {
+  if [[ "$(id -u)" -eq 0 ]]; then
+    runuser -u "$APP_USER" -- env HOME="$(getent passwd "$APP_USER" | cut -d: -f6)" pm2 "$@"
+  else
+    pm2 "$@"
+  fi
+}
+
+run_project_update() {
+  if [[ "$(id -u)" -eq 0 ]]; then
+    runuser -u "$APP_USER" -- env HOME="$(getent passwd "$APP_USER" | cut -d: -f6)" bash -lc \
+      'cd "$1" && git pull --ff-only && npm ci && npm run typecheck && npm test && npm run build' \
+      bash "$PROJECT_DIR"
+  else
+    cd "$PROJECT_DIR"
+    git pull --ff-only
+    npm ci
+    npm run typecheck
+    npm test
+    npm run build
+  fi
+}
 
 usage() {
   cat <<'EOF'
@@ -14,6 +42,7 @@ Usage:
   joj status
   joj logs [server|web]
   joj health
+  joj backup
 
 Compatibility shortcut (if installed by install script):
   start joj
@@ -34,35 +63,40 @@ case "$cmd" in
   start)
     require_config
     cd "$PROJECT_DIR"
-    pm2 start "$CONFIG_FILE" || pm2 restart "$CONFIG_FILE" --update-env
+    run_pm2 start "$CONFIG_FILE" || run_pm2 restart "$CONFIG_FILE" --update-env
     ;;
   stop)
-    pm2 stop joj-game-server joj-game-web
+    run_pm2 stop joj-game-server joj-game-web
     ;;
   restart)
     require_config
     cd "$PROJECT_DIR"
-    pm2 restart "$CONFIG_FILE" --update-env
+    run_pm2 restart "$CONFIG_FILE" --update-env
     ;;
   update)
     require_config
-    cd "$PROJECT_DIR"
-    git pull --ff-only
-    npm run build
-    pm2 restart joj-game-server joj-game-web --update-env
+    run_project_update
+    run_pm2 restart joj-game-server joj-game-web --update-env
     ;;
   status)
-    pm2 status
+    run_pm2 status
     ;;
   logs)
     case "$arg2" in
-      server) pm2 logs joj-game-server ;;
-      web) pm2 logs joj-game-web ;;
-      *) pm2 logs ;;
+      server) run_pm2 logs joj-game-server ;;
+      web) run_pm2 logs joj-game-web ;;
+      *) run_pm2 logs ;;
     esac
     ;;
   health)
     curl http://127.0.0.1:8000/api/health
+    ;;
+  backup)
+    if [[ "$(id -u)" -ne 0 ]]; then
+      echo "Run backup as root: sudo joj backup" >&2
+      exit 1
+    fi
+    JOJ_PROJECT_DIR="$PROJECT_DIR" "${PROJECT_DIR}/scripts/backup-production.sh"
     ;;
   ""|-h|--help|help)
     usage

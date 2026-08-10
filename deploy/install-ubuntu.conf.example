@@ -1,0 +1,28 @@
+# JOJ Game unattended installer example.
+# Copy to a root-only location and run: chmod 600 /root/joj-install.conf
+
+PROJECT_DIR=/opt/joj-game
+APP_USER=joj
+
+DOMAIN=joj.lol
+DOMAIN_WWW=www.joj.lol
+ACME_EMAIL=admin@joj.lol
+
+# local: installer creates the PostgreSQL role/database on this VM
+# remote: installer only connects, imports the schema and validates access
+DB_MODE=local
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=joj_game
+DB_USER=joj_user
+DB_PASSWORD_FILE=/root/joj-db-password
+DB_SSLMODE=disable
+
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=admin@joj.lol
+ADMIN_DISPLAY_NAME=Administrator
+ADMIN_LANG=uk
+ADMIN_PASSWORD_FILE=/root/joj-admin-password
+
+ENABLE_UFW=1
+BACKUP_RETENTION_DAYS=14
