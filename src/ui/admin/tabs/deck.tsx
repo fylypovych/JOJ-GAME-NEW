@@ -8,6 +8,7 @@ import type { CardCategory, CardDefinition } from '../../../game/types';
 type T = ReturnType<typeof text>;
 type DeckModuleAction = 'add' | 'replace' | 'remove';
 type DeckInnerTab = 'manager' | 'decks' | 'cards';
+type ModuleEditorSection = 'details' | 'cards' | 'appearance';
 type ModuleDef = {
   id: string;
   name: string;
@@ -23,6 +24,19 @@ type ModuleDef = {
 
 const parseIds = (value: string): string[] =>
   Array.from(new Set(value.split(/[\s,;]+/).map((id) => id.trim()).filter(Boolean)));
+const createBlankModule = (): ModuleDef => ({
+  id: '',
+  name: '',
+  moduleType: 'MAIN_DECK_MODULE',
+  category: 'SUPPORT',
+  cardCount: 0,
+  enabled: true,
+  target: 'deck',
+  cardIds: [],
+  defaultCategory: 'SUPPORT',
+  deckBackImage: '',
+});
+const getModuleEditorSnapshot = (draft: ModuleDef, cardIdsText: string) => JSON.stringify({ draft, cardIdsText });
 const getCardImageSrc = (card: { id: string; image?: string }) =>
   normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`;
 
@@ -76,20 +90,12 @@ export const AdminDeckTab = ({
   const [innerTab, setInnerTab] = useState<DeckInnerTab>('manager');
   const [cardEditorModuleId, setCardEditorModuleId] = useState<string>('');
   const [editingModuleId, setEditingModuleId] = useState<string>('');
-  const [moduleDraft, setModuleDraft] = useState<ModuleDef>({
-    id: '',
-    name: '',
-    moduleType: 'MAIN_DECK_MODULE',
-    category: 'SUPPORT',
-    cardCount: 0,
-    enabled: true,
-    target: 'deck',
-    cardIds: [],
-    defaultCategory: 'SUPPORT',
-    deckBackImage: '',
-  });
+  const [moduleDraft, setModuleDraft] = useState<ModuleDef>(() => createBlankModule());
   const [moduleCardIdsText, setModuleCardIdsText] = useState<string>('');
   const [moduleValidationError, setModuleValidationError] = useState<string>('');
+  const [moduleSearch, setModuleSearch] = useState('');
+  const [moduleEditorSection, setModuleEditorSection] = useState<ModuleEditorSection>('details');
+  const [moduleEditorBaseline, setModuleEditorBaseline] = useState(() => getModuleEditorSnapshot(createBlankModule(), ''));
   const [cardSearch, setCardSearch] = useState('');
   const [cardCategoryFilter, setCardCategoryFilter] = useState('ALL');
 
@@ -162,29 +168,38 @@ export const AdminDeckTab = ({
     });
   }, [moduleCardRows, cardSearch, cardCategoryFilter]);
 
-  const startNewModule = () => {
+  const visibleModules = useMemo(() => {
+    const needle = moduleSearch.trim().toLocaleLowerCase();
+    return modules.filter((module) => !needle || `${module.id} ${module.name} ${module.category} ${module.moduleType}`.toLocaleLowerCase().includes(needle));
+  }, [modules, moduleSearch]);
+  const parsedModuleCardIds = useMemo(() => parseIds(moduleCardIdsText), [moduleCardIdsText]);
+  const modulePreviewCards = useMemo(() => {
+    const byId = new Map(cardCatalog.map((card) => [card.id, card] as const));
+    return parsedModuleCardIds.map((id) => byId.get(id) ?? { id, title: id, image: '' });
+  }, [cardCatalog, parsedModuleCardIds]);
+  const hasUnsavedModuleChanges = getModuleEditorSnapshot(moduleDraft, moduleCardIdsText) !== moduleEditorBaseline;
+
+  const startNewModule = (force = false) => {
+    if (!force && hasUnsavedModuleChanges && !window.confirm(t.moduleUnsavedConfirm)) return;
+    const next = createBlankModule();
     setEditingModuleId('');
     setModuleValidationError('');
-    setModuleDraft({
-      id: '',
-      name: '',
-      moduleType: 'MAIN_DECK_MODULE',
-      category: 'SUPPORT',
-      cardCount: 0,
-      enabled: true,
-      target: 'deck',
-      cardIds: [],
-      defaultCategory: 'SUPPORT',
-      deckBackImage: '',
-    });
+    setModuleDraft(next);
     setModuleCardIdsText('');
+    setModuleEditorBaseline(getModuleEditorSnapshot(next, ''));
+    setModuleEditorSection('details');
   };
 
   const editModule = (module: ModuleDef) => {
+    if (module.id === editingModuleId) return;
+    if (hasUnsavedModuleChanges && !window.confirm(t.moduleUnsavedConfirm)) return;
+    const next = { ...module, cardIds: [...module.cardIds] };
+    const nextIdsText = module.cardIds.join('\n');
     setEditingModuleId(module.id);
     setModuleValidationError('');
-    setModuleDraft({ ...module });
-    setModuleCardIdsText(module.cardIds.join('\n'));
+    setModuleDraft(next);
+    setModuleCardIdsText(nextIdsText);
+    setModuleEditorBaseline(getModuleEditorSnapshot(next, nextIdsText));
   };
 
   const saveModule = () => {
@@ -203,7 +218,11 @@ export const AdminDeckTab = ({
       cardIds: parsedCardIds,
     };
     onSaveModule(next);
-    if (!editingModuleId) startNewModule();
+    const nextIdsText = parsedCardIds.join('\n');
+    setEditingModuleId(next.id);
+    setModuleDraft(next);
+    setModuleCardIdsText(nextIdsText);
+    setModuleEditorBaseline(getModuleEditorSnapshot(next, nextIdsText));
   };
 
   return (
@@ -288,93 +307,162 @@ export const AdminDeckTab = ({
       ) : null}
 
       {innerTab === 'decks' ? (
-        <div className="admin-inline-editor">
-          <h4>{t.moduleEditorTitle}</h4>
-          <p>{t.moduleEditorHint}</p>
-          <p className="admin-controls">
-            <button type="button" onClick={startNewModule}>{t.newModule}</button>
-          </p>
-          <div className="admin-deck-list">
-            <ul>
-              {modules.map((module) => (
-                <li key={`module-row-${module.id}`}>
-                  <span>{displayModuleName(module)} ({module.id}) | {module.moduleType} | {module.category} | target: {module.target} | cards: {module.cardIds.length}</span>
-                  <span className="admin-controls">
-                    <button type="button" onClick={() => editModule(module)}>{t.editCard}</button>
-                    <button type="button" onClick={() => onDeleteModule(module.id)}>{t.removeCard}</button>
+        <div className="admin-card-workspace-shell admin-module-workspace-shell">
+          <header className="admin-card-workspace-toolbar">
+            <div>
+              <h4>{t.moduleEditorTitle}</h4>
+              <span>{modules.length}</span>
+            </div>
+            <span className={hasUnsavedModuleChanges ? 'admin-card-save-state is-dirty' : 'admin-card-save-state'}>
+              {hasUnsavedModuleChanges ? t.moduleUnsavedChanges : t.allChangesSaved}
+            </span>
+            <button type="button" className="admin-card-primary-action" onClick={() => startNewModule()}>+ {t.newModule}</button>
+          </header>
+          <div className="admin-card-workspace">
+            <aside className="admin-card-browser">
+              <div className="admin-card-browser-filters admin-module-browser-filter">
+                <input type="search" value={moduleSearch} placeholder={t.moduleSearchPlaceholder} onChange={(e) => setModuleSearch(e.target.value)} />
+              </div>
+              <div className="admin-card-browser-count">{t.visibleCardsLabel}: {visibleModules.length}</div>
+              <div className="admin-card-browser-list">
+                {visibleModules.length === 0 ? <p>{t.moduleNoMatches}</p> : null}
+                {visibleModules.map((module) => (
+                  <article className={editingModuleId === module.id ? 'admin-card-browser-row is-selected' : 'admin-card-browser-row'} key={`module-browser-${module.id}`}>
+                    <button type="button" className="admin-card-browser-open admin-module-browser-open" onClick={() => editModule(module)}>
+                      <span className="admin-module-category-icon">{module.category.slice(0, 2)}</span>
+                      <span>
+                        <strong>{displayModuleName(module)}</strong>
+                        <small>{module.id} · {module.cardIds.length}</small>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-card-browser-remove"
+                      title={t.removeCard}
+                      aria-label={`${t.removeCard}: ${displayModuleName(module)}`}
+                      onClick={() => {
+                        if (!window.confirm(t.moduleDeleteConfirm)) return;
+                        onDeleteModule(module.id);
+                        if (editingModuleId === module.id) startNewModule(true);
+                      }}
+                    >×</button>
+                  </article>
+                ))}
+              </div>
+            </aside>
+
+            <main className="admin-card-editor-stage">
+              <div className="admin-card-editor-shell admin-module-editor-shell">
+                <header className="admin-card-editor-header">
+                  <div>
+                    <span className="admin-card-editor-kicker">{editingModuleId ? t.editingModule : t.createModule}</span>
+                    <h4>{moduleDraft.name || moduleDraft.id || t.newModule}</h4>
+                  </div>
+                  <span className={hasUnsavedModuleChanges ? 'admin-card-save-state is-dirty' : 'admin-card-save-state'}>
+                    {hasUnsavedModuleChanges ? t.unsavedChanges : t.allChangesSaved}
                   </span>
-                </li>
-              ))}
-            </ul>
+                </header>
+
+                <nav className="admin-card-editor-tabs" aria-label={t.moduleEditorTitle}>
+                  {([
+                    ['details', t.moduleDetailsTab],
+                    ['cards', t.moduleCardsTab],
+                    ['appearance', t.moduleAppearanceTab],
+                  ] as Array<[ModuleEditorSection, string]>).map(([id, label]) => (
+                    <button key={id} type="button" aria-pressed={moduleEditorSection === id} onClick={() => setModuleEditorSection(id)}>{label}</button>
+                  ))}
+                </nav>
+
+                <div className="admin-card-form-layout">
+                  <section className="admin-card-form-panel">
+                    {moduleEditorSection === 'details' ? (
+                      <div className="admin-editor-grid admin-card-details-grid">
+                        <label>ID<input value={moduleDraft.id} onChange={(e) => setModuleDraft((prev) => ({ ...prev, id: e.target.value }))} /></label>
+                        <label>{t.moduleNameLabel}<input value={moduleDraft.name} onChange={(e) => setModuleDraft((prev) => ({ ...prev, name: e.target.value }))} /></label>
+                        <label>{t.moduleTypeLabel}
+                          <select value={moduleDraft.moduleType} onChange={(e) => setModuleDraft((prev) => ({ ...prev, moduleType: e.target.value as ModuleDef['moduleType'] }))}>
+                            <option value="MAIN_DECK_MODULE">MAIN_DECK_MODULE</option>
+                            <option value="SEPARATE_DECK_MODULE">SEPARATE_DECK_MODULE</option>
+                            <option value="SYSTEM_MODULE">SYSTEM_MODULE</option>
+                            <option value="VISUAL_TRACK_MODULE">VISUAL_TRACK_MODULE</option>
+                          </select>
+                        </label>
+                        <label>{t.moduleCategoryLabel}
+                          <select value={moduleDraft.category} onChange={(e) => setModuleDraft((prev) => ({ ...prev, category: e.target.value as ModuleDef['category'] }))}>
+                            {['LYAP', 'SCANDAL', 'SUPPORT', 'COMMAND', 'LEGENDARY', 'VVNZ', 'RANK'].map((category) => <option key={category} value={category}>{category}</option>)}
+                          </select>
+                        </label>
+                        <label>{t.moduleExpectedCountLabel}<input type="number" min={0} value={moduleDraft.cardCount} onChange={(e) => setModuleDraft((prev) => ({ ...prev, cardCount: Math.max(0, Number(e.target.value || 0)) }))} /></label>
+                        <label>{t.moduleEnabledLabel}
+                          <select value={moduleDraft.enabled ? '1' : '0'} onChange={(e) => setModuleDraft((prev) => ({ ...prev, enabled: e.target.value === '1' }))}>
+                            <option value="1">{t.yes}</option><option value="0">{t.no}</option>
+                          </select>
+                        </label>
+                        <label>{t.moduleTargetLabel}
+                          <select value={moduleDraft.target} onChange={(e) => setModuleDraft((prev) => ({ ...prev, target: e.target.value as DeckTarget }))}>
+                            <option value="deck">deck</option><option value="legendaryDeck">legendaryDeck</option><option value="rankTrack">rankTrack</option>
+                          </select>
+                        </label>
+                        <label>{t.moduleDefaultCategoryLabel}
+                          <select value={moduleDraft.defaultCategory ?? 'SUPPORT'} onChange={(e) => setModuleDraft((prev) => ({ ...prev, defaultCategory: e.target.value as CardCategory }))}>
+                            {['LYAP', 'SCANDAL', 'SUPPORT', 'COMMAND', 'VVNZ', 'LEGENDARY'].map((category) => <option key={category} value={category}>{category}</option>)}
+                          </select>
+                        </label>
+                      </div>
+                    ) : null}
+
+                    {moduleEditorSection === 'cards' ? (
+                      <div className="admin-module-cards-editor">
+                        <label>{t.moduleCardIdsLabel}
+                          <textarea className="admin-textarea" value={moduleCardIdsText} onChange={(e) => {
+                            setModuleCardIdsText(e.target.value);
+                            if (moduleValidationError) setModuleValidationError('');
+                          }} />
+                        </label>
+                        <p>{t.moduleLinkedCardsLabel}: <strong>{parsedModuleCardIds.length}</strong></p>
+                        <div className="admin-module-card-grid">
+                          {modulePreviewCards.map((card) => (
+                            <div key={`module-preview-card-${card.id}`}>
+                              <img src={getCardImageSrc(card)} alt="" />
+                              <span><strong>{card.title}</strong><small>{card.id}</small></span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {moduleEditorSection === 'appearance' ? (
+                      <div className="admin-module-appearance-editor">
+                        <label>{t.moduleBackImagePathLabel}
+                          <input value={moduleDraft.deckBackImage ?? ''} onChange={(e) => setModuleDraft((prev) => ({ ...prev, deckBackImage: e.target.value }))} placeholder="/card-assets/deck-back.webp" />
+                        </label>
+                        {moduleDraft.deckBackImage ? <img src={moduleDraft.deckBackImage} alt={t.moduleBackImagePathLabel} /> : null}
+                      </div>
+                    ) : null}
+                  </section>
+
+                  <aside className="admin-card-live-preview admin-module-live-preview">
+                    <h5>{t.modulePreviewTitle}</h5>
+                    <span className="admin-module-preview-icon">{moduleDraft.category}</span>
+                    <strong>{moduleDraft.name || '—'}</strong>
+                    <code>{moduleDraft.id || '—'}</code>
+                    <dl>
+                      <div><dt>{t.moduleTypeLabel}</dt><dd>{moduleDraft.moduleType}</dd></div>
+                      <div><dt>{t.moduleTargetLabel}</dt><dd>{moduleDraft.target}</dd></div>
+                      <div><dt>{t.moduleLinkedCardsLabel}</dt><dd>{parsedModuleCardIds.length} / {moduleDraft.cardCount}</dd></div>
+                      <div><dt>{t.moduleEnabledLabel}</dt><dd>{moduleDraft.enabled ? t.yes : t.no}</dd></div>
+                    </dl>
+                  </aside>
+                </div>
+
+                {moduleValidationError ? <p className="admin-error">{moduleValidationError}</p> : null}
+                <footer className="admin-card-editor-actions">
+                  <button type="button" className="admin-card-primary-action" disabled={!moduleDraft.id.trim() || !moduleDraft.name.trim()} onClick={saveModule}>{t.saveModule}</button>
+                </footer>
+              </div>
+              {deckManagerStatus ? <p className="admin-info">{deckManagerStatus}</p> : null}
+            </main>
           </div>
-          <h5>{editingModuleId ? `${t.editingModule}: ${editingModuleId}` : t.createModule}</h5>
-          <div className="admin-editor-grid">
-            <label>ID
-              <input value={moduleDraft.id} onChange={(e) => setModuleDraft((prev) => ({ ...prev, id: e.target.value }))} />
-            </label>
-            <label>{t.moduleNameLabel}
-              <input value={moduleDraft.name} onChange={(e) => setModuleDraft((prev) => ({ ...prev, name: e.target.value }))} />
-            </label>
-            <label>{t.moduleTypeLabel}
-              <select value={moduleDraft.moduleType} onChange={(e) => setModuleDraft((prev) => ({ ...prev, moduleType: e.target.value as ModuleDef['moduleType'] }))}>
-                <option value="MAIN_DECK_MODULE">MAIN_DECK_MODULE</option>
-                <option value="SEPARATE_DECK_MODULE">SEPARATE_DECK_MODULE</option>
-                <option value="SYSTEM_MODULE">SYSTEM_MODULE</option>
-                <option value="VISUAL_TRACK_MODULE">VISUAL_TRACK_MODULE</option>
-              </select>
-            </label>
-            <label>{t.moduleCategoryLabel}
-              <select value={moduleDraft.category} onChange={(e) => setModuleDraft((prev) => ({ ...prev, category: e.target.value as ModuleDef['category'] }))}>
-                <option value="LYAP">LYAP</option>
-                <option value="SCANDAL">SCANDAL</option>
-                <option value="SUPPORT">SUPPORT</option>
-                <option value="COMMAND">COMMAND</option>
-                <option value="LEGENDARY">LEGENDARY</option>
-                <option value="VVNZ">VVNZ</option>
-                <option value="RANK">RANK</option>
-              </select>
-            </label>
-            <label>{t.moduleExpectedCountLabel}
-              <input type="number" min={0} value={moduleDraft.cardCount} onChange={(e) => setModuleDraft((prev) => ({ ...prev, cardCount: Math.max(0, Number(e.target.value || 0)) }))} />
-            </label>
-            <label>{t.moduleEnabledLabel}
-              <select value={moduleDraft.enabled ? '1' : '0'} onChange={(e) => setModuleDraft((prev) => ({ ...prev, enabled: e.target.value === '1' }))}>
-                <option value="1">{t.yes}</option>
-                <option value="0">{t.no}</option>
-              </select>
-            </label>
-            <label>{t.moduleTargetLabel}
-              <select value={moduleDraft.target} onChange={(e) => setModuleDraft((prev) => ({ ...prev, target: e.target.value as DeckTarget }))}>
-                <option value="deck">deck</option>
-                <option value="legendaryDeck">legendaryDeck</option>
-                <option value="rankTrack">rankTrack</option>
-              </select>
-            </label>
-            <label>{t.moduleDefaultCategoryLabel}
-              <select value={moduleDraft.defaultCategory ?? 'SUPPORT'} onChange={(e) => setModuleDraft((prev) => ({ ...prev, defaultCategory: e.target.value as CardCategory }))}>
-                <option value="LYAP">LYAP</option>
-                <option value="SCANDAL">SCANDAL</option>
-                <option value="SUPPORT">SUPPORT</option>
-                <option value="COMMAND">COMMAND</option>
-                <option value="VVNZ">VVNZ</option>
-                <option value="LEGENDARY">LEGENDARY</option>
-              </select>
-            </label>
-            <label>{t.moduleBackImagePathLabel}
-              <input value={moduleDraft.deckBackImage ?? ''} onChange={(e) => setModuleDraft((prev) => ({ ...prev, deckBackImage: e.target.value }))} placeholder="/card-assets/deck-back.webp" />
-            </label>
-          </div>
-          <label>{t.moduleCardIdsLabel}
-            <textarea className="admin-textarea" value={moduleCardIdsText} onChange={(e) => {
-              setModuleCardIdsText(e.target.value);
-              if (moduleValidationError) setModuleValidationError('');
-            }} />
-          </label>
-          {moduleValidationError ? <p className="admin-info">{moduleValidationError}</p> : null}
-          <p className="admin-controls">
-            <button type="button" onClick={saveModule}>{t.saveModule}</button>
-          </p>
-          {deckManagerStatus ? <p className="admin-info">{deckManagerStatus}</p> : null}
         </div>
       ) : null}
 

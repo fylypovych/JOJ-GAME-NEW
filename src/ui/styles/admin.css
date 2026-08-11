@@ -3608,6 +3608,145 @@
   font-weight: 800;
 }
 
+.admin-module-browser-filter {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.admin-module-browser-open {
+  grid-template-columns: 42px minmax(0, 1fr);
+}
+
+.admin-module-category-icon {
+  display      : grid !important;
+  place-items  : center;
+  width        : 40px;
+  height       : 40px;
+  border-radius: 11px;
+  background   : color-mix(in srgb, var(--admin-primary) 14%, var(--admin-card-bg));
+  color        : var(--admin-primary-dark);
+  font-size    : 11px;
+  font-weight  : 900;
+}
+
+.admin-module-cards-editor,
+.admin-module-appearance-editor {
+  display: grid;
+  gap    : 12px;
+}
+
+.admin-module-appearance-editor label {
+  display: grid;
+  gap    : 6px;
+}
+
+.admin-module-appearance-editor input {
+  box-sizing   : border-box;
+  width        : 100%;
+  min-height   : 40px;
+  padding      : 8px 10px;
+  border       : 1px solid var(--admin-border);
+  border-radius: 9px;
+  background   : var(--admin-card-bg);
+  color        : var(--admin-text);
+}
+
+.admin-module-appearance-editor>img {
+  width        : min(280px, 100%);
+  max-height   : 400px;
+  border       : 1px solid var(--admin-border);
+  border-radius: 12px;
+  object-fit   : contain;
+  background   : color-mix(in srgb, var(--admin-bg) 70%, var(--admin-card-bg));
+}
+
+.admin-module-card-grid {
+  display              : grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap                  : 8px;
+  max-height           : 360px;
+  padding              : 2px;
+  overflow-y           : auto;
+}
+
+.admin-module-card-grid>div {
+  display              : grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap                  : 8px;
+  align-items           : center;
+  min-width             : 0;
+  padding               : 6px;
+  border                : 1px solid var(--admin-border);
+  border-radius         : 9px;
+  background            : color-mix(in srgb, var(--admin-card-bg) 94%, var(--admin-bg));
+}
+
+.admin-module-card-grid img {
+  width        : 38px;
+  height       : 52px;
+  border-radius: 5px;
+  object-fit   : cover;
+  background   : var(--admin-bg);
+}
+
+.admin-module-card-grid span,
+.admin-module-card-grid strong,
+.admin-module-card-grid small {
+  display      : block;
+  min-width    : 0;
+  overflow     : hidden;
+  text-overflow: ellipsis;
+  white-space  : nowrap;
+}
+
+.admin-module-card-grid small {
+  margin-top: 3px;
+  color     : color-mix(in srgb, var(--admin-text) 60%, transparent);
+}
+
+.admin-module-preview-icon {
+  display      : grid;
+  place-items  : center;
+  min-height   : 92px;
+  padding      : 10px;
+  border       : 1px solid var(--admin-border);
+  border-radius: 12px;
+  background   : linear-gradient(145deg,
+    color-mix(in srgb, var(--admin-primary) 22%, var(--admin-card-bg)),
+    color-mix(in srgb, var(--admin-bg) 70%, var(--admin-card-bg)));
+  color        : var(--admin-primary-dark);
+  font-size    : clamp(16px, 2vw, 24px);
+  font-weight  : 900;
+  overflow-wrap: anywhere;
+  text-align   : center;
+}
+
+.admin-module-live-preview dl {
+  display: grid;
+  gap    : 6px;
+  margin : 4px 0 0;
+}
+
+.admin-module-live-preview dl div {
+  display              : grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap                  : 6px;
+  padding-bottom       : 5px;
+  border-bottom        : 1px solid var(--admin-border);
+}
+
+.admin-module-live-preview dt {
+  color    : color-mix(in srgb, var(--admin-text) 62%, transparent);
+  font-size: 11px;
+}
+
+.admin-module-live-preview dd {
+  margin      : 0;
+  overflow-wrap: anywhere;
+  font-size   : 11px;
+  font-weight : 700;
+  text-align  : right;
+}
+
 @media (max-width: 1180px) {
   .admin-card-workspace {
     grid-template-columns: 260px minmax(0, 1fr);
