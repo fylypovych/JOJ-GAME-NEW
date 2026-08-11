@@ -31,6 +31,7 @@ export const AdminGithubTab = ({
   publishGitChanges,
   gitLocalChanges,
   gitLocalChangesLoading,
+  setGitLocalChanges,
   viewGitLocalChanges,
   gitActionMessage,
   gitActionLog,
@@ -63,6 +64,7 @@ export const AdminGithubTab = ({
   publishGitChanges: () => Promise<void> | void;
   gitLocalChanges: GitLocalChangesPreview | null;
   gitLocalChangesLoading: boolean;
+  setGitLocalChanges: (value: GitLocalChangesPreview | null) => void;
   viewGitLocalChanges: () => Promise<void> | void;
   gitActionMessage: string;
   gitActionLog: string;
@@ -180,7 +182,28 @@ export const AdminGithubTab = ({
           <p className="admin-error">{t.githubLocalChangesTruncated}</p>
         ) : null}
         {gitLocalChanges.diff ? (
-          <pre className="admin-textarea admin-log-viewer admin-github-log-viewer">{gitLocalChanges.diff}</pre>
+          <>
+            <p className="admin-controls">
+              <button
+                type="button"
+                onClick={() => {
+                  void copyText(gitLocalChanges.diff).then(() => setGitActionMessage(t.githubLogCopied));
+                }}
+              >
+                {t.githubCopyLog}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setGitLocalChanges(null);
+                  setGitActionMessage('');
+                }}
+              >
+                {t.githubClearLog}
+              </button>
+            </p>
+            <pre className="admin-textarea admin-log-viewer admin-github-log-viewer">{gitLocalChanges.diff}</pre>
+          </>
         ) : (
           <p>{t.githubLocalChangesNone}</p>
         )}

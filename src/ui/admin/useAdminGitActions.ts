@@ -436,6 +436,7 @@ export const useAdminGitActions = ({
     gitActionLog,
     gitLocalChanges,
     gitLocalChangesLoading,
+    setGitLocalChanges,
     setGitActionMessage,
     setGitActionLog,
     loadGitAuthStatus,

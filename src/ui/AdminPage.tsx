@@ -380,6 +380,7 @@ export const AdminPage = ({
     gitActionLog,
     gitLocalChanges,
     gitLocalChangesLoading,
+    setGitLocalChanges,
     setGitActionMessage,
     setGitActionLog,
     loadGitAuthStatus,
@@ -1092,6 +1093,7 @@ export const AdminPage = ({
             publishGitChanges={publishGitChanges}
             gitLocalChanges={gitLocalChanges}
             gitLocalChangesLoading={gitLocalChangesLoading}
+            setGitLocalChanges={setGitLocalChanges}
             viewGitLocalChanges={viewGitLocalChanges}
             gitActionMessage={gitActionMessage}
             gitActionLog={gitActionLog}
