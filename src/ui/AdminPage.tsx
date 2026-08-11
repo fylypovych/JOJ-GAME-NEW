@@ -423,6 +423,7 @@ export const AdminPage = ({
   });
   const {
     editableRanks,
+    hasUnsavedRankChanges,
     rankDraft,
     setRankDraft,
     ranksJson,
@@ -1312,6 +1313,7 @@ export const AdminPage = ({
             setRanksImportError={setRanksImportError}
             setRanksImportStatus={setRanksImportStatus}
             editableRanks={editableRanks}
+            hasUnsavedRankChanges={hasUnsavedRankChanges}
             updateRankAt={updateRankAt}
             attachRankImageFile={attachRankImageFile}
             attachRankVariantImageFile={attachRankVariantImageFile}

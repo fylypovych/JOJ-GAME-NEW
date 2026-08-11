@@ -47,6 +47,7 @@ export const useAdminRanksEditor = ({
   const [ranksJson, setRanksJson] = useState<string>(() => JSON.stringify(serializeSharedRanksDocument(sharedRanks), null, 2));
   const [ranksImportError, setRanksImportError] = useState<string>('');
   const [ranksImportStatus, setRanksImportStatus] = useState<string>('');
+  const hasUnsavedRankChanges = JSON.stringify(editableRanks) !== JSON.stringify(cloneEditableRanks(sharedRanks));
 
   useEffect(() => {
     setRanksJson(JSON.stringify(serializeSharedRanksDocument(sharedRanks), null, 2));
@@ -130,7 +131,9 @@ export const useAdminRanksEditor = ({
   const saveRanks = () => {
     const next = editableRanks.map((row) => ({
       ...row,
-      imageVariants: Array.isArray(row.imageVariants) ? [...row.imageVariants] : [],
+      imageVariants: Array.isArray(row.imageVariants)
+        ? row.imageVariants.map((path) => path.trim()).filter(Boolean)
+        : [],
       requirement: { ...row.requirement },
       cost: { ...row.cost },
       bonus: { ...row.bonus },
@@ -232,6 +235,7 @@ export const useAdminRanksEditor = ({
 
   return {
     editableRanks,
+    hasUnsavedRankChanges,
     rankDraft,
     setRankDraft,
     ranksJson,
