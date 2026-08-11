@@ -294,7 +294,7 @@ export const uiEnData = {
   githubNote: 'Note',
   githubIgnoreLocalChanges: 'Ignore local changes and force update',
   githubIgnoreLocalChangesHint:
-    'This will discard local tracked and untracked git changes on the server before pulling from GitHub.',
+    'Before pulling from GitHub, the server will preserve local tracked and untracked changes in a backup Git stash.',
   githubCommitMessageLabel: 'Commit message',
   githubCommitMessagePlaceholder: 'Save server changes',
   githubPublish: 'Publish production content',

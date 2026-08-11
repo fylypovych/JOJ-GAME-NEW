@@ -295,7 +295,7 @@ export const uiUkData = {
   githubNote: 'Примітка',
   githubIgnoreLocalChanges: 'Ігнорувати локальні зміни і примусово оновити',
   githubIgnoreLocalChangesHint:
-    'Перед pull з GitHub сервер скине локальні tracked і untracked git-зміни.',
+    'Перед pull з GitHub сервер збереже локальні tracked і untracked git-зміни в резервному Git stash.',
   githubCommitMessageLabel: 'Повідомлення коміту',
   githubCommitMessagePlaceholder: 'Зберегти серверні зміни',
   githubPublish: 'Опублікувати production-контент',

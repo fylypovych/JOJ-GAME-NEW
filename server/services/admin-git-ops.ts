@@ -74,19 +74,6 @@ const readGitFileList = async (runGit: RunGit, args: string[]) => {
   };
 };
 
-const findUnpublishedProductionFiles = async (
-  runGit: RunGit,
-  upstream: string,
-): Promise<{ ok: true; files: string[] } | { ok: false; error: string }> => {
-  const statusResult = await runGit(['status', '--porcelain', '--untracked-files=all']);
-  if (!statusResult.ok) return statusResult;
-  const { publishable } = classifyProductionPublishFiles(parsePorcelainFiles(statusResult.stdout));
-  if (publishable.length === 0) return { ok: true, files: [] };
-  if (!upstream) return { ok: true, files: publishable };
-  const matchesUpstream = await runGit(['diff', '--quiet', upstream, '--', ...publishable]);
-  return { ok: true, files: matchesUpstream.ok ? [] : publishable };
-};
-
 const copyProductionFileToWorktree = async (repoRoot: string, worktreeRoot: string, filePath: string) => {
   const normalized = normalizeGitPath(filePath);
   if (!isProductionPublishPath(normalized)) throw new Error(`Publish path is not allowed: ${normalized}`);
@@ -368,18 +355,6 @@ export const registerAdminGitRoutes = ({
         routeError(ctx, 409, 'Working tree has local changes. Commit or stash before update.', { status });
         return;
       }
-      const unpublished = await findUnpublishedProductionFiles(runGit, status.upstream);
-      if (!unpublished.ok) {
-        routeError(ctx, 500, 'Failed to verify production content before update', { details: unpublished.error, status });
-        return;
-      }
-      if (unpublished.files.length > 0) {
-        routeError(ctx, 409, 'Unpublished production content cannot be ignored. Publish it to GitHub first.', {
-          status,
-          publishableFiles: unpublished.files,
-        });
-        return;
-      }
       const stashRes = await stashAllLocalGitChanges(runGit);
       if (!stashRes.ok) {
         await logLine('ERROR', `git safe stash failed before update: ${stashRes.error}`);
@@ -457,18 +432,6 @@ export const registerAdminGitRoutes = ({
     if (status.dirty) {
       if (!ignoreLocalChanges) {
         routeError(ctx, 409, 'Working tree has local changes. Commit or stash before deploy.', { status });
-        return;
-      }
-      const unpublished = await findUnpublishedProductionFiles(runGit, status.upstream);
-      if (!unpublished.ok) {
-        routeError(ctx, 500, 'Failed to verify production content before deploy', { details: unpublished.error, status });
-        return;
-      }
-      if (unpublished.files.length > 0) {
-        routeError(ctx, 409, 'Unpublished production content cannot be ignored. Publish it to GitHub first.', {
-          status,
-          publishableFiles: unpublished.files,
-        });
         return;
       }
       const stashRes = await stashAllLocalGitChanges(runGit);
