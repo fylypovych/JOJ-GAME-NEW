@@ -3,12 +3,10 @@
   "baselines": [
     {
       "id": "2026-03-08-standard-4p-5000-vvnz-always-on",
-      "capturedAt": "2026-03-08",
-      "notes": "User-approved balance baseline",
       "input": {
         "players": 4,
-        "simulations": 5000,
         "gameMode": "standard",
+        "simulations": 5000,
         "optionalModules": [
           {
             "id": "2026.VVNZ.MODULE",
@@ -16,70 +14,70 @@
           }
         ]
       },
+      "notes": "User-approved balance baseline",
       "summary": {
-        "finished": 5000,
         "stalled": 0,
         "avgTurns": 109.42,
+        "finished": 5000,
         "rankWins": 0,
         "scoreWins": 5000
       },
-      "topReachedByPct": [
-        {
-          "rankName": "Капітан",
-          "pct": 30.6,
-          "games": 1530,
-          "total": 5000
-        },
-        {
-          "rankName": "Майор",
-          "pct": 22.58,
-          "games": 1129,
-          "total": 5000
-        },
-        {
-          "rankName": "Старший лейтенант",
-          "pct": 14.54,
-          "games": 727,
-          "total": 5000
-        }
-      ],
+      "capturedAt": "2026-03-08",
+      "lastGameTurns": 114,
       "topHighestRanks": [
         {
-          "rankName": "Полковник",
           "pct": 0.48,
           "games": 24,
-          "total": 5000
+          "total": 5000,
+          "rankName": "Полковник"
         },
         {
-          "rankName": "Підполковник",
           "pct": 4.56,
           "games": 228,
-          "total": 5000
+          "total": 5000,
+          "rankName": "Підполковник"
         },
         {
-          "rankName": "Майор",
           "pct": 22.58,
           "games": 1129,
-          "total": 5000
+          "total": 5000,
+          "rankName": "Майор"
+        }
+      ],
+      "topReachedByPct": [
+        {
+          "pct": 30.6,
+          "games": 1530,
+          "total": 5000,
+          "rankName": "Капітан"
+        },
+        {
+          "pct": 22.58,
+          "games": 1129,
+          "total": 5000,
+          "rankName": "Майор"
+        },
+        {
+          "pct": 14.54,
+          "games": 727,
+          "total": 5000,
+          "rankName": "Старший лейтенант"
         }
       ],
       "winnerResources": {
+        "tech": 7,
         "time": 0,
-        "reputation": 24,
-        "discipline": 15,
         "documents": 13,
-        "tech": 7
-      },
-      "lastGameTurns": 114
+        "discipline": 15,
+        "reputation": 24
+      }
     },
     {
       "id": "2026-03-08-standard-6p-5000-vvnz-always-on",
-      "capturedAt": "2026-03-08",
-      "notes": "User-approved balance baseline",
       "input": {
         "players": 6,
-        "simulations": 5000,
         "gameMode": "standard",
+        "simulations": 5000,
         "optionalModules": [
           {
             "id": "2026.VVNZ.MODULE",
@@ -87,61 +85,63 @@
           }
         ]
       },
+      "notes": "User-approved balance baseline",
       "summary": {
-        "finished": 5000,
         "stalled": 0,
         "avgTurns": 114.88,
+        "finished": 5000,
         "rankWins": 0,
         "scoreWins": 5000
       },
-      "topReachedByPct": [
-        {
-          "rankName": "Капітан",
-          "pct": 37.26,
-          "games": 1863,
-          "total": 5000
-        },
-        {
-          "rankName": "Майор",
-          "pct": 22.52,
-          "games": 1126,
-          "total": 5000
-        },
-        {
-          "rankName": "Старший лейтенант",
-          "pct": 17.44,
-          "games": 872,
-          "total": 5000
-        }
-      ],
+      "capturedAt": "2026-03-08",
+      "lastGameTurns": 116,
       "topHighestRanks": [
         {
-          "rankName": "Полковник",
           "pct": 0.18,
           "games": 9,
-          "total": 5000
+          "total": 5000,
+          "rankName": "Полковник"
         },
         {
-          "rankName": "Підполковник",
           "pct": 3.44,
           "games": 172,
-          "total": 5000
+          "total": 5000,
+          "rankName": "Підполковник"
         },
         {
-          "rankName": "Майор",
           "pct": 22.52,
           "games": 1126,
-          "total": 5000
+          "total": 5000,
+          "rankName": "Майор"
+        }
+      ],
+      "topReachedByPct": [
+        {
+          "pct": 37.26,
+          "games": 1863,
+          "total": 5000,
+          "rankName": "Капітан"
+        },
+        {
+          "pct": 22.52,
+          "games": 1126,
+          "total": 5000,
+          "rankName": "Майор"
+        },
+        {
+          "pct": 17.44,
+          "games": 872,
+          "total": 5000,
+          "rankName": "Старший лейтенант"
         }
       ],
       "winnerResources": {
+        "tech": 8,
         "time": 1,
-        "reputation": 21,
-        "discipline": 17,
         "documents": 12,
-        "tech": 8
-      },
-      "lastGameTurns": 116
+        "discipline": 17,
+        "reputation": 21
+      }
     }
   ]
 }
