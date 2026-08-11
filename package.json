@@ -32,6 +32,7 @@
     "setup:git-hooks": "node scripts/install-git-hooks.cjs",
     "sync:version-from-commit": "node scripts/sync-version-from-commit.cjs",
     "set:version": "node scripts/sync-version-from-commit.cjs",
+    "version:next": "node scripts/release-version.cjs",
     "check:version-sync": "node scripts/check-version-sync.cjs",
     "seed:shared-config": "node scripts/seed-shared-config-to-db.cjs",
     "sync:shared-config-db": "tsx scripts/sync-shared-config-to-db.ts",
