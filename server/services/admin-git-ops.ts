@@ -1,5 +1,4 @@
 import { access, copyFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { randomBytes } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from '../routes/types';
@@ -86,11 +85,6 @@ const findUnpublishedProductionFiles = async (
   if (!upstream) return { ok: true, files: publishable };
   const matchesUpstream = await runGit(['diff', '--quiet', upstream, '--', ...publishable]);
   return { ok: true, files: matchesUpstream.ok ? [] : publishable };
-};
-
-const createProductionPublishBranchName = (now = new Date()) => {
-  const stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
-  return `production-content/${stamp}-${randomBytes(3).toString('hex')}`;
 };
 
 const copyProductionFileToWorktree = async (repoRoot: string, worktreeRoot: string, filePath: string) => {
@@ -380,7 +374,7 @@ export const registerAdminGitRoutes = ({
         return;
       }
       if (unpublished.files.length > 0) {
-        routeError(ctx, 409, 'Unpublished production content cannot be ignored. Publish it to a review branch and merge it first.', {
+        routeError(ctx, 409, 'Unpublished production content cannot be ignored. Publish it to GitHub first.', {
           status,
           publishableFiles: unpublished.files,
         });
@@ -471,7 +465,7 @@ export const registerAdminGitRoutes = ({
         return;
       }
       if (unpublished.files.length > 0) {
-        routeError(ctx, 409, 'Unpublished production content cannot be ignored. Publish it to a review branch and merge it first.', {
+        routeError(ctx, 409, 'Unpublished production content cannot be ignored. Publish it to GitHub first.', {
           status,
           publishableFiles: unpublished.files,
         });
@@ -633,6 +627,11 @@ export const registerAdminGitRoutes = ({
       routeError(ctx, 409, 'Production branch has no upstream branch configured.', { status });
       return;
     }
+    const targetBranch = status.branch.trim();
+    if (!targetBranch || status.upstream !== `origin/${targetBranch}`) {
+      routeError(ctx, 409, 'Production branch must track the matching origin branch before direct publish.', { status });
+      return;
+    }
 
     const stagedBefore = await readGitFileList(runGit, ['diff', '--cached', '--name-only']);
     if (!stagedBefore.ok) {
@@ -683,8 +682,8 @@ export const registerAdminGitRoutes = ({
     }
     const repoRoot = path.resolve(repoRootRes.stdout.trim());
     const worktreeRoot = await mkdtemp(path.join(tmpdir(), 'joj-production-publish-'));
-    const publishBranch = createProductionPublishBranchName();
     let worktreeRegistered = false;
+    let publishedHead = '';
     try {
       const worktreeRes = await runGit(['worktree', 'add', '--detach', worktreeRoot, status.upstream]);
       if (!worktreeRes.ok) throw new Error(worktreeRes.error);
@@ -727,10 +726,14 @@ export const registerAdminGitRoutes = ({
       if (!commitRes.ok) throw new Error(commitRes.error);
       steps.push({ step: `git commit -m "${commitMessage}"`, output: commitRes.stdout.trim() || '(ok)' });
 
-      const pushRes = await runGit(['-C', worktreeRoot, 'push', 'origin', `HEAD:refs/heads/${publishBranch}`]);
+      const publishedHeadRes = await runGit(['-C', worktreeRoot, 'rev-parse', 'HEAD']);
+      if (!publishedHeadRes.ok) throw new Error(publishedHeadRes.error);
+      publishedHead = publishedHeadRes.stdout.trim();
+
+      const pushRes = await runGit(['-C', worktreeRoot, 'push', 'origin', `HEAD:refs/heads/${targetBranch}`]);
       if (!pushRes.ok) throw new Error(pushRes.error);
       steps.push({
-        step: `git push origin ${publishBranch}`,
+        step: `git push origin ${targetBranch}`,
         output: pushRes.stdout.trim() || pushRes.stderr.trim() || '(ok)',
       });
     } catch (error) {
@@ -743,7 +746,33 @@ export const registerAdminGitRoutes = ({
       await rm(worktreeRoot, { recursive: true, force: true });
     }
 
-    await logLine('WARN', `production content published to review branch=${publishBranch}`);
+    const alignRes = await runGit(['reset', '--mixed', publishedHead]);
+    if (!alignRes.ok) {
+      await logLine('ERROR', `production content was pushed but local HEAD alignment failed: ${alignRes.error}`);
+      routeError(ctx, 500, 'Content was pushed to GitHub, but production Git status needs manual alignment.', {
+        details: alignRes.error,
+        pushed: true,
+        publishedHead,
+        branch: targetBranch,
+        steps,
+      });
+      return;
+    }
+    steps.push({ step: `align production HEAD ${publishedHead}`, output: '(working files preserved)' });
+
+    const nextStatus = await getGitUpdateStatus(runGit);
+    if (!nextStatus.ok) {
+      routeError(ctx, 500, 'Content was pushed, but the updated Git status could not be read.', {
+        details: nextStatus.error,
+        pushed: true,
+        publishedHead,
+        branch: targetBranch,
+        steps,
+      });
+      return;
+    }
+
+    await logLine('WARN', `production content published directly to branch=${targetBranch}`);
     await logLine('INFO', buildAdminDeployLog({
       action: 'publish',
       route: '/api/admin/git/publish',
@@ -751,13 +780,13 @@ export const registerAdminGitRoutes = ({
       actor,
       durationMs: Date.now() - startedAt,
       outcome: 'success',
-      details: { branch: publishBranch, base: status.upstream, files: classification.publishable },
+      details: { branch: targetBranch, base: status.upstream, files: classification.publishable },
     }));
     routeOk(ctx, {
-      message: `Production content pushed to review branch ${publishBranch}`,
+      message: `Production content pushed directly to ${targetBranch}`,
       steps,
-      status,
-      publishBranch,
+      status: nextStatus,
+      publishBranch: targetBranch,
       publishableFiles: classification.publishable,
       excludedFiles: classification.excluded,
     });
