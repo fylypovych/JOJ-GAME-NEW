@@ -23,6 +23,7 @@ const logLine = async () => undefined;
 test('shared ranks update validates payload and saves on success', async () => {
   const { router, postHandlers } = makeRouter();
   let saved = false;
+  let templateSaved = false;
   registerSharedRoutes({
     router,
     requireAdminAuth,
@@ -35,11 +36,12 @@ test('shared ranks update validates payload and saves on success', async () => {
     getSharedDeckTemplateStats: () => ({ cards: 1 }),
     getSharedRanks: () => [{ id: 'recruit' }],
     setSharedRanks: (value) => Array.isArray(value) && value.length === 1,
+    regenerateRankVisualData: () => ({ ranksChanged: false, templateChanged: true }),
     resetSharedRanks: () => undefined,
     importSharedDeckTemplateJson: () => ({ ok: true }),
     resetSharedDeckTemplate: () => undefined,
     saveRanksToDisk: async () => { saved = true; },
-    saveTemplateToDisk: async () => undefined,
+    saveTemplateToDisk: async () => { templateSaved = true; },
   });
 
   const handler = postHandlers.get('/api/shared-ranks');
@@ -59,6 +61,7 @@ test('shared ranks update validates payload and saves on success', async () => {
   await handler?.(ctx);
   assert.equal((ctx.body as { ok: boolean }).ok, true);
   assert.equal(saved, true);
+  assert.equal(templateSaved, true);
 });
 
 test('shared deck template import reports validation error', async () => {
@@ -75,6 +78,7 @@ test('shared deck template import reports validation error', async () => {
     getSharedDeckTemplateStats: () => ({ cards: 1 }),
     getSharedRanks: () => [{ id: 'recruit' }],
     setSharedRanks: () => true,
+    regenerateRankVisualData: () => ({ ranksChanged: false, templateChanged: false }),
     resetSharedRanks: () => undefined,
     importSharedDeckTemplateJson: () => ({ ok: false, error: 'bad template' }),
     resetSharedDeckTemplate: () => undefined,

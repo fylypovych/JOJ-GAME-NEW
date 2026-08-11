@@ -3,7 +3,7 @@ set -Eeuo pipefail
 umask 077
 
 PROJECT_DIR="${JOJ_PROJECT_DIR:-/opt/joj-game}"
-BACKUP_DIR="${JOJ_BACKUP_DIR:-/var/backups/joj-game}"
+BACKUP_DIR="${JOJ_BACKUP_DIR:-${PROJECT_DIR}/backup}"
 RETENTION_DAYS="${JOJ_BACKUP_RETENTION_DAYS:-14}"
 ENV_FILE="${PROJECT_DIR}/.env"
 

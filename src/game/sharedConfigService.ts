@@ -86,23 +86,41 @@ export class SharedConfigService {
     let ranksChanged = false;
     let templateChanged = false;
 
-    if (this.sharedRanks.length === 0) {
-      return { ranksChanged: false, templateChanged: false };
-    }
-
     const hydratedRanks = this.hydrateSharedRanksWithGeneratedImages(this.sharedRanks);
     if (hydratedRanks.changed) {
       this.sharedRanks = hydratedRanks.nextRanks;
       ranksChanged = true;
     }
 
-    const expectedRankTrackCount = this.sharedRanks.reduce((acc: number, rank: RankDefinition) => acc + generatedRankCardCopies(rank.id), 0);
-    const hasOnlyGeneratedRankCards = this.sharedDeckTemplate.rankTrack.every((card) => isGeneratedRankTrackCardId(card.id));
-    const needsRankTrackRepair = force
-      || this.sharedDeckTemplate.rankTrack.length === 0
-      || (hasOnlyGeneratedRankCards && this.sharedDeckTemplate.rankTrack.length !== expectedRankTrackCount);
+    // Loading persisted content must never recreate cards that an administrator
+    // deliberately removed. Visual cards are rebuilt only by an explicit rank
+    // update/reset, which calls this method with force=true.
+    if (!force) {
+      return { ranksChanged, templateChanged };
+    }
 
-    if (!needsRankTrackRepair) {
+    if (this.sharedRanks.length === 0) {
+      const nextRankTrack = this.sharedDeckTemplate.rankTrack.filter((card) => !isGeneratedRankTrackCardId(card.id));
+      const nextModules = (this.sharedDeckTemplate.modules ?? []).filter((module) => (
+        module.target !== 'rankTrack' && module.category !== 'RANK'
+      ));
+      const rankModuleWasConfigured = Boolean(this.sharedDeckTemplate.gameSetup.rankModuleId);
+      if (
+        nextRankTrack.length !== this.sharedDeckTemplate.rankTrack.length
+        || nextModules.length !== (this.sharedDeckTemplate.modules ?? []).length
+        || rankModuleWasConfigured
+      ) {
+        this.sharedDeckTemplate = {
+          ...this.sharedDeckTemplate,
+          rankTrack: nextRankTrack,
+          modules: nextModules,
+          gameSetup: {
+            ...this.sharedDeckTemplate.gameSetup,
+            rankModuleId: undefined,
+          },
+        };
+        templateChanged = true;
+      }
       return { ranksChanged, templateChanged };
     }
 
@@ -142,6 +160,10 @@ export class SharedConfigService {
     return this.syncGeneratedRankVisualData(false);
   }
 
+  regenerateRankVisualData(): { ranksChanged: boolean; templateChanged: boolean } {
+    return this.syncGeneratedRankVisualData(true);
+  }
+
   getActiveRanks(): SharedRanks {
     return this.sharedRanks;
   }
@@ -160,12 +182,12 @@ export class SharedConfigService {
   }
 
   setSharedRanks(next: SharedRanks): boolean {
-    if (!Array.isArray(next) || next.length === 0) return false;
+    if (!Array.isArray(next)) return false;
     if (!next.every((rank) => isValidRank(rank))) return false;
     const ids = next.map((rank) => rank.id.trim());
     if (new Set(ids).size !== ids.length) return false;
     this.sharedRanks = normalizeSharedRanks(next);
-    this.syncGeneratedRankVisualData(true);
+    this.syncGeneratedRankVisualData(false);
     return true;
   }
 

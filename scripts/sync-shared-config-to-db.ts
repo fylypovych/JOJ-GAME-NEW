@@ -40,12 +40,6 @@ const main = async () => {
     ),
     readFile(path.resolve(appRoot, 'database', 'shared-ranks.json'), 'utf8'),
   ]);
-  requireImportSuccess(
-    'shared deck template',
-    importSharedDeckTemplateJson(templateJson),
-  );
-  requireImportSuccess('shared ranks', importSharedRanksJson(ranksJson));
-
   const store = createSharedConfigStore(
     {
       exportSharedDeckTemplateJson,
@@ -59,11 +53,52 @@ const main = async () => {
     },
     appRoot,
   );
-  await store.syncCurrentJsonToPostgres();
 
   const pool = new Pool({ connectionString: databaseUrl });
   try {
+    const existingResult = await pool.query<{ key: string }>(
+      `SELECT key
+       FROM app_settings
+       WHERE key = ANY($1::text[])`,
+      [['shared_deck_template', 'shared_ranks']],
+    );
+    const existingKeys = new Set(existingResult.rows.map((row) => row.key));
+    const templateExists = existingKeys.has('shared_deck_template');
+    const ranksExist = existingKeys.has('shared_ranks');
+
+    if (templateExists) {
+      await store.loadTemplate();
+    } else {
+      requireImportSuccess(
+        'shared deck template',
+        importSharedDeckTemplateJson(templateJson),
+      );
+    }
+
+    if (ranksExist) {
+      await store.loadRanks();
+    } else {
+      requireImportSuccess('shared ranks', importSharedRanksJson(ranksJson));
+    }
+
+    // Rebuild normalized tables from the selected source. Existing app_settings
+    // values were loaded first, so this cannot replace production content with
+    // repository defaults.
+    await store.saveTemplateToDisk();
+    await store.saveRanksToDisk();
+    await store.syncAdditionalJsonConfigsToPostgres?.(databaseUrl, appRoot);
     await assertSharedConfigConsistency(pool);
+
+    const seeded: string[] = [];
+    const preserved: string[] = [];
+    (templateExists ? preserved : seeded).push('shared_deck_template');
+    (ranksExist ? preserved : seeded).push('shared_ranks');
+    if (seeded.length > 0) {
+      process.stdout.write(`[sync:shared-config-db] Seeded missing settings: ${seeded.join(', ')}.\n`);
+    }
+    if (preserved.length > 0) {
+      process.stdout.write(`[sync:shared-config-db] Preserved production settings: ${preserved.join(', ')}.\n`);
+    }
   } finally {
     await pool.end();
   }

@@ -118,9 +118,10 @@ export const normalizeModules = (
   modules: DeckModuleDefinition[] | undefined,
   templateBase: { deck: CardDefinition[]; legendaryDeck: CardDefinition[]; rankTrack: CardDefinition[] },
 ): DeckModuleDefinition[] => {
-  const source = Array.isArray(modules) && modules.length > 0 ? modules : defaultModulesFromDecks(templateBase);
+  // A missing modules field is a legacy document and still needs migration defaults.
+  // An explicit empty array is valid production content and must stay empty.
+  const source = Array.isArray(modules) ? modules : defaultModulesFromDecks(templateBase);
   const normalized = source.map((module) => sanitizeModule(module)).filter((module) => module.id);
-  if (normalized.length === 0) return defaultModulesFromDecks(templateBase);
   const seen = new Set<string>();
   const deduped: DeckModuleDefinition[] = [];
   normalized.forEach((module) => {

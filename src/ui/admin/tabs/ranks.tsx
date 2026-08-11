@@ -230,7 +230,6 @@ export const AdminRanksTab = ({
                   <button
                     type="button"
                     className="admin-card-browser-remove"
-                    disabled={editableRanks.length <= 1}
                     title={t.deleteItemShort}
                     aria-label={`${t.deleteItemShort}: ${rank.name}`}
                     onClick={() => {

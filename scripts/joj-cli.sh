@@ -19,18 +19,11 @@ run_pm2() {
 }
 
 run_project_update() {
-  if [[ "$(id -u)" -eq 0 ]]; then
-    runuser -u "$APP_USER" -- env HOME="$(getent passwd "$APP_USER" | cut -d: -f6)" bash -lc \
-      'cd "$1" && git pull --ff-only && npm ci && npm run typecheck && npm test && npm run build' \
-      bash "$PROJECT_DIR"
-  else
-    cd "$PROJECT_DIR"
-    git pull --ff-only
-    npm ci
-    npm run typecheck
-    npm test
-    npm run build
+  if [[ "$(id -u)" -ne 0 ]]; then
+    echo "Run updates as root: sudo joj update" >&2
+    exit 1
   fi
+  exec bash "${PROJECT_DIR}/scripts/install-ubuntu.sh" --update --yes
 }
 
 usage() {
@@ -77,7 +70,6 @@ case "$cmd" in
   update)
     require_config
     run_project_update
-    run_pm2 restart joj-game-server joj-game-web --update-env
     ;;
   status)
     run_pm2 status
@@ -97,7 +89,10 @@ case "$cmd" in
       echo "Run backup as root: sudo joj backup" >&2
       exit 1
     fi
-    JOJ_PROJECT_DIR="$PROJECT_DIR" "${PROJECT_DIR}/scripts/backup-production.sh"
+    JOJ_PROJECT_DIR="$PROJECT_DIR" \
+      JOJ_BACKUP_DIR="${JOJ_BACKUP_DIR:-${PROJECT_DIR}/backup}" \
+      JOJ_BACKUP_RETENTION_DAYS="${JOJ_BACKUP_RETENTION_DAYS:-14}" \
+      "${PROJECT_DIR}/scripts/backup-production.sh"
     ;;
   ""|-h|--help|help)
     usage

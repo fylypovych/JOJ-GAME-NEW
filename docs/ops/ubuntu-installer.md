@@ -50,6 +50,35 @@ The installer can be rerun after a failed step. It preserves an existing target 
 
 It does update the configured local PostgreSQL role password and rewrites `.env` and `/etc/caddy/Caddyfile` from the answers supplied on each run. Back up an existing production host before changing those values.
 
+## Updating an existing installation
+
+Use update mode for routine releases. It reuses the installed `.env`, database,
+application user, Caddy/TLS, firewall and systemd configuration:
+
+```bash
+sudo bash /opt/joj-game/scripts/install-ubuntu.sh --update
+```
+
+For an unattended update:
+
+```bash
+sudo bash /opt/joj-game/scripts/install-ubuntu.sh --update --non-interactive --yes
+```
+
+After this release is installed, the equivalent shortcut is:
+
+```bash
+sudo joj update
+```
+
+Update mode creates a production backup first in `<PROJECT_DIR>/backup`, performs
+a fast-forward-only Git pull, installs locked dependencies, runs type checks/tests/build and database
+migrations, preserves existing shared production content, restarts PM2 and checks
+the backend health endpoint. It does not reinstall OS packages or recreate the
+database, administrator, Caddy configuration, certificates, UFW rules or backup
+timer. If tracked local changes conflict with the incoming Git update, Git stops
+the operation without deleting them; review or publish those changes first.
+
 ## Operations
 
 ```bash
@@ -58,12 +87,16 @@ sudo joj health
 sudo joj logs server
 sudo joj logs web
 sudo joj restart
+sudo joj update
 sudo joj backup
 ```
 
 Daily backups run around 03:15 through `joj-backup.timer` and are retained locally for 14 days by default. Each archive includes a PostgreSQL custom-format dump, runtime JSON/files and card assets.
 
-Local backups do not protect against VM deletion. Configure a separate job or storage agent to copy `/var/backups/joj-game` to storage outside the VM.
+Backups are stored in `<PROJECT_DIR>/backup` (normally `/opt/joj-game/backup`).
+This directory is ignored by Git and excluded from production-content publishing,
+so archives remain local to the server. Local backups do not protect against VM
+deletion; configure separate storage outside the VM if off-host recovery is needed.
 
 ## Verification
 

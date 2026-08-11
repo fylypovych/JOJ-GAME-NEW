@@ -176,7 +176,6 @@ export const useAdminRanksEditor = ({
   };
 
   const removeRankAt = (index: number) => {
-    if (editableRanks.length <= 1) return;
     setEditableRanks((prev) => prev.filter((_, i) => i !== index));
     setRanksImportStatus('');
     setRanksImportError('');

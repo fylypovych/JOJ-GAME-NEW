@@ -181,6 +181,7 @@ export const bootstrapRoutes = async (deps: RouteBootstrapDeps) => {
     getSharedDeckTemplateStats: () => ({ totalCards: 0 }),
     getSharedRanks: () => ({ ranks: [] }),
     setSharedRanks: () => false,
+    regenerateRankVisualData: () => ({ ranksChanged: false, templateChanged: false }),
     resetSharedRanks: async () => {},
     importSharedDeckTemplateJson: () => ({ ok: true }),
     resetSharedDeckTemplate: async () => {},

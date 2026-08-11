@@ -15,6 +15,7 @@ test('production publish allows only reviewed content configuration files', () =
   assert.equal(isProductionPublishPath('database/admin-db-ui-config.json'), false);
   assert.equal(isProductionPublishPath('package.json'), false);
   assert.equal(isProductionPublishPath('.env'), false);
+  assert.equal(isProductionPublishPath('backup/joj-backup-20260811T120000Z.tar.gz'), false);
 });
 
 test('production publish accepts card images and avatars but rejects executable uploads', () => {
@@ -36,6 +37,7 @@ test('production publish classification keeps excluded files out of the commit',
     'public/card-assets/module/card.webp',
     'database/admin-db-ui-config.json',
     'package-lock.json',
+    'backup/joj-backup-20260811T120000Z.tar.gz',
   ]);
 
   assert.deepEqual(result.publishable, [
@@ -45,5 +47,6 @@ test('production publish classification keeps excluded files out of the commit',
   assert.deepEqual(result.excluded, [
     'database/admin-db-ui-config.json',
     'package-lock.json',
+    'backup/joj-backup-20260811T120000Z.tar.gz',
   ]);
 });

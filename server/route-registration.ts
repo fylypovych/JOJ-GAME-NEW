@@ -27,6 +27,7 @@ import {
   getSharedDeckTemplateStats,
   getSharedRanks,
   setSharedRanks,
+  regenerateRankVisualData,
   resetSharedRanks,
   importSharedDeckTemplateJson,
   resetSharedDeckTemplate,
@@ -92,6 +93,7 @@ export interface RouteRegistrationDeps {
     getSharedDeckTemplateStats: unknown;
     getSharedRanks: unknown;
     setSharedRanks: unknown;
+    regenerateRankVisualData: unknown;
     resetSharedRanks: unknown;
     importSharedDeckTemplateJson: unknown;
     resetSharedDeckTemplate: unknown;
@@ -264,6 +266,7 @@ export const registerAllRoutes = (
     getSharedDeckTemplateStats: gameAdapter.getSharedDeckTemplateStats as typeof getSharedDeckTemplateStats,
     getSharedRanks: gameAdapter.getSharedRanks as typeof getSharedRanks,
     setSharedRanks: gameAdapter.setSharedRanks as typeof setSharedRanks,
+    regenerateRankVisualData: gameAdapter.regenerateRankVisualData as typeof regenerateRankVisualData,
     resetSharedRanks: gameAdapter.resetSharedRanks as typeof resetSharedRanks,
     importSharedDeckTemplateJson: gameAdapter.importSharedDeckTemplateJson as typeof importSharedDeckTemplateJson,
     resetSharedDeckTemplate: gameAdapter.resetSharedDeckTemplate as typeof resetSharedDeckTemplate,

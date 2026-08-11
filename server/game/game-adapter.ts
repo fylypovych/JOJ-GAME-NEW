@@ -19,6 +19,7 @@ export {
   importSharedRanksJson,
   importSharedDeckTemplateJson,
   repairGeneratedRankVisualData,
+  regenerateRankVisualData,
   resetSharedRanks,
   resetSharedDeckTemplate,
   setSharedRanks,

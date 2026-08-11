@@ -60,6 +60,7 @@ export { SharedConfigService, sharedConfigService };
 
 // Backward compatible function exports (proxies to singleton)
 export const repairGeneratedRankVisualData = () => sharedConfigService.repairGeneratedRankVisualData();
+export const regenerateRankVisualData = () => sharedConfigService.regenerateRankVisualData();
 export const getActiveRanks = () => sharedConfigService.getActiveRanks();
 export const getTopRankId = () => sharedConfigService.getTopRankId();
 export const getSharedRanks = () => sharedConfigService.getSharedRanks();

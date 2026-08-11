@@ -11,7 +11,11 @@ SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG_FILE=""
 NON_INTERACTIVE=0
 ASSUME_YES=0
+INSTALL_MODE="install"
 LOG_FILE="/var/log/joj-installer.log"
+
+ENV_APP_USER_OVERRIDE="${APP_USER:-}"
+ENV_PROJECT_DIR_OVERRIDE="${PROJECT_DIR:-}"
 
 APP_USER="${APP_USER:-joj}"
 PROJECT_DIR="${PROJECT_DIR:-/opt/joj-game}"
@@ -40,6 +44,7 @@ usage() {
 Usage: sudo bash scripts/install-ubuntu.sh [options]
 
 Options:
+  --update            Update an existing installation without reprovisioning it
   --config FILE       Load KEY=VALUE settings from a root-owned file
   --non-interactive   Fail instead of prompting for missing values
   --yes               Accept the final installation confirmation
@@ -53,6 +58,11 @@ Supported config keys:
 
 For unattended installs, put the admin password in a chmod-600 file and set
 ADMIN_PASSWORD_FILE. Avoid storing ADMIN passwords directly in the config.
+
+Update mode reads the existing .env and /etc/default/joj-game, creates a backup,
+pulls the current Git branch, installs dependencies, runs migrations/tests/build,
+restarts PM2 and performs a health check. It does not reconfigure PostgreSQL,
+Caddy, UFW, the administrator, TLS, or backup timers.
 EOF
 }
 
@@ -91,6 +101,7 @@ load_config() {
 
 while (($#)); do
   case "$1" in
+    --update) INSTALL_MODE="update"; shift ;;
     --config) [[ $# -ge 2 ]] || die '--config requires a file'; CONFIG_FILE="$2"; shift 2 ;;
     --non-interactive) NON_INTERACTIVE=1; shift ;;
     --yes) ASSUME_YES=1; shift ;;
@@ -98,6 +109,29 @@ while (($#)); do
     *) die "Unknown option: $1" ;;
   esac
 done
+
+load_installed_runtime_defaults() {
+  local runtime_file="/etc/default/joj-game" raw key value
+  [[ -r "$runtime_file" ]] || return 0
+  while IFS= read -r raw || [[ -n "$raw" ]]; do
+    raw="${raw%$'\r'}"
+    [[ -z "${raw//[[:space:]]/}" || "$raw" =~ ^[[:space:]]*# || "$raw" != *=* ]] && continue
+    key="${raw%%=*}"
+    value="${raw#*=}"
+    case "$key" in
+      JOJ_PROJECT_DIR) PROJECT_DIR="$value" ;;
+      JOJ_APP_USER) APP_USER="$value" ;;
+      JOJ_PM2_BIN) PM2_BIN="$value" ;;
+      JOJ_BACKUP_RETENTION_DAYS) BACKUP_RETENTION_DAYS="$value" ;;
+    esac
+  done <"$runtime_file"
+}
+
+if [[ "$INSTALL_MODE" == update ]]; then
+  load_installed_runtime_defaults
+  [[ -z "$ENV_APP_USER_OVERRIDE" ]] || APP_USER="$ENV_APP_USER_OVERRIDE"
+  [[ -z "$ENV_PROJECT_DIR_OVERRIDE" ]] || PROJECT_DIR="$ENV_PROJECT_DIR_OVERRIDE"
+fi
 [[ -z "$CONFIG_FILE" ]] || load_config "$CONFIG_FILE"
 
 prompt_value() {
@@ -158,6 +192,98 @@ run_as_app() {
   runuser -u "$APP_USER" -- env HOME="${APP_HOME:-/home/${APP_USER}}" "$@"
 }
 
+run_update_mode() {
+  [[ -d "${PROJECT_DIR}/.git" ]] || die "Existing Git checkout not found at ${PROJECT_DIR}"
+  [[ -f "${PROJECT_DIR}/package.json" ]] || die "package.json not found at ${PROJECT_DIR}"
+  [[ -f "${PROJECT_DIR}/.env" ]] || die "Existing ${PROJECT_DIR}/.env is required for update mode"
+  [[ -f "${PROJECT_DIR}/ecosystem.config.cjs" ]] || die "ecosystem.config.cjs not found at ${PROJECT_DIR}"
+  id "$APP_USER" >/dev/null 2>&1 || die "Application user does not exist: ${APP_USER}"
+  APP_HOME="$(getent passwd "$APP_USER" | cut -d: -f6)"
+  [[ -n "$APP_HOME" ]] || die "Cannot resolve home directory for ${APP_USER}"
+  PM2_BIN="${PM2_BIN:-/usr/local/bin/pm2}"
+  [[ -x "$PM2_BIN" ]] || die "PM2 is not executable at ${PM2_BIN}"
+  command -v git >/dev/null 2>&1 || die 'git is required for update mode'
+  command -v npm >/dev/null 2>&1 || die 'npm is required for update mode'
+  [[ "$BACKUP_RETENTION_DAYS" =~ ^[0-9]+$ ]] && (( BACKUP_RETENTION_DAYS >= 1 )) \
+    || die 'BACKUP_RETENTION_DAYS must be a positive integer'
+  BACKUP_DIR="${PROJECT_DIR}/backup"
+
+  cat <<EOF
+
+JOJ Game update summary
+  Project:  ${PROJECT_DIR}
+  App user: ${APP_USER}
+  PM2:      ${PM2_BIN}
+  Config:   preserve existing .env and system configuration
+  Content:  preserve PostgreSQL production content
+  Backups:  ${BACKUP_DIR} (local only, ignored by Git)
+EOF
+  if (( ! ASSUME_YES )); then
+    (( NON_INTERACTIVE )) && die 'Use --yes for non-interactive update'
+    read -r -p 'Continue with update? [y/N]: ' answer
+    [[ "$answer" =~ ^[Yy]$ ]] || { log 'Cancelled.'; exit 0; }
+  fi
+
+  install -d -m 0700 -o root -g root "$BACKUP_DIR"
+  if [[ -f /etc/default/joj-game ]]; then
+    if grep -q '^JOJ_BACKUP_DIR=' /etc/default/joj-game; then
+      sed -i "s|^JOJ_BACKUP_DIR=.*$|JOJ_BACKUP_DIR=${BACKUP_DIR}|" /etc/default/joj-game
+    else
+      printf 'JOJ_BACKUP_DIR=%s\n' "$BACKUP_DIR" >>/etc/default/joj-game
+    fi
+  fi
+
+  touch "$LOG_FILE"; chmod 600 "$LOG_FILE"
+  exec > >(tee -a "$LOG_FILE") 2>&1
+
+  log 'Update mode: preserving OS, database, administrator, Caddy, TLS, firewall and timers.'
+  if [[ -x "${PROJECT_DIR}/scripts/backup-production.sh" ]]; then
+    log 'Creating a pre-update production backup...'
+    JOJ_PROJECT_DIR="$PROJECT_DIR" JOJ_BACKUP_DIR="$BACKUP_DIR" JOJ_BACKUP_RETENTION_DAYS="$BACKUP_RETENTION_DAYS" \
+      "${PROJECT_DIR}/scripts/backup-production.sh"
+  else
+    die 'Backup script is missing; update aborted before changing files'
+  fi
+
+  log 'Fetching and fast-forwarding the current Git branch...'
+  run_as_app git -C "$PROJECT_DIR" fetch --prune origin
+  run_as_app git -C "$PROJECT_DIR" pull --ff-only
+
+  log 'Installing locked dependencies...'
+  run_as_app bash -lc 'cd "$1" && npm ci --include=dev' bash "$PROJECT_DIR"
+
+  log 'Running type checks, tests and production build...'
+  run_as_app bash -lc 'cd "$1" && npm run typecheck && npm test && npm run build' bash "$PROJECT_DIR"
+
+  log 'Applying database migrations without reseeding production content...'
+  run_as_app bash -lc 'cd "$1" && npm run db:migrate && npm run sync:shared-config-db' bash "$PROJECT_DIR"
+
+  log 'Restarting JOJ services...'
+  install -m 0755 "${PROJECT_DIR}/scripts/joj-cli.sh" /usr/local/bin/joj
+  run_as_app bash -lc 'cd "$1" && ("$2" start ecosystem.config.cjs --update-env || "$2" restart ecosystem.config.cjs --update-env)' bash "$PROJECT_DIR" "$PM2_BIN"
+  run_as_app "$PM2_BIN" save
+
+  log 'Running health check...'
+  local health_ok=0
+  for _ in {1..20}; do
+    if curl --fail --silent --show-error http://127.0.0.1:8000/api/health >/dev/null; then
+      health_ok=1
+      break
+    fi
+    sleep 2
+  done
+  (( health_ok == 1 )) || die 'Backend health check failed; run sudo joj logs server'
+  run_as_app "$PM2_BIN" status
+
+  cat <<EOF
+
+Update completed successfully.
+  Project: ${PROJECT_DIR}
+  Health:  http://127.0.0.1:8000/api/health
+  Backup:  ${BACKUP_DIR}
+EOF
+}
+
 [[ "$(id -u)" -eq 0 ]] || die 'Run this installer as root (sudo).'
 [[ -f "${SOURCE_DIR}/package.json" ]] || die "package.json not found in ${SOURCE_DIR}"
 [[ -r /etc/os-release ]] || die 'Cannot identify the operating system.'
@@ -166,6 +292,11 @@ source /etc/os-release
 validate_name "$APP_USER" 'APP_USER'
 [[ "$PROJECT_DIR" == /* && "$PROJECT_DIR" != / ]] || die 'PROJECT_DIR must be an absolute, non-root path'
 [[ "$PROJECT_DIR" =~ ^/[A-Za-z0-9._/-]+$ ]] || die 'PROJECT_DIR contains unsupported characters'
+
+if [[ "$INSTALL_MODE" == update ]]; then
+  run_update_mode
+  exit 0
+fi
 
 prompt_value DOMAIN 'Public domain (for example joj.lol)'
 prompt_optional DOMAIN_WWW 'Additional www domain (for example www.joj.lol)'
@@ -279,16 +410,16 @@ APP_HOME="$(getent passwd "$APP_USER" | cut -d: -f6)"
 [[ -n "$APP_HOME" ]] || die "Cannot resolve home directory for ${APP_USER}"
 if [[ "$SOURCE_DIR" != "$PROJECT_DIR" && ! -f "${PROJECT_DIR}/package.json" ]]; then
   mkdir -p "$PROJECT_DIR"
-  rsync -a --exclude node_modules --exclude dist --exclude coverage --exclude .env --exclude logs --exclude database/matches "${SOURCE_DIR}/" "${PROJECT_DIR}/"
+  rsync -a --exclude node_modules --exclude dist --exclude coverage --exclude .env --exclude logs --exclude backup --exclude database/matches "${SOURCE_DIR}/" "${PROJECT_DIR}/"
 elif [[ "$SOURCE_DIR" != "$PROJECT_DIR" ]]; then
   log "Existing installation found at ${PROJECT_DIR}; keeping its checkout."
 fi
 [[ -f "${PROJECT_DIR}/package.json" ]] || die "No application checkout at ${PROJECT_DIR}"
-mkdir -p "${PROJECT_DIR}/logs" /var/backups/joj-game
+mkdir -p "${PROJECT_DIR}/logs" "${PROJECT_DIR}/backup"
 chmod 0755 "${PROJECT_DIR}/scripts/joj-cli.sh" "${PROJECT_DIR}/scripts/backup-production.sh"
 chown -R "$APP_USER:$APP_USER" "$PROJECT_DIR"
-chown root:root /var/backups/joj-game
-chmod 700 /var/backups/joj-game
+chown root:root "${PROJECT_DIR}/backup"
+chmod 700 "${PROJECT_DIR}/backup"
 
 log 'Configuring PostgreSQL...'
 if [[ "$DB_MODE" == local ]]; then
@@ -375,7 +506,7 @@ install -m 0755 "${PROJECT_DIR}/scripts/joj-cli.sh" /usr/local/bin/joj
 cat >/etc/default/joj-game <<EOF
 JOJ_PROJECT_DIR=${PROJECT_DIR}
 JOJ_APP_USER=${APP_USER}
-JOJ_BACKUP_DIR=/var/backups/joj-game
+JOJ_BACKUP_DIR=${PROJECT_DIR}/backup
 JOJ_BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS}
 JOJ_PM2_BIN=${PM2_BIN}
 EOF
@@ -425,7 +556,7 @@ for _ in {1..20}; do
 done
 (( health_ok == 1 )) || die 'Backend health check failed; run sudo joj logs server'
 run_as_app "$PM2_BIN" status
-JOJ_PROJECT_DIR="$PROJECT_DIR" JOJ_BACKUP_RETENTION_DAYS="$BACKUP_RETENTION_DAYS" "${PROJECT_DIR}/scripts/backup-production.sh"
+JOJ_PROJECT_DIR="$PROJECT_DIR" JOJ_BACKUP_DIR="${PROJECT_DIR}/backup" JOJ_BACKUP_RETENTION_DAYS="$BACKUP_RETENTION_DAYS" "${PROJECT_DIR}/scripts/backup-production.sh"
 
 cat <<EOF
 
@@ -434,7 +565,7 @@ Installation completed successfully.
   Admin:      https://${DOMAIN}/admin
   Health:     https://${DOMAIN}/api/health
   Project:    ${PROJECT_DIR}
-  Backups:    /var/backups/joj-game
+  Backups:    ${PROJECT_DIR}/backup
 
 Useful commands:
   sudo joj status
@@ -443,5 +574,5 @@ Useful commands:
   sudo joj restart
   sudo joj backup
 
-Important: configure copying /var/backups/joj-game to storage outside this VM.
+Important: ${PROJECT_DIR}/backup is local-only and ignored by Git. Copy it to storage outside this VM.
 EOF

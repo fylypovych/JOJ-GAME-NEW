@@ -15,6 +15,7 @@ type SharedRoutesDeps = {
   getSharedDeckTemplateStats: () => unknown;
   getSharedRanks: () => unknown;
   setSharedRanks: (value: RankDefinition[]) => boolean;
+  regenerateRankVisualData: () => { ranksChanged: boolean; templateChanged: boolean };
   resetSharedRanks: () => void;
   importSharedDeckTemplateJson: (json: string) => { ok: true } | { ok: false; error: string };
   resetSharedDeckTemplate: () => void;
@@ -41,6 +42,7 @@ export const registerSharedRoutes = ({
   getSharedDeckTemplateStats,
   getSharedRanks,
   setSharedRanks,
+  regenerateRankVisualData,
   resetSharedRanks,
   importSharedDeckTemplateJson,
   resetSharedDeckTemplate,
@@ -112,7 +114,9 @@ export const registerSharedRoutes = ({
       ctx.body = { ok: false, error: 'Invalid ranks schema' };
       return;
     }
+    regenerateRankVisualData();
     await saveRanksToDisk();
+    await saveTemplateToDisk();
     await logLine('INFO', `shared-ranks updated (${ranks.length} rows)`);
     await auditAdminAction?.({ action: 'shared.ranks.update', ctx, success: true, details: { count: ranks.length } });
     ctx.body = { ok: true, ranks: getSharedRanks() };
