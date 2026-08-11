@@ -3035,26 +3035,31 @@
 
 .admin-hover-popover {
   display      : none;
-  position     : absolute;
-  left         : calc(100% + 8px);
+  position     : fixed;
+  right        : 12px;
+  left         : auto;
   top          : 50%;
   transform    : translateY(-50%);
   z-index      : 30;
-  width        : auto;
-  max-width    : 85vw;
-  max-height   : 88vh;
+  box-sizing   : border-box;
+  width        : min(360px, calc(100vw - 24px));
+  max-width    : calc(100vw - 24px);
+  max-height   : min(72vh, 720px);
   padding      : 8px;
   border       : 1px solid #98a2b3;
   border-radius: 10px;
   background   : #fff;
   box-shadow   : 0 16px 40px rgba(16, 24, 40, 0.3);
+  pointer-events: none;
+  overflow     : hidden;
 }
 
 .admin-hover-popover img {
-  width     : auto;
+  display   : block;
+  width     : 100%;
   height    : auto;
-  max-width : min(85vw, 980px);
-  max-height: calc(88vh - 16px);
+  max-width : 100%;
+  max-height: calc(min(72vh, 720px) - 16px);
   object-fit: contain;
 }
 
