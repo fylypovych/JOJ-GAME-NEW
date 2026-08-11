@@ -1,4 +1,5 @@
 import { text } from '../../i18n';
+import { copyText } from '../../app/share';
 import type { GitAuthStatus, GitLocalChangesPreview, GitUpdateStatus } from '../types';
 
 type T = ReturnType<typeof text>;
@@ -33,6 +34,8 @@ export const AdminGithubTab = ({
   viewGitLocalChanges,
   gitActionMessage,
   gitActionLog,
+  setGitActionMessage,
+  setGitActionLog,
 }: {
   t: T;
   gitAuthStatus: GitAuthStatus | null;
@@ -63,6 +66,8 @@ export const AdminGithubTab = ({
   viewGitLocalChanges: () => Promise<void> | void;
   gitActionMessage: string;
   gitActionLog: string;
+  setGitActionMessage: (value: string) => void;
+  setGitActionLog: (value: string) => void;
 }) => (
   <>
     <h3>{t.githubAuthTitle}</h3>
@@ -183,7 +188,28 @@ export const AdminGithubTab = ({
     ) : null}
     {gitActionMessage ? <p className="admin-success">{gitActionMessage}</p> : null}
     {gitActionLog ? (
-      <pre className="admin-textarea admin-log-viewer admin-github-log-viewer">{gitActionLog}</pre>
+      <div className="admin-inline-editor">
+        <p className="admin-controls">
+          <button
+            type="button"
+            onClick={() => {
+              void copyText(gitActionLog).then(() => setGitActionMessage(t.githubLogCopied));
+            }}
+          >
+            {t.githubCopyLog}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setGitActionLog('');
+              setGitActionMessage('');
+            }}
+          >
+            {t.githubClearLog}
+          </button>
+        </p>
+        <pre className="admin-textarea admin-log-viewer admin-github-log-viewer">{gitActionLog}</pre>
+      </div>
     ) : null}
   </>
 );

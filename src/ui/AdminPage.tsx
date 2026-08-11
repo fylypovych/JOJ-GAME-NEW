@@ -1095,6 +1095,8 @@ export const AdminPage = ({
             viewGitLocalChanges={viewGitLocalChanges}
             gitActionMessage={gitActionMessage}
             gitActionLog={gitActionLog}
+            setGitActionMessage={setGitActionMessage}
+            setGitActionLog={setGitActionLog}
           />
         ) : null}
         {activeTab === 'analytics' ? (
