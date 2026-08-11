@@ -1,357 +1,449 @@
-[
-  {
-    "id": "recruit",
-    "name": "Рекрут",
-    "requirement": {},
-    "cost": {},
-    "bonus": {},
-    "flavor": "Знає різницю між наказом і порадою."
-  },
-  {
-    "id": "soldier",
-    "name": "Солдат",
-    "requirement": {
-      "reputation": 3,
-      "discipline": 2
+{
+  "kind": "joj-shared-ranks",
+  "version": 1,
+  "ranks": [
+    {
+      "id": "recruit",
+      "cost": {},
+      "name": "Рекрут",
+      "bonus": {},
+      "image": "/card-assets/00-1.webp",
+      "flavor": "Знає різницю між наказом і порадою.",
+      "requirement": {},
+      "imageVariants": [
+        "/card-assets/00-1.webp"
+      ]
     },
-    "cost": {
-      "time": 1
+    {
+      "id": "soldier",
+      "cost": {
+        "time": 1
+      },
+      "name": "Солдат",
+      "bonus": {
+        "discipline": 1
+      },
+      "image": "/card-assets/01-1.webp",
+      "flavor": "Навчився не лише слухати, а й виконувати.",
+      "requirement": {
+        "discipline": 2,
+        "reputation": 3
+      },
+      "imageVariants": [
+        "/card-assets/01-1.webp"
+      ]
     },
-    "bonus": {
-      "discipline": 1
+    {
+      "id": "senior_soldier",
+      "cost": {
+        "time": 2
+      },
+      "name": "Старший солдат",
+      "bonus": {
+        "reputation": 1,
+        "documents": 1
+      },
+      "image": "/card-assets/02-1.webp",
+      "flavor": "Молодим — приклад, старшим — пам’ятка.",
+      "requirement": {
+        "discipline": 3,
+        "reputation": 4
+      },
+      "imageVariants": [
+        "/card-assets/02-1.webp"
+      ]
     },
-    "flavor": "Навчився не лише слухати, а й виконувати."
-  },
-  {
-    "id": "senior_soldier",
-    "name": "Старший солдат",
-    "requirement": {
-      "reputation": 4,
-      "discipline": 3
+    {
+      "id": "junior_sergeant",
+      "cost": {
+        "time": 2
+      },
+      "name": "Молодший сержант",
+      "bonus": {
+        "discipline": 1,
+        "tech": 1
+      },
+      "image": "/card-assets/03-1.webp",
+      "flavor": "Перше “так точно” з нотками відповідальності.",
+      "requirement": {
+        "documents": 1,
+        "discipline": 3,
+        "reputation": 5
+      },
+      "imageVariants": [
+        "/card-assets/03-1.webp"
+      ]
     },
-    "cost": {
-      "time": 2
+    {
+      "id": "sergeant",
+      "cost": {
+        "time": 1,
+        "documents": 1
+      },
+      "name": "Сержант",
+      "bonus": {
+        "reputation": 1,
+        "tech": 1
+      },
+      "image": "/card-assets/04-1.webp",
+      "flavor": "Командуєш малими, але відповідаєш за всіх.",
+      "requirement": {
+        "discipline": 4,
+        "reputation": 6
+      },
+      "imageVariants": [
+        "/card-assets/04-1.webp"
+      ]
     },
-    "bonus": {
-      "documents": 1,
-      "reputation": 1
+    {
+      "id": "senior_sergeant",
+      "cost": {
+        "time": 2
+      },
+      "name": "Старший сержант",
+      "bonus": {
+        "reputation": 1,
+        "discipline": 1
+      },
+      "image": "/card-assets/05-1.webp",
+      "flavor": "Коли треба — наказує, коли можна — радить.",
+      "requirement": {
+        "discipline": 5,
+        "reputation": 7
+      },
+      "imageVariants": [
+        "/card-assets/05-1.webp"
+      ]
     },
-    "flavor": "Молодим — приклад, старшим — пам’ятка."
-  },
-  {
-    "id": "junior_sergeant",
-    "name": "Молодший сержант",
-    "requirement": {
-      "reputation": 5,
-      "discipline": 3,
-      "documents": 1
+    {
+      "id": "chief_sergeant",
+      "cost": {
+        "time": 2
+      },
+      "name": "Головний сержант",
+      "bonus": {
+        "reputation": 1,
+        "tech": 1
+      },
+      "image": "/card-assets/06-1.webp",
+      "flavor": "Веде журнал точніше, ніж взвод у бій.",
+      "requirement": {
+        "documents": 1,
+        "discipline": 6,
+        "reputation": 8
+      },
+      "imageVariants": [
+        "/card-assets/06-1.webp"
+      ]
     },
-    "cost": {
-      "time": 2
+    {
+      "id": "staff_sergeant",
+      "cost": {
+        "time": 2,
+        "documents": 1
+      },
+      "name": "Штаб-сержант",
+      "bonus": {
+        "reputation": 1,
+        "tech": 1
+      },
+      "image": "/card-assets/07-1.webp",
+      "flavor": "Знає, де журнал, і хто його не здав.",
+      "requirement": {
+        "discipline": 7,
+        "reputation": 9
+      },
+      "imageVariants": [
+        "/card-assets/07-1.webp"
+      ]
     },
-    "bonus": {
-      "discipline": 1,
-      "tech": 1
+    {
+      "id": "master_sergeant",
+      "cost": {
+        "time": 2
+      },
+      "name": "Майстер-сержант",
+      "bonus": {
+        "reputation": 1,
+        "documents": 1
+      },
+      "image": "/card-assets/08-1.webp",
+      "flavor": "Майстер не тому, що вміє, а тому, що вже бачив.",
+      "requirement": {
+        "discipline": 7,
+        "reputation": 10
+      },
+      "imageVariants": [
+        "/card-assets/08-1.webp"
+      ]
     },
-    "flavor": "Перше “так точно” з нотками відповідальності."
-  },
-  {
-    "id": "sergeant",
-    "name": "Сержант",
-    "requirement": {
-      "reputation": 6,
-      "discipline": 4
+    {
+      "id": "senior_master_sergeant",
+      "cost": {
+        "time": 2,
+        "tech": 1
+      },
+      "name": "Старший майстер-сержант",
+      "bonus": {
+        "reputation": 1,
+        "documents": 1
+      },
+      "image": "/card-assets/09-1.webp",
+      "flavor": "Підлеглі слухають, навіть коли мовчиш.",
+      "requirement": {
+        "discipline": 8,
+        "reputation": 11
+      },
+      "imageVariants": [
+        "/card-assets/09-1.webp"
+      ]
     },
-    "cost": {
-      "time": 1,
-      "documents": 1
+    {
+      "id": "chief_master_sergeant",
+      "cost": {
+        "time": 2
+      },
+      "name": "Головний майстер-сержант",
+      "bonus": {
+        "reputation": 1,
+        "tech": 1
+      },
+      "image": "/card-assets/10-1.webp",
+      "flavor": "Той, хто вміє навести лад навіть у ладах.",
+      "requirement": {
+        "discipline": 9,
+        "reputation": 12
+      },
+      "imageVariants": [
+        "/card-assets/10-1.webp"
+      ]
     },
-    "bonus": {
-      "reputation": 1,
-      "tech": 1
+    {
+      "id": "junior_lieutenant",
+      "cost": {
+        "time": 2,
+        "documents": 1
+      },
+      "name": "Молодший лейтенант",
+      "bonus": {
+        "reputation": 1,
+        "tech": 1
+      },
+      "image": "/card-assets/11-1.webp",
+      "flavor": "Перший підпис — і перший стрес.",
+      "requirement": {
+        "documents": 1,
+        "discipline": 10,
+        "reputation": 13
+      },
+      "imageVariants": [
+        "/card-assets/11-1.webp"
+      ]
     },
-    "flavor": "Командуєш малими, але відповідаєш за всіх."
-  },
-  {
-    "id": "senior_sergeant",
-    "name": "Старший сержант",
-    "requirement": {
-      "reputation": 7,
-      "discipline": 5
+    {
+      "id": "lieutenant",
+      "cost": {
+        "time": 2
+      },
+      "name": "Лейтенант",
+      "bonus": {
+        "reputation": 1,
+        "documents": 1
+      },
+      "image": "/card-assets/12-1.webp",
+      "flavor": "Вивчив різницю між планом і реальністю.",
+      "requirement": {
+        "discipline": 10,
+        "reputation": 14
+      },
+      "imageVariants": [
+        "/card-assets/12-1.webp"
+      ]
     },
-    "cost": {
-      "time": 2
+    {
+      "id": "senior_lieutenant",
+      "cost": {
+        "time": 2,
+        "tech": 1
+      },
+      "name": "Старший лейтенант",
+      "bonus": {
+        "reputation": 1,
+        "documents": 1
+      },
+      "image": "/card-assets/13-1.webp",
+      "flavor": "Звикаєш до фрази “за власною ініціативою”.",
+      "requirement": {
+        "discipline": 11,
+        "reputation": 15
+      },
+      "imageVariants": [
+        "/card-assets/13-1.webp"
+      ]
     },
-    "bonus": {
-      "discipline": 1,
-      "reputation": 1
+    {
+      "id": "captain",
+      "cost": {
+        "time": 2
+      },
+      "name": "Капітан",
+      "bonus": {
+        "reputation": 1,
+        "tech": 1
+      },
+      "image": "/card-assets/14-1.webp",
+      "flavor": "Відповідає за все, навіть за погоду.",
+      "requirement": {
+        "discipline": 12,
+        "reputation": 16
+      },
+      "imageVariants": [
+        "/card-assets/14-1.webp"
+      ]
     },
-    "flavor": "Коли треба — наказує, коли можна — радить."
-  },
-  {
-    "id": "chief_sergeant",
-    "name": "Головний сержант",
-    "requirement": {
-      "reputation": 8,
-      "discipline": 6,
-      "documents": 1
+    {
+      "id": "major",
+      "cost": {
+        "time": 2
+      },
+      "name": "Майор",
+      "bonus": {
+        "reputation": 1,
+        "documents": 1
+      },
+      "image": "/card-assets/15-1.webp",
+      "flavor": "Якщо нічого не згоріло — значить, керував майор.",
+      "requirement": {
+        "tech": 1,
+        "discipline": 13,
+        "reputation": 17
+      },
+      "imageVariants": [
+        "/card-assets/15-1.webp"
+      ]
     },
-    "cost": {
-      "time": 2
+    {
+      "id": "lieutenant_colonel",
+      "cost": {
+        "time": 2,
+        "documents": 1
+      },
+      "name": "Підполковник",
+      "bonus": {
+        "reputation": 1,
+        "tech": 1
+      },
+      "image": "/card-assets/16-1.webp",
+      "flavor": "Твій спокій — найкраща зброя в штабі.",
+      "requirement": {
+        "discipline": 14,
+        "reputation": 18
+      },
+      "imageVariants": [
+        "/card-assets/16-1.webp"
+      ]
     },
-    "bonus": {
-      "tech": 1,
-      "reputation": 1
+    {
+      "id": "colonel",
+      "cost": {
+        "time": 2
+      },
+      "name": "Полковник",
+      "bonus": {
+        "reputation": 1,
+        "documents": 1
+      },
+      "image": "/card-assets/17-1.webp",
+      "flavor": "Розпорядження, накази, вказівки — і все з підписом.",
+      "requirement": {
+        "discipline": 15,
+        "reputation": 19
+      },
+      "imageVariants": [
+        "/card-assets/17-1.webp"
+      ]
     },
-    "flavor": "Веде журнал точніше, ніж взвод у бій."
-  },
-  {
-    "id": "staff_sergeant",
-    "name": "Штаб-сержант",
-    "requirement": {
-      "reputation": 9,
-      "discipline": 7
+    {
+      "id": "brigadier_general",
+      "cost": {
+        "time": 2,
+        "tech": 1
+      },
+      "name": "Бригадний генерал",
+      "bonus": {
+        "reputation": 1,
+        "documents": 1
+      },
+      "image": "/card-assets/18-1.webp",
+      "flavor": "Якщо бачиш порядок — десь поруч генерал.",
+      "requirement": {
+        "tech": 1,
+        "discipline": 16,
+        "reputation": 20
+      },
+      "imageVariants": [
+        "/card-assets/18-1.webp"
+      ]
     },
-    "cost": {
-      "time": 2,
-      "documents": 1
+    {
+      "id": "major_general",
+      "cost": {
+        "time": 2
+      },
+      "name": "Генерал-майор",
+      "bonus": {
+        "reputation": 1,
+        "tech": 1
+      },
+      "image": "/card-assets/19-1.webp",
+      "flavor": "Планує стратегічно, рахує дріб’язково.",
+      "requirement": {
+        "discipline": 17,
+        "reputation": 21
+      },
+      "imageVariants": [
+        "/card-assets/19-1.webp"
+      ]
     },
-    "bonus": {
-      "tech": 1,
-      "reputation": 1
+    {
+      "id": "lieutenant_general",
+      "cost": {
+        "time": 2,
+        "documents": 1
+      },
+      "name": "Генерал-лейтенант",
+      "bonus": {
+        "reputation": 1,
+        "tech": 1
+      },
+      "image": "/card-assets/20-1.webp",
+      "flavor": "Журнали самі тебе знаходять.",
+      "requirement": {
+        "discipline": 18,
+        "reputation": 22
+      },
+      "imageVariants": [
+        "/card-assets/20-1.webp"
+      ]
     },
-    "flavor": "Знає, де журнал, і хто його не здав."
-  },
-  {
-    "id": "master_sergeant",
-    "name": "Майстер-сержант",
-    "requirement": {
-      "reputation": 10,
-      "discipline": 7
-    },
-    "cost": {
-      "time": 2
-    },
-    "bonus": {
-      "documents": 1,
-      "reputation": 1
-    },
-    "flavor": "Майстер не тому, що вміє, а тому, що вже бачив."
-  },
-  {
-    "id": "senior_master_sergeant",
-    "name": "Старший майстер-сержант",
-    "requirement": {
-      "reputation": 11,
-      "discipline": 8
-    },
-    "cost": {
-      "time": 2,
-      "tech": 1
-    },
-    "bonus": {
-      "documents": 1,
-      "reputation": 1
-    },
-    "flavor": "Підлеглі слухають, навіть коли мовчиш."
-  },
-  {
-    "id": "chief_master_sergeant",
-    "name": "Головний майстер-сержант",
-    "requirement": {
-      "reputation": 12,
-      "discipline": 9
-    },
-    "cost": {
-      "time": 2
-    },
-    "bonus": {
-      "tech": 1,
-      "reputation": 1
-    },
-    "flavor": "Той, хто вміє навести лад навіть у ладах."
-  },
-  {
-    "id": "junior_lieutenant",
-    "name": "Молодший лейтенант",
-    "requirement": {
-      "reputation": 13,
-      "discipline": 10,
-      "documents": 1
-    },
-    "cost": {
-      "time": 2,
-      "documents": 1
-    },
-    "bonus": {
-      "tech": 1,
-      "reputation": 1
-    },
-    "flavor": "Перший підпис — і перший стрес."
-  },
-  {
-    "id": "lieutenant",
-    "name": "Лейтенант",
-    "requirement": {
-      "reputation": 14,
-      "discipline": 10
-    },
-    "cost": {
-      "time": 2
-    },
-    "bonus": {
-      "documents": 1,
-      "reputation": 1
-    },
-    "flavor": "Вивчив різницю між планом і реальністю."
-  },
-  {
-    "id": "senior_lieutenant",
-    "name": "Старший лейтенант",
-    "requirement": {
-      "reputation": 15,
-      "discipline": 11
-    },
-    "cost": {
-      "time": 2,
-      "tech": 1
-    },
-    "bonus": {
-      "documents": 1,
-      "reputation": 1
-    },
-    "flavor": "Звикаєш до фрази “за власною ініціативою”."
-  },
-  {
-    "id": "captain",
-    "name": "Капітан",
-    "requirement": {
-      "reputation": 16,
-      "discipline": 12
-    },
-    "cost": {
-      "time": 2
-    },
-    "bonus": {
-      "tech": 1,
-      "reputation": 1
-    },
-    "flavor": "Відповідає за все, навіть за погоду."
-  },
-  {
-    "id": "major",
-    "name": "Майор",
-    "requirement": {
-      "reputation": 17,
-      "discipline": 13,
-      "tech": 1
-    },
-    "cost": {
-      "time": 2
-    },
-    "bonus": {
-      "documents": 1,
-      "reputation": 1
-    },
-    "flavor": "Якщо нічого не згоріло — значить, керував майор."
-  },
-  {
-    "id": "lieutenant_colonel",
-    "name": "Підполковник",
-    "requirement": {
-      "reputation": 18,
-      "discipline": 14
-    },
-    "cost": {
-      "time": 2,
-      "documents": 1
-    },
-    "bonus": {
-      "tech": 1,
-      "reputation": 1
-    },
-    "flavor": "Твій спокій — найкраща зброя в штабі."
-  },
-  {
-    "id": "colonel",
-    "name": "Полковник",
-    "requirement": {
-      "reputation": 19,
-      "discipline": 15
-    },
-    "cost": {
-      "time": 2
-    },
-    "bonus": {
-      "documents": 1,
-      "reputation": 1
-    },
-    "flavor": "Розпорядження, накази, вказівки — і все з підписом."
-  },
-  {
-    "id": "brigadier_general",
-    "name": "Бригадний генерал",
-    "requirement": {
-      "reputation": 20,
-      "discipline": 16,
-      "tech": 1
-    },
-    "cost": {
-      "time": 2,
-      "tech": 1
-    },
-    "bonus": {
-      "documents": 1,
-      "reputation": 1
-    },
-    "flavor": "Якщо бачиш порядок — десь поруч генерал."
-  },
-  {
-    "id": "major_general",
-    "name": "Генерал-майор",
-    "requirement": {
-      "reputation": 21,
-      "discipline": 17
-    },
-    "cost": {
-      "time": 2
-    },
-    "bonus": {
-      "tech": 1,
-      "reputation": 1
-    },
-    "flavor": "Планує стратегічно, рахує дріб’язково."
-  },
-  {
-    "id": "lieutenant_general",
-    "name": "Генерал-лейтенант",
-    "requirement": {
-      "reputation": 22,
-      "discipline": 18
-    },
-    "cost": {
-      "time": 2,
-      "documents": 1
-    },
-    "bonus": {
-      "tech": 1,
-      "reputation": 1
-    },
-    "flavor": "Журнали самі тебе знаходять."
-  },
-  {
-    "id": "general",
-    "name": "Генерал",
-    "requirement": {
-      "reputation": 23,
-      "discipline": 19
-    },
-    "cost": {
-      "time": 2,
-      "tech": 1
-    },
-    "bonus": {},
-    "victory": true,
-    "flavor": "Доки хтось шукає винних — він шукає рішення."
-  }
-]
+    {
+      "id": "general",
+      "cost": {
+        "time": 2,
+        "tech": 1
+      },
+      "name": "Генерал",
+      "bonus": {},
+      "image": "/card-assets/21-1.webp",
+      "flavor": "Доки хтось шукає винних — він шукає рішення.",
+      "victory": true,
+      "requirement": {
+        "discipline": 19,
+        "reputation": 23
+      },
+      "imageVariants": [
+        "/card-assets/21-1.webp"
+      ]
+    }
+  ]
+}

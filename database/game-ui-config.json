@@ -1,9 +1,25 @@
 {
+  "updatedAt": 1786373451372,
+  "defaultBotCount": 3,
   "allowedBotCounts": [
     1,
     2,
-    3
+    3,
+    4,
+    5
   ],
-  "defaultBotCount": 3,
-  "updatedAt": 1774899677025
+  "resourceImagePaths": {
+    "tech": "/resource-icons/tech.png",
+    "time": "/resource-icons/time.png",
+    "documents": "/resource-icons/documents.png",
+    "discipline": "/resource-icons/discipline.png",
+    "reputation": "/resource-icons/reputation.png"
+  },
+  "defaultRoomCapacity": 4,
+  "allowedRoomCapacities": [
+    3,
+    4,
+    5,
+    6
+  ]
 }
