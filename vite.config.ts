@@ -1,8 +1,12 @@
 import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const VERSION_PATTERN = /\bv=(\d+\.\d+\.\d+\.\d+)\b/;
+const require = createRequire(import.meta.url);
+const { parseVersionFromCommitMessage } = require('./scripts/version-from-commit.cjs') as {
+  parseVersionFromCommitMessage: (message: string) => string;
+};
 
 const safeRunGit = (args: string[]) => {
   try {
@@ -20,9 +24,9 @@ const safeRunGit = (args: string[]) => {
 const resolveGitBuildInfo = () => {
   const commit = safeRunGit(['rev-parse', '--short=8', 'HEAD']);
   const commitMessage = safeRunGit(['log', '-1', '--pretty=%B']);
-  const version = commitMessage.match(VERSION_PATTERN)?.[1] ?? '';
+  const version = parseVersionFromCommitMessage(commitMessage);
   const label = version
-    ? `v${version}${commit ? ` (${commit})` : ''}`
+    ? `v${version}`
     : (commit ? `commit ${commit}` : '');
   return { commit, version, label };
 };

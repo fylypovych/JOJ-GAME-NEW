@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { parseVersionFromCommitMessage, VERSION_PATTERN } = require('../scripts/version-from-commit.cjs') as {
+const { parseVersionFromCommitMessage, VERSION_PATTERN, RELEASE_SUMMARY_PATTERN } = require('../scripts/version-from-commit.cjs') as {
   parseVersionFromCommitMessage: (message: string) => string;
   VERSION_PATTERN: RegExp;
+  RELEASE_SUMMARY_PATTERN: RegExp;
 };
 const { getConflictAbortText, resolveVersionFromInput } = require('../scripts/sync-version-from-commit.cjs') as {
   getConflictAbortText: (files: string[], version: string) => string[];
@@ -19,8 +20,16 @@ const { getSkipReason, isCiEnvironment } = require('../scripts/install-git-hooks
   isCiEnvironment: (env: Record<string, string | undefined>) => boolean;
 };
 
-test('parseVersionFromCommitMessage returns version from bare marker', () => {
+test('parseVersionFromCommitMessage returns version from legacy marker', () => {
   assert.equal(parseVersionFromCommitMessage('v=0.0.0.26'), '0.0.0.26');
+});
+
+test('parseVersionFromCommitMessage returns version from release summary', () => {
+  assert.equal(parseVersionFromCommitMessage('0.0.4.3\n\n- Admin UX rebuilt'), '0.0.4.3');
+});
+
+test('parseVersionFromCommitMessage accepts historical summary suffix', () => {
+  assert.equal(parseVersionFromCommitMessage('0.0.3.98 — release description'), '0.0.3.98');
 });
 
 test('parseVersionFromCommitMessage returns version from descriptive commit message', () => {
@@ -33,6 +42,7 @@ test('parseVersionFromCommitMessage ignores messages without version marker', ()
 
 test('VERSION_PATTERN does not match malformed marker', () => {
   assert.equal(VERSION_PATTERN.test('v=0.0.0'), false);
+  assert.equal(RELEASE_SUMMARY_PATTERN.test('0.0.4'), false);
 });
 
 test('getConflictAbortText explains why auto-sync is blocked', () => {
@@ -76,6 +86,6 @@ test('resolveVersionFromInput parses raw commit message argument', () => {
 test('getValidationErrorText explains how to repair staged version mismatch', () => {
   assert.deepEqual(getValidationErrorText('0.0.0.95'), [
     '[version-check] aborted: staged package version does not match 0.0.0.95.',
-    '[version-check] hook auto-sync works only when package files are clean; otherwise run npm run set:version -- "v=0.0.0.95" and retry the commit.',
+    '[version-check] hook auto-sync works only when package files are clean; otherwise run npm run set:version -- "0.0.0.95" and retry the commit.',
   ]);
 });
