@@ -7,6 +7,13 @@ import { createUserStore } from '../server/services/user-store';
 
 const bootstrapUserStoreSchema = async (pool: Pool) => {
   const statements = [
+    `CREATE TABLE app_settings (
+      key text PRIMARY KEY,
+      value jsonb,
+      updated_at timestamptz,
+      updated_by text
+    )`,
+    `ALTER TABLE app_settings ALTER COLUMN updated_at SET DEFAULT now()`,
     `CREATE TABLE app_users (
       id uuid,
       username text,
@@ -367,6 +374,28 @@ test('user-store unlocks awards from aggregated statistics', async () => {
     assert.ok(awards.some((award) => award.key === 'lyaps_10' && award.awarded));
     assert.ok(awards.some((award) => award.key === 'best_rank_captain' && award.awarded));
   });
+});
+
+test('user-store does not restore awards after an administrator deletes them all', async () => {
+  const { store, pool } = await makeStore();
+  try {
+    const initialAwards = await store.listAwardDefinitions();
+    assert.ok(initialAwards.length > 0);
+    for (const award of initialAwards) {
+      await store.deleteAwardDefinition(award.id);
+    }
+    assert.deepEqual(await store.listAwardDefinitions(), []);
+
+    await store.ensureSchema();
+
+    assert.deepEqual(await store.listAwardDefinitions(), []);
+    const marker = await pool.query<{ value: boolean }>(
+      "SELECT value FROM app_settings WHERE key = 'default_awards_initialized'",
+    );
+    assert.equal(marker.rows[0]?.value, true);
+  } finally {
+    await pool.end();
+  }
 });
 
 test('user-store does not create a default administrator implicitly', async () => {

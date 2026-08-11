@@ -9,6 +9,7 @@ import {
   normalizeAwardMetric,
   normalizeBadgeVariant,
 } from './user-store-shared';
+import { saveAppSettingJson } from './app-settings-store';
 
 type AwardGrantRow = {
   award_id: string;
@@ -197,6 +198,7 @@ export const createUserAwardsStore = (args: {
   };
 
   const deleteAwardDefinition = async (awardId: string) => {
+    await saveAppSettingJson(pool, 'default_awards_initialized', true, 'admin-awards');
     await pool.query('DELETE FROM award_definitions WHERE id = $1', [awardId]);
     return listAwardDefinitions();
   };

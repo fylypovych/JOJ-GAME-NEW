@@ -9,6 +9,7 @@ import { createUserAuthStore } from './user-store-auth';
 import { createUserAwardsStore } from './user-store-awards';
 import { createUserMatchStore } from './user-store-match';
 import { createUserAdminStore } from './user-store-admin';
+import { loadAppSettingJson, saveAppSettingJson } from './app-settings-store';
 export type {
   AdminUserDetail,
   AdminUserSummary,
@@ -25,6 +26,7 @@ export type {
 export type UserStore = ReturnType<typeof createUserStore>;
 
 export const createUserStore = (pool: Pool) => {
+  const defaultAwardsSeededKey = 'default_awards_initialized';
   const withTransaction = async <T>(run: (client: Pool) => Promise<T>): Promise<T> => {
     const client = await pool.connect();
     try {
@@ -41,6 +43,8 @@ export const createUserStore = (pool: Pool) => {
   };
 
   const ensureSchema = async () => {
+    const defaultsInitialized = await loadAppSettingJson<boolean>(pool, defaultAwardsSeededKey);
+    if (defaultsInitialized === true) return;
     const seeded = await pool.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM award_definitions');
     if (Number(seeded.rows[0]?.count ?? 0) === 0) {
       for (const def of DEFAULT_AWARD_DEFINITIONS) {
@@ -48,6 +52,7 @@ export const createUserStore = (pool: Pool) => {
           INSERT INTO award_definitions (
             award_key, title, description, category, metric, threshold, badge_label, badge_variant, icon_path, active, sort_order
           ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+          ON CONFLICT (award_key) DO NOTHING
         `, [
           def.key,
           def.title,
@@ -63,6 +68,7 @@ export const createUserStore = (pool: Pool) => {
         ]);
       }
     }
+    await saveAppSettingJson(pool, defaultAwardsSeededKey, true, 'user-store');
   };
 
   const getRuntimeDatabaseInfo = async () => {
