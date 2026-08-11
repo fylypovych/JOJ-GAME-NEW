@@ -17,14 +17,16 @@ test('production publish allows only reviewed content configuration files', () =
   assert.equal(isProductionPublishPath('.env'), false);
 });
 
-test('production publish accepts card images but rejects executable or unrelated uploads', () => {
+test('production publish accepts card images and avatars but rejects executable uploads', () => {
   assert.equal(isProductionPublishPath('public/card-assets/2026.TEST/card.webp'), true);
   assert.equal(isProductionPublishPath('public\\card-assets\\2026.TEST\\card.PNG'), true);
   assert.equal(isProductionPublishPath('public/card-assets/card.gif'), true);
 
   assert.equal(isProductionPublishPath('public/card-assets/payload.js'), false);
   assert.equal(isProductionPublishPath('public/card-assets/page.html'), false);
-  assert.equal(isProductionPublishPath('public/profile-image/avatar.webp'), false);
+  assert.equal(isProductionPublishPath('public/profile-image/avatar.webp'), true);
+  assert.equal(isProductionPublishPath('public/profile-image/avatar.jpg'), true);
+  assert.equal(isProductionPublishPath('public/profile-image/payload.html'), false);
 });
 
 test('production publish classification keeps excluded files out of the commit', () => {

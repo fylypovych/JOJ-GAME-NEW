@@ -35,6 +35,3 @@ database/matches/
 database/admin-db-ui-config.json
 *.log
 /tmp
-
-# User-uploaded avatars are persistent runtime data, not repository content.
-/public/profile-image/*

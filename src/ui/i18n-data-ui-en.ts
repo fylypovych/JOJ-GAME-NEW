@@ -300,7 +300,7 @@ export const uiEnData = {
   githubPublish: 'Publish production content',
   githubPublishLoading: 'Committing/pushing...',
   githubPublishHint:
-    'Commits directly to the tracked GitHub branch. Only shared deck, ranks, game UI, simulation settings, and card images are included. Force push is never used.',
+    'Commits directly to the tracked GitHub branch. Only shared deck, ranks, game UI, simulation settings, card images, and avatars are included. Force push is never used.',
   githubViewLocalChanges: 'View local changes',
   githubViewLocalChangesLoading: 'Loading changes...',
   githubLocalChangesTitle: 'Local changes (preview)',

@@ -301,7 +301,7 @@ export const uiUkData = {
   githubPublish: 'Опублікувати production-контент',
   githubPublishLoading: 'Commit/push...',
   githubPublishHint:
-    'Коміт надсилається прямо у прив’язану гілку GitHub. Потраплять лише колода, звання, налаштування гри й симуляції та зображення карт. Force push не використовується.',
+    'Коміт надсилається прямо у прив’язану гілку GitHub. Потраплять лише колода, звання, налаштування гри й симуляції, зображення карт та аватари. Force push не використовується.',
   githubViewLocalChanges: 'Переглянути локальні зміни',
   githubViewLocalChangesLoading: 'Завантаження змін...',
   githubLocalChangesTitle: 'Локальні зміни (preview)',

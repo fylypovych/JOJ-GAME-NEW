@@ -44,7 +44,7 @@ const PRODUCTION_PUBLISH_CONFIG_PATHS = new Set([
   'database/shared-ranks.json',
   'database/simulation-baselines.json',
 ]);
-const PRODUCTION_PUBLISH_ASSET_PATTERN = /^public\/card-assets\/.+\.(?:avif|gif|jpe?g|png|webp)$/i;
+const PRODUCTION_PUBLISH_ASSET_PATTERN = /^public\/(?:card-assets|profile-image)\/.+\.(?:avif|gif|jpe?g|png|webp)$/i;
 
 const normalizeGitPath = (filePath: string) => String(filePath ?? '')
   .trim()
