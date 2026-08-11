@@ -1,7 +1,9 @@
+import { useMemo, useState } from 'react';
 import { text } from '../../i18n';
 import type { Snapshot } from '../types';
 import type { GameMode, JojGameState } from '../../../game/types';
 import type { SimulationReport } from '../../../game/jojGame';
+import { AdminEmptyState, AdminSectionHeader, AdminStatusBadge } from '../components/AdminWorkspaceLayout';
 
 type T = ReturnType<typeof text>;
 type SnapshotCtx = {
@@ -32,39 +34,19 @@ export const AdminImportTab = ({
   importJson: string;
   setImportJson: (v: string) => void;
   clearImportStatus: () => void;
-}) => (
-  <>
-    <h3>{t.importExport}</h3>
-    <p className="admin-controls">
-      <button type="button" onClick={exportToFile}>{t.exportJson}</button>
-      <label>
-        {t.importToDeck}
-        <select value={importTarget} onChange={(e) => { setImportTarget(e.target.value as 'deck' | 'legendaryDeck' | 'rankTrack'); clearImportStatus(); }}>
-          <option value="deck">{t.mainDeck}</option>
-          <option value="legendaryDeck">{t.legendaryDeckLabel}</option>
-          <option value="rankTrack">{t.rankTrackDeckLabel}</option>
-        </select>
-      </label>
-      {importTarget === 'deck' ? (
-        <label>
-          {t.importCategoryLabel}
-          <select value={importCategoryMode} onChange={(e) => { setImportCategoryMode(e.target.value); clearImportStatus(); }}>
-            <option value="AS_IS">{t.importCategoryAsIs}</option>
-            {categories.map((cat) => <option key={`import-cat-${cat}`} value={cat}>{cat}</option>)}
-          </select>
-        </label>
-      ) : null}
-      <button type="button" onClick={runImport}>{t.importJson}</button>
-      <label>
-        {t.importFile}
-        <input type="file" accept="application/json,.json" onChange={(e) => importFromFile(e.target.files?.[0] ?? null)} />
-      </label>
-    </p>
-    {importError ? <p className="admin-error">{importError}</p> : null}
-    {importStatus ? <p className="admin-success">{importStatus}</p> : null}
-    <textarea className="admin-textarea" value={importJson} onChange={(e) => { setImportJson(e.target.value); clearImportStatus(); }} />
-  </>
-);
+}) => {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const validation = useMemo(() => {
+    if (!importJson.trim()) return { ok: false, message: t.simulationNoData, count: 0 };
+    try {
+      const parsed = JSON.parse(importJson) as unknown;
+      const count = Array.isArray(parsed) ? parsed.length : parsed && typeof parsed === 'object' ? Object.keys(parsed as object).length : 0;
+      return { ok: true, message: 'JSON OK', count };
+    } catch (error) { return { ok: false, message: error instanceof Error ? error.message : String(error), count: 0 }; }
+  }, [importJson, t.simulationNoData]);
+  const applyImport = () => { if (!validation.ok) return; exportToFile(); runImport(); };
+  return <div className="admin-import-workspace"><AdminSectionHeader title={t.importExport} description={t.importToDeck} actions={<AdminStatusBadge tone={validation.ok ? 'success' : 'warning'}>{validation.message}</AdminStatusBadge>} /><div className="admin-import-layout"><section className="admin-operation-panel"><div className="admin-editor-grid"><label>{t.importToDeck}<select value={importTarget} onChange={(e) => { setImportTarget(e.target.value as 'deck' | 'legendaryDeck' | 'rankTrack'); clearImportStatus(); }}><option value="deck">{t.mainDeck}</option><option value="legendaryDeck">{t.legendaryDeckLabel}</option><option value="rankTrack">{t.rankTrackDeckLabel}</option></select></label>{importTarget === 'deck' ? <label>{t.importCategoryLabel}<select value={importCategoryMode} onChange={(e) => { setImportCategoryMode(e.target.value); clearImportStatus(); }}><option value="AS_IS">{t.importCategoryAsIs}</option>{categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}</select></label> : null}</div><label className="admin-file-drop"><strong>{t.importFile}</strong><span>JSON</span><input type="file" accept="application/json,.json" onChange={(e) => importFromFile(e.target.files?.[0] ?? null)} /></label><button type="button" onClick={() => setShowAdvanced((value) => !value)}>{showAdvanced ? '−' : '+'} JSON</button>{showAdvanced ? <textarea className="admin-textarea admin-import-json" value={importJson} onChange={(e) => { setImportJson(e.target.value); clearImportStatus(); }} /> : null}{importError ? <p className="admin-error">{importError}</p> : null}{importStatus ? <p className="admin-success">{importStatus}</p> : null}<footer className="admin-sticky-actions"><button type="button" onClick={exportToFile}>{t.exportJson}</button><button type="button" className="admin-card-primary-action" onClick={applyImport} disabled={!validation.ok}>{t.importJson}</button></footer></section><aside className="admin-import-preview"><h5>{t.editorPreview}</h5>{validation.ok ? <><strong>{validation.count}</strong><span>{t.importToDeck}</span><code>{importTarget}</code><small>{importCategoryMode}</small><p>{t.exportJson} → {t.importJson}</p></> : <AdminEmptyState>{validation.message}</AdminEmptyState>}</aside></div></div>;
+};
 
 export const AdminStateTab = ({
   t,

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { text } from '../../i18n';
 import type { AdminDbConfigDraft, AdminStorageMode } from '../types';
+import { AdminSectionHeader, AdminStatusBadge } from '../components/AdminWorkspaceLayout';
 
 type T = ReturnType<typeof text>;
 
@@ -89,17 +90,25 @@ export const AdminDatabaseTab = ({
   dbSyncMigrationsRunning: boolean;
 }) => {
   const [backupFile, setBackupFile] = useState<File | null>(null);
+  const [section, setSection] = useState<'connection' | 'migrations' | 'sync' | 'backup' | 'schema'>('connection');
+  const sections = [
+    ['connection', t.dbConnectionTitle],
+    ['migrations', t.dbSyncMigrations],
+    ['sync', t.dbCheckSync],
+    ['backup', t.dbBackupTitle],
+    ['schema', t.dbSchemaTitle],
+  ] as const;
   return (
-  <>
-    <h3>{t.databaseTabTitle}</h3>
-    <p>{t.databaseTabHint}</p>
-    <h4>{t.storageModeTitle}</h4>
-    <p><strong>{t.storageModeLabel}:</strong> {t.storageModeDb}</p>
-    <p>{t.storageModeHint}</p>
+  <div className="admin-database-workspace">
+    <AdminSectionHeader title={t.databaseTabTitle} description={t.databaseTabHint} actions={<AdminStatusBadge tone={storageMode === 'db' ? 'success' : 'warning'}>{storageMode === 'db' ? t.storageModeDb : storageMode}</AdminStatusBadge>} />
+    <nav className="admin-detail-tabs" aria-label={t.databaseTabTitle}>
+      {sections.map(([id, label]) => <button key={id} type="button" className={section === id ? 'is-active' : ''} aria-current={section === id ? 'page' : undefined} onClick={() => setSection(id)}>{label}</button>)}
+    </nav>
 
     {storageMode === 'db' ? (
       <>
-        <h4>{t.dbConnectionTitle}</h4>
+        {section === 'connection' ? <div className="admin-operation-panel">
+        <AdminSectionHeader title={t.dbConnectionTitle} description={t.dbConnectionHint} />
         <div className="admin-inline-editor">
           <div className="admin-editor-grid">
             <label>{t.dbHostLabel}
@@ -127,7 +136,6 @@ export const AdminDatabaseTab = ({
               </select>
             </label>
           </div>
-          <p>{t.dbConnectionHint}</p>
           <p className="admin-controls">
             <button type="button" onClick={onSaveDbConfigDraft}>{t.dbSaveSettings}</button>
             <button type="button" onClick={() => void onTestDbConnection()} disabled={dbConnectionTestRunning}>
@@ -139,7 +147,9 @@ export const AdminDatabaseTab = ({
           {dbConnectionTestError ? <p className="admin-error">{dbConnectionTestError}</p> : null}
           <p>{t.dbConnectionPreview}: <code>{`postgresql://${dbConfigDraft.user || 'user'}:${dbConfigDraft.password ? '***' : ''}@${dbConfigDraft.host || '127.0.0.1'}:${dbConfigDraft.port || '5432'}/${dbConfigDraft.database || 'database'}?sslmode=${dbConfigDraft.sslMode}`}</code></p>
         </div>
+        </div> : null}
 
+        {section === 'migrations' ? <div className="admin-operation-panel">
         <h4>{t.dbSyncMigrations}</h4>
         <p>{t.dbSyncMigrationsHint}</p>
         <p className="admin-controls">
@@ -149,7 +159,9 @@ export const AdminDatabaseTab = ({
         </p>
         {dbSyncMigrationsStatus ? <p className="admin-success">{dbSyncMigrationsStatus}</p> : null}
         {dbSyncMigrationsError ? <p className="admin-error">{dbSyncMigrationsError}</p> : null}
+        </div> : null}
 
+        {section === 'sync' ? <div className="admin-operation-panel">
         <h4>{t.dbCheckSync}</h4>
         <p>{t.dbCheckSyncHint}</p>
         <p className="admin-controls">
@@ -167,7 +179,9 @@ export const AdminDatabaseTab = ({
         {dbCheckSyncError ? <p className="admin-error">{dbCheckSyncError}</p> : null}
         {dbImportJsonConfigStatus ? <p className="admin-success">{dbImportJsonConfigStatus}</p> : null}
         {dbImportJsonConfigError ? <p className="admin-error">{dbImportJsonConfigError}</p> : null}
+        </div> : null}
 
+        {section === 'backup' ? <div className="admin-operation-panel">
         <h4>{t.dbBackupTitle}</h4>
         <p>{t.dbBackupHint}</p>
         <p className="admin-controls">
@@ -184,7 +198,7 @@ export const AdminDatabaseTab = ({
               onChange={(e) => setBackupFile(e.target.files?.[0] ?? null)}
             />
           </label>
-          <button type="button" onClick={() => void onRestoreDbBackup(backupFile)} disabled={dbRestoreBackupRunning || !backupFile}>
+          <button className="admin-danger-action" type="button" onClick={() => { if (backupFile && window.confirm(`${t.dbRestoreBackup}: ${backupFile.name}?`)) void onRestoreDbBackup(backupFile); }} disabled={dbRestoreBackupRunning || !backupFile}>
             {dbRestoreBackupRunning ? t.dbRestoreBackupRunning : t.dbRestoreBackup}
           </button>
         </p>
@@ -193,7 +207,9 @@ export const AdminDatabaseTab = ({
         {dbRestoreBackupError ? <p className="admin-error">{dbRestoreBackupError}</p> : null}
         {dbExportBackupStatus ? <p className="admin-success">{dbExportBackupStatus}</p> : null}
         {dbExportBackupError ? <p className="admin-error">{dbExportBackupError}</p> : null}
+        </div> : null}
 
+        {section === 'schema' ? <div className="admin-operation-panel">
         <h4>{t.dbSchemaTitle}</h4>
         <p>{t.dbSchemaHint}</p>
         <p className="admin-controls">
@@ -208,8 +224,9 @@ export const AdminDatabaseTab = ({
         {dbExportSchemaError ? <p className="admin-error">{dbExportSchemaError}</p> : null}
         {dbImportSchemaStatus ? <p className="admin-success">{dbImportSchemaStatus}</p> : null}
         {dbImportSchemaError ? <p className="admin-error">{dbImportSchemaError}</p> : null}
+        </div> : null}
       </>
     ) : null}
-  </>
+  </div>
   );
 };

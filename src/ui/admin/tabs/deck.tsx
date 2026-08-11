@@ -227,7 +227,6 @@ export const AdminDeckTab = ({
 
   return (
     <>
-      <h3>{t.deckControls}</h3>
       <p>{t.deckCount}: {deckStats.deck} | {t.discardCount}: {deckStats.discard} | {t.legendaryCount}: {deckStats.legendary} | {t.rankTrackCount}: {deckStats.rankTrack}</p>
 
       <p className="admin-controls">

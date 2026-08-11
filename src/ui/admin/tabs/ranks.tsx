@@ -192,7 +192,6 @@ export const AdminRanksTab = ({
 
   return (
     <>
-      <h3>{t.ranksTitle}</h3>
       <p>{t.ranksHint}</p>
 
       <div className="admin-card-workspace-shell admin-rank-workspace-shell">

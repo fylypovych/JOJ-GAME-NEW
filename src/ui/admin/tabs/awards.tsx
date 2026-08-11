@@ -1,169 +1,35 @@
+import { useMemo, useState } from 'react';
 import { text } from '../../i18n';
+import { AdminEmptyState, AdminSectionHeader, AdminStatusBadge, AdminWorkspaceLayout } from '../components/AdminWorkspaceLayout';
 
 type T = ReturnType<typeof text>;
+type AwardMetric = 'matches_linked' | 'matches_finished' | 'wins' | 'win_rate_pct' | 'avg_turns' | 'best_rank_order' | 'resources_gained_total' | 'resources_lost_total' | 'lyaps_played_on_others' | 'scandals_played_on_others';
+type AwardDefinition = { id: string; key: string; title: string; description: string; category: 'general' | 'ranks' | 'resources' | 'actions'; metric: AwardMetric; threshold: number; badgeLabel: string; badgeVariant: 'bronze' | 'silver' | 'gold' | 'special'; iconPath: string | null; active: boolean; sortOrder: number };
+type AwardDraft = { id: string; key: string; title: string; description: string; category: AwardDefinition['category']; metric: AwardMetric; threshold: string; badgeLabel: string; badgeVariant: AwardDefinition['badgeVariant']; iconPath: string; active: boolean; sortOrder: string };
 
-type AwardMetric =
-  | 'matches_linked'
-  | 'matches_finished'
-  | 'wins'
-  | 'win_rate_pct'
-  | 'avg_turns'
-  | 'best_rank_order'
-  | 'resources_gained_total'
-  | 'resources_lost_total'
-  | 'lyaps_played_on_others'
-  | 'scandals_played_on_others';
+const metrics: AwardMetric[] = ['matches_linked', 'matches_finished', 'wins', 'win_rate_pct', 'avg_turns', 'best_rank_order', 'resources_gained_total', 'resources_lost_total', 'lyaps_played_on_others', 'scandals_played_on_others'];
+const readable = (value: string) => value.replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
 
-type AwardDefinition = {
-  id: string;
-  key: string;
-  title: string;
-  description: string;
-  category: 'general' | 'ranks' | 'resources' | 'actions';
-  metric: AwardMetric;
-  threshold: number;
-  badgeLabel: string;
-  badgeVariant: 'bronze' | 'silver' | 'gold' | 'special';
-  iconPath: string | null;
-  active: boolean;
-  sortOrder: number;
-};
-
-export const AdminAwardsTab = ({
-  t,
-  awards,
-  loading,
-  error,
-  runtimeDbInfo,
-  selectedAwardId,
-  onSelectAwardId,
-  draft,
-  setDraft,
-  onCreateNew,
-  onSave,
-  onDelete,
-}: {
-  t: T;
-  awards: AwardDefinition[];
-  loading: boolean;
-  error: string;
+export const AdminAwardsTab = ({ t, awards, loading, error, runtimeDbInfo, selectedAwardId, onSelectAwardId, draft, setDraft, onCreateNew, onSave, onDelete }: {
+  t: T; awards: AwardDefinition[]; loading: boolean; error: string;
   runtimeDbInfo: { database: string; user: string; serverAddr: string | null; serverPort: number | null } | null;
-  selectedAwardId: string;
-  onSelectAwardId: (value: string) => void;
-  draft: {
-    id: string;
-    key: string;
-    title: string;
-    description: string;
-    category: AwardDefinition['category'];
-    metric: AwardMetric;
-    threshold: string;
-    badgeLabel: string;
-    badgeVariant: AwardDefinition['badgeVariant'];
-    iconPath: string;
-    active: boolean;
-    sortOrder: string;
-  };
-  setDraft: (value: {
-    id: string;
-    key: string;
-    title: string;
-    description: string;
-    category: AwardDefinition['category'];
-    metric: AwardMetric;
-    threshold: string;
-    badgeLabel: string;
-    badgeVariant: AwardDefinition['badgeVariant'];
-    iconPath: string;
-    active: boolean;
-    sortOrder: string;
-  }) => void;
-  onCreateNew: () => void;
-  onSave: () => void;
-  onDelete: () => void;
-}) => (
-  <>
-    <h3>{t.adminAwardsTitle}</h3>
-    <p>{t.adminAwardsHint}</p>
-    {runtimeDbInfo ? (
-      <p className="admin-muted">
-        DB: {runtimeDbInfo.database} @ {runtimeDbInfo.serverAddr ?? 'unknown'}:{runtimeDbInfo.serverPort ?? '?'} ({runtimeDbInfo.user})
-      </p>
-    ) : null}
-    {error ? <p className="admin-error">{error}</p> : null}
-    <div className="lobby-layout">
-      <div className="lobby-col">
-        <h4>{t.adminAwardsListTitle}</h4>
-        <p className="admin-controls">
-          <button type="button" onClick={onCreateNew} disabled={loading}>{t.adminAwardsCreateButton}</button>
-        </p>
-        <p>
-          {t.adminAwardsSelectedLabel}{' '}
-          <select value={selectedAwardId} onChange={(e) => onSelectAwardId(e.target.value)} disabled={loading}>
-            <option value="">{t.notSelected}</option>
-            {awards.map((award) => (
-              <option key={`award-${award.id}`} value={award.id}>
-                {award.title} [{award.badgeLabel}]
-              </option>
-            ))}
-          </select>
-        </p>
-        {awards.length === 0 ? <p>{t.simulationNoData}</p> : (
-          <ul>
-            {awards.map((award) => (
-              <li key={`award-row-${award.id}`}>
-                <strong>{award.title}</strong> ({award.metric} ≥ {award.threshold})
-                <br />
-                [{award.badgeVariant}] {award.badgeLabel} {award.active ? '' : '(off)'}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-      <div className="lobby-col">
-        <h4>{t.adminAwardsDetailTitle}</h4>
-        <p><input value={draft.key} onChange={(e) => setDraft({ ...draft, key: e.target.value })} placeholder="award_key" /></p>
-        <p><input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder={t.adminAwardsTitle} /></p>
-        <p><textarea className="admin-textarea" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder={t.adminAwardsDescriptionLabel} /></p>
-        <p>
-          <select value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value as AwardDefinition['category'] })}>
-            <option value="general">general</option>
-            <option value="ranks">ranks</option>
-            <option value="resources">resources</option>
-            <option value="actions">actions</option>
-          </select>
-          {' '}
-          <select value={draft.metric} onChange={(e) => setDraft({ ...draft, metric: e.target.value as AwardMetric })}>
-            <option value="matches_linked">matches_linked</option>
-            <option value="matches_finished">matches_finished</option>
-            <option value="wins">wins</option>
-            <option value="win_rate_pct">win_rate_pct</option>
-            <option value="avg_turns">avg_turns</option>
-            <option value="best_rank_order">best_rank_order</option>
-            <option value="resources_gained_total">resources_gained_total</option>
-            <option value="resources_lost_total">resources_lost_total</option>
-            <option value="lyaps_played_on_others">lyaps_played_on_others</option>
-            <option value="scandals_played_on_others">scandals_played_on_others</option>
-          </select>
-        </p>
-        <p><input value={draft.threshold} onChange={(e) => setDraft({ ...draft, threshold: e.target.value })} placeholder={t.adminAwardsThresholdLabel} /></p>
-        <p><input value={draft.badgeLabel} onChange={(e) => setDraft({ ...draft, badgeLabel: e.target.value })} placeholder={t.adminAwardsBadgeLabel} /></p>
-        <p>
-          <select value={draft.badgeVariant} onChange={(e) => setDraft({ ...draft, badgeVariant: e.target.value as AwardDefinition['badgeVariant'] })}>
-            <option value="bronze">bronze</option>
-            <option value="silver">silver</option>
-            <option value="gold">gold</option>
-            <option value="special">special</option>
-          </select>
-        </p>
-        <p><input value={draft.iconPath} onChange={(e) => setDraft({ ...draft, iconPath: e.target.value })} placeholder={t.adminAwardsIconPathLabel} /></p>
-        <p><input value={draft.sortOrder} onChange={(e) => setDraft({ ...draft, sortOrder: e.target.value })} placeholder={t.adminAwardsSortOrderLabel} /></p>
-        <p><label><input type="checkbox" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} /> {t.adminAwardsActiveLabel}</label></p>
-        <p className="admin-controls">
-          <button type="button" onClick={onSave} disabled={loading}>{t.adminAwardsSaveButton}</button>
-          <button type="button" onClick={onDelete} disabled={loading || !draft.id}>{t.adminAwardsDeleteButton}</button>
-        </p>
-      </div>
-    </div>
-  </>
-);
+  selectedAwardId: string; onSelectAwardId: (value: string) => void; draft: AwardDraft; setDraft: (value: AwardDraft) => void;
+  onCreateNew: () => void; onSave: () => void; onDelete: () => void;
+}) => {
+  const [search, setSearch] = useState('');
+  const selected = awards.find((award) => award.id === selectedAwardId);
+  const filtered = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    return query ? awards.filter((award) => `${award.title} ${award.key} ${award.badgeLabel}`.toLocaleLowerCase().includes(query)) : awards;
+  }, [awards, search]);
+  const baseline: AwardDraft | null = selected ? {
+    id: selected.id, key: selected.key, title: selected.title, description: selected.description,
+    category: selected.category, metric: selected.metric, threshold: String(selected.threshold),
+    badgeLabel: selected.badgeLabel, badgeVariant: selected.badgeVariant,
+    iconPath: selected.iconPath ?? '', active: selected.active, sortOrder: String(selected.sortOrder),
+  } : null;
+  const dirty = selectedAwardId ? Boolean(baseline && JSON.stringify(baseline) !== JSON.stringify(draft)) : Boolean(draft.key || draft.title || draft.description);
+  const selectAward = (id: string) => { if (dirty && !window.confirm(t.unsavedChangesConfirm)) return; onSelectAwardId(id); };
+  const sidebar = <><AdminSectionHeader eyebrow={`${awards.filter((item) => item.active).length} active`} title={t.adminAwardsListTitle} actions={<button type="button" className="admin-card-primary-action" onClick={() => { if (!dirty || window.confirm(t.unsavedChangesConfirm)) onCreateNew(); }}>+ {t.adminAwardsCreateButton}</button>} /><div className="admin-management-search"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.adminUsersSearchPlaceholder} /></div><div className="admin-entity-list">{filtered.length === 0 ? <AdminEmptyState>{t.simulationNoData}</AdminEmptyState> : filtered.map((award) => <button key={award.id} type="button" className={`admin-entity-row admin-award-row${selectedAwardId === award.id ? ' is-selected' : ''}`} onClick={() => selectAward(award.id)}><span className={`admin-award-badge is-${award.badgeVariant}`}>{award.iconPath ? <img src={award.iconPath} alt="" /> : award.badgeLabel.slice(0, 2)}</span><span className="admin-entity-row-copy"><strong>{award.title}</strong><small>{readable(award.metric)} ≥ {award.threshold}</small><span><AdminStatusBadge tone={award.active ? 'success' : 'neutral'}>{award.active ? 'active' : 'off'}</AdminStatusBadge><AdminStatusBadge tone="info">{award.badgeVariant}</AdminStatusBadge></span></span></button>)}</div></>;
+  return <div className="admin-management-shell">{error ? <p className="admin-error">{error}</p> : null}<AdminWorkspaceLayout sidebar={sidebar}>{!selectedAwardId && !dirty ? <AdminEmptyState>{t.notSelected}</AdminEmptyState> : <><AdminSectionHeader eyebrow={draft.key || t.adminAwardsCreateButton} title={draft.title || t.adminAwardsDetailTitle} description={runtimeDbInfo ? `DB: ${runtimeDbInfo.database} · ${runtimeDbInfo.user}` : undefined} actions={<AdminStatusBadge tone={draft.active ? 'success' : 'neutral'}>{draft.active ? 'active' : 'off'}</AdminStatusBadge>} /><div className="admin-award-editor-layout"><section className="admin-operation-panel"><div className="admin-editor-grid"><label>Key<input value={draft.key} onChange={(e) => setDraft({ ...draft, key: e.target.value })} placeholder="award_key" /></label><label>{t.adminAwardsTitle}<input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></label><label className="admin-field-wide">{t.adminAwardsDescriptionLabel}<textarea className="admin-textarea" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} /></label><label>Category<select value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value as AwardDefinition['category'] })}>{['general', 'ranks', 'resources', 'actions'].map((value) => <option key={value} value={value}>{readable(value)}</option>)}</select></label><label>Metric<select value={draft.metric} onChange={(e) => setDraft({ ...draft, metric: e.target.value as AwardMetric })}>{metrics.map((value) => <option key={value} value={value}>{readable(value)}</option>)}</select></label><label>{t.adminAwardsThresholdLabel}<input type="number" value={draft.threshold} onChange={(e) => setDraft({ ...draft, threshold: e.target.value })} /></label><label>{t.adminAwardsBadgeLabel}<input value={draft.badgeLabel} onChange={(e) => setDraft({ ...draft, badgeLabel: e.target.value })} /></label><label>Variant<select value={draft.badgeVariant} onChange={(e) => setDraft({ ...draft, badgeVariant: e.target.value as AwardDefinition['badgeVariant'] })}>{['bronze', 'silver', 'gold', 'special'].map((value) => <option key={value} value={value}>{readable(value)}</option>)}</select></label><label>{t.adminAwardsSortOrderLabel}<input type="number" value={draft.sortOrder} onChange={(e) => setDraft({ ...draft, sortOrder: e.target.value })} /></label><label className="admin-field-wide">{t.adminAwardsIconPathLabel}<input value={draft.iconPath} onChange={(e) => setDraft({ ...draft, iconPath: e.target.value })} /></label><label className="admin-checkbox-card"><input type="checkbox" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} /><span><strong>{t.adminAwardsActiveLabel}</strong></span></label></div></section><aside className="admin-award-preview"><span className={`admin-award-badge is-${draft.badgeVariant}`}>{draft.iconPath ? <img src={draft.iconPath} alt="" /> : (draft.badgeLabel || '—').slice(0, 2)}</span><strong>{draft.badgeLabel || draft.title || '—'}</strong><p>{draft.description || '—'}</p><small>{readable(draft.metric)} ≥ {draft.threshold || '0'}</small></aside></div><footer className="admin-sticky-actions"><span className={dirty ? 'admin-card-save-state is-dirty' : 'admin-card-save-state'}>{dirty ? t.unsavedChanges : t.allChangesSaved}</span>{draft.id ? <button type="button" className="admin-danger-action" onClick={() => { if (window.confirm(`${t.adminAwardsDeleteButton}?`)) onDelete(); }} disabled={loading}>{t.adminAwardsDeleteButton}</button> : null}<button type="button" className="admin-card-primary-action" onClick={onSave} disabled={loading || !dirty}>{t.adminAwardsSaveButton}</button></footer></>}</AdminWorkspaceLayout></div>;
+};

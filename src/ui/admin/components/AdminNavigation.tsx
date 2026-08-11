@@ -9,9 +9,7 @@ interface AdminNavigationProps {
   activeTabLabel: string;
   adminCategories: AdminNavCategory[];
   setActiveTab: (tab: AdminTab) => void;
-  matches: Array<{ id: string }>;
-  activeMatchId: string | null;
-  t: ReturnType<typeof import('../../i18n').text>;
+  contextStatus: string;
   activeTabDescriptionMap: Record<AdminTab, string>;
   children?: ReactNode;
 }
@@ -22,9 +20,7 @@ export const AdminNavigation = ({
   activeTabLabel,
   adminCategories,
   setActiveTab,
-  matches,
-  activeMatchId,
-  t,
+  contextStatus,
   activeTabDescriptionMap,
   children,
 }: AdminNavigationProps) => {
@@ -39,7 +35,13 @@ export const AdminNavigation = ({
               (item) => item.id === categoryId,
             );
             if (category?.tabs[0]) {
-              setActiveTab(category.tabs[0].id);
+              const savedTab = window.localStorage.getItem(
+                `joj-admin-last-tab-${category.id}`,
+              ) as AdminTab | null;
+              const nextTab = category.tabs.some((tab) => tab.id === savedTab)
+                ? savedTab!
+                : category.tabs[0].id;
+              setActiveTab(nextTab);
             }
           }}
         />
@@ -72,9 +74,7 @@ export const AdminNavigation = ({
             </span>
             <strong>{activeCategory.label}</strong>
             <small>{activeCategory.description}</small>
-            <span className="admin-v2-badge is-muted">
-              {matches.length} / {activeMatchId || t.notSelected}
-            </span>
+            <span className="admin-v2-badge is-muted">{contextStatus}</span>
           </aside>
         </header>
         <div className="admin-v2-workspace-body">

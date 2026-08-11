@@ -464,5 +464,6 @@ export const useAdminCardEditor = ({
     removeCardByIdFromEditor,
     inlineEditor,
     withCacheBust,
+    hasUnsavedChanges,
   };
 };

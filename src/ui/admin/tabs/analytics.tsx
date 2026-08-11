@@ -1,94 +1,19 @@
+import { useState } from 'react';
 import { text } from '../../i18n';
 import type { AdminAnalyticsSummary } from '../types';
+import { AdminEmptyState, AdminSectionHeader, AdminStatusBadge } from '../components/AdminWorkspaceLayout';
 
 type T = ReturnType<typeof text>;
+type Section = 'overview' | 'modes' | 'players' | 'ranks';
 
-export const AdminAnalyticsTab = ({
-  t,
-  adminAnalytics,
-  adminAnalyticsLoading,
-  adminAnalyticsError,
-  onRefreshAdminAnalytics,
-}: {
-  t: T;
-  adminAnalytics: AdminAnalyticsSummary | null;
-  adminAnalyticsLoading: boolean;
-  adminAnalyticsError: string;
-  onRefreshAdminAnalytics: () => Promise<void> | void;
-}) => (
-  <>
-    <h3>{t.adminAnalyticsTitle}</h3>
-    <p className="admin-controls">
-      <button type="button" onClick={() => void onRefreshAdminAnalytics()} disabled={adminAnalyticsLoading}>
-        {adminAnalyticsLoading ? t.loading : t.refreshRooms}
-      </button>
-    </p>
-    {adminAnalyticsError ? <p className="admin-error">{adminAnalyticsError}</p> : null}
-    {adminAnalytics ? (
-      <>
-        <div className="admin-inline-editor">
-          <p>{t.adminAnalyticsMatchesFinished}: <strong>{adminAnalytics.matchesFinished}</strong></p>
-          <p>{t.adminAnalyticsRankWins}: <strong>{adminAnalytics.rankWins}</strong></p>
-          <p>{t.adminAnalyticsScoreWins}: <strong>{adminAnalytics.scoreWins}</strong></p>
-          <p>{t.adminAnalyticsStalledMatches}: <strong>{adminAnalytics.stalledMatches}</strong></p>
-          <p>{t.adminAnalyticsAvgTurns}: <strong>{adminAnalytics.avgTurns}</strong></p>
-          <p>{t.adminAnalyticsAvgPlayers}: <strong>{adminAnalytics.avgPlayerCount}</strong></p>
-          <p>{t.adminAnalyticsAvgBots}: <strong>{adminAnalytics.avgBotCount}</strong></p>
-          <p>{t.adminAnalyticsAvgWinnerRank}: <strong>{adminAnalytics.avgWinnerRankOrder}</strong></p>
-        </div>
-        <h5>{t.adminAnalyticsByMode}</h5>
-        {adminAnalytics.byMode.length === 0 ? <p>{t.simulationNoData}</p> : (
-          <ul>
-            {adminAnalytics.byMode.map((row) => (
-              <li key={`analytics-mode-${row.mode}`}>
-                {row.mode}: {row.matchesFinished}
-                {' | '}{t.adminAnalyticsAvgTurns}: {row.avgTurns}
-                {' | '}{t.adminAnalyticsStalledMatches}: {row.stalledMatches}
-                {' | '}{t.adminAnalyticsRankWinRate}: {row.rankWinRatePct}%
-                {' | '}{t.adminAnalyticsScoreWinRate}: {row.scoreWinRatePct}%
-                {' | '}{t.adminAnalyticsStalledRate}: {row.stalledRatePct}%
-                {' | '}{t.adminAnalyticsAvgWinnerRank}: {row.avgWinnerRankOrder}
-              </li>
-            ))}
-          </ul>
-        )}
-        <h5>{t.adminAnalyticsByPlayerCount}</h5>
-        {adminAnalytics.byPlayerCount.length === 0 ? <p>{t.simulationNoData}</p> : (
-          <ul>
-            {adminAnalytics.byPlayerCount.map((row) => (
-              <li key={`analytics-players-${row.playerCount}`}>
-                {row.playerCount}: {row.matchesFinished}
-                {' | '}{t.adminAnalyticsAvgTurns}: {row.avgTurns}
-                {' | '}{t.adminAnalyticsStalledMatches}: {row.stalledMatches}
-                {' | '}{t.adminAnalyticsRankWinRate}: {row.rankWinRatePct}%
-                {' | '}{t.adminAnalyticsScoreWinRate}: {row.scoreWinRatePct}%
-                {' | '}{t.adminAnalyticsStalledRate}: {row.stalledRatePct}%
-                {' | '}{t.adminAnalyticsAvgWinnerRank}: {row.avgWinnerRankOrder}
-              </li>
-            ))}
-          </ul>
-        )}
-        <h5>{t.adminAnalyticsTopRanks}</h5>
-        {adminAnalytics.topRanks.length === 0 ? <p>{t.simulationNoData}</p> : (
-          <ul>
-            {adminAnalytics.topRanks.map((row) => (
-              <li key={`analytics-rank-${row.rankId}`}>
-                {row.rankId}: {row.count}
-              </li>
-            ))}
-          </ul>
-        )}
-        <h5>{t.adminAnalyticsTopWinningRanks}</h5>
-        {adminAnalytics.topWinningRanks.length === 0 ? <p>{t.simulationNoData}</p> : (
-          <ul>
-            {adminAnalytics.topWinningRanks.map((row) => (
-              <li key={`analytics-winning-rank-${row.rankId}`}>
-                {row.rankId}: {row.count}
-              </li>
-            ))}
-          </ul>
-        )}
-      </>
-    ) : null}
-  </>
-);
+export const AdminAnalyticsTab = ({ t, adminAnalytics, adminAnalyticsLoading, adminAnalyticsError, onRefreshAdminAnalytics }: { t: T; adminAnalytics: AdminAnalyticsSummary | null; adminAnalyticsLoading: boolean; adminAnalyticsError: string; onRefreshAdminAnalytics: () => Promise<void> | void }) => {
+  const [section, setSection] = useState<Section>('overview');
+  const tabs: Array<[Section, string]> = [['overview', t.adminAnalyticsTitle], ['modes', t.adminAnalyticsByMode], ['players', t.adminAnalyticsByPlayerCount], ['ranks', t.adminAnalyticsTopRanks]];
+  const maxRank = Math.max(1, ...(adminAnalytics?.topRanks.map((row) => row.count) ?? [1]));
+  return <div className="admin-analytics-workspace"><AdminSectionHeader title={t.adminAnalyticsTitle} description={adminAnalytics ? `${t.adminAnalyticsMatchesFinished}: ${adminAnalytics.matchesFinished}` : undefined} actions={<><AdminStatusBadge tone={adminAnalytics ? 'success' : 'neutral'}>{adminAnalytics ? t.allChangesSaved : t.simulationNoData}</AdminStatusBadge><button type="button" onClick={() => void onRefreshAdminAnalytics()} disabled={adminAnalyticsLoading}>{adminAnalyticsLoading ? t.loading : t.refreshRooms}</button></>} /><nav className="admin-detail-tabs">{tabs.map(([id, label]) => <button key={id} type="button" className={section === id ? 'is-active' : ''} onClick={() => setSection(id)}>{label}</button>)}</nav>{adminAnalyticsError ? <p className="admin-error">{adminAnalyticsError}</p> : null}{!adminAnalytics ? <AdminEmptyState>{adminAnalyticsLoading ? t.loading : t.simulationNoData}</AdminEmptyState> : <>
+    {section === 'overview' ? <div className="admin-metric-grid admin-analytics-metrics">{[[t.adminAnalyticsMatchesFinished, adminAnalytics.matchesFinished], [t.adminAnalyticsRankWins, adminAnalytics.rankWins], [t.adminAnalyticsScoreWins, adminAnalytics.scoreWins], [t.adminAnalyticsStalledMatches, adminAnalytics.stalledMatches], [t.adminAnalyticsAvgTurns, adminAnalytics.avgTurns], [t.adminAnalyticsAvgPlayers, adminAnalytics.avgPlayerCount], [t.adminAnalyticsAvgBots, adminAnalytics.avgBotCount], [t.adminAnalyticsAvgWinnerRank, adminAnalytics.avgWinnerRankOrder]].map(([label, value]) => <article className="admin-metric-card" key={String(label)}><span>{label}</span><strong>{value}</strong></article>)}</div> : null}
+    {section === 'modes' ? <div className="admin-data-table-wrap"><table className="admin-data-table"><thead><tr><th>{t.gameModeLabel}</th><th>{t.adminAnalyticsMatchesFinished}</th><th>{t.adminAnalyticsAvgTurns}</th><th>{t.adminAnalyticsRankWinRate}</th><th>{t.adminAnalyticsScoreWinRate}</th><th>{t.adminAnalyticsStalledRate}</th></tr></thead><tbody>{adminAnalytics.byMode.map((row) => <tr key={row.mode}><th>{row.mode}</th><td>{row.matchesFinished}</td><td>{row.avgTurns}</td><td>{row.rankWinRatePct}%</td><td>{row.scoreWinRatePct}%</td><td>{row.stalledRatePct}%</td></tr>)}</tbody></table></div> : null}
+    {section === 'players' ? <div className="admin-data-table-wrap"><table className="admin-data-table"><thead><tr><th>{t.simulationPlayers}</th><th>{t.adminAnalyticsMatchesFinished}</th><th>{t.adminAnalyticsAvgTurns}</th><th>{t.adminAnalyticsRankWinRate}</th><th>{t.adminAnalyticsStalledRate}</th><th>{t.adminAnalyticsAvgWinnerRank}</th></tr></thead><tbody>{adminAnalytics.byPlayerCount.map((row) => <tr key={row.playerCount}><th>{row.playerCount}</th><td>{row.matchesFinished}</td><td>{row.avgTurns}</td><td>{row.rankWinRatePct}%</td><td>{row.stalledRatePct}%</td><td>{row.avgWinnerRankOrder}</td></tr>)}</tbody></table></div> : null}
+    {section === 'ranks' ? <div className="admin-rank-chart"><section><h5>{t.adminAnalyticsTopRanks}</h5>{adminAnalytics.topRanks.length ? adminAnalytics.topRanks.map((row) => <div className="admin-bar-row" key={row.rankId}><code>{row.rankId}</code><span><i style={{ width: `${Math.max(3, row.count / maxRank * 100)}%` }} /></span><strong>{row.count}</strong></div>) : <AdminEmptyState>{t.simulationNoData}</AdminEmptyState>}</section><section><h5>{t.adminAnalyticsTopWinningRanks}</h5>{adminAnalytics.topWinningRanks.length ? adminAnalytics.topWinningRanks.map((row) => <div className="admin-bar-row" key={row.rankId}><code>{row.rankId}</code><span><i style={{ width: `${Math.max(3, row.count / maxRank * 100)}%` }} /></span><strong>{row.count}</strong></div>) : <AdminEmptyState>{t.simulationNoData}</AdminEmptyState>}</section></div> : null}
+  </>}</div>;
+};

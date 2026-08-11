@@ -1,110 +1,26 @@
+import { useMemo, useState } from 'react';
 import { text } from '../../i18n';
 import type { AdminBugReportDetail, AdminBugReportListItem, AdminBugReportStatus, AdminBugReportUiVariant } from '../useAdminBugReports';
+import { AdminEmptyState, AdminSectionHeader, AdminStatusBadge, AdminWorkspaceLayout } from '../components/AdminWorkspaceLayout';
 
 type T = ReturnType<typeof text>;
+const statusLabel = (t: T, value: AdminBugReportStatus) => value === 'resolved' ? t.bugReportStatusResolved : value === 'closed' ? t.bugReportStatusClosed : t.bugReportStatusNew;
+const statusTone = (value: AdminBugReportStatus) => value === 'resolved' ? 'success' as const : value === 'closed' ? 'neutral' as const : 'warning' as const;
+const uiVariantLabel = (t: T, value: AdminBugReportUiVariant) => value === 'v1' || value === 'v2' ? value : t.bugReportUiUnknown;
 
-const statusLabel = (t: T, value: AdminBugReportStatus) => {
-  if (value === 'resolved') return t.bugReportStatusResolved;
-  if (value === 'closed') return t.bugReportStatusClosed;
-  return t.bugReportStatusNew;
+export const AdminBugReportsTab = ({ t, reports, loading, error, selectedReportId, selectedReport, screenshotUrl, onSelectReport, onMarkResolved, onCloseDetails }: {
+  t: T; reports: AdminBugReportListItem[]; loading: boolean; error: string; selectedReportId: string;
+  selectedReport: AdminBugReportDetail | null; screenshotUrl: string; onSelectReport: (id: string) => void;
+  onMarkResolved: () => void; onCloseDetails: () => void;
+}) => {
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | AdminBugReportStatus>('all');
+  const filtered = useMemo(() => reports.filter((report) => {
+    if (statusFilter !== 'all' && report.status !== statusFilter) return false;
+    const needle = query.trim().toLocaleLowerCase();
+    return !needle || `${report.id} ${report.descriptionPreview} ${report.playerName ?? ''} ${report.matchID ?? ''}`.toLocaleLowerCase().includes(needle);
+  }), [reports, query, statusFilter]);
+  const newCount = reports.filter((report) => report.status === 'new').length;
+  const sidebar = <><AdminSectionHeader eyebrow={`${reports.length} total`} title={t.adminBugReportsListTitle} /><div className="admin-management-search"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t.adminUsersSearchPlaceholder} /><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}><option value="all">All</option><option value="new">{t.bugReportStatusNew}</option><option value="resolved">{t.bugReportStatusResolved}</option><option value="closed">{t.bugReportStatusClosed}</option></select></div><div className="admin-management-summary"><AdminStatusBadge tone="warning">{newCount} {t.bugReportStatusNew}</AdminStatusBadge><AdminStatusBadge tone="success">{reports.length - newCount} processed</AdminStatusBadge></div><div className="admin-entity-list">{filtered.length === 0 ? <AdminEmptyState>{loading ? t.loading : t.simulationNoData}</AdminEmptyState> : filtered.map((report) => <button key={report.id} type="button" className={`admin-bug-report-card${selectedReportId === report.id ? ' is-selected' : ''}`} onClick={() => onSelectReport(report.id)} disabled={loading}><span><AdminStatusBadge tone={statusTone(report.status)}>{statusLabel(t, report.status)}</AdminStatusBadge><code>{report.id.slice(0, 8)}</code><time>{new Date(report.createdAt).toLocaleString()}</time></span><strong>{report.descriptionPreview || '…'}</strong><small>{report.playerName ?? t.notSelected}{report.matchID ? ` · ${report.matchID}` : ''}{report.hasScreenshot ? ` · ${t.bugReportHasScreenshot}` : ''}</small></button>)}</div></>;
+  return <div className="admin-management-shell">{error ? <p className="admin-error">{error}</p> : null}<AdminWorkspaceLayout sidebar={sidebar}>{!selectedReport ? <AdminEmptyState>{t.notSelected}</AdminEmptyState> : <><AdminSectionHeader eyebrow={selectedReport.id} title={selectedReport.description.slice(0, 80)} description={new Date(selectedReport.createdAt).toLocaleString()} actions={<AdminStatusBadge tone={statusTone(selectedReport.status)}>{statusLabel(t, selectedReport.status)}</AdminStatusBadge>} /><div className="admin-bug-detail-grid"><section className="admin-operation-panel"><h5>{t.bugReportDescriptionLabel}</h5><p className="admin-bug-report-description">{selectedReport.description}</p><div className="admin-info-grid"><p><span>{t.userDisplayNameLabel}</span><strong>{selectedReport.playerName ?? '—'}</strong></p><p><span>{t.activeMatch}</span><code>{selectedReport.matchID ?? '—'}</code></p><p><span>{t.spectatorMode}</span><strong>{selectedReport.spectator ? t.yes : t.no}</strong></p><p><span>{t.gameUiLabel}</span><strong>{uiVariantLabel(t, selectedReport.uiVariant)}</strong></p><p><span>{t.language}</span><strong>{selectedReport.lang === 'en' ? t.langEn : t.langUk}</strong></p><p><span>{t.userSignedInAs}</span><strong>{selectedReport.submittedBy.displayName ?? selectedReport.submittedBy.username ?? '—'}</strong></p><p><span>{t.adminPath}</span><code>{selectedReport.pageUrl || '—'}</code></p><p><span>{t.bugReportReporterIp}</span><code>{selectedReport.sourceIp || '—'}</code></p></div><details><summary>{t.bugReportReporterAgent}</summary><code>{selectedReport.userAgent || '—'}</code></details></section>{screenshotUrl ? <aside className="admin-bug-screenshot-panel"><AdminSectionHeader title={t.bugReportHasScreenshot} /><a href={screenshotUrl} target="_blank" rel="noreferrer"><img className="admin-bug-report-image" src={screenshotUrl} alt={t.bugReportImageAlt} /></a></aside> : null}</div><footer className="admin-sticky-actions"><button type="button" onClick={onCloseDetails} disabled={loading}>{t.bugReportClose}</button><button type="button" className="admin-card-primary-action" onClick={onMarkResolved} disabled={loading || selectedReport.status === 'resolved'}>{t.bugReportResolve}</button></footer></>}</AdminWorkspaceLayout></div>;
 };
-
-const uiVariantLabel = (t: T, value: AdminBugReportUiVariant) => {
-  if (value === 'v1') return 'v1';
-  if (value === 'v2') return 'v2';
-  return t.bugReportUiUnknown;
-};
-
-export const AdminBugReportsTab = ({
-  t,
-  reports,
-  loading,
-  error,
-  selectedReportId,
-  selectedReport,
-  screenshotUrl,
-  onSelectReport,
-  onMarkResolved,
-  onCloseDetails,
-}: {
-  t: T;
-  reports: AdminBugReportListItem[];
-  loading: boolean;
-  error: string;
-  selectedReportId: string;
-  selectedReport: AdminBugReportDetail | null;
-  screenshotUrl: string;
-  onSelectReport: (id: string) => void;
-  onMarkResolved: () => void;
-  onCloseDetails: () => void;
-}) => (
-  <>
-    <h3>{t.adminBugReportsTitle}</h3>
-    <p>{t.adminBugReportsHint}</p>
-    {error ? <p className="admin-error">{error}</p> : null}
-    <div className="lobby-layout">
-      <div className="lobby-col">
-        <h4>{t.adminBugReportsListTitle}</h4>
-        {reports.length === 0 ? <p>{loading ? t.loading : t.simulationNoData}</p> : (
-          <ul className="admin-bug-report-list">
-            {reports.map((report) => (
-              <li key={`bug-report-${report.id}`} className={`admin-bug-report-row${selectedReportId === report.id ? ' is-selected' : ''}`}>
-                <div>
-                  <strong>{statusLabel(t, report.status)}</strong>
-                  {' · '}
-                  <code>{report.id.slice(0, 8)}</code>
-                  {' · '}
-                  {new Date(report.createdAt).toLocaleString()}
-                </div>
-                <div>{report.descriptionPreview || '...'}</div>
-                <div className="admin-bug-report-meta">
-                  {report.playerName ?? t.notSelected}
-                  {report.matchID ? ` · ${report.matchID}` : ''}
-                  {report.hasScreenshot ? ` · ${t.bugReportHasScreenshot}` : ''}
-                </div>
-                <p className="admin-controls">
-                  <button type="button" onClick={() => onSelectReport(report.id)} disabled={loading}>
-                    {t.bugReportOpenDetails}
-                  </button>
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-      <div className="lobby-col">
-        <h4>{t.adminBugReportsDetailTitle}</h4>
-        {!selectedReport ? <p>{t.notSelected}</p> : (
-          <div className="admin-bug-report-detail">
-            <p><strong>{statusLabel(t, selectedReport.status)}</strong></p>
-            <p>{t.createdAt}: {new Date(selectedReport.createdAt).toLocaleString()}</p>
-            <p>{t.userDisplayNameLabel}: {selectedReport.playerName ?? '-'}</p>
-            <p>{t.activeMatch}: {selectedReport.matchID ?? '-'}</p>
-            <p>{t.spectatorMode}: {selectedReport.spectator ? t.yes : t.no}</p>
-            <p>{t.gameUiLabel}: {uiVariantLabel(t, selectedReport.uiVariant)}</p>
-            <p>{t.language}: {selectedReport.lang === 'en' ? t.langEn : t.langUk}</p>
-            <p>{t.userSignedInAs}: {selectedReport.submittedBy.displayName ?? selectedReport.submittedBy.username ?? '-'}</p>
-            <p>{t.adminPath}: <code>{selectedReport.pageUrl || '-'}</code></p>
-            <p>{t.bugReportReporterIp}: <code>{selectedReport.sourceIp || '-'}</code></p>
-            <p>{t.bugReportReporterAgent}: <code>{selectedReport.userAgent || '-'}</code></p>
-            <p>{t.bugReportDescriptionLabel}</p>
-            <p className="admin-bug-report-description">{selectedReport.description}</p>
-            {screenshotUrl ? (
-              <p>
-                <img className="admin-bug-report-image" src={screenshotUrl} alt={t.bugReportImageAlt} />
-              </p>
-            ) : null}
-            <p className="admin-controls">
-              <button type="button" onClick={onCloseDetails} disabled={loading}>
-                {t.bugReportClose}
-              </button>
-              <button type="button" onClick={onMarkResolved} disabled={loading || selectedReport.status === 'resolved'}>
-                {t.bugReportResolve}
-              </button>
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  </>
-);

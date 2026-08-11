@@ -172,7 +172,7 @@ export const AdminOverview = ({
           <button type="button" onClick={() => setActiveTab('matches')}>
             {t.tabMatches}
           </button>
-          <button type="button" onClick={() => setActiveTab('settings')}>
+          <button type="button" onClick={() => setActiveTab('gameConfig')}>
             {t.tabSettings}
           </button>
           <button type="button" onClick={() => setActiveTab('github')}>
