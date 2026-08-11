@@ -55,7 +55,12 @@ export const useAdminCardEditor = ({
   const [editError, setEditError] = useState('');
   const [imagePreviewNonce, setImagePreviewNonce] = useState(0);
   const [createCardModuleId, setCreateCardModuleId] = useState('');
+  const [editBaseline, setEditBaseline] = useState('');
   const [, setDeckBackImageInput] = useState(sharedDeckTemplate.deckBackImage ?? '');
+  const editorSnapshot = (card: CardDefinition, effectsText: string) => JSON.stringify({ card, effectsText });
+  const hasActiveEditor = editIndex >= 0 || editIndex === -2 || editIndex === -3;
+  const hasUnsavedChanges = hasActiveEditor && editorSnapshot(editCard, editEffectsText) !== editBaseline;
+  const canLeaveEditor = () => !hasUnsavedChanges || window.confirm(t.unsavedChangesConfirm);
 
   const isManagedCardAssetPath = (value?: string) => {
     const normalized = normalizeImagePath(value);
@@ -141,21 +146,25 @@ export const useAdminCardEditor = ({
   };
 
   const openCardEditorAt = (target: DeckTarget, index: number) => {
+    if (!canLeaveEditor()) return;
     const sourceList = sharedDeckTemplate[target];
     const card = sourceList?.[index];
     if (!card) return;
     setEditTarget(target);
     setEditIndex(index);
     setEditOriginalCardId(card.id);
-    setEditCard({
+    const nextCard = {
       ...card,
       image: card.image ?? '',
       flavor: card.flavor ?? '',
       effects: card.effects?.map((effect) => ({ ...effect })),
-    });
+    };
+    setEditCard(nextCard);
     const nextEffectValues = effectsToValues(card.effects);
+    const nextEffectsText = JSON.stringify(valuesToEffects(nextEffectValues), null, 2);
     setEditEffectValues(nextEffectValues);
-    setEditEffectsText(JSON.stringify(valuesToEffects(nextEffectValues), null, 2));
+    setEditEffectsText(nextEffectsText);
+    setEditBaseline(editorSnapshot(nextCard, nextEffectsText));
     setCreateCardModuleId('');
     setEditError('');
   };
@@ -167,20 +176,24 @@ export const useAdminCardEditor = ({
       openCardEditorAt(target, inTargetIndex);
       return;
     }
+    if (!canLeaveEditor()) return;
     const catalogCard = cardCatalog.find((row) => row.id === cardId);
     if (!catalogCard) return;
     const nextEffectValues = effectsToValues(catalogCard.effects);
     setEditTarget(target);
     setEditIndex(-3);
     setEditOriginalCardId(catalogCard.id);
-    setEditCard({
+    const nextCard = {
       ...catalogCard,
       image: catalogCard.image ?? '',
       flavor: catalogCard.flavor ?? '',
       effects: catalogCard.effects?.map((effect) => ({ ...effect })),
-    });
+    };
+    setEditCard(nextCard);
+    const nextEffectsText = JSON.stringify(valuesToEffects(nextEffectValues), null, 2);
     setEditEffectValues(nextEffectValues);
-    setEditEffectsText(JSON.stringify(valuesToEffects(nextEffectValues), null, 2));
+    setEditEffectsText(nextEffectsText);
+    setEditBaseline(editorSnapshot(nextCard, nextEffectsText));
     setCreateCardModuleId('');
     setEditError('');
   };
@@ -225,8 +238,10 @@ export const useAdminCardEditor = ({
     } else {
       onUpdateCard(editTarget, editIndex, nextCard);
     }
+    setEditCard(nextCard);
     setCreateCardModuleId('');
     setEditOriginalCardId(nextCard.id);
+    setEditBaseline(editorSnapshot(nextCard, editEffectsText));
   };
 
   const addFromForm = () => {
@@ -261,6 +276,7 @@ export const useAdminCardEditor = ({
   };
 
   const startCreateCardForModule = (moduleId: string) => {
+    if (!canLeaveEditor()) return;
     const module = deckModules.find((row) => row.id === moduleId);
     if (module?.category === 'RANK' || module?.target === 'rankTrack') {
       setDeckManagerStatus(t.rankCardsManagedInRanks);
@@ -273,16 +289,19 @@ export const useAdminCardEditor = ({
     const fresh = blankCard();
     setEditTarget(nextTarget);
     setEditIndex(-2);
-    setEditCard({
+    const nextCard = {
       ...fresh,
       category: defaultCategory,
       image: '',
       flavor: '',
       effects: [],
-    });
+    };
+    setEditCard(nextCard);
     const nextEffectValues = zeroEffectValues();
+    const nextEffectsText = JSON.stringify(valuesToEffects(nextEffectValues), null, 2);
     setEditEffectValues(nextEffectValues);
-    setEditEffectsText(JSON.stringify(valuesToEffects(nextEffectValues), null, 2));
+    setEditEffectsText(nextEffectsText);
+    setEditBaseline(editorSnapshot(nextCard, nextEffectsText));
     setCreateCardModuleId(moduleId);
     setEditError('');
   };
@@ -393,6 +412,7 @@ export const useAdminCardEditor = ({
   };
 
   const closeEditor = () => {
+    if (!canLeaveEditor()) return;
     setEditIndex(-1);
     setCreateCardModuleId('');
     setEditError('');
@@ -425,6 +445,7 @@ export const useAdminCardEditor = ({
       saveEdit={saveEdit}
       addFromForm={addFromForm}
       isCreateCardMode={isCreateCardMode}
+      hasUnsavedChanges={hasUnsavedChanges}
       closeEditor={closeEditor}
     />
   );

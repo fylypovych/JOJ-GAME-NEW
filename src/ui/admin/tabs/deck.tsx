@@ -1,10 +1,9 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { text } from '../../i18n';
 import { formatModuleDisplayName } from '../../moduleDisplay';
 import type { DeckTarget, LegendaryDeckMode } from '../../../game/jojGame';
 import { CARD_ASSET_BASE_PATH, normalizeImagePath } from '../../../game/imagePaths';
 import type { CardCategory, CardDefinition } from '../../../game/types';
-import { HoverImage } from '../HoverImage';
 
 type T = ReturnType<typeof text>;
 type DeckModuleAction = 'add' | 'replace' | 'remove';
@@ -91,7 +90,8 @@ export const AdminDeckTab = ({
   });
   const [moduleCardIdsText, setModuleCardIdsText] = useState<string>('');
   const [moduleValidationError, setModuleValidationError] = useState<string>('');
-  const cardEditorAnchorRef = useRef<HTMLDivElement | null>(null);
+  const [cardSearch, setCardSearch] = useState('');
+  const [cardCategoryFilter, setCardCategoryFilter] = useState('ALL');
 
   const baseModules = useMemo(
     () => modules.filter((m) => m.moduleType === 'MAIN_DECK_MODULE' && m.target === 'deck'),
@@ -118,20 +118,6 @@ export const AdminDeckTab = ({
   const selectedCardModule = modules.find((m) => m.id === cardEditorModuleId) ?? modules[0];
   const canCreateCardInModule = Boolean(selectedCardModule && selectedCardModule.category !== 'RANK' && selectedCardModule.target !== 'rankTrack');
   const hasActiveCardEditor = editIndex >= 0 || editIndex === -2 || editIndex === -3;
-  const isCreateCardMode = editIndex === -2;
-  const isDetachedEditMode = editIndex === -3;
-
-  useEffect(() => {
-    if (innerTab !== 'cards' || !hasActiveCardEditor) return;
-    if (editIndex >= 0) {
-      const row = document.querySelector(`[data-card-row="${editTarget}-${editIndex}"]`);
-      if (row instanceof HTMLElement) {
-        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
-    }
-    cardEditorAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [innerTab, hasActiveCardEditor, editIndex, editTarget]);
 
   const moduleCardRows = useMemo(() => {
     if (!selectedCardModule) return [];
@@ -152,12 +138,7 @@ export const AdminDeckTab = ({
     const source = target === 'legendaryDeck' ? sharedDeckTemplate.legendaryDeck : sharedDeckTemplate.deck;
     const sourceById = new Map(source.map((card, index) => [card.id, { card, index }] as const));
     const catalogById = new Map(cardCatalog.map((card) => [card.id, card] as const));
-    const moduleAndTargetIds = Array.from(
-      new Set([
-        ...selectedCardModule.cardIds,
-        ...source.map((card) => card.id),
-      ]),
-    );
+    const moduleAndTargetIds = Array.from(new Set(selectedCardModule.cardIds));
     return moduleAndTargetIds.map((id) => {
       const fromTarget = sourceById.get(id);
       const fromCatalog = catalogById.get(id);
@@ -170,6 +151,16 @@ export const AdminDeckTab = ({
       };
     });
   }, [selectedCardModule, sharedDeckTemplate, sharedRanks, cardCatalog]);
+
+  const visibleCardRows = useMemo(() => {
+    const needle = cardSearch.trim().toLocaleLowerCase();
+    return moduleCardRows.filter(({ card }) => {
+      const category = 'category' in card ? String(card.category ?? '') : 'RANK';
+      if (cardCategoryFilter !== 'ALL' && category !== cardCategoryFilter) return false;
+      if (!needle) return true;
+      return `${card.id} ${card.title}`.toLocaleLowerCase().includes(needle);
+    });
+  }, [moduleCardRows, cardSearch, cardCategoryFilter]);
 
   const startNewModule = () => {
     setEditingModuleId('');
@@ -388,59 +379,79 @@ export const AdminDeckTab = ({
       ) : null}
 
       {innerTab === 'cards' ? (
-        <div className="admin-inline-editor">
-          <h4>{t.cardsEditorTitle}</h4>
-          <p className="admin-controls">
+        <div className="admin-card-workspace-shell">
+          <header className="admin-card-workspace-toolbar">
+            <div>
+              <h4>{t.cardsEditorTitle}</h4>
+              <span>{t.cardsInModuleLabel}: {moduleCardRows.length}</span>
+            </div>
             <label>{t.moduleLabel}
               <select value={selectedCardModule?.id ?? ''} onChange={(e) => setCardEditorModuleId(e.target.value)}>
                 {modules.map((module) => <option key={`module-option-${module.id}`} value={module.id}>{displayModuleName(module)}</option>)}
               </select>
             </label>
-            <button type="button" disabled={!canCreateCardInModule} onClick={() => selectedCardModule && onStartCreateCardForModule(selectedCardModule.id)}>
-              {t.createNewCard}
+            <button type="button" className="admin-card-primary-action" disabled={!canCreateCardInModule} onClick={() => selectedCardModule && onStartCreateCardForModule(selectedCardModule.id)}>
+              + {t.createNewCard}
             </button>
-          </p>
-          <div ref={cardEditorAnchorRef}>
-            {(isCreateCardMode || isDetachedEditMode) ? inlineEditor : <p>{t.createOrOpenCardHint}</p>}
-            {(isCreateCardMode || isDetachedEditMode) ? <p className="admin-info">{t.editingTargetLabel}: {editTarget}</p> : null}
-          </div>
-          <p>{t.cardsInModuleLabel}: {moduleCardRows.length}</p>
+          </header>
           {selectedCardModule && (selectedCardModule.category === 'RANK' || selectedCardModule.target === 'rankTrack') ? (
             <p className="admin-info">{t.rankCardsManagedInRanks}</p>
           ) : null}
-          <div className="admin-deck-list">
-            <ul>
-              {moduleCardRows.map(({ target, index, card }) => {
-                const isEditedRow = editIndex >= 0 && editTarget === target && editIndex === index;
-                return (
-                  <Fragment key={`module-card-fragment-${target}-${index}-${card.id}`}>
-                    <li data-card-row={`${target}-${index}`}>
-                      <span>
-                        <HoverImage src={getCardImageSrc(card)} alt={card.title} className="admin-thumb" />
-                        {' '}
-                        {index >= 0 ? `${index + 1}.` : '•'} {card.id} | {card.title}
-                      </span>
-                      <span className="admin-controls">
-                        {'__rankId' in card ? (
-                          <button type="button" disabled>{t.tabRanks}</button>
-                        ) : (
-                          <>
-                            <button type="button" onClick={() => (index >= 0 ? onEditCardAt(target, index) : onEditCardById(target, card.id))}>{t.editCard}</button>
-                            <button type="button" onClick={() => (index >= 0 ? onRemoveCardAt(target, index) : onRemoveCardById(target, card.id))}>{t.removeCard}</button>
-                          </>
-                        )}
-                      </span>
-                    </li>
-                    {isEditedRow ? (
-                      <li>
-                        {inlineEditor}
-                        <p className="admin-info">{t.editingTargetLabel}: {editTarget}</p>
-                      </li>
-                    ) : null}
-                  </Fragment>
-                );
-              })}
-            </ul>
+          <div className="admin-card-workspace">
+            <aside className="admin-card-browser">
+              <div className="admin-card-browser-filters">
+                <input type="search" value={cardSearch} placeholder={t.cardSearchPlaceholder} onChange={(e) => setCardSearch(e.target.value)} />
+                <select aria-label={t.categoryFilter} value={cardCategoryFilter} onChange={(e) => setCardCategoryFilter(e.target.value)}>
+                  <option value="ALL">{t.allCategories}</option>
+                  {['LYAP', 'SCANDAL', 'SUPPORT', 'COMMAND', 'VVNZ', 'LEGENDARY', 'RANK'].map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="admin-card-browser-count">{t.visibleCardsLabel}: {visibleCardRows.length}</div>
+              <div className="admin-card-browser-list">
+                {visibleCardRows.length === 0 ? <p>{t.noCardsMatch}</p> : null}
+                {visibleCardRows.map(({ target, index, card }) => {
+                  const isEditedRow = editIndex >= 0 && editTarget === target && editIndex === index;
+                  return (
+                    <article className={isEditedRow ? 'admin-card-browser-row is-selected' : 'admin-card-browser-row'} key={`module-card-${target}-${index}-${card.id}`}>
+                      <button
+                        type="button"
+                        className="admin-card-browser-open"
+                        disabled={'__rankId' in card}
+                        onClick={() => (index >= 0 ? onEditCardAt(target, index) : onEditCardById(target, card.id))}
+                      >
+                        <img src={getCardImageSrc(card)} alt="" />
+                        <span>
+                          <strong>{card.title}</strong>
+                          <small>{card.id}{'category' in card ? ` · ${card.category}` : ''}</small>
+                        </span>
+                      </button>
+                      {'__rankId' in card ? (
+                        <span className="admin-card-browser-rank">{t.tabRanks}</span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="admin-card-browser-remove"
+                          title={t.removeCard}
+                          aria-label={`${t.removeCard}: ${card.title}`}
+                          onClick={() => (index >= 0 ? onRemoveCardAt(target, index) : onRemoveCardById(target, card.id))}
+                        >×</button>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            </aside>
+            <main className="admin-card-editor-stage">
+              {hasActiveCardEditor ? inlineEditor : (
+                <div className="admin-card-editor-empty">
+                  <strong>{t.selectCardToEdit}</strong>
+                  <p>{t.createOrOpenCardHint}</p>
+                </div>
+              )}
+              {hasActiveCardEditor ? <p className="admin-info">{t.editingTargetLabel}: {editTarget}</p> : null}
+            </main>
           </div>
         </div>
       ) : null}
