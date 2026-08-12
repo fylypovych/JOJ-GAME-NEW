@@ -37,7 +37,7 @@ ADMIN_LANG="${ADMIN_LANG:-uk}"
 ADMIN_PASSWORD_FILE="${ADMIN_PASSWORD_FILE:-}"
 SKIP_ADMIN="${SKIP_ADMIN:-0}"
 ENABLE_UFW="${ENABLE_UFW:-1}"
-BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-14}"
+BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-7}"
 
 usage() {
   cat <<'EOF'
@@ -224,7 +224,10 @@ EOF
     [[ "$answer" =~ ^[Yy]$ ]] || { log 'Cancelled.'; exit 0; }
   fi
 
-  install -d -m 0700 -o root -g root "$BACKUP_DIR"
+  # The admin deployment endpoint runs as the application user and must be able
+  # to create the mandatory pre-update backup without sudo. The directory stays
+  # private because production backups can contain sensitive application data.
+  install -d -m 0700 -o "$APP_USER" -g "$APP_USER" "$BACKUP_DIR"
   if [[ -f /etc/default/joj-game ]]; then
     if grep -q '^JOJ_BACKUP_DIR=' /etc/default/joj-game; then
       sed -i "s|^JOJ_BACKUP_DIR=.*$|JOJ_BACKUP_DIR=${BACKUP_DIR}|" /etc/default/joj-game
@@ -418,7 +421,7 @@ fi
 mkdir -p "${PROJECT_DIR}/logs" "${PROJECT_DIR}/backup"
 chmod 0755 "${PROJECT_DIR}/scripts/joj-cli.sh" "${PROJECT_DIR}/scripts/backup-production.sh"
 chown -R "$APP_USER:$APP_USER" "$PROJECT_DIR"
-chown root:root "${PROJECT_DIR}/backup"
+chown "$APP_USER:$APP_USER" "${PROJECT_DIR}/backup"
 chmod 700 "${PROJECT_DIR}/backup"
 
 log 'Configuring PostgreSQL...'

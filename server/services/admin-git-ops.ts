@@ -9,7 +9,7 @@ type RunGit = (args: string[]) => Promise<CmdResult>;
 type RunShellCommand = (command: string, timeoutMs?: number) => Promise<CmdResult>;
 type SpawnDetachedShell = (command: string) => void;
 export const ADMIN_DEPLOY_COMMANDS = {
-  backup: 'JOJ_PROJECT_DIR="$PWD" JOJ_BACKUP_DIR="$PWD/backup" bash scripts/backup-production.sh',
+  backup: 'if [ -r /etc/default/joj-game ]; then . /etc/default/joj-game; fi; JOJ_PROJECT_DIR="$PWD" JOJ_BACKUP_DIR="$PWD/backup" JOJ_BACKUP_RETENTION_DAYS="${JOJ_BACKUP_RETENTION_DAYS:-7}" bash scripts/backup-production.sh',
   install: 'npm ci --include=dev',
   verify: 'npm run check:release',
   migrate: 'npm run db:migrate',

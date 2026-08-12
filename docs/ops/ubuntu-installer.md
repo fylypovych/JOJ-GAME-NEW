@@ -91,7 +91,7 @@ sudo joj update
 sudo joj backup
 ```
 
-Daily backups run around 03:15 through `joj-backup.timer` and are retained locally for 14 days by default. Each archive includes a PostgreSQL custom-format dump, runtime JSON/files and card assets.
+Daily backups run around 03:15 through `joj-backup.timer` and are retained locally for 7 days by default. Each archive includes a PostgreSQL custom-format dump, runtime JSON/files and card assets.
 
 Backups are stored in `<PROJECT_DIR>/backup` (normally `/opt/joj-game/backup`).
 This directory is ignored by Git and excluded from production-content publishing,
