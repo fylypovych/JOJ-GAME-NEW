@@ -92,7 +92,7 @@ case "$cmd" in
     JOJ_PROJECT_DIR="$PROJECT_DIR" \
       JOJ_BACKUP_DIR="${JOJ_BACKUP_DIR:-${PROJECT_DIR}/backup}" \
       JOJ_BACKUP_RETENTION_DAYS="${JOJ_BACKUP_RETENTION_DAYS:-7}" \
-      "${PROJECT_DIR}/scripts/backup-production.sh"
+      bash "${PROJECT_DIR}/scripts/backup-production.sh"
     ;;
   ""|-h|--help|help)
     usage

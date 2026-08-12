@@ -240,10 +240,10 @@ EOF
   exec > >(tee -a "$LOG_FILE") 2>&1
 
   log 'Update mode: preserving OS, database, administrator, Caddy, TLS, firewall and timers.'
-  if [[ -x "${PROJECT_DIR}/scripts/backup-production.sh" ]]; then
+  if [[ -r "${PROJECT_DIR}/scripts/backup-production.sh" ]]; then
     log 'Creating a pre-update production backup...'
     JOJ_PROJECT_DIR="$PROJECT_DIR" JOJ_BACKUP_DIR="$BACKUP_DIR" JOJ_BACKUP_RETENTION_DAYS="$BACKUP_RETENTION_DAYS" \
-      "${PROJECT_DIR}/scripts/backup-production.sh"
+      bash "${PROJECT_DIR}/scripts/backup-production.sh"
   else
     die 'Backup script is missing; update aborted before changing files'
   fi
@@ -526,7 +526,7 @@ Description=JOJ Game PostgreSQL and runtime backup
 [Service]
 Type=oneshot
 EnvironmentFile=-/etc/default/joj-game
-ExecStart=${PROJECT_DIR}/scripts/backup-production.sh
+ExecStart=/usr/bin/bash ${PROJECT_DIR}/scripts/backup-production.sh
 EOF
 cat >/etc/systemd/system/joj-backup.timer <<'EOF'
 [Unit]
@@ -559,7 +559,7 @@ for _ in {1..20}; do
 done
 (( health_ok == 1 )) || die 'Backend health check failed; run sudo joj logs server'
 run_as_app "$PM2_BIN" status
-JOJ_PROJECT_DIR="$PROJECT_DIR" JOJ_BACKUP_DIR="${PROJECT_DIR}/backup" JOJ_BACKUP_RETENTION_DAYS="$BACKUP_RETENTION_DAYS" "${PROJECT_DIR}/scripts/backup-production.sh"
+JOJ_PROJECT_DIR="$PROJECT_DIR" JOJ_BACKUP_DIR="${PROJECT_DIR}/backup" JOJ_BACKUP_RETENTION_DAYS="$BACKUP_RETENTION_DAYS" bash "${PROJECT_DIR}/scripts/backup-production.sh"
 
 cat <<EOF
 

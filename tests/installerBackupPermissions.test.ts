@@ -14,6 +14,18 @@ test('installer keeps the private backup directory writable by web deployments',
     /chown "\$APP_USER:\$APP_USER" "\$\{PROJECT_DIR\}\/backup"/,
   );
   assert.doesNotMatch(installer, /chown root:root "\$\{PROJECT_DIR\}\/backup"/);
+  assert.match(
+    installer,
+    /if \[\[ -r "\$\{PROJECT_DIR\}\/scripts\/backup-production\.sh" \]\]; then/,
+  );
+  assert.doesNotMatch(
+    installer,
+    /if \[\[ -x "\$\{PROJECT_DIR\}\/scripts\/backup-production\.sh" \]\]; then/,
+  );
+  assert.match(
+    installer,
+    /bash "\$\{PROJECT_DIR\}\/scripts\/backup-production\.sh"/,
+  );
 });
 
 test('production backup retention defaults to seven days in every entry point', async () => {
