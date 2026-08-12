@@ -29,3 +29,4 @@ jobs:
           bash -n scripts/install-ubuntu.sh
           bash -n scripts/backup-production.sh
           bash -n scripts/db-cutover-check.sh
+          bash -n scripts/restart-and-healthcheck.sh

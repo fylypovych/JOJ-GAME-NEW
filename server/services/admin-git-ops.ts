@@ -8,6 +8,14 @@ type CmdResult = { ok: true; stdout: string; stderr: string } | { ok: false; err
 type RunGit = (args: string[]) => Promise<CmdResult>;
 type RunShellCommand = (command: string, timeoutMs?: number) => Promise<CmdResult>;
 type SpawnDetachedShell = (command: string) => void;
+export const ADMIN_DEPLOY_COMMANDS = {
+  backup: 'JOJ_PROJECT_DIR="$PWD" JOJ_BACKUP_DIR="$PWD/backup" bash scripts/backup-production.sh',
+  install: 'npm ci --include=dev',
+  verify: 'npm run check:release',
+  migrate: 'npm run db:migrate',
+  syncSharedConfig: 'npm run sync:shared-config-db',
+  restartAndHealthCheck: 'bash scripts/restart-and-healthcheck.sh',
+} as const;
 type GitAuthStatus = {
   helper: string;
   helperConfigured: boolean;
@@ -172,6 +180,9 @@ const truncateText = (value: string, maxChars: number) => {
     truncated: true,
   };
 };
+
+const summarizeCommandOutput = (result: { stdout: string; stderr: string }) =>
+  truncateText(result.stdout.trim() || result.stderr.trim() || '(ok)', 24_000).value;
 
 export const registerAdminGitRoutes = ({
   router,
@@ -432,11 +443,28 @@ export const registerAdminGitRoutes = ({
       routeError(ctx, 500, 'Failed to read Git status before deploy', { details: status.error });
       return;
     }
+    if (status.dirty && !ignoreLocalChanges) {
+      routeError(ctx, 409, 'Working tree has local changes. Commit or stash before deploy.', { status });
+      return;
+    }
+    if (status.ahead > 0 && status.behind > 0) {
+      routeError(ctx, 409, 'Branch diverged from upstream. Manual reconciliation is required before deploy.', { status, steps });
+      return;
+    }
+
+    const backupRes = await runShellCommand(ADMIN_DEPLOY_COMMANDS.backup, 30 * 60_000);
+    if (!backupRes.ok) {
+      await logLine('ERROR', `deploy backup failed: ${backupRes.error}`);
+      await logLine('ERROR', buildAdminDeployLog({
+        action: 'deploy', route: '/api/admin/git/deploy', correlationId, actor,
+        durationMs: Date.now() - startedAt, outcome: 'error', details: { failedStep: 'production backup' },
+      }));
+      routeError(ctx, 500, 'Production backup failed; update was not started', { details: backupRes.error, status, steps });
+      return;
+    }
+    steps.push({ step: 'production backup', output: summarizeCommandOutput(backupRes) });
+
     if (status.dirty) {
-      if (!ignoreLocalChanges) {
-        routeError(ctx, 409, 'Working tree has local changes. Commit or stash before deploy.', { status });
-        return;
-      }
       const stashRes = await stashAllLocalGitChanges(runGit);
       if (!stashRes.ok) {
         await logLine('ERROR', `git safe stash failed before deploy: ${stashRes.error}`);
@@ -464,10 +492,6 @@ export const registerAdminGitRoutes = ({
       return;
     }
 
-    if (status.ahead > 0 && status.behind > 0) {
-      routeError(ctx, 409, 'Branch diverged from upstream. Manual reconciliation is required before deploy.', { status, steps });
-      return;
-    }
     if (status.behind > 0) {
       const pullRes = await runGit(['pull', '--ff-only']);
       if (!pullRes.ok) {
@@ -480,63 +504,46 @@ export const registerAdminGitRoutes = ({
       steps.push({ step: 'git pull --ff-only', output: 'Already up to date' });
     }
 
-    let installRes = await runShellCommand('npm ci --include=dev', 30 * 60_000);
+    const installRes = await runShellCommand(ADMIN_DEPLOY_COMMANDS.install, 30 * 60_000);
     if (!installRes.ok) {
-      await logLine('WARN', `deploy npm ci --include=dev failed, falling back to npm install --include=dev: ${installRes.error}`);
-      steps.push({ step: 'npm ci --include=dev', output: `FAILED (fallback to npm install --include=dev): ${installRes.error}` });
-      installRes = await runShellCommand('npm install --include=dev', 30 * 60_000);
-      if (!installRes.ok) {
-        await logLine('ERROR', `deploy npm install --include=dev failed: ${installRes.error}`);
+      await logLine('ERROR', `deploy npm ci --include=dev failed: ${installRes.error}`);
+      await logLine('ERROR', buildAdminDeployLog({
+        action: 'deploy', route: '/api/admin/git/deploy', correlationId, actor,
+        durationMs: Date.now() - startedAt, outcome: 'error', details: { failedStep: ADMIN_DEPLOY_COMMANDS.install },
+      }));
+      routeError(ctx, 500, 'Locked dependency installation failed', { details: installRes.error, steps });
+      return;
+    }
+    steps.push({ step: ADMIN_DEPLOY_COMMANDS.install, output: summarizeCommandOutput(installRes) });
+
+    const verifyRes = await runShellCommand(ADMIN_DEPLOY_COMMANDS.verify, 45 * 60_000);
+    if (!verifyRes.ok) {
+      await logLine('ERROR', `deploy release checks failed: ${verifyRes.error}`);
+      await logLine('ERROR', buildAdminDeployLog({
+        action: 'deploy', route: '/api/admin/git/deploy', correlationId, actor,
+        durationMs: Date.now() - startedAt, outcome: 'error', details: { failedStep: ADMIN_DEPLOY_COMMANDS.verify },
+      }));
+      routeError(ctx, 500, 'Release checks failed', { details: verifyRes.error, steps });
+      return;
+    }
+    steps.push({ step: ADMIN_DEPLOY_COMMANDS.verify, output: summarizeCommandOutput(verifyRes) });
+
+    for (const deploymentStep of [
+      { command: ADMIN_DEPLOY_COMMANDS.migrate, label: 'Database migrations' },
+      { command: ADMIN_DEPLOY_COMMANDS.syncSharedConfig, label: 'Shared configuration sync' },
+    ]) {
+      const result = await runShellCommand(deploymentStep.command, 20 * 60_000);
+      if (!result.ok) {
+        await logLine('ERROR', `deploy ${deploymentStep.label} failed: ${result.error}`);
         await logLine('ERROR', buildAdminDeployLog({
-          action: 'deploy',
-          route: '/api/admin/git/deploy',
-          correlationId,
-          actor,
-          durationMs: Date.now() - startedAt,
-          outcome: 'error',
-          details: { failedStep: 'npm install --include=dev' },
+          action: 'deploy', route: '/api/admin/git/deploy', correlationId, actor,
+          durationMs: Date.now() - startedAt, outcome: 'error', details: { failedStep: deploymentStep.command },
         }));
-        routeError(ctx, 500, 'npm install failed', { details: installRes.error, steps });
+        routeError(ctx, 500, `${deploymentStep.label} failed`, { details: result.error, steps });
         return;
       }
-      steps.push({ step: 'npm install --include=dev', output: installRes.stdout.trim() || '(ok)' });
-    } else {
-      steps.push({ step: 'npm ci --include=dev', output: installRes.stdout.trim() || '(ok)' });
+      steps.push({ step: deploymentStep.command, output: summarizeCommandOutput(result) });
     }
-
-    const tscRes = await runShellCommand('npm run typecheck', 20 * 60_000);
-    if (!tscRes.ok) {
-      await logLine('ERROR', `deploy tsc failed: ${tscRes.error}`);
-      await logLine('ERROR', buildAdminDeployLog({
-        action: 'deploy',
-        route: '/api/admin/git/deploy',
-        correlationId,
-        actor,
-        durationMs: Date.now() - startedAt,
-        outcome: 'error',
-        details: { failedStep: 'npm run typecheck' },
-      }));
-      routeError(ctx, 500, 'TypeScript build failed', { details: tscRes.error, steps });
-      return;
-    }
-    steps.push({ step: 'npm run typecheck', output: tscRes.stdout.trim() || '(ok)' });
-
-    const viteRes = await runShellCommand('npm run build', 30 * 60_000);
-    if (!viteRes.ok) {
-      await logLine('ERROR', `deploy vite build failed: ${viteRes.error}`);
-      await logLine('ERROR', buildAdminDeployLog({
-        action: 'deploy',
-        route: '/api/admin/git/deploy',
-        correlationId,
-        actor,
-        durationMs: Date.now() - startedAt,
-        outcome: 'error',
-        details: { failedStep: 'npm run build' },
-      }));
-      routeError(ctx, 500, 'Vite build failed', { details: viteRes.error, steps });
-      return;
-    }
-    steps.push({ step: 'npm run build', output: viteRes.stdout.trim() || '(ok)' });
 
     const nextStatus = await getGitUpdateStatus(runGit);
     if (!nextStatus.ok) {
@@ -555,10 +562,16 @@ export const registerAdminGitRoutes = ({
       outcome: 'success',
       details: { head: nextStatus.head, branch: nextStatus.branch },
     }));
-    routeOk(ctx, { message: 'Update, build and restart scheduled', restarted: true, steps, status: nextStatus });
+    steps.push({ step: 'PM2 restart + health check', output: 'Scheduled; the admin panel will reconnect after the health check succeeds.' });
+    routeOk(ctx, {
+      message: 'Повне оновлення завершено; перезапуск і перевірку стану заплановано',
+      restarted: true,
+      steps,
+      status: nextStatus,
+    });
     setTimeout(() => {
       try {
-        spawnDetachedShell('pm2 restart ecosystem.config.cjs --update-env');
+        spawnDetachedShell(ADMIN_DEPLOY_COMMANDS.restartAndHealthCheck);
       } catch {
         process.exit(0);
       }

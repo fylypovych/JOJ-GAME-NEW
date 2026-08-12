@@ -42,8 +42,11 @@
 
 ## Deploy/Runtime
 
+- Admin “Update + build + restart” creates a local backup before changing files
+- Admin deployment runs locked install, release checks, DB migrations, and shared-config sync
 - Server process starts (`joj start`)
 - `/api/health` responds
+- `logs/admin-deploy-health.log` confirms the post-restart health check
 - Static frontend loads from deployed URL
 - PM2 services remain stable for a few minutes
 - No startup errors related to missing environment variables
