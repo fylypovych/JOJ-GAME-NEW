@@ -39,7 +39,8 @@ archive_path="${BACKUP_DIR}/joj-backup-${timestamp}.tar.gz"
 cleanup() { rm -rf -- "$work_dir"; }
 trap cleanup EXIT
 
-PGDATABASE="$DATABASE_URL" pg_dump --format=custom --file="${work_dir}/database.dump"
+JOJ_DATABASE_URL="$DATABASE_URL" \
+  node "${PROJECT_DIR}/scripts/pg-dump-from-url.cjs" "${work_dir}/database.dump"
 
 runtime_paths=()
 for candidate in database public/card-assets public/profile-image; do
