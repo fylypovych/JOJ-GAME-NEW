@@ -4,3 +4,4 @@ export { ActiveSessionSection } from './ActiveSessionSection';
 export { ProfileSection } from './ProfileSection';
 export { StatisticsSection } from './StatisticsSection';
 export { GallerySection, RulesSection } from '../sections-gallery-rules';
+export { HomeSection, DownloadsSection } from './content-sections';

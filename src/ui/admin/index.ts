@@ -24,6 +24,7 @@ export {
   AdminUsersTab,
   AdminGameConfigTab,
   AdminSystemAdminTab,
+  AdminContentPagesTab,
 } from './tabs';
 export {
   useAdminAnalytics,

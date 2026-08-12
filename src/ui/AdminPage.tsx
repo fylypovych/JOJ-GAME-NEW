@@ -29,6 +29,7 @@ import {
   AdminSimulationTab,
   AdminStateTab,
   AdminSystemAdminTab,
+  AdminContentPagesTab,
   AdminUsersTab,
   categories,
   rankResourceKeys,
@@ -60,7 +61,7 @@ import {
 const ADMIN_TAB_IDS: AdminTab[] = [
   'start', 'matches', 'deck', 'import', 'state', 'ranks', 'database',
   'analytics', 'github', 'settings', 'simulation', 'users', 'awards',
-  'bugReports', 'gameConfig', 'systemAdmin',
+  'bugReports', 'gameConfig', 'systemAdmin', 'contentPages',
 ];
 
 const adminTabFromUrl = (): AdminTab => {
@@ -624,6 +625,12 @@ export const AdminPage = ({
       short: 'SA',
       iconPath: '/admin-icons/tab-settings.svg',
     },
+    contentPages: {
+      id: 'contentPages',
+      label: activeTabLabelMap.contentPages,
+      short: 'PG',
+      iconPath: '/admin-icons/content.svg',
+    },
   };
   const activeTabLabel = activeTabLabelMap[activeTab];
   const activeTabDescriptionMap = buildActiveTabDescriptionMap(lang);
@@ -664,6 +671,7 @@ export const AdminPage = ({
               adminTabMeta.import,
               adminTabMeta.ranks,
               adminTabMeta.awards,
+              adminTabMeta.contentPages,
             ],
           },
           {
@@ -733,6 +741,7 @@ export const AdminPage = ({
               adminTabMeta.import,
               adminTabMeta.ranks,
               adminTabMeta.awards,
+              adminTabMeta.contentPages,
             ],
           },
           {
@@ -1343,6 +1352,9 @@ export const AdminPage = ({
               void deleteAdminAward();
             }}
           />
+        ) : null}
+        {activeTab === 'contentPages' ? (
+          <AdminContentPagesTab lang={lang} serverUrl={serverUrl} adminJsonFetch={adminJsonFetch} />
         ) : null}
         {activeTab === 'bugReports' ? (
           <AdminBugReportsTab

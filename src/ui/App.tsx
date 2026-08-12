@@ -22,6 +22,8 @@ import {
   AuthErrorFeature,
   BugReportFeature,
   GalleryFeature,
+  HomeFeature,
+  DownloadsFeature,
   LobbyFeature,
   PasswordResetFeature,
   ProfileFeature,
@@ -547,6 +549,10 @@ export const App = () => {
                 onVerifyAdminToken={verifyAdminToken}
               />
             ) : null}
+
+            <HomeFeature visible={!isAdminRoute && activeUserTab === 'home'} serverUrl={SERVER_URL} lang={lang} />
+
+            <DownloadsFeature visible={!isAdminRoute && activeUserTab === 'downloads'} serverUrl={SERVER_URL} lang={lang} />
 
             <LobbyFeature
               visible={!isAdminRoute && activeUserTab === 'games' && !session}

@@ -4,6 +4,7 @@ import { registerBugReportRoutes } from './routes/bug-reports';
 import { registerSharedRoutes } from './routes/shared';
 import { registerUploadRoutes } from './routes/uploads';
 import { registerUserLobbyRoutes } from './routes/user-lobby';
+import { registerContentRoutes } from './routes/content';
 import { deliverPasswordReset } from './services/user-recovery';
 import type { LogLine } from './file-logger';
 import type { RouterLike } from './routes/types';
@@ -13,6 +14,9 @@ import type { createAdminAuditLogger } from './services/admin-audit';
 import type { PostgresConnDraft } from './db/psql';
 import { buildPostgresUrlFromDraft } from './db/psql';
 import {
+  downloadMaterialsConfigPath,
+  downloadsDir,
+  newsAssetsDir,
   uploadsDir,
 } from './bootstrap-config';
 import type {
@@ -162,6 +166,20 @@ export const registerAllRoutes = (
     jsonBodyLimit,
     gameUiConfigPath,
     pool,
+  });
+
+  registerContentRoutes({
+    router,
+    pool,
+    requireAdminAuth,
+    enforceRateLimit,
+    readJsonBodySafe,
+    logLine,
+    jsonBodyLimit,
+    uploadBodyLimit: imageUploadBodyLimit,
+    newsAssetsDir,
+    downloadsDir,
+    materialsConfigPath: downloadMaterialsConfigPath,
   });
 
   registerAdminRoutes({

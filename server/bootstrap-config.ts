@@ -26,6 +26,9 @@ export const adminDbUiConfigPath = path.resolve(appRootDir, 'database', 'admin-d
 export const passwordResetHealthPath = path.resolve(appRootDir, 'database', 'password-reset-health.json');
 export const bugReportUiConfigPath = path.resolve(appRootDir, 'database', 'bug-report-ui-config.json');
 export const gameUiConfigPath = path.resolve(appRootDir, 'database', 'game-ui-config.json');
+export const newsAssetsDir = path.resolve(appRootDir, 'public', 'news-assets');
+export const downloadsDir = path.resolve(appRootDir, 'public', 'downloads');
+export const downloadMaterialsConfigPath = path.resolve(appRootDir, 'database', 'download-materials.json');
 
 export const JSON_BODY_LIMIT = 2 * 1024 * 1024;
 export const LARGE_JSON_BODY_LIMIT = 8 * 1024 * 1024;

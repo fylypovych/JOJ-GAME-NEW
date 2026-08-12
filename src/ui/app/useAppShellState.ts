@@ -8,6 +8,7 @@ import { DEFAULT_PUBLIC_TAB, getCanonicalPublicPath, getPublicTabFromPathname } 
 import {
   PLAYER_NAME_STORAGE_KEY,
   SERVER_URL_STORAGE_KEY,
+  galleryCategories,
   type GalleryCategoryFilter,
   type UserTab,
 } from './model';
@@ -47,9 +48,12 @@ export const useAppShellState = (serverUrl: string) => {
     return raw === 'dark' ? 'dark' : 'light';
   });
   const GALLERY_CATEGORY_FILTER_STORAGE_KEY = 'joj-gallery-category-filter';
-  const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>(() => (
-    (window.localStorage.getItem(GALLERY_CATEGORY_FILTER_STORAGE_KEY) as GalleryCategoryFilter | null) ?? 'ALL'
-  ));
+  const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<GalleryCategoryFilter>(() => {
+    const stored = window.localStorage.getItem(GALLERY_CATEGORY_FILTER_STORAGE_KEY) as GalleryCategoryFilter | 'ALL' | null;
+    return stored && stored !== 'ALL' && galleryCategories.includes(stored)
+      ? stored
+      : galleryCategories[0];
+  });
   useEffect(() => {
     window.localStorage.setItem(GALLERY_CATEGORY_FILTER_STORAGE_KEY, galleryCategoryFilter);
   }, [galleryCategoryFilter]);

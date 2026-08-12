@@ -1,0 +1,20 @@
+.content-page { max-width: 1320px; margin: 0 auto; padding: 32px clamp(16px, 4vw, 52px) 64px; }
+.content-page__header { padding: clamp(28px, 5vw, 64px); margin-bottom: 24px; border: 1px solid var(--border-color, #39444a); border-radius: 24px; background: linear-gradient(135deg, color-mix(in srgb, var(--surface, #182024) 92%, #315e49), var(--surface, #182024)); }
+.content-page__header h1 { margin: 8px 0 12px; font-size: clamp(2rem, 5vw, 4rem); line-height: 1; }
+.content-page__eyebrow { margin: 0; letter-spacing: .18em; font-weight: 800; color: #55c88a; }
+.news-grid, .downloads-grid { display: grid; gap: 20px; }
+.news-card, .download-card, .content-empty { overflow: hidden; border: 1px solid var(--border-color, #39444a); border-radius: 20px; background: var(--surface, #182024); box-shadow: 0 14px 40px rgb(0 0 0 / 10%); }
+.news-card { display: grid; grid-template-columns: minmax(220px, 36%) 1fr; }
+.news-card > img { width: 100%; height: 100%; min-height: 280px; object-fit: cover; }
+.news-card__body { padding: clamp(22px, 4vw, 42px); }
+.news-card__body h2, .download-card h2 { margin: 10px 0; }
+.news-card__body time { opacity: .65; font-size: .9rem; }
+.news-card__summary { font-size: 1.14rem; font-weight: 650; }
+.news-card__text { white-space: pre-line; line-height: 1.65; }
+.content-badge { display: inline-flex; padding: 5px 10px; border-radius: 999px; background: #2c7652; color: white; font-size: .78rem; font-weight: 800; text-transform: uppercase; }
+.downloads-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.download-card { display: grid; grid-template-columns: 120px 1fr; gap: 20px; padding: 20px; }
+.download-card > img, .download-card__placeholder { width: 120px; height: 160px; object-fit: cover; border-radius: 12px; background: #253238; display: grid; place-items: center; font-size: 1.5rem; font-weight: 900; }
+.download-card__meta { display: flex; gap: 12px; margin: 12px 0; opacity: .7; }
+.content-empty { padding: 44px; text-align: center; }
+@media (max-width: 720px) { .news-card { grid-template-columns: 1fr; } .news-card > img { max-height: 280px; } .download-card { grid-template-columns: 84px 1fr; } .download-card > img, .download-card__placeholder { width: 84px; height: 112px; } }

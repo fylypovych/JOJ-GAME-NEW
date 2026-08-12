@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { CARD_ASSET_BASE_PATH, normalizeImagePath } from '../../game/imagePaths';
 import { cardFlavor, cardTitleWithOverride, categoryLabel, text } from '../i18n';
 import type { Language } from '../i18n';
@@ -6,6 +6,9 @@ import type { GalleryCategoryFilter } from './model';
 import { useGallery } from '../providers/GalleryContext';
 
 type T = ReturnType<typeof text>;
+
+const GALLERY_EAGER_IMAGE_COUNT = 12;
+const GALLERY_HIGH_PRIORITY_IMAGE_COUNT = 4;
 
 type GallerySectionProps = {
   t: T;
@@ -32,33 +35,14 @@ export const GallerySection = ({
   const togglePreview = (key: string) =>
     setOpenPreviewKey((prev) => (prev === key ? null : key));
 
-  // Preload images for current category
   useEffect(() => {
-    const imagesToPreload = galleryCards.map((card) =>
-      normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`
-    );
-    
-    // Preload first 10 images immediately, then the rest
-    const immediatePreload = imagesToPreload.slice(0, 10);
-    const deferredPreload = imagesToPreload.slice(10);
-    
-    immediatePreload.forEach((src) => {
-      const img = new Image();
-      img.src = src;
-    });
-    
-    // Defer remaining images to avoid blocking
-    if (deferredPreload.length > 0) {
-      const timeoutId = setTimeout(() => {
-        deferredPreload.forEach((src) => {
-          const img = new Image();
-          img.src = src;
-        });
-      }, 100);
-      
-      return () => clearTimeout(timeoutId);
+    if (
+      availableGalleryCategories.length > 0
+      && !availableGalleryCategories.includes(galleryCategoryFilter)
+    ) {
+      setGalleryCategoryFilter(availableGalleryCategories[0]);
     }
-  }, [galleryCards]);
+  }, [availableGalleryCategories, galleryCategoryFilter, setGalleryCategoryFilter]);
 
   return (
     <section
@@ -72,13 +56,6 @@ export const GallerySection = ({
         className="gallery-category-tabs"
         style={{ position: 'sticky', top: 0, zIndex: 10, background: 'inherit', padding: '8px 0' }}
       >
-        <button
-          type="button"
-          onClick={() => setGalleryCategoryFilter('ALL')}
-          disabled={galleryCategoryFilter === 'ALL'}
-        >
-          {t.allCategories}
-        </button>
         {availableGalleryCategories.map((cat) => (
           <button
             type="button"
@@ -92,7 +69,7 @@ export const GallerySection = ({
       </nav>
       {galleryCards.length === 0 ? <p>{t.noCardsYet}</p> : null}
       <div className="gallery-grid">
-        {galleryCards.map((card) => {
+        {galleryCards.map((card, index) => {
           const previewKey = `gallery-${card.id}`;
           const isOpen = openPreviewKey === previewKey;
           return (
@@ -115,7 +92,8 @@ export const GallerySection = ({
                 <img
                   src={normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`}
                   alt={cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}
-                  loading="lazy"
+                  loading={index < GALLERY_EAGER_IMAGE_COUNT ? 'eager' : 'lazy'}
+                  fetchPriority={index < GALLERY_HIGH_PRIORITY_IMAGE_COUNT ? 'high' : 'auto'}
                   decoding="async"
                   onError={(e) => {
                     const img = e.currentTarget as HTMLImageElement;
@@ -127,27 +105,28 @@ export const GallerySection = ({
                     }
                   }}
                 />
-                <div
-                  className={`gallery-card-popover${isOpen ? ' is-open' : ''}`}
-                  aria-hidden={!isOpen}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenPreviewKey(null);
-                  }}
-                >
-                  <img
-                    src={normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`}
-                    alt={cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}
-                    decoding="async"
-                    onError={(e) => {
-                      const img = e.currentTarget as HTMLImageElement;
-                      const fallbackSrc = `${CARD_ASSET_BASE_PATH}${card.id}.png`;
-                      if (img.src !== fallbackSrc && img.src !== window.location.origin + fallbackSrc) {
-                        img.src = fallbackSrc;
-                      }
+                {isOpen ? (
+                  <div
+                    className="gallery-card-popover is-open"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenPreviewKey(null);
                     }}
-                  />
-                </div>
+                  >
+                    <img
+                      src={normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`}
+                      alt={cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}
+                      decoding="async"
+                      onError={(e) => {
+                        const img = e.currentTarget as HTMLImageElement;
+                        const fallbackSrc = `${CARD_ASSET_BASE_PATH}${card.id}.png`;
+                        if (img.src !== fallbackSrc && img.src !== window.location.origin + fallbackSrc) {
+                          img.src = fallbackSrc;
+                        }
+                      }}
+                    />
+                  </div>
+                ) : null}
               </div>
               <h3>{cardTitleWithOverride(card.id, card.title, lang, card.titleEn)}</h3>
               <p>{cardFlavor(card.flavor, lang, card.flavorEn)}</p>

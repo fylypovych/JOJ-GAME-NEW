@@ -43,8 +43,10 @@ const PRODUCTION_PUBLISH_CONFIG_PATHS = new Set([
   'database/shared-deck-template.json',
   'database/shared-ranks.json',
   'database/simulation-baselines.json',
+  'database/download-materials.json',
 ]);
 const PRODUCTION_PUBLISH_ASSET_PATTERN = /^public\/(?:card-assets|profile-image)\/.+\.(?:avif|gif|jpe?g|png|webp)$/i;
+const PRODUCTION_DOWNLOAD_PATTERN = /^public\/downloads\/.+\.(?:pdf|zip|avif|gif|jpe?g|png|webp)$/i;
 
 const normalizeGitPath = (filePath: string) => String(filePath ?? '')
   .trim()
@@ -54,7 +56,8 @@ const normalizeGitPath = (filePath: string) => String(filePath ?? '')
 export const isProductionPublishPath = (filePath: string): boolean => {
   const normalized = normalizeGitPath(filePath);
   return PRODUCTION_PUBLISH_CONFIG_PATHS.has(normalized)
-    || PRODUCTION_PUBLISH_ASSET_PATTERN.test(normalized);
+    || PRODUCTION_PUBLISH_ASSET_PATTERN.test(normalized)
+    || PRODUCTION_DOWNLOAD_PATTERN.test(normalized);
 };
 
 export const classifyProductionPublishFiles = (files: string[]) => {

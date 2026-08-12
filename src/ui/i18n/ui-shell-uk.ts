@@ -20,6 +20,8 @@ export const uiShellUk = {
   adminAuthChecking: 'Перевірка...',
   adminUnauthorized: 'Невірний токен або доступ заборонено',
   userTabGames: 'Ігри',
+  userTabHome: 'Головна',
+  userTabDownloads: 'Завантажити',
   userTabGallery: 'Галерея карт',
   userTabRules: 'Правила гри',
   userTabProfile: 'Профіль',

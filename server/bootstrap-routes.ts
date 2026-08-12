@@ -6,6 +6,7 @@ import { registerAdminRoutes } from './routes/admin';
 import { registerBugReportRoutes } from './routes/bug-reports';
 import { registerSharedRoutes } from './routes/shared';
 import { registerUploadRoutes } from './routes/uploads';
+import { registerContentRoutes } from './routes/content';
 import {
   autoStashRuntimeNoise,
   createCommandRunners,
@@ -23,6 +24,9 @@ import {
   IMAGE_UPLOAD_BODY_LIMIT,
   uploadsDir,
   bugReportUiConfigPath,
+  newsAssetsDir,
+  downloadsDir,
+  downloadMaterialsConfigPath,
 } from './bootstrap-config';
 
 export type RouteBootstrapDeps = {
@@ -103,6 +107,20 @@ export const bootstrapRoutes = async (deps: RouteBootstrapDeps) => {
     jsonBodyLimit: JSON_BODY_LIMIT,
     gameUiConfigPath,
     pool,
+  });
+
+  registerContentRoutes({
+    router,
+    pool,
+    requireAdminAuth,
+    enforceRateLimit,
+    readJsonBodySafe,
+    logLine,
+    jsonBodyLimit: JSON_BODY_LIMIT,
+    uploadBodyLimit: IMAGE_UPLOAD_BODY_LIMIT,
+    newsAssetsDir,
+    downloadsDir,
+    materialsConfigPath: downloadMaterialsConfigPath,
   });
 
   registerAdminRoutes({

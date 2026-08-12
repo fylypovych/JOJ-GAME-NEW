@@ -63,6 +63,8 @@ import {
   repoDir,
   requestedSharedConfigStorageMode,
   uploadsDir,
+  newsAssetsDir,
+  downloadsDir,
 } from './bootstrap-config';
 
 
@@ -255,7 +257,7 @@ void (async () => {
         dbSchemaPath,
         devRestartTouchPath,
         backupRootDir: repoDir,
-        backupAssetDirs: [uploadsDir],
+        backupAssetDirs: [uploadsDir, newsAssetsDir, downloadsDir],
       },
       {
         userStore,

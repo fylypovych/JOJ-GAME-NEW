@@ -55,9 +55,6 @@ export const useGalleryData = (args: UseGalleryDataArgs): UseGalleryDataResult =
         if (galleryCategoryFilter === 'RANK') {
           return rankCardIds.has(card.id);
         }
-        if (galleryCategoryFilter === 'ALL') {
-          return true;
-        }
         return card.category === galleryCategoryFilter && !rankCardIds.has(card.id);
       })
       .sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));

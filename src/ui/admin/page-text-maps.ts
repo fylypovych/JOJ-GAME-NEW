@@ -17,6 +17,7 @@ type TabTextShape = {
   tabBugReports: string;
   tabGameConfig: string;
   tabSystemAdmin: string;
+  tabContentPages: string;
 };
 
 export const buildAdminTabLabelMap = (
@@ -38,6 +39,7 @@ export const buildAdminTabLabelMap = (
   bugReports: t.tabBugReports,
   gameConfig: t.tabGameConfig,
   systemAdmin: t.tabSystemAdmin,
+  contentPages: t.tabContentPages,
 });
 
 export const buildActiveTabDescriptionMap = (
@@ -67,6 +69,7 @@ export const buildActiveTabDescriptionMap = (
           'Налаштування гри: URL сервера, іконки, ресурси та параметри ботів.',
         systemAdmin:
           'Системні операції: assets, регенерація зображень, перезапуск сервера.',
+        contentPages: 'Редактор головної сторінки, новин і матеріалів для завантаження.',
       }
     : {
         start:
@@ -87,5 +90,6 @@ export const buildActiveTabDescriptionMap = (
         simulation: 'Balance simulations, run progress and result summaries.',
         gameConfig: 'Game configuration: server URL, icons, resources and bot settings.',
         systemAdmin: 'System operations: assets, image regeneration, server restart.',
+        contentPages: 'Home page news and printable download materials.',
       };
 

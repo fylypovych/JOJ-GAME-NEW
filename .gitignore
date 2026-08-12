@@ -1,4 +1,5 @@
 node_modules
+/public/news-assets/
 dist
 coverage
 # Local environment files may contain database passwords and API tokens.

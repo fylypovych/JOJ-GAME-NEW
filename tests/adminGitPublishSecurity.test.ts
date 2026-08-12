@@ -8,6 +8,7 @@ import {
 
 test('production publish allows only reviewed content configuration files', () => {
   assert.equal(isProductionPublishPath('database/shared-deck-template.json'), true);
+  assert.equal(isProductionPublishPath('database/download-materials.json'), true);
   assert.equal(isProductionPublishPath('database/shared-ranks.json'), true);
   assert.equal(isProductionPublishPath('database/game-ui-config.json'), true);
   assert.equal(isProductionPublishPath('database/simulation-baselines.json'), true);
@@ -49,4 +50,11 @@ test('production publish classification keeps excluded files out of the commit',
     'package-lock.json',
     'backup/joj-backup-20260811T120000Z.tar.gz',
   ]);
+});
+
+test('production publish accepts printable materials but never local news assets', () => {
+  assert.equal(isProductionPublishPath('public/downloads/rules.pdf'), true);
+  assert.equal(isProductionPublishPath('public/downloads/print-pack.zip'), true);
+  assert.equal(isProductionPublishPath('public/news-assets/announcement.webp'), false);
+  assert.equal(isProductionPublishPath('public/downloads/install.js'), false);
 });

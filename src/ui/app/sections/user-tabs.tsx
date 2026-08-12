@@ -48,9 +48,11 @@ export const UserTabs = ({ t, activeUserTab, setActiveUserTab, uiVariant = 'v2' 
   };
 
   const tabs = [
+    { id: 'home', label: t.userTabHome, path: getPublicTabPath('home') },
     { id: 'games', label: t.userTabGames, path: getPublicTabPath('games') },
     { id: 'gallery', label: t.userTabGallery, path: getPublicTabPath('gallery') },
     { id: 'rules', label: t.userTabRules, path: getPublicTabPath('rules') },
+    { id: 'downloads', label: t.userTabDownloads, path: getPublicTabPath('downloads') },
     { id: 'profile', label: t.userTabProfile, path: getPublicTabPath('profile') },
     { id: 'statistics', label: t.userTabStatistics, path: getPublicTabPath('statistics') },
   ] as const;

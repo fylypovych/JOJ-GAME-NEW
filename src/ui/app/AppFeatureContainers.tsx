@@ -10,11 +10,19 @@ import { PasswordResetSection } from './sections/password-reset-section';
 import { RegisterSection } from './sections/register-section';
 import {
   GallerySection,
+  HomeSection,
+  DownloadsSection,
   LobbySection,
   ProfileSection,
   RulesSection,
   StatisticsSection,
 } from './sections/index';
+
+export const HomeFeature = ({ visible, ...props }: { visible: boolean } & ComponentProps<typeof HomeSection>) =>
+  visible ? <HomeSection {...props} /> : null;
+
+export const DownloadsFeature = ({ visible, ...props }: { visible: boolean } & ComponentProps<typeof DownloadsSection>) =>
+  visible ? <DownloadsSection {...props} /> : null;
 
 type LobbyFeatureProps = {
   visible: boolean;

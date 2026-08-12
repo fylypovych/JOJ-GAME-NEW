@@ -20,6 +20,8 @@ export const uiShellEn = {
   adminAuthChecking: 'Checking...',
   adminUnauthorized: 'Invalid token or access denied',
   userTabGames: 'Games',
+  userTabHome: 'Home',
+  userTabDownloads: 'Downloads',
   userTabGallery: 'Cards',
   userTabRules: 'Game rules',
   userTabProfile: 'Profile',

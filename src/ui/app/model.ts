@@ -99,8 +99,8 @@ export type Session = {
   spectator?: boolean;
 };
 
-export type UserTab = 'games' | 'gallery' | 'rules' | 'profile' | 'statistics';
-export type GalleryCategoryFilter = CardDefinition['category'] | 'RANK' | 'ALL';
+export type UserTab = 'home' | 'games' | 'gallery' | 'rules' | 'downloads' | 'profile' | 'statistics';
+export type GalleryCategoryFilter = CardDefinition['category'] | 'RANK';
 
 export const galleryCategories: GalleryCategoryFilter[] = [
   'LYAP',
