@@ -3,9 +3,9 @@
 ## Pre-deploy
 
 - `git status` is clean (or expected changes only)
-- `npm install` completed successfully
-- `npx --no-install tsc -b` passes
-- `npm run build` passes
+- `npm ci` completed successfully
+- `npm run check:release` passes
+- `npm audit --omit=dev` reports no production vulnerabilities
 - `.env` is configured with required production variables:
   - `DATABASE_URL` is set
   - `FRONTEND_ORIGIN` is set
@@ -25,6 +25,7 @@
 - Match snapshot panel loads for an active match
 - `Database` tab loads and DB connection test works (if `STORAGE_MODE=postgres`)
 - User management works (create, update, role assignment, password reset)
+- Content studio saves and publishes news, downloads, and rules
 
 ## Game Smoke Test
 
@@ -35,6 +36,7 @@
 - Board renders for all participants
 - Basic card play / end turn flow works
 - Gallery (`/cards` or `/gallery`) loads and displays cards
+- News, downloads, and editable rules pages render in light and dark themes
 - Awards (`/awards`) loads (if implemented)
 - Profile (`/profile`) loads and displays user info
 

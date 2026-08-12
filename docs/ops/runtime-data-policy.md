@@ -12,6 +12,7 @@
 - `game-ui-config.json`
 - `bug-report-ui-config.json`
 - `admin-db-ui-config.json`
+- `download-materials.json`
 
 Правила:
 

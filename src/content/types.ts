@@ -15,6 +15,18 @@ export type ProjectNews = {
   updatedAt: string;
 };
 
+export type ProjectPage = {
+  key: 'rules';
+  title: string;
+  titleEn: string;
+  summary: string;
+  summaryEn: string;
+  body: string;
+  bodyEn: string;
+  status: 'draft' | 'published';
+  updatedAt: string;
+};
+
 export type DownloadMaterial = {
   id: string;
   title: string;

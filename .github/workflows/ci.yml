@@ -1,0 +1,31 @@
+name: Release checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check:release
+      - run: npm audit --omit=dev
+      - name: Validate production shell scripts
+        run: |
+          bash -n scripts/install-ubuntu.sh
+          bash -n scripts/backup-production.sh
+          bash -n scripts/db-cutover-check.sh

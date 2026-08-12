@@ -17,11 +17,23 @@ const sharedRanks = Array.isArray(sharedRanksJson)
     : [];
 
 const readAssetNames = async () => {
-  const entries = await readdir(assetDir, { withFileTypes: true });
-  return entries
-    .filter((entry) => entry.isFile() && entry.name !== '.gitkeep')
-    .map((entry) => entry.name)
-    .sort();
+  const names: string[] = [];
+  const visit = async (directory: string, relativeDirectory = '') => {
+    const entries = await readdir(directory, { withFileTypes: true });
+    for (const entry of entries) {
+      const relativeName = relativeDirectory
+        ? path.posix.join(relativeDirectory, entry.name)
+        : entry.name;
+      if (entry.isDirectory()) {
+        await visit(path.join(directory, entry.name), relativeName);
+      } else if (entry.isFile() && entry.name !== '.gitkeep') {
+        names.push(relativeName);
+      }
+    }
+  };
+
+  await visit(assetDir);
+  return names.sort();
 };
 
 const collectAssetRefs = () => {
@@ -54,7 +66,7 @@ const collectAssetRefs = () => {
 
 const assetNames = await readAssetNames();
 const nonCanonical = assetNames.filter(
-  (name) => !canonicalAssetNameRe.test(name),
+  (name) => !canonicalAssetNameRe.test(path.posix.basename(name)),
 );
 if (nonCanonical.length > 0) {
   throw new Error(

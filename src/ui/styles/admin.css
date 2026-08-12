@@ -4620,6 +4620,7 @@ pre.admin-github-log-viewer {
 .admin-editor-list > button { text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 12px; }
 .admin-editor-list > button.is-active { outline: 2px solid var(--accent, #4f8cff); }
 .admin-editor-list small { opacity: .65; }
+.admin-editor-layout-single .admin-editor-list { padding: 16px; border: 1px solid var(--admin-border); border-radius: 14px; background: var(--admin-card-bg); }
 .admin-editor-form { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .admin-editor-form label { display: flex; flex-direction: column; gap: 6px; font-weight: 700; }
 .admin-editor-form input:not([type="checkbox"]), .admin-editor-form textarea { width: 100%; box-sizing: border-box; }

@@ -7,6 +7,7 @@ const matchesDir = path.join(databaseDir, 'matches');
 const topLevelAllowlist = new Set([
   'admin-db-ui-config.json',
   'bug-report-ui-config.json',
+  'download-materials.json',
   'game-ui-config.json',
   'shared-deck-template.json',
   'shared-ranks.json',

@@ -252,8 +252,8 @@ EOF
   log 'Installing locked dependencies...'
   run_as_app bash -lc 'cd "$1" && npm ci --include=dev' bash "$PROJECT_DIR"
 
-  log 'Running type checks, tests and production build...'
-  run_as_app bash -lc 'cd "$1" && npm run typecheck && npm test && npm run build' bash "$PROJECT_DIR"
+  log 'Running the complete release checks...'
+  run_as_app bash -lc 'cd "$1" && npm run check:release' bash "$PROJECT_DIR"
 
   log 'Applying database migrations without reseeding production content...'
   run_as_app bash -lc 'cd "$1" && npm run db:migrate && npm run sync:shared-config-db' bash "$PROJECT_DIR"
@@ -460,7 +460,7 @@ log 'Testing database and applying schema...'
 PGPASSWORD="$DB_PASSWORD" PGSSLMODE="$DB_SSLMODE" psql --host="$DB_HOST" --port="$DB_PORT" --username="$DB_USER" --dbname="$DB_NAME" --set ON_ERROR_STOP=1 --file="${PROJECT_DIR}/db/schema/db.sql"
 
 log 'Installing dependencies and building...'
-run_as_app bash -lc 'cd "$1" && npm ci && npm run typecheck && npm test && npm run build' bash "$PROJECT_DIR"
+run_as_app bash -lc 'cd "$1" && npm ci && npm run check:release' bash "$PROJECT_DIR"
 run_as_app bash -lc 'cd "$1" && npm run db:migrate' bash "$PROJECT_DIR"
 run_as_app bash -lc 'cd "$1" && npm run sync:shared-config-db' bash "$PROJECT_DIR"
 
