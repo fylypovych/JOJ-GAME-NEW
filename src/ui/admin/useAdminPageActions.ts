@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { buildAdminHeaders } from './authHeaders';
 import { uploadAdminImageDataUrl } from './imageUpload';
 
@@ -28,7 +28,7 @@ export const useAdminPageActions = (args: {
   const [stopGameError, setStopGameError] = useState('');
   const [stopGameStatus, setStopGameStatus] = useState('');
 
-  const adminHeaders = () => buildAdminHeaders();
+  const adminHeaders = useCallback(() => buildAdminHeaders(), []);
 
   useEffect(() => {
     setStopGameError('');

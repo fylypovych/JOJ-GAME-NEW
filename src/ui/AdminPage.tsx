@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DeckTarget } from '../game/jojGame';
 import {
   SHARED_TEMPLATE_SCHEMA_KIND,
@@ -275,15 +275,18 @@ export const AdminPage = ({
     stateStopGameFailed: t.stateStopGameFailed,
     stateStopGameSuccess: t.stateStopGameSuccess,
   });
-  const adminJsonFetch = (url: string, init?: RequestInit) =>
-    fetch(url, {
-      ...init,
-      credentials: 'include',
-      headers: {
-        ...adminHeaders(),
-        ...(init?.headers ?? {}),
-      },
-    });
+  const adminJsonFetch = useCallback(
+    (url: string, init?: RequestInit) =>
+      fetch(url, {
+        ...init,
+        credentials: 'include',
+        headers: {
+          ...adminHeaders(),
+          ...(init?.headers ?? {}),
+        },
+      }),
+    [adminHeaders],
+  );
   const {
     adminUsers,
     adminUsersLoading,
