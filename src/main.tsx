@@ -12,7 +12,8 @@ if (
   window.location.href = window.location.href.replace('http:', 'https:');
 }
 
-// Register Service Worker for image caching
+// Keep a lightweight service worker only to remove caches created by older
+// releases. Application documents, bundles and API requests use the network.
 if ('serviceWorker' in navigator) {
   const isHttpsOrLocalhost =
     window.location.protocol === 'https:' ||
@@ -21,9 +22,24 @@ if ('serviceWorker' in navigator) {
 
   if (isHttpsOrLocalhost) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(() => {
-        // Service Worker registration failed silently - image caching will not work
+      let reloadingForNewWorker = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloadingForNewWorker) return;
+        reloadingForNewWorker = true;
+        window.location.reload();
       });
+
+      void navigator.serviceWorker
+        .register('/sw.js', { updateViaCache: 'none' })
+        .then(async (registration) => {
+          await registration.update();
+          const worker =
+            registration.active ?? navigator.serviceWorker.controller;
+          worker?.postMessage({ type: 'CLEAR_JOJ_CACHES' });
+        })
+        .catch(() => {
+          // A service worker is an optional cache-cleanup enhancement.
+        });
     });
   }
 }

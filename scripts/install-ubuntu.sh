@@ -484,6 +484,10 @@ ${DOMAIN} {
   @backend path /api/* /socket.io/*
   reverse_proxy @backend 127.0.0.1:8000
   reverse_proxy 127.0.0.1:4173
+  @app_shell path / /index.html /sw.js
+  header @app_shell Cache-Control "no-cache, no-store, must-revalidate"
+  @versioned_assets path /assets/*
+  header @versioned_assets Cache-Control "public, max-age=31536000, immutable"
   header {
     X-Content-Type-Options nosniff
     Referrer-Policy strict-origin-when-cross-origin
