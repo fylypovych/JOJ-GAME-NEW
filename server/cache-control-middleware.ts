@@ -29,7 +29,7 @@ export const createCacheControlMiddleware = () => {
     }
 
     // Cache uploaded avatars for 1 year
-    if (path.startsWith('/profile-image/')) {
+    if (path.startsWith('/profile-image/') || path.startsWith('/api/profile/avatar/')) {
       if (typeof ctx.set === 'function') {
         ctx.set('Cache-Control', 'public, max-age=31536000, immutable');
       }

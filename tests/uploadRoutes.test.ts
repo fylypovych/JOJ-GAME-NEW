@@ -81,7 +81,7 @@ test('avatar upload creates a new immutable URL and persists it to the user prof
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'joj-avatar-upload-'));
   const uploadsDir = path.join(rootDir, 'card-assets');
   await mkdir(uploadsDir, { recursive: true });
-  const { router, postHandlers } = makeRouter();
+  const { router, getHandlers, postHandlers } = makeRouter();
   const user: UserRecord = {
     id: 'user-123',
     username: 'avatar-user',
@@ -142,10 +142,17 @@ test('avatar upload creates a new immutable URL and persists it to the user prof
   const firstPath = await uploadOnce();
   const secondPath = await uploadOnce();
 
-  assert.match(firstPath, /^\/profile-image\/avatar-user-123-\d+\.png$/);
-  assert.match(secondPath, /^\/profile-image\/avatar-user-123-\d+(?:-\d+)?\.png$/);
+  assert.match(firstPath, /^\/api\/profile\/avatar\/avatar-user-123-\d+\.png$/);
+  assert.match(secondPath, /^\/api\/profile\/avatar\/avatar-user-123-\d+(?:-\d+)?\.png$/);
   assert.notEqual(secondPath, firstPath);
   assert.deepEqual(persistedPaths, [firstPath, secondPath]);
+
+  const serveHandler = getHandlers.get('/api/profile/avatar/:fileName');
+  assert.ok(serveHandler);
+  const serveCtx = { params: { fileName: path.basename(secondPath) } } as RouteCtx;
+  await serveHandler?.(serveCtx);
+  assert.equal(Buffer.isBuffer(serveCtx.body), true);
+  assert.equal((serveCtx.body as Buffer).toString('utf8'), 'hello');
 });
 
 test('delete-card-image rejects paths outside /card-assets', async () => {

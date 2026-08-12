@@ -62,7 +62,10 @@ export const registerUploadRoutes = ({
   auditAdminAction,
 }: UploadRoutesDeps) => {
   const CARD_ASSET_BASE_PATH = '/public/card-assets/';
-  const AVATAR_ASSET_BASE_PATH = '/profile-image/';
+  // Avatar files are served through /api so the production Caddy routing sends
+  // requests to the backend immediately after upload. The legacy routes below
+  // remain available for profiles saved before this change.
+  const AVATAR_ASSET_BASE_PATH = '/api/profile/avatar/';
   const avatarUploadsDir = path.resolve(uploadsDir, '..', 'profile-image');
   const systemIconsDir = path.resolve(uploadsDir, '..', 'sys.icons');
   const isCardAssetPath = (value: string) => value.startsWith('/card-assets/') || value.startsWith('/cards/') || value.startsWith('/public/card-assets/');
@@ -279,6 +282,7 @@ export const registerUploadRoutes = ({
 
   router.get('/profile-image/:fileName', serveAvatarFile);
   router.get('/public/profile-image/:fileName', serveAvatarFile);
+  router.get('/api/profile/avatar/:fileName', serveAvatarFile);
 
   router.post('/api/upload-card-image', async (ctx: RouteCtx) => {
     if (!(await requireAdminWriteAccess(ctx, '/api/upload-card-image'))) return;
