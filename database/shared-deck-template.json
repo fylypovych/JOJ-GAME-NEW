@@ -6,7 +6,7 @@
       "id": "vvnz-01",
       "title": "Національний університет оборони України імені Івана Черняховського",
       "category": "VVNZ",
-      "image": "/card-assets/2026.VVNZ.MODULE/card-1772973622889.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973622889.webp",
       "grantRank": "junior_lieutenant",
       "effects": [
         {
@@ -24,7 +24,7 @@
       "id": "vvnz-02",
       "title": "Харківський національний університет Повітряних Сил імені Івана Кожедуба",
       "category": "VVNZ",
-      "image": "/card-assets/2026.VVNZ.MODULE/card-1772973634847.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973634847.webp",
       "grantRank": "junior_lieutenant",
       "effects": [
         {
@@ -42,7 +42,7 @@
       "id": "vvnz-03",
       "title": "Національна академія сухопутних військ імені гетьмана Петра Сагайдачного",
       "category": "VVNZ",
-      "image": "/card-assets/2026.VVNZ.MODULE/card-1772973647835.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973647835.webp",
       "grantRank": "junior_lieutenant",
       "effects": [
         {
@@ -60,7 +60,7 @@
       "id": "vvnz-04",
       "title": "Військова академія (м. Одеса)",
       "category": "VVNZ",
-      "image": "/card-assets/2026.VVNZ.MODULE/card-1772973666914.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973666914.webp",
       "grantRank": "junior_lieutenant",
       "effects": [
         {
@@ -78,7 +78,7 @@
       "id": "vvnz-05",
       "title": "Національна академія Національної гвардії України",
       "category": "VVNZ",
-      "image": "/card-assets/2026.VVNZ.MODULE/card-1772973685587.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973685587.webp",
       "grantRank": "senior_master_sergeant",
       "effects": [
         {
@@ -96,7 +96,7 @@
       "id": "vvnz-06",
       "title": "Академія Державної прикордонної служби України імені Богдана Хмельницького",
       "category": "VVNZ",
-      "image": "/card-assets/2026.VVNZ.MODULE/card-1772973710288.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973710288.webp",
       "grantRank": "senior_master_sergeant",
       "effects": [
         {
@@ -114,7 +114,7 @@
       "id": "vvnz-07",
       "title": "Військовий інститут Київського національного університету імені Тараса Шевченка",
       "category": "VVNZ",
-      "image": "/card-assets/2026.VVNZ.MODULE/card-1772973756861.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973756861.webp",
       "grantRank": "senior_master_sergeant",
       "effects": [
         {
@@ -132,7 +132,7 @@
       "id": "vvnz-08",
       "title": "Військовий інститут телекомунікацій та інформатизації імені Героїв Крут",
       "category": "VVNZ",
-      "image": "/card-assets/2026.VVNZ.MODULE/card-1772973769756.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973769756.webp",
       "grantRank": "senior_master_sergeant",
       "effects": [
         {
@@ -150,7 +150,7 @@
       "id": "vvnz-09",
       "title": "Інститут Військово-Морських Сил Національного університету «Одеська морська академія»",
       "category": "VVNZ",
-      "image": "/card-assets/2026.VVNZ.MODULE/card-1772973780615.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973780615.webp",
       "grantRank": "senior_sergeant",
       "effects": [
         {
@@ -168,7 +168,7 @@
       "id": "vvnz-10",
       "title": "Житомирський військовий інститут імені С. П. Корольова",
       "category": "VVNZ",
-      "image": "/card-assets/2026.VVNZ.MODULE/card-1772973792599.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973792599.webp",
       "grantRank": "senior_sergeant",
       "effects": [
         {
@@ -186,7 +186,7 @@
       "id": "vvnz-11",
       "title": "Харківський військовий коледж сержантського складу Повітряних Сил",
       "category": "VVNZ",
-      "image": "/card-assets/2026.VVNZ.MODULE/card-1772973804362.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973804362.webp",
       "grantRank": "senior_sergeant",
       "effects": [
         {
@@ -204,7 +204,7 @@
       "id": "vvnz-12",
       "title": "Київський військовий ліцей імені Івана Богуна",
       "category": "VVNZ",
-      "image": "/card-assets/2026.VVNZ.MODULE/card-1772973817479.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973817479.webp",
       "grantRank": "senior_sergeant",
       "effects": [
         {
@@ -222,7 +222,7 @@
       "id": "legendary-15",
       "title": "SLON.FM",
       "category": "LEGENDARY",
-      "image": "/card-assets/card-1772961436932.webp",
+      "image": "/api/card-assets/card-1772961436932.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -243,7 +243,7 @@
       "id": "scandal-01",
       "title": "Яйця по 17 гривень",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614354252.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614354252.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -260,7 +260,7 @@
       "id": "scandal-02",
       "title": "Куртки Резнікова",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614366040.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614366040.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -277,7 +277,7 @@
       "id": "scandal-03",
       "title": "Дрони по завищеній ціні",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614378587.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614378587.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -294,7 +294,7 @@
       "id": "scandal-04",
       "title": "Пропажа пального",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614390190.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614390190.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -307,7 +307,7 @@
       "id": "scandal-05",
       "title": "Закупівля підписів на тендер",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614425063.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614425063.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -324,7 +324,7 @@
       "id": "scandal-06",
       "title": "Пропажа дронів",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614439747.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614439747.webp",
       "effects": [
         {
           "resource": "tech",
@@ -337,7 +337,7 @@
       "id": "scandal-07",
       "title": "Списання бронежилетів як витратних",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614451008.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614451008.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -354,7 +354,7 @@
       "id": "scandal-08",
       "title": "Паперовий аудит без документів",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614500039.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614500039.webp",
       "effects": [
         {
           "resource": "time",
@@ -371,7 +371,7 @@
       "id": "scandal-09",
       "title": "Відео з полігону",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614508047.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614508047.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -384,7 +384,7 @@
       "id": "scandal-10",
       "title": "Витік наказів у пресу",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771615063474.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771615063474.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -401,7 +401,7 @@
       "id": "scandal-11",
       "title": "Зникнення гуманітарки",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614820343.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614820343.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -418,7 +418,7 @@
       "id": "scandal-12",
       "title": "Підроблені рапорти",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614939024.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614939024.webp",
       "effects": [
         {
           "resource": "documents",
@@ -431,7 +431,7 @@
       "id": "scandal-13",
       "title": "Бюджет на ремонт даху",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614949216.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614949216.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -448,7 +448,7 @@
       "id": "scandal-14",
       "title": "Викриття корупційної схеми",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771615029111.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771615029111.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -465,7 +465,7 @@
       "id": "scandal-15",
       "title": "Тушонка",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614982549.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614982549.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -482,7 +482,7 @@
       "id": "scandal-16",
       "title": "Колаборант",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771615017418.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771615017418.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -503,7 +503,7 @@
       "id": "scandal-17",
       "title": "Полковник із ОТУ",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1772952038855.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772952038855.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -515,7 +515,7 @@
       "id": "scandal-18",
       "title": "ВЛК",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1772956066783.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772956066783.webp",
       "effects": [
         {
           "resource": "time",
@@ -532,7 +532,7 @@
       "id": "scandal-19",
       "title": "гИометрія",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1772956549834.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772956549834.webp",
       "effects": [
         {
           "resource": "time",
@@ -549,7 +549,7 @@
       "id": "scandal-20",
       "title": "Службове розслідування",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1772956616687.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772956616687.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -566,7 +566,7 @@
       "id": "support-01",
       "title": "Моральна підтримка",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/support-01.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/support-01.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -579,7 +579,7 @@
       "id": "support-02",
       "title": "Кавопауза",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/support-02.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/support-02.webp",
       "effects": [
         {
           "resource": "time",
@@ -596,7 +596,7 @@
       "id": "support-03",
       "title": "Психологічний тренінг",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/support-03.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/support-03.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -613,7 +613,7 @@
       "id": "support-04",
       "title": "Виховна година",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714564147.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714564147.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -626,7 +626,7 @@
       "id": "support-05",
       "title": "Спільна вечеря",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714604953.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714604953.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -643,7 +643,7 @@
       "id": "support-06",
       "title": "Лікарська довідка",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714633584.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714633584.webp",
       "effects": [
         {
           "resource": "documents",
@@ -656,7 +656,7 @@
       "id": "support-07",
       "title": "Підміна чергового",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714671936.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714671936.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -669,7 +669,7 @@
       "id": "support-08",
       "title": "Бойове братерство",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714689637.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714689637.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -686,7 +686,7 @@
       "id": "support-09",
       "title": "Військовий капелан",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714707997.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714707997.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -699,7 +699,7 @@
       "id": "support-10",
       "title": "Порада від старшини",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714722903.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714722903.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -712,7 +712,7 @@
       "id": "support-11",
       "title": "Відновлення документів",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714742579.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714742579.webp",
       "effects": [
         {
           "resource": "documents",
@@ -725,7 +725,7 @@
       "id": "support-12",
       "title": "Сміх у строю",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715218332.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715218332.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -738,7 +738,7 @@
       "id": "support-13",
       "title": "Психологічна розрядка",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715244138.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715244138.webp",
       "effects": [
         {
           "resource": "time",
@@ -755,7 +755,7 @@
       "id": "support-14",
       "title": "Діловод з досвідом",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715259141.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715259141.webp",
       "effects": [
         {
           "resource": "time",
@@ -772,7 +772,7 @@
       "id": "support-15",
       "title": "Аудит реальності",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715273172.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715273172.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -789,7 +789,7 @@
       "id": "support-16",
       "title": "Перерозподіл завдань",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715296842.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715296842.webp",
       "effects": [
         {
           "resource": "time",
@@ -802,7 +802,7 @@
       "id": "support-17",
       "title": "Волонтерська допомога",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715319817.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715319817.webp",
       "effects": [
         {
           "resource": "documents",
@@ -819,7 +819,7 @@
       "id": "support-18",
       "title": "Командирський обхід",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715512342.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715512342.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -832,7 +832,7 @@
       "id": "support-19",
       "title": "Звіт за зразком НАТО",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715544114.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715544114.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -849,7 +849,7 @@
       "id": "support-20",
       "title": "Підпис у три примірники",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715580942.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715580942.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -862,7 +862,7 @@
       "id": "support-21",
       "title": "Залучення резерву часу",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715607819.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715607819.webp",
       "effects": [
         {
           "resource": "time",
@@ -875,7 +875,7 @@
       "id": "support-22",
       "title": "Оптимізація звітності",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715652703.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715652703.webp",
       "effects": [
         {
           "resource": "time",
@@ -892,7 +892,7 @@
       "id": "support-23",
       "title": "Внутрішній аудит документів",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715664135.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715664135.webp",
       "effects": [
         {
           "resource": "documents",
@@ -905,7 +905,7 @@
       "id": "support-24",
       "title": "Звіт до звіту про звіт",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715687524.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715687524.webp",
       "effects": [
         {
           "resource": "time",
@@ -922,7 +922,7 @@
       "id": "support-25",
       "title": "Позапланове ААR",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715705510.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715705510.webp",
       "effects": [
         {
           "resource": "time",
@@ -939,7 +939,7 @@
       "id": "support-26",
       "title": "Польове налагодження Excel",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715718861.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715718861.webp",
       "effects": [
         {
           "resource": "tech",
@@ -952,7 +952,7 @@
       "id": "support-27",
       "title": "Контрольний збір рапортів",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715729674.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715729674.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -969,7 +969,7 @@
       "id": "support-28",
       "title": "Схвалюючий погляд командира",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772960967836.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772960967836.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -982,7 +982,7 @@
       "id": "support-29",
       "title": "Три П.",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/3-1772964546873.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/3-1772964546873.webp",
       "effects": [
         {
           "resource": "time",
@@ -999,7 +999,7 @@
       "id": "support-30",
       "title": "Допомога суміжників",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772964593007.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772964593007.webp",
       "effects": [
         {
           "resource": "time",
@@ -1016,7 +1016,7 @@
       "id": "decision-01",
       "title": "Зразковий рапорт",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871420538.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871420538.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1033,7 +1033,7 @@
       "id": "decision-02",
       "title": "Вдалий виступ на шикуванні",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871439446.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871439446.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1046,7 +1046,7 @@
       "id": "decision-03",
       "title": "Перемога у спортивних змаганнях",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871453560.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871453560.webp",
       "effects": [
         {
           "resource": "time",
@@ -1063,7 +1063,7 @@
       "id": "decision-04",
       "title": "Успішний ААR",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871467975.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871467975.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1080,7 +1080,7 @@
       "id": "decision-05",
       "title": "Волонтерська ініціатива",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871484518.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871484518.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1097,7 +1097,7 @@
       "id": "decision-06",
       "title": "Публікація у військовому журналі",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871500051.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871500051.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1114,7 +1114,7 @@
       "id": "decision-07",
       "title": "Прийняття на курс лідерства",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871519462.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871519462.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1131,7 +1131,7 @@
       "id": "decision-08",
       "title": "Затвердження нового SOP",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871537749.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871537749.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1148,7 +1148,7 @@
       "id": "decision-09",
       "title": "Участь у навчаннях НАТО",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871551984.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871551984.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1165,7 +1165,7 @@
       "id": "decision-10",
       "title": "Ефективне використання ресурсів",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871573623.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871573623.webp",
       "effects": [
         {
           "resource": "time",
@@ -1182,7 +1182,7 @@
       "id": "decision-11",
       "title": "Вдалий брифінг перед начальством",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871588026.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871588026.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1195,7 +1195,7 @@
       "id": "decision-12",
       "title": "Відмінна інвентаризація",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871600284.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871600284.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1212,7 +1212,7 @@
       "id": "decision-13",
       "title": "Курс з кібербезпеки",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871612720.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871612720.webp",
       "effects": [
         {
           "resource": "tech",
@@ -1225,7 +1225,7 @@
       "id": "decision-14",
       "title": "Відзнака командира",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871627089.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871627089.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1238,7 +1238,7 @@
       "id": "decision-15",
       "title": "Призначення на нову посаду",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871647198.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871647198.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1255,7 +1255,7 @@
       "id": "decision-16",
       "title": "Успішний аудит холодильника",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871660520.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871660520.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1272,7 +1272,7 @@
       "id": "decision-17",
       "title": "Підтримка волонтерів",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871672495.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871672495.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1289,7 +1289,7 @@
       "id": "decision-18",
       "title": "Вдале інтерв’ю для преси",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771873874546.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771873874546.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1302,7 +1302,7 @@
       "id": "decision-19",
       "title": "Успішна сертифікація підрозділу",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771873894734.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771873894734.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1315,7 +1315,7 @@
       "id": "decision-20",
       "title": "Покращення побутових умов",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771874748714.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771874748714.webp",
       "effects": [
         {
           "resource": "time",
@@ -1332,7 +1332,7 @@
       "id": "decision-21",
       "title": "Перенесення термінів",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771873958187.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771873958187.webp",
       "effects": [
         {
           "resource": "time",
@@ -1349,7 +1349,7 @@
       "id": "decision-22",
       "title": "Ротація командирів",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771873978850.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771873978850.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1366,7 +1366,7 @@
       "id": "decision-23",
       "title": "Новий наказ про реформу",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771873991299.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771873991299.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1383,7 +1383,7 @@
       "id": "decision-24",
       "title": "Анонімне опитування",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1772964742729.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1772964742729.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1400,7 +1400,7 @@
       "id": "decision-25",
       "title": "БЗВП",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1772964779436.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1772964779436.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1417,7 +1417,7 @@
       "id": "decision-26",
       "title": "Окреме розпорядження",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1772964805573.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1772964805573.webp",
       "effects": [
         {
           "resource": "time",
@@ -1434,7 +1434,7 @@
       "id": "decision-27",
       "title": "Інструкція",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1772964869593.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1772964869593.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1451,7 +1451,7 @@
       "id": "decision-28",
       "title": "Координаційний центр",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1772964900628.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1772964900628.webp",
       "effects": [
         {
           "resource": "time",
@@ -1468,7 +1468,7 @@
       "id": "decision-29",
       "title": "Злагодження підрозділів",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1772964939595.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1772964939595.webp",
       "effects": [
         {
           "resource": "time",
@@ -1485,7 +1485,7 @@
       "id": "decision-30",
       "title": "Необмежено придатний",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1772964687130.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1772964687130.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1502,7 +1502,7 @@
       "id": "lyap-01",
       "title": "Журнал обліку журналів",
       "category": "LYAP",
-      "image": "/api/card-assets/asset-1786616827711.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/asset-1786616827711.webp",
       "effects": [
         {
           "resource": "time",
@@ -1519,7 +1519,7 @@
       "id": "lyap-02",
       "title": "Три сантиметри відступу",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/3-1771613029493.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/3-1771613029493.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1532,7 +1532,7 @@
       "id": "lyap-03",
       "title": "Кава на журналі обліку",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/lyap-03.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-03.webp",
       "effects": [
         {
           "resource": "documents",
@@ -1545,7 +1545,7 @@
       "id": "lyap-04",
       "title": "Загублений бланк №27",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/lyap-04.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-04.webp",
       "effects": [
         {
           "resource": "documents",
@@ -1558,7 +1558,7 @@
       "id": "lyap-05",
       "title": "План евакуації з орфографічною помилкою",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/lyap-05.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-05.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1571,7 +1571,7 @@
       "id": "lyap-06",
       "title": "П’ять нарад за один день",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/5-1771613043832.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/5-1771613043832.webp",
       "effects": [
         {
           "resource": "time",
@@ -1584,7 +1584,7 @@
       "id": "lyap-07",
       "title": "Підпис за відсутнього начальника",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613058005.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613058005.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1601,7 +1601,7 @@
       "id": "lyap-08",
       "title": "Фотозвіт без фото",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613066196.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613066196.webp",
       "effects": [
         {
           "resource": "tech",
@@ -1614,7 +1614,7 @@
       "id": "lyap-09",
       "title": "Плутанина з печатками",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613078854.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613078854.webp",
       "effects": [
         {
           "resource": "time",
@@ -1631,7 +1631,7 @@
       "id": "lyap-10",
       "title": "Карта-схема загублена у Google Maps",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613088169.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613088169.webp",
       "effects": [
         {
           "resource": "tech",
@@ -1644,7 +1644,7 @@
       "id": "lyap-11",
       "title": "Плутанина з особовими справами",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/3-1771613102827.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/3-1771613102827.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1661,7 +1661,7 @@
       "id": "lyap-12",
       "title": "Рапорт на ім’я іншого командира",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613115148.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613115148.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1674,7 +1674,7 @@
       "id": "lyap-13",
       "title": "Неправильна дата у наказі",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613133973.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613133973.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1687,7 +1687,7 @@
       "id": "lyap-14",
       "title": "Втрачений журнал",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613146108.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613146108.webp",
       "effects": [
         {
           "resource": "documents",
@@ -1700,7 +1700,7 @@
       "id": "lyap-15",
       "title": "Подвійна звітність",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613156561.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613156561.webp",
       "effects": [
         {
           "resource": "time",
@@ -1713,7 +1713,7 @@
       "id": "lyap-16",
       "title": "Рапорт без дати",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613164308.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613164308.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1726,7 +1726,7 @@
       "id": "lyap-17",
       "title": "Неправильний шрифт у наказі",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613170671.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613170671.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1739,7 +1739,7 @@
       "id": "lyap-18",
       "title": "Майте повагу до звання",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613178947.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613178947.webp",
       "effects": [
         {
           "resource": "rank",
@@ -1752,7 +1752,7 @@
       "id": "lyap-19",
       "title": "СЗЧ",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613186122.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613186122.webp",
       "effects": [
         {
           "resource": "time",
@@ -1769,7 +1769,7 @@
       "id": "lyap-20",
       "title": "Задувка",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613196642.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613196642.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1786,7 +1786,7 @@
       "id": "legendary-01",
       "title": "Мислі Головкома",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1803,7 +1803,7 @@
       "id": "legendary-02",
       "title": "Cміх BUDDA-н-OFF",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1772961254432.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961254432.webp",
       "effects": [
         {
           "resource": "tech",
@@ -1816,7 +1816,7 @@
       "id": "legendary-03",
       "title": "Посмішка Малюка",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884348987.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884348987.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1833,7 +1833,7 @@
       "id": "legendary-04",
       "title": "Фонд Добродія",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1772961289925.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961289925.webp",
       "effects": [
         {
           "resource": "time",
@@ -1854,7 +1854,7 @@
       "id": "legendary-05",
       "title": "Сухпай ЗСУ",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884379477.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884379477.webp",
       "effects": [
         {
           "resource": "time",
@@ -1875,7 +1875,7 @@
       "id": "legendary-06",
       "title": "Статуя Святого ТОРа",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884391744.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884391744.webp",
       "effects": [],
       "flavor": "Коли гримить звітність — мовчи і натискай “оновити”."
     },
@@ -1883,7 +1883,7 @@
       "id": "legendary-07",
       "title": "Церква Святого Лідерства",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884403769.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884403769.webp",
       "effects": [
         {
           "resource": "time",
@@ -1900,7 +1900,7 @@
       "id": "legendary-08",
       "title": "Зірколінк",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1772961348506.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961348506.webp",
       "effects": [
         {
           "resource": "time",
@@ -1917,7 +1917,7 @@
       "id": "legendary-09",
       "title": "Вода “ПроZORRO”",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1772961387230.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961387230.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1930,7 +1930,7 @@
       "id": "legendary-10",
       "title": "Дрончик",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884442233.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884442233.webp",
       "effects": [
         {
           "resource": "tech",
@@ -1943,7 +1943,7 @@
       "id": "legendary-11",
       "title": "Старий польський корч",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884453732.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884453732.webp",
       "effects": [
         {
           "resource": "time",
@@ -1960,7 +1960,7 @@
       "id": "legendary-12",
       "title": "Грамота “Єбать ти молодець”",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884466520.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884466520.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1973,7 +1973,7 @@
       "id": "legendary-14",
       "title": "Відпустка",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884495159.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884495159.webp",
       "effects": [
         {
           "resource": "time",
@@ -1990,20 +1990,20 @@
       "id": "legendary-16",
       "title": "Котєйка ЗСУ",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
       "effects": [
         {
           "resource": "time",
           "value": 2
         }
       ],
-      "flavor": "Видається разом із позицією. Оформлення не потребує. Доступ має всюди."
+      "flavor": "Видається разом із позиціє��. Оформлення не потребує. Доступ має всюди."
     },
     {
       "id": "legendary-17",
       "title": "Нептун",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
       "effects": [],
       "flavor": "«Стакан за тих, хто не потягнув стакан за звання.»"
     },
@@ -2011,7 +2011,7 @@
       "id": "rank-recruit-set-1",
       "title": "Рекрут",
       "category": "COMMAND",
-      "image": "/card-assets/00-1.webp",
+      "image": "/api/card-assets/00-1.webp",
       "grantRank": "recruit",
       "flavor": "Знає різницю між наказом і порадою."
     },
@@ -2019,7 +2019,7 @@
       "id": "rank-recruit-set-2",
       "title": "Рекрут",
       "category": "COMMAND",
-      "image": "/card-assets/00-1.webp",
+      "image": "/api/card-assets/00-1.webp",
       "grantRank": "recruit",
       "flavor": "Знає різницю між наказом і порадою."
     },
@@ -2027,7 +2027,7 @@
       "id": "rank-recruit-set-3",
       "title": "Рекрут",
       "category": "COMMAND",
-      "image": "/card-assets/00-1.webp",
+      "image": "/api/card-assets/00-1.webp",
       "grantRank": "recruit",
       "flavor": "Знає різницю між наказом і порадою."
     },
@@ -2035,7 +2035,7 @@
       "id": "rank-recruit-set-4",
       "title": "Рекрут",
       "category": "COMMAND",
-      "image": "/card-assets/00-1.webp",
+      "image": "/api/card-assets/00-1.webp",
       "grantRank": "recruit",
       "flavor": "Знає різницю між нака��ом і порадою."
     },
@@ -2043,7 +2043,7 @@
       "id": "rank-recruit-extra-1",
       "title": "Рекрут",
       "category": "COMMAND",
-      "image": "/card-assets/00-1.webp",
+      "image": "/api/card-assets/00-1.webp",
       "grantRank": "recruit",
       "flavor": "Знає різницю між наказом і порадою."
     },
@@ -2051,7 +2051,7 @@
       "id": "rank-recruit-extra-2",
       "title": "Рекрут",
       "category": "COMMAND",
-      "image": "/card-assets/00-1.webp",
+      "image": "/api/card-assets/00-1.webp",
       "grantRank": "recruit",
       "flavor": "Знає різницю між наказом і порадою."
     },
@@ -2059,7 +2059,7 @@
       "id": "rank-soldier-set-1",
       "title": "Солдат",
       "category": "COMMAND",
-      "image": "/card-assets/01-1.webp",
+      "image": "/api/card-assets/01-1.webp",
       "grantRank": "soldier",
       "flavor": "Навчився не лише слухати, а й виконувати."
     },
@@ -2067,7 +2067,7 @@
       "id": "rank-soldier-set-2",
       "title": "Солдат",
       "category": "COMMAND",
-      "image": "/card-assets/01-1.webp",
+      "image": "/api/card-assets/01-1.webp",
       "grantRank": "soldier",
       "flavor": "Навчився не лише слухати, а й виконувати."
     },
@@ -2075,7 +2075,7 @@
       "id": "rank-soldier-set-3",
       "title": "Солдат",
       "category": "COMMAND",
-      "image": "/card-assets/01-1.webp",
+      "image": "/api/card-assets/01-1.webp",
       "grantRank": "soldier",
       "flavor": "Навчився не лише слухати, а й виконувати."
     },
@@ -2083,7 +2083,7 @@
       "id": "rank-soldier-set-4",
       "title": "Солдат",
       "category": "COMMAND",
-      "image": "/card-assets/01-1.webp",
+      "image": "/api/card-assets/01-1.webp",
       "grantRank": "soldier",
       "flavor": "Навчився не лише слухати, а й виконувати."
     },
@@ -2091,7 +2091,7 @@
       "id": "rank-senior_soldier-set-1",
       "title": "Старший солдат",
       "category": "COMMAND",
-      "image": "/card-assets/02-1.webp",
+      "image": "/api/card-assets/02-1.webp",
       "grantRank": "senior_soldier",
       "flavor": "Молодим — приклад, старшим — пам’ятка."
     },
@@ -2099,7 +2099,7 @@
       "id": "rank-senior_soldier-set-2",
       "title": "Старший солдат",
       "category": "COMMAND",
-      "image": "/card-assets/02-1.webp",
+      "image": "/api/card-assets/02-1.webp",
       "grantRank": "senior_soldier",
       "flavor": "Молодим — приклад, старшим — пам’ятка."
     },
@@ -2107,7 +2107,7 @@
       "id": "rank-senior_soldier-set-3",
       "title": "Старший солдат",
       "category": "COMMAND",
-      "image": "/card-assets/02-1.webp",
+      "image": "/api/card-assets/02-1.webp",
       "grantRank": "senior_soldier",
       "flavor": "Молодим — приклад, старшим — пам’ятка."
     },
@@ -2115,7 +2115,7 @@
       "id": "rank-senior_soldier-set-4",
       "title": "Старший солдат",
       "category": "COMMAND",
-      "image": "/card-assets/02-1.webp",
+      "image": "/api/card-assets/02-1.webp",
       "grantRank": "senior_soldier",
       "flavor": "Молодим — приклад, старшим — пам’ятка."
     },
@@ -2123,7 +2123,7 @@
       "id": "rank-junior_sergeant-set-1",
       "title": "Молодший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/03-1.webp",
+      "image": "/api/card-assets/03-1.webp",
       "grantRank": "junior_sergeant",
       "flavor": "Перше “так точно” з нотками відповідальності."
     },
@@ -2131,7 +2131,7 @@
       "id": "rank-junior_sergeant-set-2",
       "title": "Молодший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/03-1.webp",
+      "image": "/api/card-assets/03-1.webp",
       "grantRank": "junior_sergeant",
       "flavor": "Перше “так точно” з нотками відповідальності."
     },
@@ -2139,7 +2139,7 @@
       "id": "rank-junior_sergeant-set-3",
       "title": "Молодший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/03-1.webp",
+      "image": "/api/card-assets/03-1.webp",
       "grantRank": "junior_sergeant",
       "flavor": "Перше “так точно” з нотками відповідальності."
     },
@@ -2147,7 +2147,7 @@
       "id": "rank-junior_sergeant-set-4",
       "title": "Молодший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/03-1.webp",
+      "image": "/api/card-assets/03-1.webp",
       "grantRank": "junior_sergeant",
       "flavor": "Перше “так точно” з нотками відповідальності."
     },
@@ -2155,7 +2155,7 @@
       "id": "rank-sergeant-set-1",
       "title": "Сержант",
       "category": "COMMAND",
-      "image": "/card-assets/04-1.webp",
+      "image": "/api/card-assets/04-1.webp",
       "grantRank": "sergeant",
       "flavor": "Командуєш малими, але відповідаєш за всіх."
     },
@@ -2163,7 +2163,7 @@
       "id": "rank-sergeant-set-2",
       "title": "Сержант",
       "category": "COMMAND",
-      "image": "/card-assets/04-1.webp",
+      "image": "/api/card-assets/04-1.webp",
       "grantRank": "sergeant",
       "flavor": "Командуєш малими, але відповідаєш за всіх."
     },
@@ -2171,7 +2171,7 @@
       "id": "rank-sergeant-set-3",
       "title": "Сержант",
       "category": "COMMAND",
-      "image": "/card-assets/04-1.webp",
+      "image": "/api/card-assets/04-1.webp",
       "grantRank": "sergeant",
       "flavor": "Командуєш малими, але відповідаєш за всіх."
     },
@@ -2179,7 +2179,7 @@
       "id": "rank-sergeant-set-4",
       "title": "Сержант",
       "category": "COMMAND",
-      "image": "/card-assets/04-1.webp",
+      "image": "/api/card-assets/04-1.webp",
       "grantRank": "sergeant",
       "flavor": "Командуєш малими, але відповідаєш за всіх."
     },
@@ -2187,7 +2187,7 @@
       "id": "rank-senior_sergeant-set-1",
       "title": "Старший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/05-1.webp",
+      "image": "/api/card-assets/05-1.webp",
       "grantRank": "senior_sergeant",
       "flavor": "Коли треба — наказує, коли можна — радить."
     },
@@ -2195,7 +2195,7 @@
       "id": "rank-senior_sergeant-set-2",
       "title": "Старший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/05-1.webp",
+      "image": "/api/card-assets/05-1.webp",
       "grantRank": "senior_sergeant",
       "flavor": "Коли треба — наказує, коли можна — радить."
     },
@@ -2203,7 +2203,7 @@
       "id": "rank-senior_sergeant-set-3",
       "title": "Старший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/05-1.webp",
+      "image": "/api/card-assets/05-1.webp",
       "grantRank": "senior_sergeant",
       "flavor": "Коли треба — наказує, коли можна — радить."
     },
@@ -2211,7 +2211,7 @@
       "id": "rank-senior_sergeant-set-4",
       "title": "Старший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/05-1.webp",
+      "image": "/api/card-assets/05-1.webp",
       "grantRank": "senior_sergeant",
       "flavor": "Коли треба — наказує, коли можна — радить."
     },
@@ -2219,7 +2219,7 @@
       "id": "rank-chief_sergeant-set-1",
       "title": "Головний сержант",
       "category": "COMMAND",
-      "image": "/card-assets/06-1.webp",
+      "image": "/api/card-assets/06-1.webp",
       "grantRank": "chief_sergeant",
       "flavor": "Веде журнал точніше, ніж взвод у бій."
     },
@@ -2227,7 +2227,7 @@
       "id": "rank-chief_sergeant-set-2",
       "title": "Головний сержант",
       "category": "COMMAND",
-      "image": "/card-assets/06-1.webp",
+      "image": "/api/card-assets/06-1.webp",
       "grantRank": "chief_sergeant",
       "flavor": "Веде журнал точніше, ніж взвод у бій."
     },
@@ -2235,7 +2235,7 @@
       "id": "rank-chief_sergeant-set-3",
       "title": "Головний сержант",
       "category": "COMMAND",
-      "image": "/card-assets/06-1.webp",
+      "image": "/api/card-assets/06-1.webp",
       "grantRank": "chief_sergeant",
       "flavor": "Веде журнал точніше, ніж взвод у бій."
     },
@@ -2243,7 +2243,7 @@
       "id": "rank-chief_sergeant-set-4",
       "title": "Головний сержант",
       "category": "COMMAND",
-      "image": "/card-assets/06-1.webp",
+      "image": "/api/card-assets/06-1.webp",
       "grantRank": "chief_sergeant",
       "flavor": "Веде журнал точніше, ніж взвод у бій."
     },
@@ -2251,7 +2251,7 @@
       "id": "rank-staff_sergeant-set-1",
       "title": "Штаб-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/07-1.webp",
+      "image": "/api/card-assets/07-1.webp",
       "grantRank": "staff_sergeant",
       "flavor": "Знає, де журнал, і хто його не здав."
     },
@@ -2259,7 +2259,7 @@
       "id": "rank-staff_sergeant-set-2",
       "title": "Штаб-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/07-1.webp",
+      "image": "/api/card-assets/07-1.webp",
       "grantRank": "staff_sergeant",
       "flavor": "Знає, де журнал, і хто його не здав."
     },
@@ -2267,7 +2267,7 @@
       "id": "rank-staff_sergeant-set-3",
       "title": "Штаб-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/07-1.webp",
+      "image": "/api/card-assets/07-1.webp",
       "grantRank": "staff_sergeant",
       "flavor": "Знає, де журнал, і хто його не здав."
     },
@@ -2275,7 +2275,7 @@
       "id": "rank-staff_sergeant-set-4",
       "title": "Штаб-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/07-1.webp",
+      "image": "/api/card-assets/07-1.webp",
       "grantRank": "staff_sergeant",
       "flavor": "Знає, де журнал, і хто його не здав."
     },
@@ -2283,7 +2283,7 @@
       "id": "rank-master_sergeant-set-1",
       "title": "Майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/08-1.webp",
+      "image": "/api/card-assets/08-1.webp",
       "grantRank": "master_sergeant",
       "flavor": "Майстер не тому, що вміє, а тому, що вже бачив."
     },
@@ -2291,7 +2291,7 @@
       "id": "rank-master_sergeant-set-2",
       "title": "Майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/08-1.webp",
+      "image": "/api/card-assets/08-1.webp",
       "grantRank": "master_sergeant",
       "flavor": "Майстер не тому, що вміє, а тому, що вже бачив."
     },
@@ -2299,7 +2299,7 @@
       "id": "rank-master_sergeant-set-3",
       "title": "Майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/08-1.webp",
+      "image": "/api/card-assets/08-1.webp",
       "grantRank": "master_sergeant",
       "flavor": "Майстер не тому, що вміє, а тому, що вже бачив."
     },
@@ -2307,7 +2307,7 @@
       "id": "rank-master_sergeant-set-4",
       "title": "Майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/08-1.webp",
+      "image": "/api/card-assets/08-1.webp",
       "grantRank": "master_sergeant",
       "flavor": "Майстер не тому, що вміє, а тому, що вже бачив."
     },
@@ -2315,7 +2315,7 @@
       "id": "rank-senior_master_sergeant-set-1",
       "title": "Старший майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/09-1.webp",
+      "image": "/api/card-assets/09-1.webp",
       "grantRank": "senior_master_sergeant",
       "flavor": "Підлеглі слухають, навіть коли мовчиш."
     },
@@ -2323,7 +2323,7 @@
       "id": "rank-senior_master_sergeant-set-2",
       "title": "Старший майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/09-1.webp",
+      "image": "/api/card-assets/09-1.webp",
       "grantRank": "senior_master_sergeant",
       "flavor": "Підлеглі слухають, навіть коли мовчиш."
     },
@@ -2331,7 +2331,7 @@
       "id": "rank-senior_master_sergeant-set-3",
       "title": "Старший майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/09-1.webp",
+      "image": "/api/card-assets/09-1.webp",
       "grantRank": "senior_master_sergeant",
       "flavor": "Підлеглі слухають, навіть коли мовчиш."
     },
@@ -2339,7 +2339,7 @@
       "id": "rank-senior_master_sergeant-set-4",
       "title": "Старший майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/09-1.webp",
+      "image": "/api/card-assets/09-1.webp",
       "grantRank": "senior_master_sergeant",
       "flavor": "Підлеглі слухають, навіть коли мовчиш."
     },
@@ -2347,7 +2347,7 @@
       "id": "rank-chief_master_sergeant-set-1",
       "title": "Головний майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/10-1.webp",
+      "image": "/api/card-assets/10-1.webp",
       "grantRank": "chief_master_sergeant",
       "flavor": "Той, хто вміє навести лад навіть у ладах."
     },
@@ -2355,7 +2355,7 @@
       "id": "rank-chief_master_sergeant-set-2",
       "title": "Головний майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/10-1.webp",
+      "image": "/api/card-assets/10-1.webp",
       "grantRank": "chief_master_sergeant",
       "flavor": "Той, хто вміє навести лад навіть у ладах."
     },
@@ -2363,7 +2363,7 @@
       "id": "rank-chief_master_sergeant-set-3",
       "title": "Головний майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/10-1.webp",
+      "image": "/api/card-assets/10-1.webp",
       "grantRank": "chief_master_sergeant",
       "flavor": "Той, хто вміє навести лад навіть у ладах."
     },
@@ -2371,7 +2371,7 @@
       "id": "rank-chief_master_sergeant-set-4",
       "title": "Головний майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/10-1.webp",
+      "image": "/api/card-assets/10-1.webp",
       "grantRank": "chief_master_sergeant",
       "flavor": "Той, хто вміє навести лад навіть у ладах."
     },
@@ -2379,7 +2379,7 @@
       "id": "rank-junior_lieutenant-set-1",
       "title": "Молодший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/11-1.webp",
+      "image": "/api/card-assets/11-1.webp",
       "grantRank": "junior_lieutenant",
       "flavor": "Перший підпис — і перший стрес."
     },
@@ -2387,7 +2387,7 @@
       "id": "rank-junior_lieutenant-set-2",
       "title": "Молодший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/11-1.webp",
+      "image": "/api/card-assets/11-1.webp",
       "grantRank": "junior_lieutenant",
       "flavor": "Перший підпис — і перший стрес."
     },
@@ -2395,7 +2395,7 @@
       "id": "rank-junior_lieutenant-set-3",
       "title": "Молодший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/11-1.webp",
+      "image": "/api/card-assets/11-1.webp",
       "grantRank": "junior_lieutenant",
       "flavor": "Перший підпис — і перший стрес."
     },
@@ -2403,7 +2403,7 @@
       "id": "rank-junior_lieutenant-set-4",
       "title": "Молодший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/11-1.webp",
+      "image": "/api/card-assets/11-1.webp",
       "grantRank": "junior_lieutenant",
       "flavor": "Перший підпис — і перший стрес."
     },
@@ -2411,7 +2411,7 @@
       "id": "rank-lieutenant-set-1",
       "title": "Лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/12-1.webp",
+      "image": "/api/card-assets/12-1.webp",
       "grantRank": "lieutenant",
       "flavor": "Вивчив різницю між планом і реальністю."
     },
@@ -2419,7 +2419,7 @@
       "id": "rank-lieutenant-set-2",
       "title": "Лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/12-1.webp",
+      "image": "/api/card-assets/12-1.webp",
       "grantRank": "lieutenant",
       "flavor": "Вивчив різницю між планом і реальністю."
     },
@@ -2427,7 +2427,7 @@
       "id": "rank-lieutenant-set-3",
       "title": "Лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/12-1.webp",
+      "image": "/api/card-assets/12-1.webp",
       "grantRank": "lieutenant",
       "flavor": "Вивчив різницю між планом і реальністю."
     },
@@ -2435,7 +2435,7 @@
       "id": "rank-lieutenant-set-4",
       "title": "Лейтена��т",
       "category": "COMMAND",
-      "image": "/card-assets/12-1.webp",
+      "image": "/api/card-assets/12-1.webp",
       "grantRank": "lieutenant",
       "flavor": "Вивчив різницю між планом і реальністю."
     },
@@ -2443,7 +2443,7 @@
       "id": "rank-senior_lieutenant-set-1",
       "title": "Старший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/13-1.webp",
+      "image": "/api/card-assets/13-1.webp",
       "grantRank": "senior_lieutenant",
       "flavor": "Звикаєш до фрази “за власною ініціативою”."
     },
@@ -2451,7 +2451,7 @@
       "id": "rank-senior_lieutenant-set-2",
       "title": "Старший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/13-1.webp",
+      "image": "/api/card-assets/13-1.webp",
       "grantRank": "senior_lieutenant",
       "flavor": "Звикаєш до фрази “за власною ініціативою”."
     },
@@ -2459,7 +2459,7 @@
       "id": "rank-senior_lieutenant-set-3",
       "title": "Старший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/13-1.webp",
+      "image": "/api/card-assets/13-1.webp",
       "grantRank": "senior_lieutenant",
       "flavor": "Звикаєш до фрази “за власною ініціативою”."
     },
@@ -2467,7 +2467,7 @@
       "id": "rank-senior_lieutenant-set-4",
       "title": "Старший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/13-1.webp",
+      "image": "/api/card-assets/13-1.webp",
       "grantRank": "senior_lieutenant",
       "flavor": "Звикаєш до фрази “за власною ініціативою”."
     },
@@ -2475,7 +2475,7 @@
       "id": "rank-captain-set-1",
       "title": "Капітан",
       "category": "COMMAND",
-      "image": "/card-assets/14-1.webp",
+      "image": "/api/card-assets/14-1.webp",
       "grantRank": "captain",
       "flavor": "Відповідає за все, навіть за погоду."
     },
@@ -2483,7 +2483,7 @@
       "id": "rank-captain-set-2",
       "title": "Капітан",
       "category": "COMMAND",
-      "image": "/card-assets/14-1.webp",
+      "image": "/api/card-assets/14-1.webp",
       "grantRank": "captain",
       "flavor": "Відповідає за все, навіть за погоду."
     },
@@ -2491,7 +2491,7 @@
       "id": "rank-captain-set-3",
       "title": "Капітан",
       "category": "COMMAND",
-      "image": "/card-assets/14-1.webp",
+      "image": "/api/card-assets/14-1.webp",
       "grantRank": "captain",
       "flavor": "Відповідає за все, навіть за погоду."
     },
@@ -2499,7 +2499,7 @@
       "id": "rank-captain-set-4",
       "title": "Капітан",
       "category": "COMMAND",
-      "image": "/card-assets/14-1.webp",
+      "image": "/api/card-assets/14-1.webp",
       "grantRank": "captain",
       "flavor": "Відповідає за все, навіть за погоду."
     },
@@ -2507,7 +2507,7 @@
       "id": "rank-major-set-1",
       "title": "Майор",
       "category": "COMMAND",
-      "image": "/card-assets/15-1.webp",
+      "image": "/api/card-assets/15-1.webp",
       "grantRank": "major",
       "flavor": "Якщо нічого не згоріло — значить, керував майор."
     },
@@ -2515,7 +2515,7 @@
       "id": "rank-major-set-2",
       "title": "Майор",
       "category": "COMMAND",
-      "image": "/card-assets/15-1.webp",
+      "image": "/api/card-assets/15-1.webp",
       "grantRank": "major",
       "flavor": "Якщо нічого не згоріло — значить, керував майор."
     },
@@ -2523,7 +2523,7 @@
       "id": "rank-major-set-3",
       "title": "Майор",
       "category": "COMMAND",
-      "image": "/card-assets/15-1.webp",
+      "image": "/api/card-assets/15-1.webp",
       "grantRank": "major",
       "flavor": "Якщо нічого не згоріло — значить, керував майор."
     },
@@ -2531,7 +2531,7 @@
       "id": "rank-major-set-4",
       "title": "Майор",
       "category": "COMMAND",
-      "image": "/card-assets/15-1.webp",
+      "image": "/api/card-assets/15-1.webp",
       "grantRank": "major",
       "flavor": "Якщо нічого не згоріло — значить, керував майор."
     },
@@ -2539,7 +2539,7 @@
       "id": "rank-lieutenant_colonel-set-1",
       "title": "Підполковник",
       "category": "COMMAND",
-      "image": "/card-assets/16-1.webp",
+      "image": "/api/card-assets/16-1.webp",
       "grantRank": "lieutenant_colonel",
       "flavor": "Твій спокій — найкраща зброя в штабі."
     },
@@ -2547,7 +2547,7 @@
       "id": "rank-lieutenant_colonel-set-2",
       "title": "Підполковник",
       "category": "COMMAND",
-      "image": "/card-assets/16-1.webp",
+      "image": "/api/card-assets/16-1.webp",
       "grantRank": "lieutenant_colonel",
       "flavor": "Твій спокій — найкраща зброя в штабі."
     },
@@ -2555,7 +2555,7 @@
       "id": "rank-lieutenant_colonel-set-3",
       "title": "Підполковник",
       "category": "COMMAND",
-      "image": "/card-assets/16-1.webp",
+      "image": "/api/card-assets/16-1.webp",
       "grantRank": "lieutenant_colonel",
       "flavor": "Твій спокій — найкраща зброя в штабі."
     },
@@ -2563,7 +2563,7 @@
       "id": "rank-lieutenant_colonel-set-4",
       "title": "Підполковник",
       "category": "COMMAND",
-      "image": "/card-assets/16-1.webp",
+      "image": "/api/card-assets/16-1.webp",
       "grantRank": "lieutenant_colonel",
       "flavor": "Твій спокій — найкраща зброя в штабі."
     },
@@ -2571,7 +2571,7 @@
       "id": "rank-colonel-set-1",
       "title": "Полковник",
       "category": "COMMAND",
-      "image": "/card-assets/17-1.webp",
+      "image": "/api/card-assets/17-1.webp",
       "grantRank": "colonel",
       "flavor": "Розпорядження, накази, вказівки — і все з підписом."
     },
@@ -2579,7 +2579,7 @@
       "id": "rank-colonel-set-2",
       "title": "Полковник",
       "category": "COMMAND",
-      "image": "/card-assets/17-1.webp",
+      "image": "/api/card-assets/17-1.webp",
       "grantRank": "colonel",
       "flavor": "Розпорядження, накази, вказівки — і все з підписом."
     },
@@ -2587,7 +2587,7 @@
       "id": "rank-colonel-set-3",
       "title": "Полковник",
       "category": "COMMAND",
-      "image": "/card-assets/17-1.webp",
+      "image": "/api/card-assets/17-1.webp",
       "grantRank": "colonel",
       "flavor": "Розпорядження, накази, вказівки — і все з підписом."
     },
@@ -2595,7 +2595,7 @@
       "id": "rank-colonel-set-4",
       "title": "Полковник",
       "category": "COMMAND",
-      "image": "/card-assets/17-1.webp",
+      "image": "/api/card-assets/17-1.webp",
       "grantRank": "colonel",
       "flavor": "Розпорядження, накази, вказівки — і все з підписом."
     },
@@ -2603,7 +2603,7 @@
       "id": "rank-brigadier_general-set-1",
       "title": "Бригадний генерал",
       "category": "COMMAND",
-      "image": "/card-assets/18-1.webp",
+      "image": "/api/card-assets/18-1.webp",
       "grantRank": "brigadier_general",
       "flavor": "Якщо бачиш порядок — десь поруч генерал."
     },
@@ -2611,7 +2611,7 @@
       "id": "rank-brigadier_general-set-2",
       "title": "Бригадний генерал",
       "category": "COMMAND",
-      "image": "/card-assets/18-1.webp",
+      "image": "/api/card-assets/18-1.webp",
       "grantRank": "brigadier_general",
       "flavor": "Якщо бачиш порядок — десь поруч генерал."
     },
@@ -2619,7 +2619,7 @@
       "id": "rank-brigadier_general-set-3",
       "title": "Бригадний генерал",
       "category": "COMMAND",
-      "image": "/card-assets/18-1.webp",
+      "image": "/api/card-assets/18-1.webp",
       "grantRank": "brigadier_general",
       "flavor": "Якщо бачиш порядок — десь поруч генерал."
     },
@@ -2627,7 +2627,7 @@
       "id": "rank-brigadier_general-set-4",
       "title": "Бригадний генерал",
       "category": "COMMAND",
-      "image": "/card-assets/18-1.webp",
+      "image": "/api/card-assets/18-1.webp",
       "grantRank": "brigadier_general",
       "flavor": "Якщо бачиш порядок — десь поруч генерал."
     },
@@ -2635,7 +2635,7 @@
       "id": "rank-major_general-set-1",
       "title": "Генерал-майор",
       "category": "COMMAND",
-      "image": "/card-assets/19-1.webp",
+      "image": "/api/card-assets/19-1.webp",
       "grantRank": "major_general",
       "flavor": "Планує стратегічно, рахує дріб’язково."
     },
@@ -2643,7 +2643,7 @@
       "id": "rank-major_general-set-2",
       "title": "Генерал-майор",
       "category": "COMMAND",
-      "image": "/card-assets/19-1.webp",
+      "image": "/api/card-assets/19-1.webp",
       "grantRank": "major_general",
       "flavor": "Планує стратегічно, рахує дріб’язково."
     },
@@ -2651,7 +2651,7 @@
       "id": "rank-major_general-set-3",
       "title": "Генерал-майор",
       "category": "COMMAND",
-      "image": "/card-assets/19-1.webp",
+      "image": "/api/card-assets/19-1.webp",
       "grantRank": "major_general",
       "flavor": "Планує стратегічно, рахує дріб’язково."
     },
@@ -2659,7 +2659,7 @@
       "id": "rank-major_general-set-4",
       "title": "Генерал-майор",
       "category": "COMMAND",
-      "image": "/card-assets/19-1.webp",
+      "image": "/api/card-assets/19-1.webp",
       "grantRank": "major_general",
       "flavor": "Планує стратегічно, рахує дріб’язково."
     },
@@ -2667,7 +2667,7 @@
       "id": "rank-lieutenant_general-set-1",
       "title": "Генерал-лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/20-1.webp",
+      "image": "/api/card-assets/20-1.webp",
       "grantRank": "lieutenant_general",
       "flavor": "Журнали самі тебе знаходять."
     },
@@ -2675,7 +2675,7 @@
       "id": "rank-lieutenant_general-set-2",
       "title": "Генерал-лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/20-1.webp",
+      "image": "/api/card-assets/20-1.webp",
       "grantRank": "lieutenant_general",
       "flavor": "Журнали самі тебе знаходять."
     },
@@ -2683,7 +2683,7 @@
       "id": "rank-lieutenant_general-set-3",
       "title": "Генерал-лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/20-1.webp",
+      "image": "/api/card-assets/20-1.webp",
       "grantRank": "lieutenant_general",
       "flavor": "Журнали самі тебе знаходять."
     },
@@ -2691,7 +2691,7 @@
       "id": "rank-lieutenant_general-set-4",
       "title": "Генерал-лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/20-1.webp",
+      "image": "/api/card-assets/20-1.webp",
       "grantRank": "lieutenant_general",
       "flavor": "Журнали самі тебе знаходять."
     },
@@ -2699,7 +2699,7 @@
       "id": "rank-general-set-1",
       "title": "Генерал",
       "category": "COMMAND",
-      "image": "/card-assets/21-1.webp",
+      "image": "/api/card-assets/21-1.webp",
       "grantRank": "general",
       "flavor": "Доки хтось шукає винних — він шукає рішення."
     },
@@ -2707,7 +2707,7 @@
       "id": "rank-general-set-2",
       "title": "Генерал",
       "category": "COMMAND",
-      "image": "/card-assets/21-1.webp",
+      "image": "/api/card-assets/21-1.webp",
       "grantRank": "general",
       "flavor": "Доки хтось шукає винних — він шукає рішення."
     },
@@ -2715,7 +2715,7 @@
       "id": "rank-general-set-3",
       "title": "Генерал",
       "category": "COMMAND",
-      "image": "/card-assets/21-1.webp",
+      "image": "/api/card-assets/21-1.webp",
       "grantRank": "general",
       "flavor": "Доки хтось шукає винних — він шукає рішення."
     },
@@ -2723,7 +2723,7 @@
       "id": "rank-general-set-4",
       "title": "Генерал",
       "category": "COMMAND",
-      "image": "/card-assets/21-1.webp",
+      "image": "/api/card-assets/21-1.webp",
       "grantRank": "general",
       "flavor": "Доки хтось шукає винних — він шукає рішення."
     }
@@ -2944,7 +2944,7 @@
       "id": "scandal-01",
       "title": "Яйця по 17 гривень",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614354252.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614354252.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2961,7 +2961,7 @@
       "id": "scandal-02",
       "title": "Куртки Резнікова",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614366040.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614366040.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2978,7 +2978,7 @@
       "id": "scandal-03",
       "title": "Дрони по завищеній ціні",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614378587.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614378587.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2995,7 +2995,7 @@
       "id": "scandal-04",
       "title": "Пропажа пального",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614390190.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614390190.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3008,7 +3008,7 @@
       "id": "scandal-05",
       "title": "Закупівля підписів на тендер",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614425063.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614425063.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3025,7 +3025,7 @@
       "id": "scandal-06",
       "title": "Пропажа дронів",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614439747.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614439747.webp",
       "effects": [
         {
           "resource": "tech",
@@ -3038,7 +3038,7 @@
       "id": "scandal-07",
       "title": "Списання бронежилетів як витратних",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614451008.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614451008.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3055,7 +3055,7 @@
       "id": "scandal-08",
       "title": "Паперовий аудит без документів",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614500039.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614500039.webp",
       "effects": [
         {
           "resource": "time",
@@ -3072,7 +3072,7 @@
       "id": "scandal-09",
       "title": "Відео з полігону",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614508047.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614508047.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3085,7 +3085,7 @@
       "id": "scandal-10",
       "title": "Витік наказів у пресу",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771615063474.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771615063474.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3102,7 +3102,7 @@
       "id": "scandal-11",
       "title": "Зникнення гуманітарки",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614820343.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614820343.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3119,7 +3119,7 @@
       "id": "scandal-12",
       "title": "Підроблені рапорти",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614939024.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614939024.webp",
       "effects": [
         {
           "resource": "documents",
@@ -3132,7 +3132,7 @@
       "id": "scandal-13",
       "title": "Бюджет на ремонт даху",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614949216.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614949216.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3149,7 +3149,7 @@
       "id": "scandal-14",
       "title": "Викриття корупційної схеми",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771615029111.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771615029111.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3166,7 +3166,7 @@
       "id": "scandal-15",
       "title": "Тушонка",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771614982549.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614982549.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3183,7 +3183,7 @@
       "id": "scandal-16",
       "title": "Колаборант",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1771615017418.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771615017418.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3204,7 +3204,7 @@
       "id": "scandal-17",
       "title": "Полковник із ОТУ",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1772952038855.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772952038855.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3216,7 +3216,7 @@
       "id": "scandal-18",
       "title": "ВЛК",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1772956066783.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772956066783.webp",
       "effects": [
         {
           "resource": "time",
@@ -3233,7 +3233,7 @@
       "id": "scandal-19",
       "title": "гИометрія",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1772956549834.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772956549834.webp",
       "effects": [
         {
           "resource": "time",
@@ -3250,7 +3250,7 @@
       "id": "scandal-20",
       "title": "Службове розслідування",
       "category": "SCANDAL",
-      "image": "/card-assets/2026.SCANDAL.STARTER/card-1772956616687.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772956616687.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3267,7 +3267,7 @@
       "id": "support-01",
       "title": "Моральна підтримка",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/support-01.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/support-01.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3280,7 +3280,7 @@
       "id": "support-02",
       "title": "Кавопауза",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/support-02.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/support-02.webp",
       "effects": [
         {
           "resource": "time",
@@ -3297,7 +3297,7 @@
       "id": "support-03",
       "title": "Психологічний тренінг",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/support-03.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/support-03.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3314,7 +3314,7 @@
       "id": "support-04",
       "title": "Виховна година",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714564147.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714564147.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3327,7 +3327,7 @@
       "id": "support-05",
       "title": "Спільна вечеря",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714604953.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714604953.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3344,7 +3344,7 @@
       "id": "support-06",
       "title": "Лікарська довідка",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714633584.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714633584.webp",
       "effects": [
         {
           "resource": "documents",
@@ -3357,7 +3357,7 @@
       "id": "support-07",
       "title": "Підміна чергового",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714671936.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714671936.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3370,7 +3370,7 @@
       "id": "support-08",
       "title": "Бойове братерство",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714689637.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714689637.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3387,7 +3387,7 @@
       "id": "support-09",
       "title": "Військовий капелан",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714707997.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714707997.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3400,7 +3400,7 @@
       "id": "support-10",
       "title": "Порада від старшини",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714722903.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714722903.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3413,7 +3413,7 @@
       "id": "support-11",
       "title": "Відновлення документів",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772714742579.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772714742579.webp",
       "effects": [
         {
           "resource": "documents",
@@ -3426,7 +3426,7 @@
       "id": "support-12",
       "title": "Сміх у строю",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715218332.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715218332.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3439,7 +3439,7 @@
       "id": "support-13",
       "title": "Психологічна розрядка",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715244138.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715244138.webp",
       "effects": [
         {
           "resource": "time",
@@ -3456,7 +3456,7 @@
       "id": "support-14",
       "title": "Діловод з досвідом",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715259141.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715259141.webp",
       "effects": [
         {
           "resource": "time",
@@ -3473,7 +3473,7 @@
       "id": "support-15",
       "title": "Аудит реальності",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715273172.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715273172.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3490,7 +3490,7 @@
       "id": "support-16",
       "title": "Перерозподіл завдань",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715296842.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715296842.webp",
       "effects": [
         {
           "resource": "time",
@@ -3503,7 +3503,7 @@
       "id": "support-17",
       "title": "Волонтерська допомога",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715319817.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715319817.webp",
       "effects": [
         {
           "resource": "documents",
@@ -3520,7 +3520,7 @@
       "id": "support-18",
       "title": "Командирський обхід",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715512342.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715512342.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3533,7 +3533,7 @@
       "id": "support-19",
       "title": "Звіт за зразком НАТО",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715544114.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715544114.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3550,7 +3550,7 @@
       "id": "support-20",
       "title": "Підпис у три примірники",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715580942.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715580942.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3563,7 +3563,7 @@
       "id": "support-21",
       "title": "Залучення резерву часу",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715607819.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715607819.webp",
       "effects": [
         {
           "resource": "time",
@@ -3576,7 +3576,7 @@
       "id": "support-22",
       "title": "Оптимізація звітності",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715652703.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715652703.webp",
       "effects": [
         {
           "resource": "time",
@@ -3593,7 +3593,7 @@
       "id": "support-23",
       "title": "Внутрішній аудит документів",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715664135.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715664135.webp",
       "effects": [
         {
           "resource": "documents",
@@ -3606,7 +3606,7 @@
       "id": "support-24",
       "title": "Звіт до звіту про звіт",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715687524.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715687524.webp",
       "effects": [
         {
           "resource": "time",
@@ -3623,7 +3623,7 @@
       "id": "support-25",
       "title": "Позапланове ААR",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715705510.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715705510.webp",
       "effects": [
         {
           "resource": "time",
@@ -3640,7 +3640,7 @@
       "id": "support-26",
       "title": "Польове налагодження Excel",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715718861.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715718861.webp",
       "effects": [
         {
           "resource": "tech",
@@ -3653,7 +3653,7 @@
       "id": "support-27",
       "title": "Контрольний збір рапортів",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772715729674.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772715729674.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3670,7 +3670,7 @@
       "id": "support-28",
       "title": "Схвалюючий погляд командира",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772960967836.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772960967836.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3683,7 +3683,7 @@
       "id": "support-29",
       "title": "Три П.",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/3-1772964546873.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/3-1772964546873.webp",
       "effects": [
         {
           "resource": "time",
@@ -3700,7 +3700,7 @@
       "id": "support-30",
       "title": "Допомога суміжників",
       "category": "SUPPORT",
-      "image": "/card-assets/2026.SUPPORT.STARTER/card-1772964593007.webp",
+      "image": "/api/card-assets/2026.SUPPORT.STARTER/card-1772964593007.webp",
       "effects": [
         {
           "resource": "time",
@@ -3717,7 +3717,7 @@
       "id": "decision-01",
       "title": "Зразковий рапорт",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871420538.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871420538.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3734,7 +3734,7 @@
       "id": "decision-02",
       "title": "Вдалий виступ на шикуванні",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871439446.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871439446.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3747,7 +3747,7 @@
       "id": "decision-03",
       "title": "Перемога у спортивних змаганнях",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871453560.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871453560.webp",
       "effects": [
         {
           "resource": "time",
@@ -3764,7 +3764,7 @@
       "id": "decision-04",
       "title": "Успішний ААR",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871467975.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871467975.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3781,7 +3781,7 @@
       "id": "decision-05",
       "title": "Волонтерська ініціатива",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871484518.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871484518.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3798,7 +3798,7 @@
       "id": "decision-06",
       "title": "Публікація у військовому журналі",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871500051.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871500051.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3815,7 +3815,7 @@
       "id": "decision-07",
       "title": "Прийняття на курс лідерства",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871519462.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871519462.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3832,7 +3832,7 @@
       "id": "decision-08",
       "title": "Затвердження нового SOP",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871537749.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871537749.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3849,7 +3849,7 @@
       "id": "decision-09",
       "title": "Участь у навчаннях НАТО",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871551984.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871551984.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3866,7 +3866,7 @@
       "id": "decision-10",
       "title": "Ефективне використання ресурсів",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871573623.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871573623.webp",
       "effects": [
         {
           "resource": "time",
@@ -3883,7 +3883,7 @@
       "id": "decision-11",
       "title": "Вдалий брифінг перед начальством",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871588026.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871588026.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3896,7 +3896,7 @@
       "id": "decision-12",
       "title": "Відмінна інвентаризація",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871600284.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871600284.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3913,7 +3913,7 @@
       "id": "decision-13",
       "title": "Курс з кібербезпеки",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871612720.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871612720.webp",
       "effects": [
         {
           "resource": "tech",
@@ -3926,7 +3926,7 @@
       "id": "decision-14",
       "title": "Відзнака командира",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871627089.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871627089.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3939,7 +3939,7 @@
       "id": "decision-15",
       "title": "Призначення на нову посаду",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871647198.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871647198.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3956,7 +3956,7 @@
       "id": "decision-16",
       "title": "Успішний аудит холодильника",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871660520.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871660520.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3973,7 +3973,7 @@
       "id": "decision-17",
       "title": "Підтримка волонтерів",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771871672495.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771871672495.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3990,7 +3990,7 @@
       "id": "decision-18",
       "title": "Вдале інтерв’ю для преси",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771873874546.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771873874546.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4003,7 +4003,7 @@
       "id": "decision-19",
       "title": "Успішна сертифікація підрозділу",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771873894734.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771873894734.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -4016,7 +4016,7 @@
       "id": "decision-20",
       "title": "Покращення побутових умов",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771874748714.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771874748714.webp",
       "effects": [
         {
           "resource": "time",
@@ -4033,7 +4033,7 @@
       "id": "decision-21",
       "title": "Перенесення термінів",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771873958187.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771873958187.webp",
       "effects": [
         {
           "resource": "time",
@@ -4050,7 +4050,7 @@
       "id": "decision-22",
       "title": "Ротація командирів",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771873978850.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771873978850.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4067,7 +4067,7 @@
       "id": "decision-23",
       "title": "Новий наказ про реформу",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1771873991299.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1771873991299.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4084,7 +4084,7 @@
       "id": "decision-24",
       "title": "Анонімне опитування",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1772964742729.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1772964742729.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4101,7 +4101,7 @@
       "id": "decision-25",
       "title": "БЗВП",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1772964779436.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1772964779436.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -4118,7 +4118,7 @@
       "id": "decision-26",
       "title": "Окреме розпорядження",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1772964805573.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1772964805573.webp",
       "effects": [
         {
           "resource": "time",
@@ -4135,7 +4135,7 @@
       "id": "decision-27",
       "title": "Інструкція",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1772964869593.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1772964869593.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -4152,7 +4152,7 @@
       "id": "decision-28",
       "title": "Координаційний центр",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1772964900628.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1772964900628.webp",
       "effects": [
         {
           "resource": "time",
@@ -4169,7 +4169,7 @@
       "id": "decision-29",
       "title": "Злагодження підрозділів",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1772964939595.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1772964939595.webp",
       "effects": [
         {
           "resource": "time",
@@ -4186,7 +4186,7 @@
       "id": "decision-30",
       "title": "Необмежено придатний",
       "category": "COMMAND",
-      "image": "/card-assets/2026.COMMAND.STARTER/card-1772964687130.webp",
+      "image": "/api/card-assets/2026.COMMAND.STARTER/card-1772964687130.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4203,7 +4203,7 @@
       "id": "lyap-01",
       "title": "Журнал обліку журналів",
       "category": "LYAP",
-      "image": "/api/card-assets/asset-1786616827711.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/asset-1786616827711.webp",
       "effects": [
         {
           "resource": "time",
@@ -4220,7 +4220,7 @@
       "id": "lyap-02",
       "title": "Три сантиметри відступу",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/3-1771613029493.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/3-1771613029493.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4233,7 +4233,7 @@
       "id": "lyap-03",
       "title": "Кава на журналі обліку",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/lyap-03.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-03.webp",
       "effects": [
         {
           "resource": "documents",
@@ -4246,7 +4246,7 @@
       "id": "lyap-04",
       "title": "Загублений бланк №27",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/lyap-04.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-04.webp",
       "effects": [
         {
           "resource": "documents",
@@ -4259,7 +4259,7 @@
       "id": "lyap-05",
       "title": "План евакуації з орфографічною помилкою",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/lyap-05.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-05.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4272,7 +4272,7 @@
       "id": "lyap-06",
       "title": "П’ять нарад за один день",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/5-1771613043832.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/5-1771613043832.webp",
       "effects": [
         {
           "resource": "time",
@@ -4285,7 +4285,7 @@
       "id": "lyap-07",
       "title": "Підпис за відсутнього начальника",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613058005.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613058005.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4302,7 +4302,7 @@
       "id": "lyap-08",
       "title": "Фотозвіт без фото",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613066196.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613066196.webp",
       "effects": [
         {
           "resource": "tech",
@@ -4315,7 +4315,7 @@
       "id": "lyap-09",
       "title": "Плутанина з печатками",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613078854.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613078854.webp",
       "effects": [
         {
           "resource": "time",
@@ -4332,7 +4332,7 @@
       "id": "lyap-10",
       "title": "Карта-схема загублена у Google Maps",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613088169.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613088169.webp",
       "effects": [
         {
           "resource": "tech",
@@ -4345,7 +4345,7 @@
       "id": "lyap-11",
       "title": "Плутанина з особовими справами",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/3-1771613102827.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/3-1771613102827.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4362,7 +4362,7 @@
       "id": "lyap-12",
       "title": "Рапорт на ім’я іншого командира",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613115148.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613115148.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -4375,7 +4375,7 @@
       "id": "lyap-13",
       "title": "Неправильна дата у наказі",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613133973.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613133973.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4388,7 +4388,7 @@
       "id": "lyap-14",
       "title": "Втрачений журнал",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613146108.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613146108.webp",
       "effects": [
         {
           "resource": "documents",
@@ -4401,7 +4401,7 @@
       "id": "lyap-15",
       "title": "Подвійна звітність",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613156561.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613156561.webp",
       "effects": [
         {
           "resource": "time",
@@ -4414,7 +4414,7 @@
       "id": "lyap-16",
       "title": "Рапорт без дати",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613164308.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613164308.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -4427,7 +4427,7 @@
       "id": "lyap-17",
       "title": "Неправильний шрифт у наказі",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613170671.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613170671.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4440,7 +4440,7 @@
       "id": "lyap-18",
       "title": "Майте повагу до звання",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613178947.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613178947.webp",
       "effects": [
         {
           "resource": "rank",
@@ -4453,7 +4453,7 @@
       "id": "lyap-19",
       "title": "СЗЧ",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613186122.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613186122.webp",
       "effects": [
         {
           "resource": "time",
@@ -4470,7 +4470,7 @@
       "id": "lyap-20",
       "title": "Задувка",
       "category": "LYAP",
-      "image": "/card-assets/2026.LYAP.STARTER/card-1771613196642.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613196642.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4489,7 +4489,7 @@
       "id": "legendary-01",
       "title": "Мислі Головкома",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4506,7 +4506,7 @@
       "id": "legendary-02",
       "title": "Cміх BUDDA-н-OFF",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1772961254432.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961254432.webp",
       "effects": [
         {
           "resource": "tech",
@@ -4519,7 +4519,7 @@
       "id": "legendary-03",
       "title": "Посмішка Малюка",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884348987.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884348987.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4536,7 +4536,7 @@
       "id": "legendary-04",
       "title": "Фонд Добродія",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1772961289925.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961289925.webp",
       "effects": [
         {
           "resource": "time",
@@ -4557,7 +4557,7 @@
       "id": "legendary-05",
       "title": "Сухпай ЗСУ",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884379477.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884379477.webp",
       "effects": [
         {
           "resource": "time",
@@ -4578,7 +4578,7 @@
       "id": "legendary-06",
       "title": "Статуя Святого ТОРа",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884391744.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884391744.webp",
       "effects": [],
       "flavor": "Коли гримить звітність — мовчи і натискай “оновити”."
     },
@@ -4586,7 +4586,7 @@
       "id": "legendary-07",
       "title": "Церква Святого Лідерства",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884403769.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884403769.webp",
       "effects": [
         {
           "resource": "time",
@@ -4603,7 +4603,7 @@
       "id": "legendary-08",
       "title": "Зірколінк",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1772961348506.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961348506.webp",
       "effects": [
         {
           "resource": "time",
@@ -4620,7 +4620,7 @@
       "id": "legendary-09",
       "title": "Вода “ПроZORRO”",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1772961387230.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961387230.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -4633,7 +4633,7 @@
       "id": "legendary-10",
       "title": "Дрончик",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884442233.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884442233.webp",
       "effects": [
         {
           "resource": "tech",
@@ -4646,7 +4646,7 @@
       "id": "legendary-11",
       "title": "Старий польський корч",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884453732.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884453732.webp",
       "effects": [
         {
           "resource": "time",
@@ -4663,7 +4663,7 @@
       "id": "legendary-12",
       "title": "Грамота “Єбать ти молодець”",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884466520.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884466520.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4676,7 +4676,7 @@
       "id": "legendary-14",
       "title": "Відпустка",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1771884495159.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884495159.webp",
       "effects": [
         {
           "resource": "time",
@@ -4693,20 +4693,20 @@
       "id": "legendary-16",
       "title": "Котєйка ЗСУ",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
       "effects": [
         {
           "resource": "time",
           "value": 2
         }
       ],
-      "flavor": "Видається разом із позицією. Оформлення не потребує. Доступ має всюди."
+      "flavor": "Видається разом із позиціє��. Оформлення не потребує. Доступ має всюди."
     },
     {
       "id": "legendary-17",
       "title": "Нептун",
       "category": "LEGENDARY",
-      "image": "/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
       "effects": [],
       "flavor": "«Стакан за тих, хто не потягнув стакан за звання.»"
     }
@@ -4716,7 +4716,7 @@
       "id": "rank-recruit-set-1",
       "title": "Рекрут",
       "category": "COMMAND",
-      "image": "/card-assets/00-1.webp",
+      "image": "/api/card-assets/00-1.webp",
       "grantRank": "recruit",
       "flavor": "Знає різницю між наказом і порадою."
     },
@@ -4724,7 +4724,7 @@
       "id": "rank-recruit-set-2",
       "title": "Рекрут",
       "category": "COMMAND",
-      "image": "/card-assets/00-1.webp",
+      "image": "/api/card-assets/00-1.webp",
       "grantRank": "recruit",
       "flavor": "Знає різницю між наказом і порадою."
     },
@@ -4732,7 +4732,7 @@
       "id": "rank-recruit-set-3",
       "title": "Рекрут",
       "category": "COMMAND",
-      "image": "/card-assets/00-1.webp",
+      "image": "/api/card-assets/00-1.webp",
       "grantRank": "recruit",
       "flavor": "Знає різницю між наказом і порадою."
     },
@@ -4740,7 +4740,7 @@
       "id": "rank-recruit-set-4",
       "title": "Рекрут",
       "category": "COMMAND",
-      "image": "/card-assets/00-1.webp",
+      "image": "/api/card-assets/00-1.webp",
       "grantRank": "recruit",
       "flavor": "Знає різницю між нака��ом і порадою."
     },
@@ -4748,7 +4748,7 @@
       "id": "rank-recruit-extra-1",
       "title": "Рекрут",
       "category": "COMMAND",
-      "image": "/card-assets/00-1.webp",
+      "image": "/api/card-assets/00-1.webp",
       "grantRank": "recruit",
       "flavor": "Знає різницю між наказом і порадою."
     },
@@ -4756,7 +4756,7 @@
       "id": "rank-recruit-extra-2",
       "title": "Рекрут",
       "category": "COMMAND",
-      "image": "/card-assets/00-1.webp",
+      "image": "/api/card-assets/00-1.webp",
       "grantRank": "recruit",
       "flavor": "Знає різницю між наказом і порадою."
     },
@@ -4764,7 +4764,7 @@
       "id": "rank-soldier-set-1",
       "title": "Солдат",
       "category": "COMMAND",
-      "image": "/card-assets/01-1.webp",
+      "image": "/api/card-assets/01-1.webp",
       "grantRank": "soldier",
       "flavor": "Навчився не лише слухати, а й виконувати."
     },
@@ -4772,7 +4772,7 @@
       "id": "rank-soldier-set-2",
       "title": "Солдат",
       "category": "COMMAND",
-      "image": "/card-assets/01-1.webp",
+      "image": "/api/card-assets/01-1.webp",
       "grantRank": "soldier",
       "flavor": "Навчився не лише слухати, а й виконувати."
     },
@@ -4780,7 +4780,7 @@
       "id": "rank-soldier-set-3",
       "title": "Солдат",
       "category": "COMMAND",
-      "image": "/card-assets/01-1.webp",
+      "image": "/api/card-assets/01-1.webp",
       "grantRank": "soldier",
       "flavor": "Навчився не лише слухати, а й виконувати."
     },
@@ -4788,7 +4788,7 @@
       "id": "rank-soldier-set-4",
       "title": "Солдат",
       "category": "COMMAND",
-      "image": "/card-assets/01-1.webp",
+      "image": "/api/card-assets/01-1.webp",
       "grantRank": "soldier",
       "flavor": "Навчився не лише слухати, а й виконувати."
     },
@@ -4796,7 +4796,7 @@
       "id": "rank-senior_soldier-set-1",
       "title": "Старший солдат",
       "category": "COMMAND",
-      "image": "/card-assets/02-1.webp",
+      "image": "/api/card-assets/02-1.webp",
       "grantRank": "senior_soldier",
       "flavor": "Молодим — приклад, старшим — пам’ятка."
     },
@@ -4804,7 +4804,7 @@
       "id": "rank-senior_soldier-set-2",
       "title": "Старший солдат",
       "category": "COMMAND",
-      "image": "/card-assets/02-1.webp",
+      "image": "/api/card-assets/02-1.webp",
       "grantRank": "senior_soldier",
       "flavor": "Молодим — приклад, старшим — пам’ятка."
     },
@@ -4812,7 +4812,7 @@
       "id": "rank-senior_soldier-set-3",
       "title": "Старший солдат",
       "category": "COMMAND",
-      "image": "/card-assets/02-1.webp",
+      "image": "/api/card-assets/02-1.webp",
       "grantRank": "senior_soldier",
       "flavor": "Молодим — приклад, старшим — пам’ятка."
     },
@@ -4820,7 +4820,7 @@
       "id": "rank-senior_soldier-set-4",
       "title": "Старший солдат",
       "category": "COMMAND",
-      "image": "/card-assets/02-1.webp",
+      "image": "/api/card-assets/02-1.webp",
       "grantRank": "senior_soldier",
       "flavor": "Молодим — приклад, старшим — пам’ятка."
     },
@@ -4828,7 +4828,7 @@
       "id": "rank-junior_sergeant-set-1",
       "title": "Молодший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/03-1.webp",
+      "image": "/api/card-assets/03-1.webp",
       "grantRank": "junior_sergeant",
       "flavor": "Перше “так точно” з нотками відповідальності."
     },
@@ -4836,7 +4836,7 @@
       "id": "rank-junior_sergeant-set-2",
       "title": "Молодший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/03-1.webp",
+      "image": "/api/card-assets/03-1.webp",
       "grantRank": "junior_sergeant",
       "flavor": "Перше “так точно” з нотками відповідальності."
     },
@@ -4844,7 +4844,7 @@
       "id": "rank-junior_sergeant-set-3",
       "title": "Молодший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/03-1.webp",
+      "image": "/api/card-assets/03-1.webp",
       "grantRank": "junior_sergeant",
       "flavor": "Перше “так точно” з нотками відповідальності."
     },
@@ -4852,7 +4852,7 @@
       "id": "rank-junior_sergeant-set-4",
       "title": "Молодший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/03-1.webp",
+      "image": "/api/card-assets/03-1.webp",
       "grantRank": "junior_sergeant",
       "flavor": "Перше “так точно” з нотками відповідальності."
     },
@@ -4860,7 +4860,7 @@
       "id": "rank-sergeant-set-1",
       "title": "Сержант",
       "category": "COMMAND",
-      "image": "/card-assets/04-1.webp",
+      "image": "/api/card-assets/04-1.webp",
       "grantRank": "sergeant",
       "flavor": "Командуєш малими, але відповідаєш за всіх."
     },
@@ -4868,7 +4868,7 @@
       "id": "rank-sergeant-set-2",
       "title": "Сержант",
       "category": "COMMAND",
-      "image": "/card-assets/04-1.webp",
+      "image": "/api/card-assets/04-1.webp",
       "grantRank": "sergeant",
       "flavor": "Командуєш малими, але відповідаєш за всіх."
     },
@@ -4876,7 +4876,7 @@
       "id": "rank-sergeant-set-3",
       "title": "Сержант",
       "category": "COMMAND",
-      "image": "/card-assets/04-1.webp",
+      "image": "/api/card-assets/04-1.webp",
       "grantRank": "sergeant",
       "flavor": "Командуєш малими, але відповідаєш за всіх."
     },
@@ -4884,7 +4884,7 @@
       "id": "rank-sergeant-set-4",
       "title": "Сержант",
       "category": "COMMAND",
-      "image": "/card-assets/04-1.webp",
+      "image": "/api/card-assets/04-1.webp",
       "grantRank": "sergeant",
       "flavor": "Командуєш малими, але відповідаєш за всіх."
     },
@@ -4892,7 +4892,7 @@
       "id": "rank-senior_sergeant-set-1",
       "title": "Старший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/05-1.webp",
+      "image": "/api/card-assets/05-1.webp",
       "grantRank": "senior_sergeant",
       "flavor": "Коли треба — наказує, коли можна — радить."
     },
@@ -4900,7 +4900,7 @@
       "id": "rank-senior_sergeant-set-2",
       "title": "Старший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/05-1.webp",
+      "image": "/api/card-assets/05-1.webp",
       "grantRank": "senior_sergeant",
       "flavor": "Коли треба — наказує, коли можна — радить."
     },
@@ -4908,7 +4908,7 @@
       "id": "rank-senior_sergeant-set-3",
       "title": "Старший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/05-1.webp",
+      "image": "/api/card-assets/05-1.webp",
       "grantRank": "senior_sergeant",
       "flavor": "Коли треба — наказує, коли можна — радить."
     },
@@ -4916,7 +4916,7 @@
       "id": "rank-senior_sergeant-set-4",
       "title": "Старший сержант",
       "category": "COMMAND",
-      "image": "/card-assets/05-1.webp",
+      "image": "/api/card-assets/05-1.webp",
       "grantRank": "senior_sergeant",
       "flavor": "Коли треба — наказує, коли можна — радить."
     },
@@ -4924,7 +4924,7 @@
       "id": "rank-chief_sergeant-set-1",
       "title": "Головний сержант",
       "category": "COMMAND",
-      "image": "/card-assets/06-1.webp",
+      "image": "/api/card-assets/06-1.webp",
       "grantRank": "chief_sergeant",
       "flavor": "Веде журнал точніше, ніж взвод у бій."
     },
@@ -4932,7 +4932,7 @@
       "id": "rank-chief_sergeant-set-2",
       "title": "Головний сержант",
       "category": "COMMAND",
-      "image": "/card-assets/06-1.webp",
+      "image": "/api/card-assets/06-1.webp",
       "grantRank": "chief_sergeant",
       "flavor": "Веде журнал точніше, ніж взвод у бій."
     },
@@ -4940,7 +4940,7 @@
       "id": "rank-chief_sergeant-set-3",
       "title": "Головний сержант",
       "category": "COMMAND",
-      "image": "/card-assets/06-1.webp",
+      "image": "/api/card-assets/06-1.webp",
       "grantRank": "chief_sergeant",
       "flavor": "Веде журнал точніше, ніж взвод у бій."
     },
@@ -4948,7 +4948,7 @@
       "id": "rank-chief_sergeant-set-4",
       "title": "Головний сержант",
       "category": "COMMAND",
-      "image": "/card-assets/06-1.webp",
+      "image": "/api/card-assets/06-1.webp",
       "grantRank": "chief_sergeant",
       "flavor": "Веде журнал точніше, ніж взвод у бій."
     },
@@ -4956,7 +4956,7 @@
       "id": "rank-staff_sergeant-set-1",
       "title": "Штаб-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/07-1.webp",
+      "image": "/api/card-assets/07-1.webp",
       "grantRank": "staff_sergeant",
       "flavor": "Знає, де журнал, і хто його не здав."
     },
@@ -4964,7 +4964,7 @@
       "id": "rank-staff_sergeant-set-2",
       "title": "Штаб-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/07-1.webp",
+      "image": "/api/card-assets/07-1.webp",
       "grantRank": "staff_sergeant",
       "flavor": "Знає, де журнал, і хто його не здав."
     },
@@ -4972,7 +4972,7 @@
       "id": "rank-staff_sergeant-set-3",
       "title": "Штаб-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/07-1.webp",
+      "image": "/api/card-assets/07-1.webp",
       "grantRank": "staff_sergeant",
       "flavor": "Знає, де журнал, і хто його не здав."
     },
@@ -4980,7 +4980,7 @@
       "id": "rank-staff_sergeant-set-4",
       "title": "Штаб-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/07-1.webp",
+      "image": "/api/card-assets/07-1.webp",
       "grantRank": "staff_sergeant",
       "flavor": "Знає, де журнал, і хто його не здав."
     },
@@ -4988,7 +4988,7 @@
       "id": "rank-master_sergeant-set-1",
       "title": "Майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/08-1.webp",
+      "image": "/api/card-assets/08-1.webp",
       "grantRank": "master_sergeant",
       "flavor": "Майстер не тому, що вміє, а тому, що вже бачив."
     },
@@ -4996,7 +4996,7 @@
       "id": "rank-master_sergeant-set-2",
       "title": "Майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/08-1.webp",
+      "image": "/api/card-assets/08-1.webp",
       "grantRank": "master_sergeant",
       "flavor": "Майстер не тому, що вміє, а тому, що вже бачив."
     },
@@ -5004,7 +5004,7 @@
       "id": "rank-master_sergeant-set-3",
       "title": "Майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/08-1.webp",
+      "image": "/api/card-assets/08-1.webp",
       "grantRank": "master_sergeant",
       "flavor": "Майстер не тому, що вміє, а тому, що вже бачив."
     },
@@ -5012,7 +5012,7 @@
       "id": "rank-master_sergeant-set-4",
       "title": "Майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/08-1.webp",
+      "image": "/api/card-assets/08-1.webp",
       "grantRank": "master_sergeant",
       "flavor": "Майстер не тому, що вміє, а тому, що вже бачив."
     },
@@ -5020,7 +5020,7 @@
       "id": "rank-senior_master_sergeant-set-1",
       "title": "Старший майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/09-1.webp",
+      "image": "/api/card-assets/09-1.webp",
       "grantRank": "senior_master_sergeant",
       "flavor": "Підлеглі слухають, навіть коли мовчиш."
     },
@@ -5028,7 +5028,7 @@
       "id": "rank-senior_master_sergeant-set-2",
       "title": "Старший майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/09-1.webp",
+      "image": "/api/card-assets/09-1.webp",
       "grantRank": "senior_master_sergeant",
       "flavor": "Підлеглі слухають, навіть коли мовчиш."
     },
@@ -5036,7 +5036,7 @@
       "id": "rank-senior_master_sergeant-set-3",
       "title": "Старший майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/09-1.webp",
+      "image": "/api/card-assets/09-1.webp",
       "grantRank": "senior_master_sergeant",
       "flavor": "Підлеглі слухають, навіть коли мовчиш."
     },
@@ -5044,7 +5044,7 @@
       "id": "rank-senior_master_sergeant-set-4",
       "title": "Старший майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/09-1.webp",
+      "image": "/api/card-assets/09-1.webp",
       "grantRank": "senior_master_sergeant",
       "flavor": "Підлеглі слухають, навіть коли мовчиш."
     },
@@ -5052,7 +5052,7 @@
       "id": "rank-chief_master_sergeant-set-1",
       "title": "Головний майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/10-1.webp",
+      "image": "/api/card-assets/10-1.webp",
       "grantRank": "chief_master_sergeant",
       "flavor": "Той, хто вміє навести лад навіть у ладах."
     },
@@ -5060,7 +5060,7 @@
       "id": "rank-chief_master_sergeant-set-2",
       "title": "Головний майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/10-1.webp",
+      "image": "/api/card-assets/10-1.webp",
       "grantRank": "chief_master_sergeant",
       "flavor": "Той, хто вміє навести лад навіть у ладах."
     },
@@ -5068,7 +5068,7 @@
       "id": "rank-chief_master_sergeant-set-3",
       "title": "Головний майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/10-1.webp",
+      "image": "/api/card-assets/10-1.webp",
       "grantRank": "chief_master_sergeant",
       "flavor": "Той, хто вміє навести лад навіть у ладах."
     },
@@ -5076,7 +5076,7 @@
       "id": "rank-chief_master_sergeant-set-4",
       "title": "Головний майстер-сержант",
       "category": "COMMAND",
-      "image": "/card-assets/10-1.webp",
+      "image": "/api/card-assets/10-1.webp",
       "grantRank": "chief_master_sergeant",
       "flavor": "Той, хто вміє навести лад навіть у ладах."
     },
@@ -5084,7 +5084,7 @@
       "id": "rank-junior_lieutenant-set-1",
       "title": "Молодший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/11-1.webp",
+      "image": "/api/card-assets/11-1.webp",
       "grantRank": "junior_lieutenant",
       "flavor": "Перший підпис — і перший стрес."
     },
@@ -5092,7 +5092,7 @@
       "id": "rank-junior_lieutenant-set-2",
       "title": "Молодший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/11-1.webp",
+      "image": "/api/card-assets/11-1.webp",
       "grantRank": "junior_lieutenant",
       "flavor": "Перший підпис — і перший стрес."
     },
@@ -5100,7 +5100,7 @@
       "id": "rank-junior_lieutenant-set-3",
       "title": "Молодший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/11-1.webp",
+      "image": "/api/card-assets/11-1.webp",
       "grantRank": "junior_lieutenant",
       "flavor": "Перший підпис — і перший стрес."
     },
@@ -5108,7 +5108,7 @@
       "id": "rank-junior_lieutenant-set-4",
       "title": "Молодший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/11-1.webp",
+      "image": "/api/card-assets/11-1.webp",
       "grantRank": "junior_lieutenant",
       "flavor": "Перший підпис — і перший стрес."
     },
@@ -5116,7 +5116,7 @@
       "id": "rank-lieutenant-set-1",
       "title": "Лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/12-1.webp",
+      "image": "/api/card-assets/12-1.webp",
       "grantRank": "lieutenant",
       "flavor": "Вивчив різницю між планом і реальністю."
     },
@@ -5124,7 +5124,7 @@
       "id": "rank-lieutenant-set-2",
       "title": "Лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/12-1.webp",
+      "image": "/api/card-assets/12-1.webp",
       "grantRank": "lieutenant",
       "flavor": "Вивчив різницю між планом і реальністю."
     },
@@ -5132,7 +5132,7 @@
       "id": "rank-lieutenant-set-3",
       "title": "Лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/12-1.webp",
+      "image": "/api/card-assets/12-1.webp",
       "grantRank": "lieutenant",
       "flavor": "Вивчив різницю між планом і реальністю."
     },
@@ -5140,7 +5140,7 @@
       "id": "rank-lieutenant-set-4",
       "title": "Лейтена��т",
       "category": "COMMAND",
-      "image": "/card-assets/12-1.webp",
+      "image": "/api/card-assets/12-1.webp",
       "grantRank": "lieutenant",
       "flavor": "Вивчив різницю між планом і реальністю."
     },
@@ -5148,7 +5148,7 @@
       "id": "rank-senior_lieutenant-set-1",
       "title": "Старший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/13-1.webp",
+      "image": "/api/card-assets/13-1.webp",
       "grantRank": "senior_lieutenant",
       "flavor": "Звикаєш до фрази “за власною ініціативою”."
     },
@@ -5156,7 +5156,7 @@
       "id": "rank-senior_lieutenant-set-2",
       "title": "Старший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/13-1.webp",
+      "image": "/api/card-assets/13-1.webp",
       "grantRank": "senior_lieutenant",
       "flavor": "Звикаєш до фрази “за власною ініціативою”."
     },
@@ -5164,7 +5164,7 @@
       "id": "rank-senior_lieutenant-set-3",
       "title": "Старший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/13-1.webp",
+      "image": "/api/card-assets/13-1.webp",
       "grantRank": "senior_lieutenant",
       "flavor": "Звикаєш до фрази “за власною ініціативою”."
     },
@@ -5172,7 +5172,7 @@
       "id": "rank-senior_lieutenant-set-4",
       "title": "Старший лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/13-1.webp",
+      "image": "/api/card-assets/13-1.webp",
       "grantRank": "senior_lieutenant",
       "flavor": "Звикаєш до фрази “за власною ініціативою”."
     },
@@ -5180,7 +5180,7 @@
       "id": "rank-captain-set-1",
       "title": "Капітан",
       "category": "COMMAND",
-      "image": "/card-assets/14-1.webp",
+      "image": "/api/card-assets/14-1.webp",
       "grantRank": "captain",
       "flavor": "Відповідає за все, навіть за погоду."
     },
@@ -5188,7 +5188,7 @@
       "id": "rank-captain-set-2",
       "title": "Капітан",
       "category": "COMMAND",
-      "image": "/card-assets/14-1.webp",
+      "image": "/api/card-assets/14-1.webp",
       "grantRank": "captain",
       "flavor": "Відповідає за все, навіть за погоду."
     },
@@ -5196,7 +5196,7 @@
       "id": "rank-captain-set-3",
       "title": "Капітан",
       "category": "COMMAND",
-      "image": "/card-assets/14-1.webp",
+      "image": "/api/card-assets/14-1.webp",
       "grantRank": "captain",
       "flavor": "Відповідає за все, навіть за погоду."
     },
@@ -5204,7 +5204,7 @@
       "id": "rank-captain-set-4",
       "title": "Капітан",
       "category": "COMMAND",
-      "image": "/card-assets/14-1.webp",
+      "image": "/api/card-assets/14-1.webp",
       "grantRank": "captain",
       "flavor": "Відповідає за все, навіть за погоду."
     },
@@ -5212,7 +5212,7 @@
       "id": "rank-major-set-1",
       "title": "Майор",
       "category": "COMMAND",
-      "image": "/card-assets/15-1.webp",
+      "image": "/api/card-assets/15-1.webp",
       "grantRank": "major",
       "flavor": "Якщо нічого не згоріло — значить, керував майор."
     },
@@ -5220,7 +5220,7 @@
       "id": "rank-major-set-2",
       "title": "Майор",
       "category": "COMMAND",
-      "image": "/card-assets/15-1.webp",
+      "image": "/api/card-assets/15-1.webp",
       "grantRank": "major",
       "flavor": "Якщо нічого не згоріло — значить, керував майор."
     },
@@ -5228,7 +5228,7 @@
       "id": "rank-major-set-3",
       "title": "Майор",
       "category": "COMMAND",
-      "image": "/card-assets/15-1.webp",
+      "image": "/api/card-assets/15-1.webp",
       "grantRank": "major",
       "flavor": "Якщо нічого не згоріло — значить, керував майор."
     },
@@ -5236,7 +5236,7 @@
       "id": "rank-major-set-4",
       "title": "Майор",
       "category": "COMMAND",
-      "image": "/card-assets/15-1.webp",
+      "image": "/api/card-assets/15-1.webp",
       "grantRank": "major",
       "flavor": "Якщо нічого не згоріло — значить, керував майор."
     },
@@ -5244,7 +5244,7 @@
       "id": "rank-lieutenant_colonel-set-1",
       "title": "Підполковник",
       "category": "COMMAND",
-      "image": "/card-assets/16-1.webp",
+      "image": "/api/card-assets/16-1.webp",
       "grantRank": "lieutenant_colonel",
       "flavor": "Твій спокій — найкраща зброя в штабі."
     },
@@ -5252,7 +5252,7 @@
       "id": "rank-lieutenant_colonel-set-2",
       "title": "Підполковник",
       "category": "COMMAND",
-      "image": "/card-assets/16-1.webp",
+      "image": "/api/card-assets/16-1.webp",
       "grantRank": "lieutenant_colonel",
       "flavor": "Твій спокій — найкраща зброя в штабі."
     },
@@ -5260,7 +5260,7 @@
       "id": "rank-lieutenant_colonel-set-3",
       "title": "Підполковник",
       "category": "COMMAND",
-      "image": "/card-assets/16-1.webp",
+      "image": "/api/card-assets/16-1.webp",
       "grantRank": "lieutenant_colonel",
       "flavor": "Твій спокій — найкраща зброя в штабі."
     },
@@ -5268,7 +5268,7 @@
       "id": "rank-lieutenant_colonel-set-4",
       "title": "Підполковник",
       "category": "COMMAND",
-      "image": "/card-assets/16-1.webp",
+      "image": "/api/card-assets/16-1.webp",
       "grantRank": "lieutenant_colonel",
       "flavor": "Твій спокій — найкраща зброя в штабі."
     },
@@ -5276,7 +5276,7 @@
       "id": "rank-colonel-set-1",
       "title": "Полковник",
       "category": "COMMAND",
-      "image": "/card-assets/17-1.webp",
+      "image": "/api/card-assets/17-1.webp",
       "grantRank": "colonel",
       "flavor": "Розпорядження, накази, вказівки — і все з підписом."
     },
@@ -5284,7 +5284,7 @@
       "id": "rank-colonel-set-2",
       "title": "Полковник",
       "category": "COMMAND",
-      "image": "/card-assets/17-1.webp",
+      "image": "/api/card-assets/17-1.webp",
       "grantRank": "colonel",
       "flavor": "Розпорядження, накази, вказівки — і все з підписом."
     },
@@ -5292,7 +5292,7 @@
       "id": "rank-colonel-set-3",
       "title": "Полковник",
       "category": "COMMAND",
-      "image": "/card-assets/17-1.webp",
+      "image": "/api/card-assets/17-1.webp",
       "grantRank": "colonel",
       "flavor": "Розпорядження, накази, вказівки — і все з підписом."
     },
@@ -5300,7 +5300,7 @@
       "id": "rank-colonel-set-4",
       "title": "Полковник",
       "category": "COMMAND",
-      "image": "/card-assets/17-1.webp",
+      "image": "/api/card-assets/17-1.webp",
       "grantRank": "colonel",
       "flavor": "Розпорядження, накази, вказівки — і все з підписом."
     },
@@ -5308,7 +5308,7 @@
       "id": "rank-brigadier_general-set-1",
       "title": "Бригадний генерал",
       "category": "COMMAND",
-      "image": "/card-assets/18-1.webp",
+      "image": "/api/card-assets/18-1.webp",
       "grantRank": "brigadier_general",
       "flavor": "Якщо бачиш порядок — десь поруч генерал."
     },
@@ -5316,7 +5316,7 @@
       "id": "rank-brigadier_general-set-2",
       "title": "Бригадний генерал",
       "category": "COMMAND",
-      "image": "/card-assets/18-1.webp",
+      "image": "/api/card-assets/18-1.webp",
       "grantRank": "brigadier_general",
       "flavor": "Якщо бачиш порядок — десь поруч генерал."
     },
@@ -5324,7 +5324,7 @@
       "id": "rank-brigadier_general-set-3",
       "title": "Бригадний генерал",
       "category": "COMMAND",
-      "image": "/card-assets/18-1.webp",
+      "image": "/api/card-assets/18-1.webp",
       "grantRank": "brigadier_general",
       "flavor": "Якщо бачиш порядок — десь поруч генерал."
     },
@@ -5332,7 +5332,7 @@
       "id": "rank-brigadier_general-set-4",
       "title": "Бригадний генерал",
       "category": "COMMAND",
-      "image": "/card-assets/18-1.webp",
+      "image": "/api/card-assets/18-1.webp",
       "grantRank": "brigadier_general",
       "flavor": "Якщо бачиш порядок — десь поруч генерал."
     },
@@ -5340,7 +5340,7 @@
       "id": "rank-major_general-set-1",
       "title": "Генерал-майор",
       "category": "COMMAND",
-      "image": "/card-assets/19-1.webp",
+      "image": "/api/card-assets/19-1.webp",
       "grantRank": "major_general",
       "flavor": "Планує стратегічно, рахує дріб’язково."
     },
@@ -5348,7 +5348,7 @@
       "id": "rank-major_general-set-2",
       "title": "Генерал-майор",
       "category": "COMMAND",
-      "image": "/card-assets/19-1.webp",
+      "image": "/api/card-assets/19-1.webp",
       "grantRank": "major_general",
       "flavor": "Планує стратегічно, рахує дріб’язково."
     },
@@ -5356,7 +5356,7 @@
       "id": "rank-major_general-set-3",
       "title": "Генерал-майор",
       "category": "COMMAND",
-      "image": "/card-assets/19-1.webp",
+      "image": "/api/card-assets/19-1.webp",
       "grantRank": "major_general",
       "flavor": "Планує стратегічно, рахує дріб’язково."
     },
@@ -5364,7 +5364,7 @@
       "id": "rank-major_general-set-4",
       "title": "Генерал-майор",
       "category": "COMMAND",
-      "image": "/card-assets/19-1.webp",
+      "image": "/api/card-assets/19-1.webp",
       "grantRank": "major_general",
       "flavor": "Планує стратегічно, рахує дріб’язково."
     },
@@ -5372,7 +5372,7 @@
       "id": "rank-lieutenant_general-set-1",
       "title": "Генерал-лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/20-1.webp",
+      "image": "/api/card-assets/20-1.webp",
       "grantRank": "lieutenant_general",
       "flavor": "Журнали самі тебе знаходять."
     },
@@ -5380,7 +5380,7 @@
       "id": "rank-lieutenant_general-set-2",
       "title": "Генерал-лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/20-1.webp",
+      "image": "/api/card-assets/20-1.webp",
       "grantRank": "lieutenant_general",
       "flavor": "Журнали самі тебе знаходять."
     },
@@ -5388,7 +5388,7 @@
       "id": "rank-lieutenant_general-set-3",
       "title": "Генерал-лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/20-1.webp",
+      "image": "/api/card-assets/20-1.webp",
       "grantRank": "lieutenant_general",
       "flavor": "Журнали самі тебе знаходять."
     },
@@ -5396,7 +5396,7 @@
       "id": "rank-lieutenant_general-set-4",
       "title": "Генерал-лейтенант",
       "category": "COMMAND",
-      "image": "/card-assets/20-1.webp",
+      "image": "/api/card-assets/20-1.webp",
       "grantRank": "lieutenant_general",
       "flavor": "Журнали самі тебе знаходять."
     },
@@ -5404,7 +5404,7 @@
       "id": "rank-general-set-1",
       "title": "Генерал",
       "category": "COMMAND",
-      "image": "/card-assets/21-1.webp",
+      "image": "/api/card-assets/21-1.webp",
       "grantRank": "general",
       "flavor": "Доки хтось шукає винних — він шукає рішення."
     },
@@ -5412,7 +5412,7 @@
       "id": "rank-general-set-2",
       "title": "Генерал",
       "category": "COMMAND",
-      "image": "/card-assets/21-1.webp",
+      "image": "/api/card-assets/21-1.webp",
       "grantRank": "general",
       "flavor": "Доки хтось шукає винних — він шукає рішення."
     },
@@ -5420,7 +5420,7 @@
       "id": "rank-general-set-3",
       "title": "Генерал",
       "category": "COMMAND",
-      "image": "/card-assets/21-1.webp",
+      "image": "/api/card-assets/21-1.webp",
       "grantRank": "general",
       "flavor": "Доки хтось шукає винних — він шукає рішення."
     },
@@ -5428,12 +5428,12 @@
       "id": "rank-general-set-4",
       "title": "Генерал",
       "category": "COMMAND",
-      "image": "/card-assets/21-1.webp",
+      "image": "/api/card-assets/21-1.webp",
       "grantRank": "general",
       "flavor": "Доки хтось шукає винних — він шукає рішення."
     }
   ],
-  "deckBackImage": "/card-assets/626a45d5-79de-44ec-b2cf-7bf701c578d6.webp",
+  "deckBackImage": "/api/card-assets/626a45d5-79de-44ec-b2cf-7bf701c578d6.webp",
   "modules": [
     {
       "id": "lyap_core",
