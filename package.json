@@ -1,6 +1,6 @@
 {
   "name": "joj-game-new",
-  "version": "0.0.4.24",
+  "version": "0.0.4.25",
   "private": true,
   "type": "module",
   "preferGlobal": true,
@@ -25,7 +25,9 @@
     "check:assets": "tsx scripts/check-asset-inventory.ts",
     "check:i18n": "tsx scripts/check-i18n.ts",
     "check:runtime-data": "tsx scripts/check-runtime-data.ts",
-    "check:release": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run coverage && npm run check:shared-config && npm run check:assets && npm run check:i18n && npm run check:runtime-data && npm run check:version-sync && npm run build",
+    "check:changelog-shas": "node scripts/sync-changelog-shas.cjs --check",
+    "sync:changelog-shas": "node scripts/sync-changelog-shas.cjs",
+    "check:release": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run coverage && npm run check:shared-config && npm run check:assets && npm run check:i18n && npm run check:runtime-data && npm run check:changelog-shas && npm run check:version-sync && npm run build",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "start:server": "tsx server/index.ts",
