@@ -7,7 +7,7 @@ import sharedRanksJson from '../database/shared-ranks.json';
 
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const assetDir = path.join(repoRoot, 'public', 'card-assets');
-const CARD_ASSET_PREFIX = '/card-assets/';
+const CARD_ASSET_PREFIXES = ['/api/card-assets/', '/card-assets/'];
 const canonicalAssetNameRe =
   /^[a-z0-9]+(?:-[a-z0-9]+)*\.(png|jpg|jpeg|gif|svg|webp)$/;
 const sharedRanks = Array.isArray(sharedRanksJson)
@@ -40,8 +40,11 @@ const collectAssetRefs = () => {
   const refs = new Set<string>();
   const add = (value: unknown) => {
     if (typeof value !== 'string') return;
-    if (!value.startsWith(CARD_ASSET_PREFIX)) return;
-    refs.add(value.slice(CARD_ASSET_PREFIX.length));
+    const prefix = CARD_ASSET_PREFIXES.find((candidate) =>
+      value.startsWith(candidate),
+    );
+    if (!prefix) return;
+    refs.add(value.slice(prefix.length));
   };
 
   add(sharedDeckTemplateJson.deckBackImage);

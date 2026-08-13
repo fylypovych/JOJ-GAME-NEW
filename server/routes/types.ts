@@ -5,6 +5,7 @@ export type RouteResponseHeaders = Record<string, string | string[]>;
 export type RouteSetHeader = (name: string, value: string | string[]) => void;
 
 export type RouteCtx = {
+  params?: Record<string, unknown>;
   query?: Record<string, unknown>;
   path?: string;
   method?: string;

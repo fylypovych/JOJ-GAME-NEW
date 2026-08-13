@@ -1,4 +1,5 @@
 export const CARD_ASSET_BASE_PATH = '/card-assets/';
+export const RUNTIME_CARD_ASSET_BASE_PATH = '/api/card-assets/';
 
 // Module folder mapping for legacy card ID patterns
 const MODULE_FOLDER_BY_PREFIX: Record<string, string> = {
@@ -25,6 +26,7 @@ export const normalizeImagePath = (input?: string): string | undefined => {
 
   const normalized = raw.replace(/\\/g, '/');
   if (/^(https?:\/\/|data:|blob:)/i.test(normalized)) return normalized;
+  if (normalized.startsWith(RUNTIME_CARD_ASSET_BASE_PATH)) return normalized;
 
   // Handle paths already in /card-assets/ but missing module folder
   if (normalized.startsWith(CARD_ASSET_BASE_PATH)) {
@@ -33,10 +35,10 @@ export const normalizeImagePath = (input?: string): string | undefined => {
     if (!afterBase.includes('/')) {
       const moduleFolder = resolveModuleFolder(afterBase);
       if (moduleFolder) {
-        return `${CARD_ASSET_BASE_PATH}${moduleFolder}/${afterBase}`;
+        return `${RUNTIME_CARD_ASSET_BASE_PATH}${moduleFolder}/${afterBase}`;
       }
     }
-    return normalized;
+    return `${RUNTIME_CARD_ASSET_BASE_PATH}${afterBase}`;
   }
 
   // Handle legacy /cards/ paths with module folder resolution
@@ -45,23 +47,23 @@ export const normalizeImagePath = (input?: string): string | undefined => {
     const filename = withoutPrefix.split('/').pop() || withoutPrefix;
     const moduleFolder = resolveModuleFolder(filename);
     if (moduleFolder) {
-      return `${CARD_ASSET_BASE_PATH}${moduleFolder}/${filename}`;
+      return `${RUNTIME_CARD_ASSET_BASE_PATH}${moduleFolder}/${filename}`;
     }
-    return `${CARD_ASSET_BASE_PATH}${withoutPrefix}`;
+    return `${RUNTIME_CARD_ASSET_BASE_PATH}${withoutPrefix}`;
   }
 
-  if (normalized.startsWith('/public/cards/')) return normalized.replace('/public/cards/', CARD_ASSET_BASE_PATH);
-  if (normalized.startsWith('public/cards/')) return `/${normalized.replace(/^public\/cards\//, 'card-assets/')}`;
-  if (normalized.startsWith('/public/card-assets/')) return normalized.replace('/public', '');
-  if (normalized.startsWith('public/card-assets/')) return `/${normalized.replace(/^public\//, '')}`;
+  if (normalized.startsWith('/public/cards/')) return normalized.replace('/public/cards/', RUNTIME_CARD_ASSET_BASE_PATH);
+  if (normalized.startsWith('public/cards/')) return `/${normalized.replace(/^public\/cards\//, 'api/card-assets/')}`;
+  if (normalized.startsWith('/public/card-assets/')) return normalized.replace('/public/card-assets/', RUNTIME_CARD_ASSET_BASE_PATH);
+  if (normalized.startsWith('public/card-assets/')) return `/${normalized.replace(/^public\/card-assets\//, 'api/card-assets/')}`;
 
   // Handle bare filenames with module folder resolution
   if (/^[^/]+\.(png|webp|jpg|jpeg|gif|svg)$/i.test(normalized)) {
     const moduleFolder = resolveModuleFolder(normalized);
     if (moduleFolder) {
-      return `${CARD_ASSET_BASE_PATH}${moduleFolder}/${normalized}`;
+      return `${RUNTIME_CARD_ASSET_BASE_PATH}${moduleFolder}/${normalized}`;
     }
-    return `${CARD_ASSET_BASE_PATH}${normalized}`;
+    return `${RUNTIME_CARD_ASSET_BASE_PATH}${normalized}`;
   }
 
   return normalized.startsWith('/') ? normalized : `/${normalized}`;

@@ -53,7 +53,7 @@ export const useAdminImageRegeneration = ({
       if (!value) return null;
       const normalized = normalizeImagePath(value);
       if (!normalized) return null;
-      return normalized.startsWith('/card-assets/') || normalized.startsWith('/cards/') ? normalized : null;
+      return normalized.startsWith('/api/card-assets/') || normalized.startsWith('/card-assets/') || normalized.startsWith('/cards/') ? normalized : null;
     };
 
     let scanned = 0;

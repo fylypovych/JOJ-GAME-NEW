@@ -61,16 +61,17 @@ export const registerUploadRoutes = ({
   assetStore,
   auditAdminAction,
 }: UploadRoutesDeps) => {
-  const CARD_ASSET_BASE_PATH = '/public/card-assets/';
+  const CARD_ASSET_BASE_PATH = '/api/card-assets/';
   // Avatar files are served through /api so the production Caddy routing sends
   // requests to the backend immediately after upload. The legacy routes below
   // remain available for profiles saved before this change.
   const AVATAR_ASSET_BASE_PATH = '/api/profile/avatar/';
   const avatarUploadsDir = path.resolve(uploadsDir, '..', 'profile-image');
   const systemIconsDir = path.resolve(uploadsDir, '..', 'sys.icons');
-  const isCardAssetPath = (value: string) => value.startsWith('/card-assets/') || value.startsWith('/cards/') || value.startsWith('/public/card-assets/');
+  const isCardAssetPath = (value: string) => value.startsWith('/api/card-assets/') || value.startsWith('/card-assets/') || value.startsWith('/cards/') || value.startsWith('/public/card-assets/');
   const toUploadsRelativePath = (assetPath: string) => {
     const normalized = assetPath.replace(/\\/g, '/').trim();
+    if (normalized.startsWith('/api/card-assets/')) return normalized.slice('/api/card-assets/'.length);
     if (normalized.startsWith('/public/card-assets/')) return normalized.slice('/public/card-assets/'.length);
     if (normalized.startsWith('/card-assets/')) return normalized.slice('/card-assets/'.length);
     if (normalized.startsWith('/cards/')) return normalized.slice('/cards/'.length);
@@ -111,6 +112,7 @@ export const registerUploadRoutes = ({
   };
   const toAvatarPath = (fileName: string) => `${AVATAR_ASSET_BASE_PATH}${fileName}`;
   const buildCardAssetAliases = (normalizedRelative: string) => ([
+    `/api/card-assets/${normalizedRelative}`,
     `/public/card-assets/${normalizedRelative}`,
     `/card-assets/${normalizedRelative}`,
     `/cards/${normalizedRelative}`,
@@ -142,6 +144,32 @@ export const registerUploadRoutes = ({
     } catch {
       ctx.status = 404;
       ctx.body = 'Avatar not found';
+    }
+  };
+  const serveCardAssetFile = async (ctx: RouteCtx) => {
+    const assetPath = typeof ctx.params?.assetPath === 'string' ? ctx.params.assetPath.trim() : '';
+    const resolvedAsset = resolveCardAssetTargetPath(`/api/card-assets/${assetPath}`);
+    if (!resolvedAsset) {
+      ctx.status = 400;
+      ctx.body = 'Invalid card asset path';
+      return;
+    }
+    try {
+      const fileBuffer = await readFile(resolvedAsset.targetPath);
+      const ext = path.extname(resolvedAsset.normalizedRelative).toLowerCase();
+      const mime = ext === '.png' ? 'image/png'
+        : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg'
+          : ext === '.gif' ? 'image/gif'
+            : ext === '.svg' ? 'image/svg+xml'
+              : 'image/webp';
+      if (typeof ctx.set === 'function') {
+        ctx.set('Content-Type', mime);
+        ctx.set('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+      ctx.body = fileBuffer;
+    } catch {
+      ctx.status = 404;
+      ctx.body = 'Card asset not found';
     }
   };
 
@@ -283,6 +311,7 @@ export const registerUploadRoutes = ({
   router.get('/profile-image/:fileName', serveAvatarFile);
   router.get('/public/profile-image/:fileName', serveAvatarFile);
   router.get('/api/profile/avatar/:fileName', serveAvatarFile);
+  router.get('/api/card-assets/:assetPath(.*)', serveCardAssetFile);
 
   router.post('/api/upload-card-image', async (ctx: RouteCtx) => {
     if (!(await requireAdminWriteAccess(ctx, '/api/upload-card-image'))) return;

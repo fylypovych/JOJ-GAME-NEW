@@ -64,7 +64,7 @@ export const useAdminCardEditor = ({
 
   const isManagedCardAssetPath = (value?: string) => {
     const normalized = normalizeImagePath(value);
-    return Boolean(normalized && (normalized.startsWith('/card-assets/') || normalized.startsWith('/cards/')));
+    return Boolean(normalized && (normalized.startsWith('/api/card-assets/') || normalized.startsWith('/card-assets/') || normalized.startsWith('/cards/')));
   };
 
   const countImageReferences = (imagePath?: string, excludingCardId?: string) => {

@@ -107,11 +107,13 @@ export const registerBugReportRoutes = (args: {
   }) => Promise<void>;
 }) => {
   const isCardAssetPath = (value: string) =>
-    value.startsWith('/public/card-assets/')
+    value.startsWith('/api/card-assets/')
+    || value.startsWith('/public/card-assets/')
     || value.startsWith('/card-assets/')
     || value.startsWith('/cards/');
   const toCardAssetRelativePath = (assetPath: string) => {
     const normalized = assetPath.replace(/\\/g, '/').trim();
+    if (normalized.startsWith('/api/card-assets/')) return normalized.slice('/api/card-assets/'.length);
     if (normalized.startsWith('/public/card-assets/')) return normalized.slice('/public/card-assets/'.length);
     if (normalized.startsWith('/card-assets/')) return normalized.slice('/card-assets/'.length);
     if (normalized.startsWith('/cards/')) return normalized.slice('/cards/'.length);
