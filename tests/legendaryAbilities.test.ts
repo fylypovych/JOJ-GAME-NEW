@@ -72,3 +72,17 @@ test('Kotieika seat-limit override expires at the next own turn', () => {
 
   assert.equal(G.ignoreSeatLimitForPromotionUntilTurn['0'], undefined);
 });
+
+test('unused extra hand play expires at the next own turn', () => {
+  const G = makeState();
+  G.extraHandPlayTokens['0'] = 1;
+  const onBegin = (jojGame.turn as unknown as { onBegin: (args: unknown) => void }).onBegin;
+
+  onBegin({
+    G,
+    ctx: { currentPlayer: '0', playOrder: ['0', '1'], turn: 3, numPlayers: 2 },
+    events: { setActivePlayers: () => undefined, endTurn: () => undefined },
+  });
+
+  assert.equal(G.extraHandPlayTokens['0'], 0);
+});

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cardNeedsResourceSelection, cardNeedsTargetSelection, getCardPlayBehavior } from '../../game/cardRules';
 import type { CardDefinition, JojGameState, ResourceKey } from '../../game/types';
 import {
@@ -131,7 +131,47 @@ export const usePendingSelection = ({
   const [vvnzSelectedResources, setVvnzSelectedResources] = useState<ResourceKey[]>([]);
   const [replacementSelectionsByTarget, setReplacementSelectionsByTarget] = useState<Record<string, ResourceKey[]>>({});
   const [activeReplacementTargetId, setActiveReplacementTargetId] = useState<string | null>(null);
+  const [isHandPlaySubmitting, setIsHandPlaySubmitting] = useState(false);
+  const handPlaySubmissionRef = useRef(false);
+  const submittedHandSnapshotRef = useRef<string | null>(null);
+  const handSnapshot = `${ctx?.turn ?? ''}:${hand.map((card) => card.id).join('|')}`;
   const botPlayerIds = useMemo(() => new Set(Object.keys(G?.botPlayers ?? {})), [G?.botPlayers]);
+
+  const releaseHandPlaySubmission = useCallback(() => {
+    handPlaySubmissionRef.current = false;
+    submittedHandSnapshotRef.current = null;
+    setIsHandPlaySubmitting(false);
+  }, []);
+
+  const submitHandCard = useCallback((
+    cardId: string,
+    replacementResources: ResourceKey[] = [],
+    targetPlayerID?: string,
+    replacementByTarget: Record<string, ResourceKey[]> = {},
+  ) => {
+    if (handPlaySubmissionRef.current) return false;
+    handPlaySubmissionRef.current = true;
+    submittedHandSnapshotRef.current = handSnapshot;
+    setIsHandPlaySubmitting(true);
+    try {
+      moves.playCard(cardId, replacementResources, targetPlayerID, replacementByTarget);
+      return true;
+    } catch (error) {
+      releaseHandPlaySubmission();
+      throw error;
+    }
+  }, [handSnapshot, moves, releaseHandPlaySubmission]);
+
+  useEffect(() => {
+    if (!submittedHandSnapshotRef.current || submittedHandSnapshotRef.current === handSnapshot) return;
+    releaseHandPlaySubmission();
+  }, [handSnapshot, releaseHandPlaySubmission]);
+
+  useEffect(() => {
+    if (!isHandPlaySubmitting) return undefined;
+    const timeoutId = setTimeout(releaseHandPlaySubmission, 5000);
+    return () => clearTimeout(timeoutId);
+  }, [isHandPlaySubmitting, releaseHandPlaySubmission]);
 
   const clearPendingSelection = () => {
     resetSelectionState(
@@ -160,7 +200,7 @@ export const usePendingSelection = ({
         && targetNeedsReplacementSelection(G?.resources?.[pid], card.effects)
       ));
       if (targetsNeedingReplacement.length === 0) {
-        moves.playCard(card.id, [], undefined, {});
+        submitHandCard(card.id, [], undefined, {});
         postNotice('info', '');
         return true;
       }
@@ -189,7 +229,7 @@ export const usePendingSelection = ({
       postNotice('info', `${board.pickResource}: ${cardTitle(card.id, card.title, lang)}`);
       return false;
     }
-    moves.playCard(card.id, [], undefined);
+    submitHandCard(card.id, [], undefined);
     postNotice('info', '');
     return true;
   };
@@ -292,7 +332,7 @@ export const usePendingSelection = ({
       const targetResources = G?.resources?.[selectedTargetId];
       if (!targetResources) return postNotice('error', board.actionUnavailable);
       if (shielded) {
-        moves.playCard(pendingSelection.cardId, [], selectedTargetId);
+        submitHandCard(pendingSelection.cardId, [], selectedTargetId);
       } else {
         const required = getRequiredReplacementSelectionCount(targetResources, selectedCard.effects);
         const selected = replacementSelectionsByTarget[selectedTargetId] ?? [];
@@ -300,7 +340,7 @@ export const usePendingSelection = ({
         if (!isReplacementPrefixValid(targetResources, selectedCard.effects, selected)) {
           return postNotice('error', board.replacementInvalid);
         }
-        moves.playCard(pendingSelection.cardId, selected, selectedTargetId);
+        submitHandCard(pendingSelection.cardId, selected, selectedTargetId);
       }
     }
     if (pendingSelection.type === 'hand-scandal') {
@@ -325,7 +365,7 @@ export const usePendingSelection = ({
         }
         replacementByTarget[pid] = selected;
       }
-      moves.playCard(pendingSelection.cardId, [], undefined, replacementByTarget);
+      submitHandCard(pendingSelection.cardId, [], undefined, replacementByTarget);
     }
     if (pendingSelection.type === 'draw-lyap') {
       const pendingCard = G?.pendingDrawAutoResolution?.card;
@@ -366,12 +406,12 @@ export const usePendingSelection = ({
     }
     if (pendingSelection.type === 'legendary-drone') {
       if (!selectedTargetId) return postNotice('error', board.targetRequired);
-      if (pendingSelection.fromHand) moves.playCard(pendingSelection.cardId, [], selectedTargetId);
+      if (pendingSelection.fromHand) submitHandCard(pendingSelection.cardId, [], selectedTargetId);
       else moves.playLegendaryCard?.(pendingSelection.cardId, selectedTargetId, undefined);
     }
     if (pendingSelection.type === 'legendary-water') {
       if (!selectedResource) return postNotice('error', board.resourceRequired);
-      if (pendingSelection.fromHand) moves.playCard(pendingSelection.cardId, [selectedResource], undefined);
+      if (pendingSelection.fromHand) submitHandCard(pendingSelection.cardId, [selectedResource], undefined);
       else moves.playLegendaryCard?.(pendingSelection.cardId, undefined, selectedResource);
     }
     clearPendingSelection();
@@ -400,7 +440,7 @@ export const usePendingSelection = ({
       ? (planReplacementSelection(targetResources, currentPendingCard.effects) ?? [])
       : [];
     if (autoReplacement.length !== required) return;
-    moves.playCard(pendingSelection.cardId, autoReplacement, selectedTargetId);
+    submitHandCard(pendingSelection.cardId, autoReplacement, selectedTargetId);
     clearPendingSelection();
   }, [
     pendingSelection,
@@ -409,7 +449,7 @@ export const usePendingSelection = ({
     G?.lyapScandalShieldUntilTurn,
     G?.resources,
     ctx?.turn,
-    moves,
+    submitHandCard,
     botPlayerIds,
   ]);
 
@@ -431,7 +471,7 @@ export const usePendingSelection = ({
     }
     const card = currentPendingCard;
     if (!card) return;
-    moves.playCard(card.id, vvnzSelectedResources, undefined);
+    submitHandCard(card.id, vvnzSelectedResources, undefined);
     clearPendingSelection();
   };
 
@@ -456,6 +496,7 @@ export const usePendingSelection = ({
     replacementActiveSlots,
     replacementActiveSelected,
     requestPlayHandCard,
+    isHandPlaySubmitting,
     requestPlayLegendaryCard,
     confirmPendingSelection,
     clearPendingSelection,

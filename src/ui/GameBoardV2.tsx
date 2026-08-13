@@ -178,6 +178,7 @@ export const GameBoardV2 = ({
     replacementActiveSlots,
     replacementActiveSelected,
     requestPlayHandCard,
+    isHandPlaySubmitting,
     requestPlayLegendaryCard,
     confirmPendingSelection,
     clearPendingSelection,
@@ -412,7 +413,7 @@ export const GameBoardV2 = ({
     lang,
   }) ?? board.helpActionReady;
   const handleFooterPrimaryAction = () => {
-    if (blockPlayerTurnControls) return;
+    if (blockPlayerTurnControls || isHandPlaySubmitting) return;
     if (pendingSelection) {
       void confirmPendingSelection();
       return;
@@ -458,7 +459,7 @@ export const GameBoardV2 = ({
             rankName={rankName}
             rankHint={footerRankHint}
             primaryActionLabel={primaryActionLabel}
-            primaryActionDisabled={primaryActionDisabled}
+            primaryActionDisabled={primaryActionDisabled || isHandPlaySubmitting}
             secondaryActionLabel={footerActionLabel}
             secondaryActionDisabled={!canEndTurn || blockPlayerTurnControls}
             onPrimaryAction={handleFooterPrimaryAction}
@@ -837,7 +838,7 @@ export const GameBoardV2 = ({
                 categoryText={(card) => categoryLabel(card.category, lang)}
                 actionLabel={board.play}
                 onAction={(card) => handleHandCardAction(card, requestPlayHandCard)}
-                actionDisabled={(card) => !(handCardsView.find((row) => row.card.id === card.id)?.actionState.allowed ?? false)}
+                actionDisabled={(card) => isHandPlaySubmitting || !(handCardsView.find((row) => row.card.id === card.id)?.actionState.allowed ?? false)}
                 selected={(card) => visibleHandSelectedId === card.id}
                 cardClickAction={handleV2HandCardClick}
                 effectLabel={effectLabel}

@@ -477,6 +477,7 @@ export const jojGame: Game<JojGameState> = {
   turn: {
     activePlayers: { currentPlayer: DRAW_STAGE },
     onBegin: ({ G, ctx, events }) => {
+      G.extraHandPlayTokens[ctx.currentPlayer] = 0;
       Object.keys(G.promotedThisTurn).forEach((pid) => {
         G.promotedThisTurn[pid] = false;
       });
