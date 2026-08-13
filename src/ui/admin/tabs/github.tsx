@@ -1,10 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { text } from '../../i18n';
 import { copyText } from '../../app/share';
 import type { GitAuthStatus, GitLocalChangesPreview, GitUpdateStatus } from '../types';
 import { AdminEmptyState, AdminSectionHeader, AdminStatusBadge } from '../components/AdminWorkspaceLayout';
 
 type T = ReturnType<typeof text>;
+type ActionLogTarget = 'github' | 'production' | 'publish' | 'access';
+
+const emptyActionFeedback = (): Record<ActionLogTarget, { log: string; message: string }> => ({
+  github: { log: '', message: '' },
+  production: { log: '', message: '' },
+  publish: { log: '', message: '' },
+  access: { log: '', message: '' },
+});
 
 export const AdminGithubTab = ({
   t,
@@ -73,15 +81,58 @@ export const AdminGithubTab = ({
   setGitActionMessage: (value: string) => void;
   setGitActionLog: (value: string) => void;
 }) => {
-  const [section, setSection] = useState<'status' | 'publish' | 'deploy' | 'access' | 'log'>('status');
+  const [section, setSection] = useState<'status' | 'publish' | 'access'>('status');
+  const [actionLogTarget, setActionLogTarget] = useState<ActionLogTarget>('github');
+  const [actionFeedback, setActionFeedback] = useState(emptyActionFeedback);
   const busy = gitStatusLoading || gitUpdateRunning || gitDeployRunning || gitPublishRunning;
-  const copyLog = (value: string) => void copyText(value).then(() => setGitActionMessage(t.githubLogCopied));
+  useEffect(() => {
+    setActionFeedback((current) => ({
+      ...current,
+      [actionLogTarget]: { log: gitActionLog, message: gitActionMessage },
+    }));
+  }, [actionLogTarget, gitActionLog, gitActionMessage]);
+
+  const copyLog = (target: ActionLogTarget, value: string) => {
+    void copyText(value).then(() => {
+      setActionFeedback((current) => ({
+        ...current,
+        [target]: { ...current[target], message: t.githubLogCopied },
+      }));
+    });
+  };
+  const clearLog = (target: ActionLogTarget) => {
+    setActionFeedback((current) => ({ ...current, [target]: { log: '', message: '' } }));
+    if (target === actionLogTarget) {
+      setGitActionLog('');
+      setGitActionMessage('');
+    }
+  };
+  const runAction = (target: ActionLogTarget, action: () => Promise<void> | void) => {
+    setActionLogTarget(target);
+    void action();
+  };
+  const renderActionFeedback = (target: ActionLogTarget) => {
+    const feedback = actionFeedback[target];
+    if (!feedback.log && !feedback.message) return null;
+    return (
+      <div className="admin-process-feedback" aria-live="polite">
+        {feedback.message ? <p className="admin-success">{feedback.message}</p> : null}
+        {feedback.log ? (
+          <div className="admin-inline-log">
+            <div className="admin-inline-log-actions">
+              <button type="button" onClick={() => copyLog(target, feedback.log)}>{t.githubCopyLog}</button>
+              <button type="button" onClick={() => clearLog(target)}>{t.githubClearLog}</button>
+            </div>
+            <pre className="admin-textarea admin-log-viewer admin-github-log-viewer">{feedback.log}</pre>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
   const sections = [
     { id: 'status' as const, label: t.githubUpdatesTitle },
     { id: 'publish' as const, label: t.githubPublish },
-    { id: 'deploy' as const, label: t.githubApplyUpdate },
     { id: 'access' as const, label: t.githubAuthTitle },
-    { id: 'log' as const, label: `${t.githubCopyLog}${gitActionLog ? ' · 1' : ''}` },
   ];
   return (
   <div className="admin-integration-workspace">
@@ -92,7 +143,7 @@ export const AdminGithubTab = ({
         <>
           <AdminStatusBadge tone={gitAuthStatus?.hasGithubCredentials ? 'success' : 'warning'}>{gitAuthStatus?.hasGithubCredentials ? t.githubAuthStored : t.githubAuthClear}</AdminStatusBadge>
           <AdminStatusBadge tone={gitStatus?.dirty ? 'warning' : 'success'}>{gitStatus?.dirty ? t.githubDirty : t.githubCanUpdate}</AdminStatusBadge>
-          <button type="button" onClick={() => void checkGitUpdates()} disabled={busy}>{gitStatusLoading ? t.githubCheckUpdatesLoading : t.githubCheckUpdates}</button>
+          <button type="button" onClick={() => runAction('github', checkGitUpdates)} disabled={busy}>{gitStatusLoading ? t.githubCheckUpdatesLoading : t.githubCheckUpdates}</button>
         </>
       }
     />
@@ -101,8 +152,9 @@ export const AdminGithubTab = ({
     </nav>
 
     {section === 'status' ? (
-      gitStatus ? (
-        <>
+      <div className="admin-github-update-workspace">
+        {gitStatus ? (
+          <>
           <div className="admin-metric-grid admin-git-status-grid">
             <article className="admin-metric-card"><span>{t.githubAhead}</span><strong>{gitStatus.ahead}</strong></article>
             <article className="admin-metric-card"><span>{t.githubBehind}</span><strong>{gitStatus.behind}</strong></article>
@@ -115,8 +167,27 @@ export const AdminGithubTab = ({
             <p><span>{t.githubCanUpdate}</span><strong>{gitStatus.canUpdate ? t.yes : t.no}</strong></p>
           </div>
           {gitStatus.note ? <p className="admin-callout is-warning">{t.githubNote}: {gitStatus.note}</p> : null}
-        </>
-      ) : <AdminEmptyState>{t.githubCheckUpdates}</AdminEmptyState>
+          </>
+        ) : <AdminEmptyState>{t.githubCheckUpdates}</AdminEmptyState>}
+
+        <label className="admin-checkbox-card"><input type="checkbox" checked={gitIgnoreLocalChanges} onChange={(e) => setGitIgnoreLocalChanges(e.target.checked)} /><span><strong>{t.githubIgnoreLocalChanges}</strong><small>{t.githubIgnoreLocalChangesHint}</small></span></label>
+        <div className="admin-update-process-grid">
+          <section className="admin-operation-panel admin-update-process-card">
+            <AdminSectionHeader title={t.githubUpdatesTitle} actions={<AdminStatusBadge tone={(gitStatus?.behind ?? 0) > 0 ? 'warning' : 'success'}>{t.githubBehind}: {gitStatus?.behind ?? 0}</AdminStatusBadge>} />
+            <div className="admin-action-group">
+              <button className="admin-card-primary-action" type="button" onClick={() => runAction('github', applyGitUpdate)} disabled={busy || (gitStatus ? (!gitStatus.canUpdate && !gitIgnoreLocalChanges) : false)}>{gitUpdateRunning ? t.githubApplyUpdateLoading : t.githubApplyUpdate}</button>
+            </div>
+            {renderActionFeedback('github')}
+          </section>
+          <section className="admin-operation-panel admin-update-process-card">
+            <AdminSectionHeader title={t.githubDeploy} description={t.githubDeployTooltip} />
+            <div className="admin-action-group">
+              <button className="admin-card-primary-action" type="button" onClick={() => runAction('production', applyGitDeploy)} disabled={busy || (gitStatus ? (gitStatus.dirty && !gitIgnoreLocalChanges) : false)}>{gitDeployRunning ? t.githubDeployLoading : t.githubDeploy}</button>
+            </div>
+            {renderActionFeedback('production')}
+          </section>
+        </div>
+      </div>
     ) : null}
 
     {section === 'publish' ? (
@@ -124,50 +195,33 @@ export const AdminGithubTab = ({
         <AdminSectionHeader title={t.githubPublish} description={t.githubPublishHint} actions={<AdminStatusBadge tone={gitStatus?.dirty ? 'warning' : 'success'}>{gitStatus?.dirty ? t.githubDirty : t.githubLocalChangesNone}</AdminStatusBadge>} />
         <label>{t.githubCommitMessageLabel}<input value={gitCommitMessageDraft} onChange={(e) => setGitCommitMessageDraft(e.target.value)} placeholder={t.githubCommitMessagePlaceholder} /></label>
         <div className="admin-action-group">
-          <button type="button" onClick={() => void viewGitLocalChanges()} disabled={gitLocalChangesLoading || gitStatusLoading || !gitStatus?.dirty}>{gitLocalChangesLoading ? t.githubViewLocalChangesLoading : t.githubViewLocalChanges}</button>
-          <button className="admin-card-primary-action" type="button" onClick={() => void publishGitChanges()} disabled={busy || (gitStatus ? (!gitStatus.dirty && gitStatus.ahead <= 0) : false)}>{gitPublishRunning ? t.githubPublishLoading : t.githubPublish}</button>
+          <button type="button" onClick={() => runAction('publish', viewGitLocalChanges)} disabled={gitLocalChangesLoading || gitStatusLoading || !gitStatus?.dirty}>{gitLocalChangesLoading ? t.githubViewLocalChangesLoading : t.githubViewLocalChanges}</button>
+          <button className="admin-card-primary-action" type="button" onClick={() => runAction('publish', publishGitChanges)} disabled={busy || (gitStatus ? (!gitStatus.dirty && gitStatus.ahead <= 0) : false)}>{gitPublishRunning ? t.githubPublishLoading : t.githubPublish}</button>
         </div>
         {gitLocalChanges?.hasLocalChanges ? (
           <div className="admin-log-panel">
-            <AdminSectionHeader title={`${t.githubLocalChangesTitle} · ${gitLocalChanges.files.length}`} actions={<><button type="button" onClick={() => copyLog(gitLocalChanges.diff)}>{t.githubCopyLog}</button><button type="button" onClick={() => { setGitLocalChanges(null); setGitActionMessage(''); }}>{t.githubClearLog}</button></>} />
+            <AdminSectionHeader title={`${t.githubLocalChangesTitle} · ${gitLocalChanges.files.length}`} actions={<><button type="button" onClick={() => copyLog('publish', gitLocalChanges.diff)}>{t.githubCopyLog}</button><button type="button" onClick={() => { setGitLocalChanges(null); clearLog('publish'); }}>{t.githubClearLog}</button></>} />
             {gitLocalChanges.files.length ? <p><code>{gitLocalChanges.files.join(', ')}</code></p> : null}
             {gitLocalChanges.truncated ? <p className="admin-error">{t.githubLocalChangesTruncated}</p> : null}
             {gitLocalChanges.diff ? <pre className="admin-textarea admin-log-viewer admin-github-log-viewer">{gitLocalChanges.diff}</pre> : null}
           </div>
         ) : null}
-      </div>
-    ) : null}
-
-    {section === 'deploy' ? (
-      <div className="admin-operation-panel">
-        <AdminSectionHeader title={t.githubApplyUpdate} description={t.githubDeployTooltip} actions={<AdminStatusBadge tone={(gitStatus?.behind ?? 0) > 0 ? 'warning' : 'success'}>{t.githubBehind}: {gitStatus?.behind ?? 0}</AdminStatusBadge>} />
-        <label className="admin-checkbox-card"><input type="checkbox" checked={gitIgnoreLocalChanges} onChange={(e) => setGitIgnoreLocalChanges(e.target.checked)} /><span><strong>{t.githubIgnoreLocalChanges}</strong><small>{t.githubIgnoreLocalChangesHint}</small></span></label>
-        <div className="admin-action-group">
-          <button type="button" onClick={() => void applyGitUpdate()} disabled={busy || (gitStatus ? (!gitStatus.canUpdate && !gitIgnoreLocalChanges) : false)}>{gitUpdateRunning ? t.githubApplyUpdateLoading : t.githubApplyUpdate}</button>
-          <button className="admin-card-primary-action" type="button" onClick={() => void applyGitDeploy()} disabled={busy || (gitStatus ? (gitStatus.dirty && !gitIgnoreLocalChanges) : false)}>{gitDeployRunning ? t.githubDeployLoading : t.githubDeploy}</button>
-        </div>
+        {renderActionFeedback('publish')}
       </div>
     ) : null}
 
     {section === 'access' ? (
       <div className="admin-operation-panel">
-        <AdminSectionHeader title={t.githubAuthTitle} description={t.githubAuthHint} actions={<button type="button" onClick={() => void loadGitAuthStatus()} disabled={gitAuthStatusLoading || gitAuthSaving}>{gitAuthStatusLoading ? t.githubCheckUpdatesLoading : t.githubAuthRefresh}</button>} />
+        <AdminSectionHeader title={t.githubAuthTitle} description={t.githubAuthHint} actions={<button type="button" onClick={() => runAction('access', loadGitAuthStatus)} disabled={gitAuthStatusLoading || gitAuthSaving}>{gitAuthStatusLoading ? t.githubCheckUpdatesLoading : t.githubAuthRefresh}</button>} />
         <div className="admin-editor-grid">
           <label>{t.githubAuthUsernameLabel}<input value={gitAuthUsernameDraft} onChange={(e) => setGitAuthUsernameDraft(e.target.value)} placeholder="GitHub username" autoComplete="username" /></label>
           <label>{t.githubAuthTokenLabel}<input value={gitAuthTokenDraft} onChange={(e) => setGitAuthTokenDraft(e.target.value)} type="password" placeholder="github_pat_…" autoComplete="new-password" /></label>
         </div>
-        <div className="admin-action-group"><button className="admin-card-primary-action" type="button" onClick={() => void saveGitAuthConfig()} disabled={gitAuthSaving}>{gitAuthSaving ? t.githubAuthSaving : t.githubAuthSave}</button><button className="admin-danger-action" type="button" onClick={() => void clearGitAuthConfig()} disabled={gitAuthSaving || !gitAuthStatus?.hasGithubCredentials}>{t.githubAuthClear}</button></div>
+        <div className="admin-action-group"><button className="admin-card-primary-action" type="button" onClick={() => runAction('access', saveGitAuthConfig)} disabled={gitAuthSaving}>{gitAuthSaving ? t.githubAuthSaving : t.githubAuthSave}</button><button className="admin-danger-action" type="button" onClick={() => runAction('access', clearGitAuthConfig)} disabled={gitAuthSaving || !gitAuthStatus?.hasGithubCredentials}>{t.githubAuthClear}</button></div>
         {gitAuthStatus ? <div className="admin-info-grid"><p><span>{t.githubAuthRemoteMode}</span><code>{gitAuthStatus.remoteAuthMode}</code></p><p><span>{t.githubAuthHelper}</span><code>{gitAuthStatus.helper || '—'}</code></p><p><span>{t.githubAuthStoredUser}</span><code>{gitAuthStatus.savedUsername || '—'}</code></p><p><span>{t.githubAuthCredentialsPath}</span><code>{gitAuthStatus.credentialsPath || '—'}</code></p></div> : null}
+        {renderActionFeedback('access')}
       </div>
     ) : null}
-
-    {section === 'log' ? (
-      <div className="admin-log-panel">
-        <AdminSectionHeader title={t.githubUpdatesTitle} actions={<><button type="button" onClick={() => copyLog(gitActionLog)} disabled={!gitActionLog}>{t.githubCopyLog}</button><button type="button" onClick={() => { setGitActionLog(''); setGitActionMessage(''); }} disabled={!gitActionLog}>{t.githubClearLog}</button></>} />
-        {gitActionLog ? <pre className="admin-textarea admin-log-viewer admin-github-log-viewer">{gitActionLog}</pre> : <AdminEmptyState>{t.githubLocalChangesNone}</AdminEmptyState>}
-      </div>
-    ) : null}
-    {gitActionMessage ? <p className="admin-success">{gitActionMessage}</p> : null}
   </div>
   );
 };
