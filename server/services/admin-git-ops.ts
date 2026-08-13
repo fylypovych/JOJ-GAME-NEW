@@ -8,6 +8,15 @@ type CmdResult = { ok: true; stdout: string; stderr: string } | { ok: false; err
 type RunGit = (args: string[]) => Promise<CmdResult>;
 type RunShellCommand = (command: string, timeoutMs?: number) => Promise<CmdResult>;
 type SpawnDetachedShell = (command: string) => void;
+type DeployProgress = { id: string; state: 'running' | 'success' | 'error'; currentStep: string; steps: Array<{ step: string; output?: string }>; updatedAt: number };
+const deployProgressById = new Map<string, DeployProgress>();
+const updateDeployProgress = (id: string, update: Partial<Omit<DeployProgress, 'id'>>) => {
+  const current = deployProgressById.get(id) ?? { id, state: 'running' as const, currentStep: '', steps: [], updatedAt: Date.now() };
+  deployProgressById.set(id, { ...current, ...update, updatedAt: Date.now() });
+  for (const [storedId, progress] of deployProgressById) {
+    if (Date.now() - progress.updatedAt > 60 * 60_000) deployProgressById.delete(storedId);
+  }
+};
 export const ADMIN_DEPLOY_COMMANDS = {
   backup: 'if [ -r /etc/default/joj-game ]; then . /etc/default/joj-game; fi; JOJ_PROJECT_DIR="$PWD" JOJ_BACKUP_DIR="$PWD/backup" JOJ_BACKUP_RETENTION_DAYS="${JOJ_BACKUP_RETENTION_DAYS:-7}" bash scripts/backup-production.sh',
   install: 'npm ci --include=dev',
@@ -227,6 +236,17 @@ export const registerAdminGitRoutes = ({
       return;
     }
     ctx.body = result;
+  });
+
+  router.get('/api/admin/git/deploy-progress', async (ctx: RouteCtx) => {
+    if (!(await requireAdminAuth(ctx, '/api/admin/git/deploy-progress'))) return;
+    const id = typeof ctx?.query?.id === 'string' ? ctx.query.id.trim() : '';
+    const progress = id ? deployProgressById.get(id) : null;
+    if (!progress) {
+      routeError(ctx, 404, 'Deployment progress not found');
+      return;
+    }
+    routeOk(ctx, { progress });
   });
 
   router.get('/api/admin/git/local-changes', async (ctx: RouteCtx) => {
@@ -451,9 +471,18 @@ export const registerAdminGitRoutes = ({
     if (!body) return;
     const ignoreLocalChanges = body.ignoreLocalChanges === true;
 
+    updateDeployProgress(correlationId, { state: 'running', currentStep: 'Checking repository status', steps: [] });
+
     let status = await getGitUpdateStatus(runGit);
     const steps: Array<{ step: string; output?: string }> = [];
+    const setCurrentStep = (currentStep: string) => updateDeployProgress(correlationId, { currentStep, steps: [...steps] });
+    const completeStep = (step: string) => {
+      steps.push({ step });
+      updateDeployProgress(correlationId, { currentStep: '', steps: [...steps] });
+    };
+    const failProgress = (currentStep: string) => updateDeployProgress(correlationId, { state: 'error', currentStep, steps: [...steps] });
     if (!status.ok) {
+      failProgress('Failed to read repository status');
       await logLine('ERROR', `git pre-deploy status failed: ${status.error}`);
       routeError(ctx, 500, 'Failed to read Git status before deploy', { details: status.error });
       return;
@@ -467,8 +496,10 @@ export const registerAdminGitRoutes = ({
       return;
     }
 
+    setCurrentStep('Creating production backup');
     const backupRes = await runShellCommand(ADMIN_DEPLOY_COMMANDS.backup, 30 * 60_000);
     if (!backupRes.ok) {
+      failProgress('Production backup failed');
       await logLine('ERROR', `deploy backup failed: ${backupRes.error}`);
       await logLine('ERROR', buildAdminDeployLog({
         action: 'deploy', route: '/api/admin/git/deploy', correlationId, actor,
@@ -477,7 +508,7 @@ export const registerAdminGitRoutes = ({
       routeError(ctx, 500, 'Production backup failed; update was not started', { details: summarizeCommandFailure(backupRes.error), status, steps });
       return;
     }
-    steps.push({ step: 'Production backup' });
+    completeStep('Production backup');
 
     if (status.dirty) {
       const stashRes = await stashAllLocalGitChanges(runGit);
@@ -486,7 +517,7 @@ export const registerAdminGitRoutes = ({
         routeError(ctx, 500, 'Failed to stash local changes before deploy', { details: stashRes.error, status });
         return;
       }
-      steps.push({ step: 'Local changes stashed' });
+      completeStep('Local changes stashed');
       await logLine('WARN', 'admin deploy stashed local git changes before pull/build');
       status = await getGitUpdateStatus(runGit);
       if (!status.ok) {
@@ -508,19 +539,22 @@ export const registerAdminGitRoutes = ({
     }
 
     if (status.behind > 0) {
+      setCurrentStep('Updating files from GitHub');
       const pullRes = await runGit(['pull', '--ff-only']);
       if (!pullRes.ok) {
         await logLine('ERROR', `git deploy pull failed: ${pullRes.error}`);
         routeError(ctx, 500, 'Git pull failed', { details: summarizeCommandFailure(pullRes.error), status, steps });
         return;
       }
-      steps.push({ step: 'GitHub files updated' });
+      completeStep('GitHub files updated');
     } else {
-      steps.push({ step: 'GitHub files already current' });
+      completeStep('GitHub files already current');
     }
 
+    setCurrentStep('Installing dependencies');
     const installRes = await runShellCommand(ADMIN_DEPLOY_COMMANDS.install, 30 * 60_000);
     if (!installRes.ok) {
+      failProgress('Dependency installation failed');
       await logLine('ERROR', `deploy npm ci --include=dev failed: ${installRes.error}`);
       await logLine('ERROR', buildAdminDeployLog({
         action: 'deploy', route: '/api/admin/git/deploy', correlationId, actor,
@@ -529,10 +563,12 @@ export const registerAdminGitRoutes = ({
       routeError(ctx, 500, 'Locked dependency installation failed', { details: summarizeCommandFailure(installRes.error), steps });
       return;
     }
-    steps.push({ step: 'Dependencies installed' });
+    completeStep('Dependencies installed');
 
+    setCurrentStep('Running release checks and production build');
     const verifyRes = await runShellCommand(ADMIN_DEPLOY_COMMANDS.verify, 45 * 60_000);
     if (!verifyRes.ok) {
+      failProgress('Release checks failed');
       await logLine('ERROR', `deploy release checks failed: ${verifyRes.error}`);
       await logLine('ERROR', buildAdminDeployLog({
         action: 'deploy', route: '/api/admin/git/deploy', correlationId, actor,
@@ -541,14 +577,16 @@ export const registerAdminGitRoutes = ({
       routeError(ctx, 500, 'Release checks failed', { details: summarizeCommandFailure(verifyRes.error), steps });
       return;
     }
-    steps.push({ step: 'Release checks passed' });
+    completeStep('Release checks passed');
 
     for (const deploymentStep of [
       { command: ADMIN_DEPLOY_COMMANDS.migrate, label: 'Database migrations' },
       { command: ADMIN_DEPLOY_COMMANDS.syncSharedConfig, label: 'Shared configuration sync' },
     ]) {
+      setCurrentStep(`Running ${deploymentStep.label.toLowerCase()}`);
       const result = await runShellCommand(deploymentStep.command, 20 * 60_000);
       if (!result.ok) {
+        failProgress(`${deploymentStep.label} failed`);
         await logLine('ERROR', `deploy ${deploymentStep.label} failed: ${result.error}`);
         await logLine('ERROR', buildAdminDeployLog({
           action: 'deploy', route: '/api/admin/git/deploy', correlationId, actor,
@@ -557,7 +595,7 @@ export const registerAdminGitRoutes = ({
         routeError(ctx, 500, `${deploymentStep.label} failed`, { details: summarizeCommandFailure(result.error), steps });
         return;
       }
-      steps.push({ step: `${deploymentStep.label} completed` });
+      completeStep(`${deploymentStep.label} completed`);
     }
 
     const nextStatus = await getGitUpdateStatus(runGit);
@@ -577,7 +615,8 @@ export const registerAdminGitRoutes = ({
       outcome: 'success',
       details: { head: nextStatus.head, branch: nextStatus.branch },
     }));
-    steps.push({ step: 'PM2 restart and health check scheduled' });
+    completeStep('PM2 restart and health check scheduled');
+    updateDeployProgress(correlationId, { state: 'success', currentStep: '', steps: [...steps] });
     routeOk(ctx, {
       message: 'Повне оновлення завершено; перезапуск і перевірку стану заплановано',
       restarted: true,

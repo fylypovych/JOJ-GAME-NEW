@@ -267,13 +267,37 @@ export const useAdminGitActions = ({
     setGitDeployRunning(true);
     setAdminActionError('');
     setGitActionMessage('');
-    setGitActionLog('');
+    setGitActionLog('… Starting production update');
+    const deployId = typeof crypto.randomUUID === 'function' ? `admin-deploy-${crypto.randomUUID()}` : `admin-deploy-${Date.now()}`;
+    let progressRequestRunning = false;
+    const pollProgress = async () => {
+      if (progressRequestRunning) return;
+      progressRequestRunning = true;
+      try {
+        const response = await fetch(`${serverUrl}/api/admin/git/deploy-progress?id=${encodeURIComponent(deployId)}`, {
+          headers: adminHeaders(), credentials: 'include', cache: 'no-store',
+        });
+        if (!response.ok) return;
+        const payload = (await response.json()) as { progress?: { steps?: Array<{ step?: string }>; currentStep?: string } };
+        if (payload.progress) {
+          const lines = (payload.progress.steps ?? []).map((step) => `✓ ${step.step ?? ''}`.trim());
+          if (payload.progress.currentStep) lines.push(`… ${payload.progress.currentStep}`);
+          setGitActionLog(lines.join('\n').trim());
+        }
+      } catch {
+        // A short polling failure is expected while the server is restarting.
+      } finally {
+        progressRequestRunning = false;
+      }
+    };
+    const progressTimer = window.setInterval(() => { void pollProgress(); }, 500);
     try {
       const response = await fetch(`${serverUrl}/api/admin/git/deploy`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
           ...adminHeaders(),
+          'x-request-id': deployId,
         },
         credentials: 'include',
         body: JSON.stringify({ ignoreLocalChanges: gitIgnoreLocalChanges }),
@@ -320,6 +344,7 @@ export const useAdminGitActions = ({
       setAdminActionError(gitActionErrors.deployProject);
       setGitActionLog('');
     } finally {
+      window.clearInterval(progressTimer);
       setGitDeployRunning(false);
     }
   };

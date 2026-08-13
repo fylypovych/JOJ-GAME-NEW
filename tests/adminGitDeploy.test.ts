@@ -9,13 +9,14 @@ import type { RouteCtx } from '../server/routes/types';
 
 test('web deployment performs backup, verification, migrations and sync before restart', async () => {
   const postHandlers = new Map<string, (ctx: RouteCtx) => unknown>();
+  const getHandlers = new Map<string, (ctx: RouteCtx) => unknown>();
   const shellCommands: string[] = [];
   const gitCommands: string[][] = [];
   const detachedCommands: string[] = [];
 
   registerAdminGitRoutes({
     router: {
-      get: () => undefined,
+      get: (route, handler) => getHandlers.set(route, handler),
       post: (route, handler) => postHandlers.set(route, handler),
     },
     requireAdminAuth: async () => true,
@@ -63,7 +64,12 @@ test('web deployment performs backup, verification, migrations and sync before r
     devRestartTouchPath: 'unused',
   });
 
-  const ctx: RouteCtx = { request: { body: { ignoreLocalChanges: false } } };
+  const ctx: RouteCtx = {
+    request: {
+      body: { ignoreLocalChanges: false },
+      headers: { 'x-request-id': 'deploy-progress-test' },
+    },
+  };
   await postHandlers.get('/api/admin/git/deploy')?.(ctx);
 
   assert.deepEqual(shellCommands, [
@@ -95,6 +101,20 @@ test('web deployment performs backup, verification, migrations and sync before r
     steps.some((step) => Boolean(step.output)),
     false,
   );
+  const progressCtx: RouteCtx = { query: { id: 'deploy-progress-test' } };
+  await getHandlers.get('/api/admin/git/deploy-progress')?.(progressCtx);
+  const progress = (
+    progressCtx.body as {
+      progress: {
+        state: string;
+        currentStep: string;
+        steps: Array<{ step: string }>;
+      };
+    }
+  ).progress;
+  assert.equal(progress.state, 'success');
+  assert.equal(progress.currentStep, '');
+  assert.deepEqual(progress.steps, steps);
 
   await new Promise((resolve) => setTimeout(resolve, 350));
   assert.deepEqual(detachedCommands, [
