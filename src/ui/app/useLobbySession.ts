@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createBotPlayerName, getBotSeatIds } from '../../game/bot-engine/config';
 import { clampBotCountToAllowed, clampRoomCapacityToAllowed } from '../../game/lobbyConfig';
 import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { LobbyMatch, Session } from './model';
+import { findFirstAvailableLobbySeat } from './lobbyJoin';
 
 type LobbyClientLike = {
   listMatches: (gameName: string) => Promise<{ matches: LobbyMatch[] }>;
@@ -69,6 +70,7 @@ export const useLobbySession = (args: {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [matchesSynced, setMatchesSynced] = useState(false);
+  const joinInFlightRef = useRef(false);
   const resolveLobbyPlayerName = () => {
     const profileName = fallbackPlayerName?.trim() || '';
     const localName = playerName.trim();
@@ -192,39 +194,18 @@ export const useLobbySession = (args: {
   };
 
   const joinRoom = async (match: LobbyMatch) => {
+    if (joinInFlightRef.current) return;
     const name = resolveLobbyPlayerName();
     if (!name) {
       setError(enterNameText);
       return;
     }
-    // Check if player is already in this match (recovery after re-login/crash)
-    const existingPlayer = match.players.find((player) => player.name?.trim() === name);
-    if (existingPlayer && joinOwnedSession) {
-      setLoading(true);
-      setError('');
-      try {
-        const nextSession = await joinOwnedSession({
-          matchID: match.matchID,
-          playerID: String(existingPlayer.id),
-          playerName: name,
-        });
-        setSession(nextSession);
-        window.localStorage.setItem(sessionStorageKey, JSON.stringify(nextSession));
-        await onSessionEstablished?.(nextSession, name);
-        await refreshMatches();
-      } catch (nextError) {
-        const message = String(nextError instanceof Error ? nextError.message : nextError).trim();
-        setError(message || joinFailedText);
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-    const freePlayer = match.players.find((player) => !player.name);
+    const freePlayer = findFirstAvailableLobbySeat(match.players);
     if (!freePlayer) {
       setError(roomFullText);
       return;
     }
+    joinInFlightRef.current = true;
     setLoading(true);
     setError('');
     try {
@@ -253,6 +234,7 @@ export const useLobbySession = (args: {
       const message = String(nextError instanceof Error ? nextError.message : nextError).trim();
       setError(message || joinFailedText);
     } finally {
+      joinInFlightRef.current = false;
       setLoading(false);
     }
   };

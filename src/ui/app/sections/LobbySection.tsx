@@ -187,7 +187,6 @@ export const LobbySection = ({
             const taken = match.players.filter((player) => Boolean(player.name)).length;
             const capacity = match.players.length;
             const hasFree = taken < capacity;
-            const isAlreadyInThisMatch = match.players.some((player) => player.name?.trim() === effectivePlayerName);
             const gameModeValue = match.setupData?.gameMode ?? 'standard';
             const botSetup = match.setupData?.bots;
             const botCountValue = Math.max(0, Math.min(capacity - 1, Math.floor(botSetup?.count ?? 0)));
@@ -230,9 +229,9 @@ export const LobbySection = ({
                   <button
                     type="button"
                     onClick={() => joinRoom(match)}
-                    disabled={!effectivePlayerName || loading || (!hasFree && !isAlreadyInThisMatch)}
+                    disabled={!effectivePlayerName || loading || !hasFree}
                   >
-                    {isAlreadyInThisMatch ? 'Продовжити' : t.joinRoomPrimary}
+                    {t.joinRoomPrimary}
                   </button>
                   <button
                     type="button"
