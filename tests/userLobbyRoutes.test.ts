@@ -34,6 +34,9 @@ const baseStore = () => ({
   persistMatchResultIfFinished: async () => true,
 });
 
+const allowRateLimit = async () => true;
+const leaveMatch = async () => undefined;
+
 const createSettingsPool = (initial: Record<string, unknown> = {}) => {
   const store = new Map<string, unknown>(Object.entries(initial));
   return {
@@ -66,8 +69,10 @@ test('user-lobby join binds owned session after verified join', async () => {
     jsonBodyLimit: 10_000,
     gameUiConfigPath: 'unused',
     pool: createSettingsPool() as never,
+    enforceRateLimit: allowRateLimit,
     lobbyApiFactory: () => ({
       createMatch: async () => ({ matchID: 'unused' }),
+      leaveMatch,
       joinMatch: async (gameName, matchID, args) => {
         joinCalls.push({ gameName, matchID, playerID: args.playerID, playerName: args.playerName });
         return { playerID: '1', playerCredentials: 'cred-1' };
@@ -118,6 +123,7 @@ test('user-lobby create-and-join creates bot seats and returns session', async (
     jsonBodyLimit: 10_000,
     gameUiConfigPath: 'unused',
     pool: createSettingsPool() as never,
+    enforceRateLimit: allowRateLimit,
     lobbyApiFactory: () => ({
       createMatch: async (gameName, args) => {
         calls.push({ type: 'create', gameName, body: args as unknown as Record<string, unknown> });
@@ -130,6 +136,7 @@ test('user-lobby create-and-join creates bot seats and returns session', async (
         }
         return { playerID: String(args.playerID), playerCredentials: '' };
       },
+      leaveMatch,
     }),
   });
   const handler = postHandlers.get('/api/user-lobby/create-and-join');
@@ -177,6 +184,59 @@ test('user-lobby create-and-join creates bot seats and returns session', async (
   assert.deepEqual(joinBodies.map((row) => String(row.playerID)), ['0', '1', '2', '3']);
 });
 
+test('public lobby create-and-join works without an authenticated user session', async () => {
+  const { router, postHandlers } = makeRouter();
+  const joinedPlayerIDs: string[] = [];
+  registerUserLobbyRoutes({
+    router,
+    userStore: baseStore() as never,
+    logLine: async () => undefined,
+    jsonBodyLimit: 10_000,
+    gameUiConfigPath: 'unused',
+    pool: createSettingsPool() as never,
+    enforceRateLimit: allowRateLimit,
+    lobbyApiFactory: () => ({
+      createMatch: async () => ({ matchID: 'mobile-room' }),
+      joinMatch: async (_gameName, _matchID, args) => {
+        joinedPlayerIDs.push(args.playerID);
+        return {
+          playerID: args.playerID,
+          playerCredentials: args.playerID === '0' ? 'mobile-credentials' : '',
+        };
+      },
+      leaveMatch,
+    }),
+  });
+  const handler = postHandlers.get('/api/lobby/create-and-join');
+  assert.ok(handler);
+  const ctx: RouteCtx = {
+    request: {
+      body: {
+        gameName: 'joj-game',
+        playerName: 'Mobile player',
+        numPlayers: 4,
+        setupData: { bots: { count: 3, difficulty: 'normal', profile: 'balanced' } },
+      },
+      headers: {
+        cookie: 'joj_user_csrf=csrf-token',
+        'x-csrf-token': 'csrf-token',
+        host: 'localhost:8000',
+        origin: 'http://localhost:8000',
+      },
+    },
+  };
+
+  await handler?.(ctx);
+
+  assert.equal((ctx.body as { ok: boolean }).ok, true);
+  assert.deepEqual((ctx.body as { session: Record<string, string> }).session, {
+    matchID: 'mobile-room',
+    playerID: '0',
+    credentials: 'mobile-credentials',
+  });
+  assert.deepEqual(joinedPlayerIDs, ['0', '1', '2', '3']);
+});
+
 test('user-lobby join returns controlled error when internal lobby api fails', async () => {
   const { router, postHandlers } = makeRouter();
   registerUserLobbyRoutes({
@@ -186,8 +246,10 @@ test('user-lobby join returns controlled error when internal lobby api fails', a
     jsonBodyLimit: 10_000,
     gameUiConfigPath: 'unused',
     pool: createSettingsPool() as never,
+    enforceRateLimit: allowRateLimit,
     lobbyApiFactory: () => ({
       createMatch: async () => ({ matchID: 'unused' }),
+      leaveMatch,
       joinMatch: async () => {
         throw new Error('Internal lobby exploded.');
       },

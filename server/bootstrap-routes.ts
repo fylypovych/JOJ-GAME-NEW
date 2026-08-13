@@ -107,6 +107,7 @@ export const bootstrapRoutes = async (deps: RouteBootstrapDeps) => {
     jsonBodyLimit: JSON_BODY_LIMIT,
     gameUiConfigPath,
     pool,
+    enforceRateLimit,
   });
 
   registerContentRoutes({

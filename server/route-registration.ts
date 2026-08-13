@@ -166,6 +166,7 @@ export const registerAllRoutes = (
     jsonBodyLimit,
     gameUiConfigPath,
     pool,
+    enforceRateLimit,
   });
 
   registerContentRoutes({

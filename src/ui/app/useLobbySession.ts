@@ -36,6 +36,7 @@ export const useLobbySession = (args: {
   onSessionEstablished?: (session: Session, playerName: string) => Promise<void> | void;
   createOwnedSession?: (args: { numPlayers: number; setupData: unknown; playerName: string }) => Promise<Session>;
   joinOwnedSession?: (args: { matchID: string; playerID: string; playerName: string }) => Promise<Session>;
+  leaveOwnedSession?: (args: { matchID: string; playerID: string; credentials: string }) => Promise<void>;
 }) => {
   const {
     lobbyClient,
@@ -61,6 +62,7 @@ export const useLobbySession = (args: {
     onSessionEstablished,
     createOwnedSession,
     joinOwnedSession,
+    leaveOwnedSession,
   } = args;
   const [matches, setMatches] = useState<LobbyMatch[]>([]);
   const [session, setSession] = useState<Session | null>(initialSession);
@@ -280,10 +282,13 @@ export const useLobbySession = (args: {
     setError('');
     try {
       if (session.playerID && session.credentials) {
-        await lobbyClient.leaveMatch(gameName, session.matchID, {
+        const leaveArgs = {
+          matchID: session.matchID,
           playerID: session.playerID,
           credentials: session.credentials,
-        });
+        };
+        if (leaveOwnedSession) await leaveOwnedSession(leaveArgs);
+        else await lobbyClient.leaveMatch(gameName, leaveArgs.matchID, leaveArgs);
       }
     } catch {
       // ignore, local cleanup still needed

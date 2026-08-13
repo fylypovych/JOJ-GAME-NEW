@@ -150,6 +150,29 @@ export const useLobbyData = (args: UseLobbyDataArgs): UseLobbyDataResult => {
     roomFullText: t.roomFull,
     createFailedText: t.createFailed,
     joinFailedText: t.joinFailed,
+    createOwnedSession: async (input) => {
+      const payload = await api.postJson<{ session: Session }>(
+        `${serverUrl}/api/lobby/create-and-join`,
+        { gameName: GAME_NAME, ...input },
+        { csrf: 'user' },
+      );
+      return payload.session;
+    },
+    joinOwnedSession: async (input) => {
+      const payload = await api.postJson<{ session: Session }>(
+        `${serverUrl}/api/lobby/join`,
+        { gameName: GAME_NAME, ...input },
+        { csrf: 'user' },
+      );
+      return payload.session;
+    },
+    leaveOwnedSession: async (input) => {
+      await api.postJson(
+        `${serverUrl}/api/lobby/leave`,
+        { gameName: GAME_NAME, ...input },
+        { csrf: 'user' },
+      );
+    },
     onSessionEstablished: (nextSession, nextPlayerName) => {
       if (!nextSession.playerID || !nextSession.credentials) return;
       void bindMatchSession({

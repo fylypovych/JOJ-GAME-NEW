@@ -3,7 +3,7 @@ import type { Pool } from 'pg';
 import { readJsonBodySafe } from '../request-utils';
 import { createBotPlayerName, getBotSeatIds, normalizeBotSetup } from '../../src/game/bot-engine/config';
 import { clampBotCountToAllowed, clampRoomCapacityToAllowed } from '../../src/game/lobbyConfig';
-import type { LogLine, RouteCtx, RouterLike } from './types';
+import type { EnforceRateLimit, LogLine, RouteCtx, RouterLike } from './types';
 import type { UserStore } from '../services/user-store';
 import { requireUserAuth, requireUserCsrf } from '../services/user-auth';
 import { loadLobbyGameUiConfig } from '../services/game-ui-config';
@@ -33,6 +33,7 @@ type MatchDbLike = {
 type InternalLobbyApi = {
   createMatch: (gameName: string, args: { numPlayers: number; setupData: unknown }) => Promise<{ matchID: string }>;
   joinMatch: (gameName: string, matchID: string, args: { playerID: string; playerName: string }) => Promise<{ playerID: string; playerCredentials: string }>;
+  leaveMatch: (gameName: string, matchID: string, args: { playerID: string; credentials: string }) => Promise<void>;
 };
 
 const INTERNAL_LOBBY_TIMEOUT_MS = 10_000;
@@ -178,6 +179,12 @@ const createInternalLobbyApi = (ctx: RouteCtx): InternalLobbyApi => {
         playerCredentials: String(result.body.playerCredentials ?? ''),
       };
     },
+    leaveMatch: async (gameName, matchID, args) => {
+      const result = await invoke('POST', `/games/${encodeURIComponent(gameName)}/${encodeURIComponent(matchID)}/leave`, args as Record<string, unknown>);
+      if (result.status < 200 || result.status >= 300) {
+        throw new Error(String(result.body.error ?? 'Failed to leave match.'));
+      }
+    },
   };
 };
 
@@ -216,6 +223,47 @@ const verifiedBind = async (args: {
   await userStore.persistMatchResultIfFinished(matchId, fetched?.state ?? null);
 };
 
+const createAndJoinLobby = async (args: {
+  lobbyApi: InternalLobbyApi;
+  gameName: string;
+  playerName: string;
+  numPlayers: number;
+  setupData: unknown;
+  gameUiConfigPath: string;
+  pool?: Pool | null;
+}) => {
+  const { lobbyApi, gameName, playerName, numPlayers, setupData, gameUiConfigPath, pool } = args;
+  const gameUiConfig = await loadLobbyGameUiConfig(gameUiConfigPath, pool);
+  const effectiveNumPlayers = clampRoomCapacityToAllowed(numPlayers, gameUiConfig.allowedRoomCapacities);
+  const requestedBotSetup = normalizeBotSetup((setupData as { bots?: unknown } | null | undefined)?.bots, effectiveNumPlayers);
+  const clampedBotCount = requestedBotSetup
+    ? clampBotCountToAllowed(requestedBotSetup.count, gameUiConfig.allowedBotCounts, effectiveNumPlayers)
+    : 0;
+  const botSetup = requestedBotSetup && clampedBotCount > 0
+    ? { ...requestedBotSetup, count: clampedBotCount }
+    : null;
+  const normalizedSetupData = setupData && typeof setupData === 'object'
+    ? { ...(setupData as Record<string, unknown>), bots: botSetup }
+    : { bots: botSetup };
+  const created = await lobbyApi.createMatch(gameName, { numPlayers: effectiveNumPlayers, setupData: normalizedSetupData });
+  const matchID = String(created.matchID ?? '');
+  if (!matchID) throw new Error('Match ID missing after creation.');
+  const joined = await lobbyApi.joinMatch(gameName, matchID, { playerID: '0', playerName });
+  if (botSetup) {
+    for (const [index, botPlayerID] of getBotSeatIds(effectiveNumPlayers, botSetup.count).entries()) {
+      await lobbyApi.joinMatch(gameName, matchID, {
+        playerID: botPlayerID,
+        playerName: createBotPlayerName({ difficulty: botSetup.difficulty, profile: botSetup.profile, seatIndex: index + 1 }),
+      });
+    }
+  }
+  return {
+    matchID,
+    playerID: String(joined.playerID ?? '0'),
+    credentials: String(joined.playerCredentials ?? ''),
+  };
+};
+
 export const registerUserLobbyRoutes = (args: {
   router: RouterLike;
   userStore: UserStore | null;
@@ -223,9 +271,86 @@ export const registerUserLobbyRoutes = (args: {
   jsonBodyLimit: number;
   gameUiConfigPath: string;
   pool?: Pool | null;
+  enforceRateLimit: EnforceRateLimit;
   lobbyApiFactory?: (ctx: RouteCtx) => InternalLobbyApi;
 }) => {
-  const { router, userStore, logLine, jsonBodyLimit, gameUiConfigPath, pool, lobbyApiFactory = createInternalLobbyApi } = args;
+  const { router, userStore, logLine, jsonBodyLimit, gameUiConfigPath, pool, enforceRateLimit, lobbyApiFactory = createInternalLobbyApi } = args;
+
+  router.post('/api/lobby/create-and-join', async (ctx: RouteCtx) => {
+    if (!requireUserCsrf(ctx)) return;
+    if (!(await enforceRateLimit(ctx, 'lobby-create', 10, 60_000))) return;
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/lobby/create-and-join', maxBytes: jsonBodyLimit, logLine });
+    if (!body) return;
+    const gameName = String(body.gameName ?? '').trim();
+    const playerName = String(body.playerName ?? '').trim();
+    const numPlayers = Number(body.numPlayers ?? 0);
+    if (!gameName || !playerName || Number.isNaN(numPlayers) || numPlayers < 2) {
+      routeError(ctx, 400, 'Invalid create-and-join payload.');
+      return;
+    }
+    try {
+      const session = await createAndJoinLobby({
+        lobbyApi: lobbyApiFactory(ctx),
+        gameName,
+        playerName,
+        numPlayers,
+        setupData: body.setupData,
+        gameUiConfigPath,
+        pool,
+      });
+      routeOk(ctx, { session });
+    } catch (error) {
+      routeError(ctx, 400, String(error instanceof Error ? error.message : error));
+    }
+  });
+
+  router.post('/api/lobby/join', async (ctx: RouteCtx) => {
+    if (!requireUserCsrf(ctx)) return;
+    if (!(await enforceRateLimit(ctx, 'lobby-join', 30, 60_000))) return;
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/lobby/join', maxBytes: jsonBodyLimit, logLine });
+    if (!body) return;
+    const gameName = String(body.gameName ?? '').trim();
+    const matchID = String(body.matchID ?? '').trim();
+    const playerID = String(body.playerID ?? '').trim();
+    const playerName = String(body.playerName ?? '').trim();
+    if (!gameName || !matchID || !playerID || !playerName) {
+      routeError(ctx, 400, 'Invalid join payload.');
+      return;
+    }
+    try {
+      const joined = await lobbyApiFactory(ctx).joinMatch(gameName, matchID, { playerID, playerName });
+      routeOk(ctx, {
+        session: {
+          matchID,
+          playerID: String(joined.playerID ?? playerID),
+          credentials: String(joined.playerCredentials ?? ''),
+        },
+      });
+    } catch (error) {
+      routeError(ctx, 400, String(error instanceof Error ? error.message : error));
+    }
+  });
+
+  router.post('/api/lobby/leave', async (ctx: RouteCtx) => {
+    if (!requireUserCsrf(ctx)) return;
+    if (!(await enforceRateLimit(ctx, 'lobby-leave', 30, 60_000))) return;
+    const body = await readJsonBodySafe({ ctx, routeLabel: '/api/lobby/leave', maxBytes: jsonBodyLimit, logLine });
+    if (!body) return;
+    const gameName = String(body.gameName ?? '').trim();
+    const matchID = String(body.matchID ?? '').trim();
+    const playerID = String(body.playerID ?? '').trim();
+    const credentials = String(body.credentials ?? '').trim();
+    if (!gameName || !matchID || !playerID || !credentials) {
+      routeError(ctx, 400, 'Invalid leave payload.');
+      return;
+    }
+    try {
+      await lobbyApiFactory(ctx).leaveMatch(gameName, matchID, { playerID, credentials });
+      routeOk(ctx, {});
+    } catch (error) {
+      routeError(ctx, 400, String(error instanceof Error ? error.message : error));
+    }
+  });
 
   router.post('/api/user-lobby/create-and-join', async (ctx: RouteCtx) => {
     if (!userStore) {
@@ -246,48 +371,25 @@ export const registerUserLobbyRoutes = (args: {
       return;
     }
     try {
-      const lobbyApi = lobbyApiFactory(ctx);
-      const gameUiConfig = await loadLobbyGameUiConfig(gameUiConfigPath, pool);
-      const effectiveNumPlayers = clampRoomCapacityToAllowed(numPlayers, gameUiConfig.allowedRoomCapacities);
-      const requestedBotSetup = normalizeBotSetup((setupData as { bots?: unknown } | null | undefined)?.bots, effectiveNumPlayers);
-      const clampedBotCount = requestedBotSetup
-        ? clampBotCountToAllowed(requestedBotSetup.count, gameUiConfig.allowedBotCounts, effectiveNumPlayers)
-        : 0;
-      const botSetup = requestedBotSetup && clampedBotCount > 0
-        ? { ...requestedBotSetup, count: clampedBotCount }
-        : null;
-      const normalizedSetupData = (
-        setupData && typeof setupData === 'object'
-          ? {
-            ...(setupData as Record<string, unknown>),
-            bots: botSetup,
-          }
-          : { bots: botSetup }
-      );
-      const created = await lobbyApi.createMatch(gameName, { numPlayers: effectiveNumPlayers, setupData: normalizedSetupData });
-      const matchID = String(created.matchID ?? '');
-      if (!matchID) throw new Error('Match ID missing after creation.');
-      const joined = await lobbyApi.joinMatch(gameName, matchID, { playerID: '0', playerName });
-      const playerID = String(joined.playerID ?? '0');
-      const credentials = String(joined.playerCredentials ?? '');
-      if (botSetup) {
-        for (const [index, botPlayerID] of getBotSeatIds(effectiveNumPlayers, botSetup.count).entries()) {
-          await lobbyApi.joinMatch(gameName, matchID, {
-            playerID: botPlayerID,
-            playerName: createBotPlayerName({ difficulty: botSetup.difficulty, profile: botSetup.profile, seatIndex: index + 1 }),
-          });
-        }
-      }
+      const session = await createAndJoinLobby({
+        lobbyApi: lobbyApiFactory(ctx),
+        gameName,
+        playerName,
+        numPlayers,
+        setupData,
+        gameUiConfigPath,
+        pool,
+      });
       await verifiedBind({
         ctx,
         userStore,
         userId: user.id,
-        matchId: matchID,
-        playerId: playerID,
-        credentials,
+        matchId: session.matchID,
+        playerId: session.playerID,
+        credentials: session.credentials,
         playerName,
       });
-      routeOk(ctx, { session: { matchID, playerID, credentials } });
+      routeOk(ctx, { session });
     } catch (error) {
       routeError(ctx, 400, String(error instanceof Error ? error.message : error));
     }
