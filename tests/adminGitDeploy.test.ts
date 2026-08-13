@@ -76,17 +76,25 @@ test('web deployment performs backup, verification, migrations and sync before r
   assert.deepEqual(gitCommands, [['pull', '--ff-only']]);
   assert.equal((ctx.body as { ok: boolean; restarted: boolean }).ok, true);
   assert.equal((ctx.body as { restarted: boolean }).restarted, true);
-  const steps = (ctx.body as { steps: Array<{ step: string; output?: string }> }).steps;
-  assert.deepEqual(steps.map((step) => step.step), [
-    'Production backup',
-    'GitHub files updated',
-    'Dependencies installed',
-    'Release checks passed',
-    'Database migrations completed',
-    'Shared configuration sync completed',
-    'PM2 restart and health check scheduled',
-  ]);
-  assert.equal(steps.some((step) => Boolean(step.output)), false);
+  const steps = (
+    ctx.body as { steps: Array<{ step: string; output?: string }> }
+  ).steps;
+  assert.deepEqual(
+    steps.map((step) => step.step),
+    [
+      'Production backup',
+      'GitHub files updated',
+      'Dependencies installed',
+      'Release checks passed',
+      'Database migrations completed',
+      'Shared configuration sync completed',
+      'PM2 restart and health check scheduled',
+    ],
+  );
+  assert.equal(
+    steps.some((step) => Boolean(step.output)),
+    false,
+  );
 
   await new Promise((resolve) => setTimeout(resolve, 350));
   assert.deepEqual(detachedCommands, [
@@ -95,16 +103,21 @@ test('web deployment performs backup, verification, migrations and sync before r
 });
 
 test('deployment failure summary drops successful test noise and keeps the actual error', () => {
-  const noisyTests = Array.from({ length: 195 }, (_, index) => `✔ successful test ${index + 1}`).join('\n');
-  const summary = summarizeCommandFailure([
-    '$ sh -lc npm run check:release',
-    'message: Command failed: sh -lc npm run check:release',
-    'code: 1',
-    `stdout:\n${noisyTests}`,
-    'stderr:',
-    'Error: Referenced asset files are missing from public/card-assets: 2026.LYAP.STARTER/lyap-04.webp',
-    '    at scripts/check-asset-inventory.ts:86:9',
-  ].join('\n'));
+  const noisyTests = Array.from(
+    { length: 195 },
+    (_, index) => `✔ successful test ${index + 1}`,
+  ).join('\n');
+  const summary = summarizeCommandFailure(
+    [
+      '$ sh -lc npm run check:release',
+      'message: Command failed: sh -lc npm run check:release',
+      'code: 1',
+      `stdout:\n${noisyTests}`,
+      'stderr:',
+      'Error: Referenced asset files are missing from public/card-assets: 2026.LYAP.STARTER/lyap-04.webp',
+      '    at scripts/check-asset-inventory.ts:86:9',
+    ].join('\n'),
+  );
 
   assert.match(summary, /Referenced asset files are missing/);
   assert.match(summary, /2026\.LYAP\.STARTER\/lyap-04\.webp/);
