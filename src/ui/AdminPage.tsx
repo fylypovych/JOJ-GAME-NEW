@@ -59,14 +59,30 @@ import {
 } from './admin';
 
 const ADMIN_TAB_IDS: AdminTab[] = [
-  'start', 'matches', 'deck', 'import', 'state', 'ranks', 'database',
-  'analytics', 'github', 'settings', 'simulation', 'users', 'awards',
-  'bugReports', 'gameConfig', 'systemAdmin', 'contentPages',
+  'start',
+  'matches',
+  'deck',
+  'import',
+  'state',
+  'ranks',
+  'database',
+  'analytics',
+  'github',
+  'settings',
+  'simulation',
+  'users',
+  'awards',
+  'bugReports',
+  'gameConfig',
+  'systemAdmin',
+  'contentPages',
 ];
 
 const adminTabFromUrl = (): AdminTab => {
   if (typeof window === 'undefined') return 'start';
-  const value = new URL(window.location.href).searchParams.get('adminTab') as AdminTab | null;
+  const value = new URL(window.location.href).searchParams.get(
+    'adminTab',
+  ) as AdminTab | null;
   if (value === 'settings') return 'gameConfig';
   return value && ADMIN_TAB_IDS.includes(value) ? value : 'start';
 };
@@ -159,7 +175,8 @@ export const AdminPage = ({
   const [adminActionError, setAdminActionError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<AdminTab>(adminTabFromUrl);
   const [v4Prefetched, setV4Prefetched] = useState(false);
-  const [hasUnsavedGameConfigChanges, setHasUnsavedGameConfigChanges] = useState(false);
+  const [hasUnsavedGameConfigChanges, setHasUnsavedGameConfigChanges] =
+    useState(false);
   const optionalSimulationModules = useMemo(
     () =>
       (sharedDeckTemplate.modules ?? [])
@@ -704,7 +721,11 @@ export const AdminPage = ({
             artLabel: 'Control Room',
             description: 'Аналітика, налаштування гри та система',
             iconPath: '/admin-icons/system.svg',
-            tabs: [adminTabMeta.analytics, adminTabMeta.gameConfig, adminTabMeta.systemAdmin],
+            tabs: [
+              adminTabMeta.analytics,
+              adminTabMeta.gameConfig,
+              adminTabMeta.systemAdmin,
+            ],
           },
         ]
       : [
@@ -774,7 +795,11 @@ export const AdminPage = ({
             artLabel: 'Control Room',
             description: 'Analytics, game config and system',
             iconPath: '/admin-icons/system.svg',
-            tabs: [adminTabMeta.analytics, adminTabMeta.gameConfig, adminTabMeta.systemAdmin],
+            tabs: [
+              adminTabMeta.analytics,
+              adminTabMeta.gameConfig,
+              adminTabMeta.systemAdmin,
+            ],
           },
         ];
   const activeCategory =
@@ -782,52 +807,69 @@ export const AdminPage = ({
       category.tabs.some((tab) => tab.id === activeTab),
     ) ?? adminCategories[0];
   const hasUnsavedUserChanges = Boolean(
-    selectedAdminUserDetail
-    && JSON.stringify(adminEditUserDraft) !== JSON.stringify({
-      username: selectedAdminUserDetail.user.username ?? '',
-      displayName: selectedAdminUserDetail.user.displayName ?? '',
-      email: selectedAdminUserDetail.user.email ?? '',
-      bio: selectedAdminUserDetail.user.bio ?? '',
-      avatarUrl: selectedAdminUserDetail.user.avatarUrl ?? '',
-      preferredLang: selectedAdminUserDetail.user.preferredLang ?? 'uk',
-    }),
+    selectedAdminUserDetail &&
+    JSON.stringify(adminEditUserDraft) !==
+      JSON.stringify({
+        username: selectedAdminUserDetail.user.username ?? '',
+        displayName: selectedAdminUserDetail.user.displayName ?? '',
+        email: selectedAdminUserDetail.user.email ?? '',
+        bio: selectedAdminUserDetail.user.bio ?? '',
+        avatarUrl: selectedAdminUserDetail.user.avatarUrl ?? '',
+        preferredLang: selectedAdminUserDetail.user.preferredLang ?? 'uk',
+      }),
   );
-  const selectedAdminAward = adminAwards.find((award) => award.id === selectedAdminAwardId);
+  const selectedAdminAward = adminAwards.find(
+    (award) => award.id === selectedAdminAwardId,
+  );
   const hasUnsavedAwardChanges = selectedAdminAward
-    ? JSON.stringify(adminAwardDraft) !== JSON.stringify({
-      id: selectedAdminAward.id,
-      key: selectedAdminAward.key,
-      title: selectedAdminAward.title,
-      description: selectedAdminAward.description,
-      category: selectedAdminAward.category,
-      metric: selectedAdminAward.metric,
-      threshold: String(selectedAdminAward.threshold),
-      badgeLabel: selectedAdminAward.badgeLabel,
-      badgeVariant: selectedAdminAward.badgeVariant,
-      iconPath: selectedAdminAward.iconPath ?? '',
-      active: selectedAdminAward.active,
-      sortOrder: String(selectedAdminAward.sortOrder),
-    })
-    : Boolean(adminAwardDraft.key || adminAwardDraft.title || adminAwardDraft.description || adminAwardDraft.badgeLabel || adminAwardDraft.iconPath);
-  const hasUnsavedAdminChanges = hasUnsavedCardChanges
-    || hasUnsavedRankChanges
-    || hasUnsavedUserChanges
-    || hasUnsavedAwardChanges
-    || hasUnsavedGameConfigChanges;
-  const unsavedNavigationMessage = lang === 'uk'
-    ? 'Є незбережені зміни. Перейти без збереження?'
-    : 'There are unsaved changes. Leave without saving?';
+    ? JSON.stringify(adminAwardDraft) !==
+      JSON.stringify({
+        id: selectedAdminAward.id,
+        key: selectedAdminAward.key,
+        title: selectedAdminAward.title,
+        description: selectedAdminAward.description,
+        category: selectedAdminAward.category,
+        metric: selectedAdminAward.metric,
+        threshold: String(selectedAdminAward.threshold),
+        badgeLabel: selectedAdminAward.badgeLabel,
+        badgeVariant: selectedAdminAward.badgeVariant,
+        iconPath: selectedAdminAward.iconPath ?? '',
+        active: selectedAdminAward.active,
+        sortOrder: String(selectedAdminAward.sortOrder),
+      })
+    : Boolean(
+        adminAwardDraft.key ||
+        adminAwardDraft.title ||
+        adminAwardDraft.description ||
+        adminAwardDraft.badgeLabel ||
+        adminAwardDraft.iconPath,
+      );
+  const hasUnsavedAdminChanges =
+    hasUnsavedCardChanges ||
+    hasUnsavedRankChanges ||
+    hasUnsavedUserChanges ||
+    hasUnsavedAwardChanges ||
+    hasUnsavedGameConfigChanges;
+  const unsavedNavigationMessage =
+    lang === 'uk'
+      ? 'Є незбережені зміни. Перейти без збереження?'
+      : 'There are unsaved changes. Leave without saving?';
   const selectActiveTab = (nextTab: AdminTab) => {
     if (nextTab === activeTab) return;
-    if (hasUnsavedAdminChanges && !window.confirm(unsavedNavigationMessage)) return;
+    if (hasUnsavedAdminChanges && !window.confirm(unsavedNavigationMessage))
+      return;
     const nextUrl = new URL(window.location.href);
     nextUrl.searchParams.set('adminTab', nextTab);
     window.history.pushState({ adminTab: nextTab }, '', nextUrl);
     setActiveTab(nextTab);
     const nextCategory = adminCategories.find((category) =>
-      category.tabs.some((tab) => tab.id === nextTab));
+      category.tabs.some((tab) => tab.id === nextTab),
+    );
     if (nextCategory) {
-      window.localStorage.setItem(`joj-admin-last-tab-${nextCategory.id}`, nextTab);
+      window.localStorage.setItem(
+        `joj-admin-last-tab-${nextCategory.id}`,
+        nextTab,
+      );
     }
   };
   useEffect(() => {
@@ -861,37 +903,6 @@ export const AdminPage = ({
       window.removeEventListener('popstate', handlePopState);
     };
   }, [activeTab, hasUnsavedAdminChanges, unsavedNavigationMessage]);
-  const contextStatus = (() => {
-    if (activeCategory.id === 'operations') {
-      return lang === 'uk'
-        ? `${matches.length} матчів · ${activeMatchId || 'не вибрано'}`
-        : `${matches.length} matches · ${activeMatchId || 'not selected'}`;
-    }
-    if (activeCategory.id === 'content') {
-      return lang === 'uk'
-        ? `${cardCatalog.length} карт · ${sharedRanks.length} звань`
-        : `${cardCatalog.length} cards · ${sharedRanks.length} ranks`;
-    }
-    if (activeCategory.id === 'data') {
-      return lang === 'uk'
-        ? `${adminUsers.length} користувачів · ${bugReports.length} репортів`
-        : `${adminUsers.length} users · ${bugReports.length} reports`;
-    }
-    if (activeCategory.id === 'integrations') {
-      if (!gitStatus) return lang === 'uk' ? 'Статус ще не перевірено' : 'Status not checked';
-      return gitStatus.dirty
-        ? (lang === 'uk' ? 'Є локальні зміни' : 'Local changes present')
-        : `${gitStatus.branch} · ${gitStatus.behind} behind`;
-    }
-    if (activeCategory.id === 'system') {
-      return storageMode === 'db'
-        ? (lang === 'uk' ? 'PostgreSQL підключено' : 'PostgreSQL connected')
-        : (lang === 'uk' ? 'Файлове сховище' : 'File storage');
-    }
-    return sharedConfigLoaded
-      ? (lang === 'uk' ? 'Система готова' : 'System ready')
-      : (lang === 'uk' ? 'Завантаження конфігурації' : 'Loading configuration');
-  })();
   return (
     <AdminShell uiVariant={uiVariant} t={t}>
       <AdminNavigation
@@ -900,7 +911,6 @@ export const AdminPage = ({
         activeTabLabel={activeTabLabel}
         adminCategories={adminCategories}
         setActiveTab={selectActiveTab}
-        contextStatus={contextStatus}
         activeTabDescriptionMap={activeTabDescriptionMap}
       >
         {activeTab === 'start' ? (
@@ -1092,7 +1102,9 @@ export const AdminPage = ({
             serverUrl={serverUrl}
             bugReportImagePath={bugReportImagePath}
             onBugReportImagePathChange={setBugReportImagePath}
-            onSaveBugReportImagePath={() => saveBugReportUiConfig(bugReportImagePath)}
+            onSaveBugReportImagePath={() =>
+              saveBugReportUiConfig(bugReportImagePath)
+            }
             onUploadBugReportImage={async (file) => {
               if (!file) return;
               const optimized = await optimizeBlobForUpload(file, file.name, {
@@ -1104,7 +1116,10 @@ export const AdminPage = ({
                 setAdminActionError(t.uploadFailedGeneric);
                 return;
               }
-              const uploaded = await uploadDataUrl(`bug-report-icon-${Date.now()}`, optimized.dataUrl);
+              const uploaded = await uploadDataUrl(
+                `bug-report-icon-${Date.now()}`,
+                optimized.dataUrl,
+              );
               if (!uploaded) return;
               setBugReportImagePath(uploaded);
               await saveBugReportUiConfig(uploaded);
@@ -1157,7 +1172,10 @@ export const AdminPage = ({
                 setAdminActionError(t.uploadFailedGeneric);
                 return;
               }
-              const uploaded = await uploadDataUrl(`resource-icon-${key}-${Date.now()}`, optimized.dataUrl);
+              const uploaded = await uploadDataUrl(
+                `resource-icon-${key}-${Date.now()}`,
+                optimized.dataUrl,
+              );
               if (!uploaded) return;
               const next = normalizeLobbyGameUiConfig({
                 allowedRoomCapacities,
@@ -1353,7 +1371,11 @@ export const AdminPage = ({
           />
         ) : null}
         {activeTab === 'contentPages' ? (
-          <AdminContentPagesTab lang={lang} serverUrl={serverUrl} adminJsonFetch={adminJsonFetch} />
+          <AdminContentPagesTab
+            lang={lang}
+            serverUrl={serverUrl}
+            adminJsonFetch={adminJsonFetch}
+          />
         ) : null}
         {activeTab === 'bugReports' ? (
           <AdminBugReportsTab

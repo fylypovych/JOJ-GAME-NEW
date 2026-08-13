@@ -1,9 +1,17 @@
 import type { ReactNode, RefObject, SyntheticEvent } from 'react';
-import { CARD_ASSET_BASE_PATH, normalizeImagePath } from '../../game/imagePaths';
-import type { CardDefinition, JojGameState, ResourceKey } from '../../game/types';
+import {
+  CARD_ASSET_BASE_PATH,
+  normalizeImagePath,
+} from '../../game/imagePaths';
+import type {
+  CardDefinition,
+  JojGameState,
+  ResourceKey,
+} from '../../game/types';
 import type { Language } from '../i18n';
-import { cardFlavor, cardTitleWithOverride, categoryLabel, localizeSystemMessageText } from '../i18n';
+import { cardFlavor, cardTitleWithOverride } from '../i18n';
 import { createPortal } from 'react-dom';
+import { SystemMessageText } from './SystemMessageText';
 
 type PilePreviewProps = {
   imageSrc?: string;
@@ -31,17 +39,44 @@ export const PilePreview = ({
   if (!imageSrc) return <>{fallback ?? null}</>;
   const previewOpen = openPreviewKey === previewKey;
   return (
-    <div className={`pile-preview${variant === 'v1' ? ' is-v1' : ''}${previewOpen ? ' has-open-preview' : ''}`}>
-      <img src={imageSrc} alt={alt} onClick={(e) => { e.stopPropagation(); onTogglePreview(previewKey); }} />
-      {previewOpen && typeof document !== 'undefined' ? createPortal(
-        <div className={`pile-preview-modal is-theme-${theme}`} role="dialog" aria-modal="true" aria-label={alt} onClick={onClosePreview}>
-          <div className="pile-preview-modal-card" onClick={(e) => e.stopPropagation()}>
-            <button type="button" className="pile-preview-modal-close" aria-label={`Close ${alt}`} onClick={onClosePreview}>×</button>
-            <img src={imageSrc} alt={alt} />
-          </div>
-        </div>,
-        document.body,
-      ) : null}
+    <div
+      className={`pile-preview${variant === 'v1' ? ' is-v1' : ''}${previewOpen ? ' has-open-preview' : ''}`}
+    >
+      <img
+        src={imageSrc}
+        alt={alt}
+        onClick={(e) => {
+          e.stopPropagation();
+          onTogglePreview(previewKey);
+        }}
+      />
+      {previewOpen && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              className={`pile-preview-modal is-theme-${theme}`}
+              role="dialog"
+              aria-modal="true"
+              aria-label={alt}
+              onClick={onClosePreview}
+            >
+              <div
+                className="pile-preview-modal-card"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="pile-preview-modal-close"
+                  aria-label={`Close ${alt}`}
+                  onClick={onClosePreview}
+                >
+                  ×
+                </button>
+                <img src={imageSrc} alt={alt} />
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 };
@@ -102,11 +137,17 @@ export const GameCardTile = ({
   selected = false,
   onCardClick,
 }: GameCardTileProps) => {
-  const imageSrc = normalizeImagePath(resolvedImage) ?? normalizeImagePath(card.image) ?? `${CARD_ASSET_BASE_PATH}${card.id}.png`;
+  const imageSrc =
+    normalizeImagePath(resolvedImage) ??
+    normalizeImagePath(card.image) ??
+    `${CARD_ASSET_BASE_PATH}${card.id}.png`;
   const categoryClass = `game-card-cat-${String(card.category).toLowerCase()}`;
-  const withCacheBust = (src: string) => `${src}${src.includes('?') ? '&' : '?'}v=${Date.now()}`;
+  const withCacheBust = (src: string) =>
+    `${src}${src.includes('?') ? '&' : '?'}v=${Date.now()}`;
   const handleCardImageError = (event: SyntheticEvent<HTMLImageElement>) => {
-    const img = event.currentTarget as HTMLImageElement & { dataset: { retried?: string } };
+    const img = event.currentTarget as HTMLImageElement & {
+      dataset: { retried?: string };
+    };
     if (!img.dataset.retried) {
       img.dataset.retried = '1';
       img.src = withCacheBust(imageSrc);
@@ -174,42 +215,57 @@ export const GameCardTile = ({
       <div
         className={`game-card-popover${variantClass}${openPreviewKey === previewKey ? ' is-open' : ''}`}
         aria-hidden={openPreviewKey !== previewKey}
-        onClick={(e) => { e.stopPropagation(); onClosePreview(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClosePreview();
+        }}
       >
-        <img
-          src={imageSrc}
-          alt={title}
-          onError={handleCardImageError}
-        />
+        <img src={imageSrc} alt={title} onError={handleCardImageError} />
       </div>
       <div className={`game-card-body${variantClass}`}>
         <strong>{title}</strong>
-        <small>{categoryText || categoryLabel(card.category, lang)}</small>
+        {categoryText ? <small>{categoryText}</small> : null}
         {badges?.length ? (
           <div className="game-card-row">
             {badges.map((badge, index) => (
-              <span key={`badge-${card.id}-${index}`} className="pill pill-badge">{badge}</span>
+              <span
+                key={`badge-${card.id}-${index}`}
+                className="pill pill-badge"
+              >
+                {badge}
+              </span>
             ))}
           </div>
         ) : null}
         {effectEntries.length ? (
           <div className="game-card-row">
             {effectEntries.map((effect, index) => (
-              <span key={`effect-${card.id}-${effect.resource}-${index}`} className="pill pill-effect">
-                {effectLabel(effect.resource)}: {effect.value > 0 ? `+${effect.value}` : effect.value}
+              <span
+                key={`effect-${card.id}-${effect.resource}-${index}`}
+                className="pill pill-effect"
+              >
+                {effectLabel(effect.resource)}:{' '}
+                {effect.value > 0 ? `+${effect.value}` : effect.value}
               </span>
             ))}
           </div>
         ) : null}
-        {helperText ? <small className="game-card-helper">{helperText}</small> : null}
-        {previewText ? <small className="game-card-preview">{previewText}</small> : null}
-        {flavorText ? <small className="game-card-helper">{flavorText}</small> : null}
+        {helperText ? (
+          <small className="game-card-helper">{helperText}</small>
+        ) : null}
+        {previewText ? (
+          <small className="game-card-preview">{previewText}</small>
+        ) : null}
+        {flavorText ? (
+          <small className="game-card-helper">{flavorText}</small>
+        ) : null}
       </div>
     </div>
   );
 };
 
 type ChatPanelProps = {
+  className?: string;
   chat: JojGameState['chat'];
   chatInput: string;
   setChatInput: (value: string) => void;
@@ -228,6 +284,7 @@ type ChatPanelProps = {
 };
 
 export const BoardChatPanel = ({
+  className,
   chat,
   chatInput,
   setChatInput,
@@ -239,19 +296,34 @@ export const BoardChatPanel = ({
   lang = 'uk',
   readOnly = false,
 }: ChatPanelProps) => (
-  <aside className="board-chat">
+  <aside className={`board-chat${className ? ` ${className}` : ''}`}>
     <h3>{t.chatTitle}</h3>
     <div className="chat-log" ref={chatLogRef}>
       {(chat ?? [])
         .filter((row) => includeSystemMessages || row.type !== 'system')
         .map((row) => {
-        const author = row.type === 'system' ? t.systemTag : playerLabelById(row.playerID);
-        return (
-          <p key={row.id} className={row.type === 'system' ? 'chat-system' : 'chat-player'}>
-            <strong>{author}:</strong> {row.type === 'system' ? localizeSystemMessageText(row.text, lang) : row.text}
-          </p>
-        );
-      })}
+          const author =
+            row.type === 'system' ? t.systemTag : playerLabelById(row.playerID);
+          return (
+            <p
+              key={row.id}
+              className={row.type === 'system' ? 'chat-system' : 'chat-player'}
+            >
+              <strong>{author}:</strong>{' '}
+              {row.type === 'system' ? (
+                <SystemMessageText
+                  text={row.text}
+                  lang={lang}
+                  playerName={
+                    row.playerID ? playerLabelById(row.playerID) : undefined
+                  }
+                />
+              ) : (
+                row.text
+              )}
+            </p>
+          );
+        })}
     </div>
     <form
       className="chat-input-row"
@@ -276,7 +348,9 @@ export const BoardChatPanel = ({
         placeholder={t.chatPlaceholder}
         disabled={readOnly}
       />
-      <button type="submit" disabled={readOnly}>{t.sendMessage}</button>
+      <button type="submit" disabled={readOnly}>
+        {t.sendMessage}
+      </button>
     </form>
   </aside>
 );

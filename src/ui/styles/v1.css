@@ -47,6 +47,14 @@
   color: #867562;
 }
 
+.game-ui-layout-shell.is-theme-v1
+  .game-ui-layout-event-row
+  .system-message-player,
+.game-ui-layout-shell.is-theme-v1 .chat-system .system-message-player {
+  color: #18733b;
+  font-weight: 800;
+}
+
 .game-ui-layout-shell.is-theme-v1 .game-ui-layout-header-copy,
 .game-ui-layout-shell.is-theme-v1 .game-ui-layout-header-leave,
 .game-ui-layout-shell.is-theme-v1 .game-ui-layout-selection-actions button,
@@ -272,7 +280,6 @@
 .app.app-v1 .game-ui-layout-shell.is-theme-v1 .game-ui-v2-subtle,
 .app.app-v1 .game-ui-layout-shell.is-theme-v1 .game-ui-v2-resource-name,
 .app.app-v1 .game-ui-layout-shell.is-theme-v1 .game-ui-v2-player-rank,
-.app.app-v1 .game-ui-layout-shell.is-theme-v1 .game-ui-v2-help-row strong,
-.app.app-v1 .game-ui-layout-shell.is-theme-v1 .game-ui-v2-hand-controls label {
+.app.app-v1 .game-ui-layout-shell.is-theme-v1 .game-ui-v2-help-row strong {
   color: #756755;
 }

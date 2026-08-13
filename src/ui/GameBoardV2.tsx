@@ -1,16 +1,41 @@
 import { useState } from 'react';
-import type { CardDefinition, ResourceKey } from '../game/types';
+import type { ResourceKey } from '../game/types';
 import { cardTitle, categoryLabel, rankLabel, text } from './i18n';
-import { buildTurnHelpItems, getBoardPromoteReason } from './board/boardViewHelpers';
+import {
+  buildTurnHelpItems,
+  getBoardPromoteReason,
+} from './board/boardViewHelpers';
 import { buildNextRankHint } from './board/rankHints';
 import { buildBoardV2ActionState } from './board/boardV2ActionState';
 import { GameCardTile, PilePreview } from './board/components';
-import { BOARD_RESOURCE_ICONS, BOARD_RESOURCE_IMAGE_PATHS, BOARD_RESOURCE_ORDER } from './board/resourceConstants';
-import { V2HandSection, V2Header, V2NoticeStack, V2SelectionPanel, V2SidePanel } from './board/v2Panels';
-import { V2EndVoteModal, V2GameoverModal, V2StandingsSummary } from './board/v2ShellSections';
-import { V2BattlefieldSection, V2BottomBar, V2OpponentsArea, V2PlayerDockSection } from './board/v2Sections';
+import {
+  BOARD_RESOURCE_ICONS,
+  BOARD_RESOURCE_IMAGE_PATHS,
+  BOARD_RESOURCE_ORDER,
+} from './board/resourceConstants';
+import {
+  V2HandSection,
+  V2Header,
+  V2NoticeStack,
+  V2SelectionPanel,
+  V2SidePanel,
+} from './board/v2Panels';
+import {
+  V2EndVoteModal,
+  V2GameoverModal,
+  V2StandingsSummary,
+} from './board/v2ShellSections';
+import {
+  V2BattlefieldSection,
+  V2BottomBar,
+  V2OpponentsArea,
+  V2PlayerDockSection,
+} from './board/v2Sections';
 import { useBoardDerivedState } from './board/useBoardDerivedState';
-import { useBotPlaybackQueue, type BotPlaybackSpeedLevel } from './board/useBotPlaybackQueue';
+import {
+  useBotPlaybackQueue,
+  type BotPlaybackSpeedLevel,
+} from './board/useBotPlaybackQueue';
 import { usePendingSelection } from './board/usePendingSelection';
 import { useBoardStageState } from './board/useBoardStageState';
 import { useBoardV2Interactions } from './board/useBoardV2Interactions';
@@ -20,8 +45,6 @@ import { useBoardUiController } from './board/useBoardUiController';
 import type { LocalizedBoardProps } from './board/types';
 import { copyText } from './app/share';
 
-type HandFilter = 'all' | 'playable' | CardDefinition['category'];
-type HandSort = 'default' | 'playable' | 'category' | 'title';
 const botSpeedHint = (lang: 'uk' | 'en', speed: BotPlaybackSpeedLevel) => {
   if (lang === 'uk') {
     if (speed <= 1) return '1 = показ кожного ходу, до 60 секунд';
@@ -33,7 +56,13 @@ const botSpeedHint = (lang: 'uk' | 'en', speed: BotPlaybackSpeedLevel) => {
   return `${speed} = faster bot playback`;
 };
 const stageLabel = (stage: string | undefined, t: ReturnType<typeof text>) =>
-  stage === 'draw' ? t.stageDraw : stage === 'play' ? t.stagePlay : stage === 'end' ? t.stageEnd : t.stageWaiting;
+  stage === 'draw'
+    ? t.stageDraw
+    : stage === 'play'
+      ? t.stagePlay
+      : stage === 'end'
+        ? t.stageEnd
+        : t.stageWaiting;
 
 export const GameBoardV2 = ({
   G: incomingG,
@@ -57,8 +86,12 @@ export const GameBoardV2 = ({
   const t = text(lang);
   const board = t.board;
   const isSpectator = !playerID;
-  const [spectatorView, setSpectatorView] = useState<'live' | 'summary'>('live');
-  const [selectedHandCardId, setSelectedHandCardId] = useState<string | null>(null);
+  const [spectatorView, setSpectatorView] = useState<'live' | 'summary'>(
+    'live',
+  );
+  const [selectedHandCardId, setSelectedHandCardId] = useState<string | null>(
+    null,
+  );
   const {
     G,
     ctx,
@@ -120,10 +153,6 @@ export const GameBoardV2 = ({
     notices,
     gameoverModalClosed,
     setGameoverModalClosed,
-    handFilter,
-    setHandFilter,
-    handSort,
-    setHandSort,
     sidePanelTab,
     setSidePanelTab,
     syncedNameRef,
@@ -187,10 +216,6 @@ export const GameBoardV2 = ({
     activeSelectionNeedsTarget,
     activeSelectionNeedsResource,
     activeSelectionNeedsReplacement,
-    activeSelectionNeedsVvnzPayment,
-    vvnzSelectedResources,
-    toggleVvnzResource,
-    confirmVvnzPayment,
     pickTargetNotice,
   } = usePendingSelection({
     G,
@@ -238,9 +263,11 @@ export const GameBoardV2 = ({
 
   const endGameVote = G?.endGameVote;
   const endGameVoteActive = Boolean(endGameVote?.active) && !ctx?.gameover;
-  const targetSelectionModalOpen = !isSpectator && Boolean(pendingSelection && activeSelectionNeedsTarget);
-  const showTopCommandPanel = !isSpectator && (Boolean((pendingSelection && !activeSelectionNeedsTarget)) || notices.length > 0);
-  const requestedByLabel = endGameVote?.requestedBy ? playerLabelById(endGameVote.requestedBy) : '';
+  const selectionModalOpen = !isSpectator && Boolean(pendingSelection);
+  const showTopCommandPanel = !isSpectator && notices.length > 0;
+  const requestedByLabel = endGameVote?.requestedBy
+    ? playerLabelById(endGameVote.requestedBy)
+    : '';
   const hasVotedAgree = Boolean(endGameVote?.votes?.[id]);
   const {
     gameoverMeta,
@@ -262,8 +289,6 @@ export const GameBoardV2 = ({
     sharedRanks,
     resourceLabels,
     lang,
-    handFilter,
-    handSort,
     board,
     endTurnLabel: t.endTurn,
   });
@@ -272,17 +297,28 @@ export const GameBoardV2 = ({
     return (
       <section className="board">
         <p>{t.loading}</p>
-        {roomMeta ? <p>{t.activeRoom}: <strong>{roomMeta.matchID}</strong></p> : null}
+        {roomMeta ? (
+          <p>
+            {t.activeRoom}: <strong>{roomMeta.matchID}</strong>
+          </p>
+        ) : null}
         {onLeaveRoom ? (
           <p>
-            <button type="button" onClick={onLeaveRoom}>{t.leaveRoom}</button>
+            <button type="button" onClick={onLeaveRoom}>
+              {t.leaveRoom}
+            </button>
           </p>
         ) : null}
       </section>
     );
   }
 
-  const promoteReason = getBoardPromoteReason({ G, playerID: id, sharedRanks, resourceLabels });
+  const promoteReason = getBoardPromoteReason({
+    G,
+    playerID: id,
+    sharedRanks,
+    resourceLabels,
+  });
   const {
     botPlaybackControlLabel,
     blockPlayerTurnControls,
@@ -390,7 +426,11 @@ export const GameBoardV2 = ({
     canEndTurn,
     passButtonLabel,
     promoteReason,
-    pendingSelectionLabel: pendingSelection ? (currentPendingCard ? cardTitle(currentPendingCard.id, currentPendingCard.title, lang) : pendingSelection.cardId) : board.waitingAction,
+    pendingSelectionLabel: pendingSelection
+      ? currentPendingCard
+        ? cardTitle(currentPendingCard.id, currentPendingCard.title, lang)
+        : pendingSelection.cardId
+      : board.waitingAction,
     mustDiscardOverflow,
     handOverflow,
     handCount: hand.length,
@@ -403,15 +443,16 @@ export const GameBoardV2 = ({
     sharedRanks,
     resourceLabels,
   });
-  const footerRankHint = buildNextRankHint({
-    G,
-    playerID: id,
-    sharedRanks,
-    resources,
-    resourceLabels,
-    promoteLabel: t.promote,
-    lang,
-  }) ?? board.helpActionReady;
+  const footerRankHint =
+    buildNextRankHint({
+      G,
+      playerID: id,
+      sharedRanks,
+      resources,
+      resourceLabels,
+      promoteLabel: t.promote,
+      lang,
+    }) ?? board.helpActionReady;
   const handleFooterPrimaryAction = () => {
     if (blockPlayerTurnControls || isHandPlaySubmitting) return;
     if (pendingSelection) {
@@ -432,9 +473,17 @@ export const GameBoardV2 = ({
   const internalTheme = uiTheme === 'v1' ? 'v1' : 'v2';
 
   return (
-    <section className={`game-ui-v2-shell game-ui-layout-shell is-theme-${internalTheme} ${stageClass}${compactMode ? ' is-compact' : ''}${isSpectator ? ' is-spectator' : ''}`}>
+    <section
+      className={`game-ui-v2-shell game-ui-layout-shell is-theme-${internalTheme} ${stageClass}${compactMode ? ' is-compact' : ''}${isSpectator ? ' is-spectator' : ''}`}
+    >
       <V2Header
-        title={blockPlayerTurnControls ? botPlaybackControlLabel : effectiveIsCurrentPlayer ? board.yourTurnTitle : board.gameTableTitle}
+        title={
+          blockPlayerTurnControls
+            ? botPlaybackControlLabel
+            : effectiveIsCurrentPlayer
+              ? board.yourTurnTitle
+              : board.gameTableTitle
+        }
         roomMeta={roomMeta}
         playerName={playerName}
         spectatorLabel={t.spectatorJoinedLabel}
@@ -448,51 +497,94 @@ export const GameBoardV2 = ({
         leaveRoomLabel={board.leaveRoom}
         requestEndGameLabel={board.requestEndGame}
         onRequestEndGame={handleRequestEndGameVote}
-        requestEndGameDisabled={isSpectator || seatConnectionMissing || typeof moves.requestEndGameVote !== 'function' || endGameVoteActive || Boolean(ctx?.gameover)}
-        onCopyInvite={inviteText ? () => { void copyText(inviteText); } : undefined}
+        requestEndGameDisabled={
+          isSpectator ||
+          seatConnectionMissing ||
+          typeof moves.requestEndGameVote !== 'function' ||
+          endGameVoteActive ||
+          Boolean(ctx?.gameover)
+        }
+        onCopyInvite={
+          inviteText
+            ? () => {
+                void copyText(inviteText);
+              }
+            : undefined
+        }
         copyInviteLabel={inviteText ? t.copyInviteText : undefined}
-        onCopyInviteLink={shareLink ? () => { void copyText(shareLink); } : undefined}
+        onCopyInviteLink={
+          shareLink
+            ? () => {
+                void copyText(shareLink);
+              }
+            : undefined
+        }
         copyInviteLinkLabel={shareLink ? t.copyInviteLink : undefined}
-        footerContent={!isSpectator ? (
-          <V2BottomBar
-            resources={footerResourceItems}
-            rankName={rankName}
-            rankHint={footerRankHint}
-            primaryActionLabel={primaryActionLabel}
-            primaryActionDisabled={primaryActionDisabled || isHandPlaySubmitting}
-            secondaryActionLabel={footerActionLabel}
-            secondaryActionDisabled={!canEndTurn || blockPlayerTurnControls}
-            actionsHidden={blockPlayerTurnControls}
-            onPrimaryAction={handleFooterPrimaryAction}
-            onSecondaryAction={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)}
-          />
-        ) : undefined}
-        sideContent={hasBotPlayers && !isSpectator ? (
-          <>
-              <div className="game-ui-v2-header-tools-head">
-                <span className="game-ui-v2-header-tools-label">{board.botControlsTitle}</span>
+        footerContent={
+          !isSpectator ? (
+            <V2BottomBar
+              resources={footerResourceItems}
+              rankName={rankName}
+              rankHint={footerRankHint}
+              primaryActionLabel={primaryActionLabel}
+              primaryActionDisabled={
+                primaryActionDisabled || isHandPlaySubmitting
+              }
+              secondaryActionLabel={footerActionLabel}
+              secondaryActionDisabled={!canEndTurn || blockPlayerTurnControls}
+              actionsHidden={blockPlayerTurnControls}
+              onPrimaryAction={handleFooterPrimaryAction}
+              onSecondaryAction={() =>
+                handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)
+              }
+            />
+          ) : undefined
+        }
+        sideContent={
+          hasBotPlayers && !isSpectator ? (
+            <>
+              <div className="game-ui-v2-header-tools-head game-ui-layout-header-tools-head">
+                <span className="game-ui-v2-header-tools-label game-ui-layout-header-tools-label">
+                  {board.botControlsTitle}
+                </span>
               </div>
-            <div className="game-ui-v2-header-tools-row">
-              <button type="button" onClick={() => setBotAutoplayEnabled((prev) => !prev)}>
-                {botAutoplayEnabled ? board.botAutoplayPause : board.botAutoplayResume}
-              </button>
-              <div className="game-ui-v2-bot-speed-slider">
-                <span className="game-ui-v2-bot-speed-label">{board.botSpeedLabel}</span>
-                <input
-                  className="game-ui-v2-bot-speed-range"
-                  type="range"
-                  min="1"
-                  max="5"
-                  step="1"
-                  value={botPlaybackSpeed}
-                  onChange={(e) => setBotPlaybackSpeed(Number(e.target.value) as BotPlaybackSpeedLevel)}
-                />
-                <strong className="game-ui-v2-bot-speed-value">{botPlaybackSpeed}</strong>
-                <small>{botSpeedHint(lang, botPlaybackSpeed)}</small>
+              <div className="game-ui-v2-header-tools-row game-ui-layout-header-tools-row">
+                <button
+                  type="button"
+                  className={`game-ui-v2-bot-toggle game-ui-layout-bot-toggle${botAutoplayEnabled ? ' is-active' : ' is-paused'}`}
+                  aria-pressed={botAutoplayEnabled}
+                  onClick={() => setBotAutoplayEnabled((prev) => !prev)}
+                >
+                  {botAutoplayEnabled
+                    ? board.botAutoplayPause
+                    : board.botAutoplayResume}
+                </button>
+                <div className="game-ui-v2-bot-speed-slider game-ui-layout-bot-speed-slider">
+                  <span className="game-ui-v2-bot-speed-label game-ui-layout-bot-speed-label">
+                    {board.botSpeedLabel}
+                  </span>
+                  <input
+                    className="game-ui-v2-bot-speed-range game-ui-layout-bot-speed-range"
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value={botPlaybackSpeed}
+                    onChange={(e) =>
+                      setBotPlaybackSpeed(
+                        Number(e.target.value) as BotPlaybackSpeedLevel,
+                      )
+                    }
+                  />
+                  <strong className="game-ui-v2-bot-speed-value game-ui-layout-bot-speed-value">
+                    {botPlaybackSpeed}
+                  </strong>
+                  <small>{botSpeedHint(lang, botPlaybackSpeed)}</small>
+                </div>
               </div>
-            </div>
-          </>
-        ) : undefined}
+            </>
+          ) : undefined
+        }
       />
 
       <V2EndVoteModal
@@ -508,15 +600,19 @@ export const GameBoardV2 = ({
         onDecline={() => handleRespondEndGameVote(false)}
       />
 
-      {targetSelectionModalOpen ? (
-        <section className="game-ui-v2-vote-popup game-ui-layout-vote-popup" role="dialog" aria-label={board.pickTarget}>
+      {selectionModalOpen ? (
+        <section
+          className="game-ui-v2-vote-popup game-ui-layout-vote-popup game-ui-v2-selection-popup game-ui-layout-selection-popup"
+          role="dialog"
+          aria-modal="true"
+          aria-label={board.stepAssistant}
+        >
           <div className="game-ui-v2-vote-popup-card game-ui-layout-vote-popup-card">
             <V2SelectionPanel
               pendingSelection={pendingSelection}
               activeSelectionNeedsTarget={activeSelectionNeedsTarget}
               activeSelectionNeedsReplacement={activeSelectionNeedsReplacement}
               activeSelectionNeedsResource={activeSelectionNeedsResource}
-              activeSelectionNeedsVvnzPayment={activeSelectionNeedsVvnzPayment}
               currentPendingCard={currentPendingCard}
               selectedTargetId={selectedTargetId}
               setSelectedTargetId={setSelectedTargetId}
@@ -531,15 +627,14 @@ export const GameBoardV2 = ({
               setActiveReplacementTargetId={setActiveReplacementTargetId}
               replacementActiveSelected={replacementActiveSelected}
               replacementActiveSlots={replacementActiveSlots}
-              replacementActiveTargetResources={replacementActiveTargetResources}
+              replacementActiveTargetResources={
+                replacementActiveTargetResources
+              }
               resourceLabels={resourceLabels}
               appendReplacementResource={appendReplacementResource}
               undoReplacementResource={undoReplacementResource}
               selectedResource={selectedResource}
               setSelectedResource={setSelectedResource}
-              vvnzSelectedResources={vvnzSelectedResources}
-              toggleVvnzResource={toggleVvnzResource}
-              confirmVvnzPayment={confirmVvnzPayment}
               resources={resources}
               confirmPendingSelection={confirmPendingSelection}
               clearPendingSelection={clearPendingSelection}
@@ -553,10 +648,18 @@ export const GameBoardV2 = ({
         <section className="game-ui-v2-spectator-strip game-ui-layout-spectator-strip">
           <p className="game-ui-v2-subtle">{board.spectatorCompactHint}</p>
           <div className="game-ui-v2-tab-row game-ui-layout-tab-row">
-            <button type="button" className={spectatorView === 'live' ? 'is-active' : ''} onClick={() => setSpectatorView('live')}>
+            <button
+              type="button"
+              className={spectatorView === 'live' ? 'is-active' : ''}
+              onClick={() => setSpectatorView('live')}
+            >
               {board.spectatorLiveView}
             </button>
-            <button type="button" className={spectatorView === 'summary' ? 'is-active' : ''} onClick={() => setSpectatorView('summary')}>
+            <button
+              type="button"
+              className={spectatorView === 'summary' ? 'is-active' : ''}
+              onClick={() => setSpectatorView('summary')}
+            >
               {board.spectatorSummaryView}
             </button>
           </div>
@@ -564,45 +667,11 @@ export const GameBoardV2 = ({
       ) : null}
 
       {showTopCommandPanel ? (
-      <section className="game-ui-v2-panel game-ui-layout-panel game-ui-v2-command game-ui-layout-command game-ui-v2-command-panel game-ui-layout-command-panel game-ui-v2-command-panel-top game-ui-layout-command-panel-top">
-        <div className="game-ui-v2-command-support game-ui-layout-command-support">
-          <V2NoticeStack notices={notices} dismissNotice={dismissNotice} />
-        </div>
-        <V2SelectionPanel
-          pendingSelection={pendingSelection}
-          activeSelectionNeedsTarget={activeSelectionNeedsTarget}
-          activeSelectionNeedsReplacement={activeSelectionNeedsReplacement}
-          activeSelectionNeedsResource={activeSelectionNeedsResource}
-          activeSelectionNeedsVvnzPayment={activeSelectionNeedsVvnzPayment}
-          currentPendingCard={currentPendingCard}
-          selectedTargetId={selectedTargetId}
-          setSelectedTargetId={setSelectedTargetId}
-          opponentIds={opponentIds}
-          playerLabelById={playerLabelById}
-          board={board}
-          lang={lang}
-          replacementTargetIds={replacementTargetIds}
-          G={G}
-          replacementSelectionsByTarget={replacementSelectionsByTarget}
-          replacementActiveTargetId={replacementActiveTargetId}
-          setActiveReplacementTargetId={setActiveReplacementTargetId}
-          replacementActiveSelected={replacementActiveSelected}
-          replacementActiveSlots={replacementActiveSlots}
-          replacementActiveTargetResources={replacementActiveTargetResources}
-          resourceLabels={resourceLabels}
-          appendReplacementResource={appendReplacementResource}
-          undoReplacementResource={undoReplacementResource}
-          selectedResource={selectedResource}
-          setSelectedResource={setSelectedResource}
-          vvnzSelectedResources={vvnzSelectedResources}
-          toggleVvnzResource={toggleVvnzResource}
-          confirmVvnzPayment={confirmVvnzPayment}
-          resources={resources}
-          confirmPendingSelection={confirmPendingSelection}
-          clearPendingSelection={clearPendingSelection}
-          pickTargetNotice={pickTargetNotice}
-        />
-      </section>
+        <section className="game-ui-v2-panel game-ui-layout-panel game-ui-v2-command game-ui-layout-command game-ui-v2-command-panel game-ui-layout-command-panel game-ui-v2-command-panel-top game-ui-layout-command-panel-top">
+          <div className="game-ui-v2-command-support game-ui-layout-command-support">
+            <V2NoticeStack notices={notices} dismissNotice={dismissNotice} />
+          </div>
+        </section>
       ) : null}
 
       <div className="game-ui-layout-grid">
@@ -627,7 +696,9 @@ export const GameBoardV2 = ({
             <section className="game-ui-v2-panel game-ui-layout-panel game-ui-v2-command game-ui-layout-command">
               <div className="game-ui-v2-command-top game-ui-layout-command-top">
                 <div>
-                  <p className="game-ui-v2-kicker">{board.standardPlusKicker}</p>
+                  <p className="game-ui-v2-kicker">
+                    {board.standardPlusKicker}
+                  </p>
                   <h3>{board.legendarySelectionTitle}</h3>
                   <p className="game-ui-v2-subtle">
                     {board.legendarySelectionHint}
@@ -657,10 +728,15 @@ export const GameBoardV2 = ({
                 })}
               </div>
               <div className="game-ui-v2-selection-actions game-ui-layout-selection-actions">
-                <p className="game-ui-v2-subtle">{board.selected}: {draftSelection.length}/5</p>
+                <p className="game-ui-v2-subtle">
+                  {board.selected}: {draftSelection.length}/5
+                </p>
                 <button
                   type="button"
-                  disabled={draftSelection.length !== 5 || typeof moves.selectLegendaryLoadout !== 'function'}
+                  disabled={
+                    draftSelection.length !== 5 ||
+                    typeof moves.selectLegendaryLoadout !== 'function'
+                  }
                   onClick={() => moves.selectLegendaryLoadout?.(draftSelection)}
                 >
                   {board.confirmSelection}
@@ -668,68 +744,121 @@ export const GameBoardV2 = ({
               </div>
             </section>
           ) : null}
-          {(!isSpectator || spectatorView === 'live') ? (
-          <V2BattlefieldSection
-            title={board.tableState}
-            opponentCount={opponentIds.length}
-            opponents={(
-              <V2OpponentsArea
-                leftItems={leftOpponentItems}
-                rightItems={rightOpponentItems}
-                handLabel={t.yourHand}
-                centerPortraitImage={currentTurnPortraitImage}
-                centerInitials={toInitials(currentTurnPlayerLabel)}
-                centerTitle={currentTurnPlayerLabel}
-                centerSubtitle={activeArenaRankName || rankName}
-                centerResources={BOARD_RESOURCE_ORDER.map((key) => ({
-                  key,
-                  icon: BOARD_RESOURCE_ICONS[key],
-                  imageSrc: resourceImagePaths[key],
-                  label: resourceLabels[key],
-                  value: activeArenaResources?.[key] ?? 0,
-                }))}
-                onOpponentClick={(pid) => {
-                  if (!activeSelectionNeedsTarget) return;
-                  setSelectedTargetId(pid);
-                  postNotice('info', `${board.pickTarget}: ${playerLabelById(pid)}`);
-                }}
-              />
-            )}
-            boardContent={(
-              <>
-                <div className="game-ui-v2-altar-focus-shell game-ui-layout-altar-focus-shell">
-                  <div className="game-ui-v2-table game-ui-layout-table">
-                    <article className="game-ui-v2-zone game-ui-layout-zone game-ui-v2-zone-deck game-ui-layout-zone-deck">
-                      <div className="game-ui-v2-zone-head game-ui-layout-zone-head">
-                        <span className="game-ui-v2-stage-label">{t.drawPile}</span>
-                        <strong>{G.deck?.length ?? 0}</strong>
-                      </div>
-                      <div className="game-ui-v2-zone-card game-ui-layout-zone-card">
-                        <PilePreview
-                          imageSrc={deckBackImage}
-                          alt={t.drawPile}
-                          previewKey="v2-pile-deck"
-                          openPreviewKey={openPreviewKey}
-                          onTogglePreview={togglePreview}
-                          onClosePreview={() => setOpenPreviewKey(null)}
-                          variant="v1"
-                          theme={internalTheme}
-                          fallback={<div className="pile-back-fallback">JOJ</div>}
-                        />
-                      </div>
-                    </article>
-                    <article className="game-ui-v2-zone game-ui-layout-zone game-ui-v2-zone-focus game-ui-layout-zone-focus">
-                      <div className="game-ui-v2-zone-head game-ui-layout-zone-head">
-                        <span className="game-ui-v2-stage-label">{selectedTargetId ? board.pickTarget : board.tableState}</span>
-                        <strong>{activeArenaPlayerName}</strong>
-                      </div>
-                      <div className="game-ui-v2-focus-body game-ui-layout-focus-body">
-                        <div className="game-ui-v2-focus-card game-ui-layout-focus-card">
-                          {displayedDiscardTitle ? (
+          {!isSpectator || spectatorView === 'live' ? (
+            <V2BattlefieldSection
+              title={board.tableState}
+              opponentCount={opponentIds.length}
+              opponents={
+                <V2OpponentsArea
+                  leftItems={leftOpponentItems}
+                  rightItems={rightOpponentItems}
+                  handLabel={board.handCardsLabel}
+                  centerPortraitImage={currentTurnPortraitImage}
+                  centerInitials={toInitials(currentTurnPlayerLabel)}
+                  centerTitle={currentTurnPlayerLabel}
+                  centerSubtitle={activeArenaRankName || rankName}
+                  centerResources={BOARD_RESOURCE_ORDER.map((key) => ({
+                    key,
+                    icon: BOARD_RESOURCE_ICONS[key],
+                    imageSrc: resourceImagePaths[key],
+                    label: resourceLabels[key],
+                    value: activeArenaResources?.[key] ?? 0,
+                  }))}
+                  onOpponentClick={(pid) => {
+                    if (!activeSelectionNeedsTarget) return;
+                    setSelectedTargetId(pid);
+                    postNotice(
+                      'info',
+                      `${board.pickTarget}: ${playerLabelById(pid)}`,
+                    );
+                  }}
+                />
+              }
+              boardContent={
+                <>
+                  <div className="game-ui-v2-altar-focus-shell game-ui-layout-altar-focus-shell">
+                    <div className="game-ui-v2-table game-ui-layout-table">
+                      <article className="game-ui-v2-zone game-ui-layout-zone game-ui-v2-zone-deck game-ui-layout-zone-deck">
+                        <div className="game-ui-v2-zone-head game-ui-layout-zone-head">
+                          <span className="game-ui-v2-stage-label">
+                            {t.drawPile}
+                          </span>
+                          <strong>{G.deck?.length ?? 0}</strong>
+                        </div>
+                        <div className="game-ui-v2-zone-card game-ui-layout-zone-card">
+                          <PilePreview
+                            imageSrc={deckBackImage}
+                            alt={t.drawPile}
+                            previewKey="v2-pile-deck"
+                            openPreviewKey={openPreviewKey}
+                            onTogglePreview={togglePreview}
+                            onClosePreview={() => setOpenPreviewKey(null)}
+                            variant="v1"
+                            theme={internalTheme}
+                            fallback={
+                              <div className="pile-back-fallback">JOJ</div>
+                            }
+                          />
+                        </div>
+                      </article>
+                      <article className="game-ui-v2-zone game-ui-layout-zone game-ui-v2-zone-focus game-ui-layout-zone-focus">
+                        <div className="game-ui-v2-zone-head game-ui-layout-zone-head">
+                          <span className="game-ui-v2-stage-label">
+                            {selectedTargetId
+                              ? board.pickTarget
+                              : board.tableState}
+                          </span>
+                          <strong>{activeArenaPlayerName}</strong>
+                        </div>
+                        <div className="game-ui-v2-focus-body game-ui-layout-focus-body">
+                          <div className="game-ui-v2-focus-card game-ui-layout-focus-card">
+                            {displayedDiscardTitle ? (
+                              <PilePreview
+                                imageSrc={displayedDiscardImage}
+                                alt={displayedDiscardTitle}
+                                previewKey={`v2-focus-${botPlaybackCardTitle || lastDiscard?.id || displayedDiscardTitle}`}
+                                openPreviewKey={openPreviewKey}
+                                onTogglePreview={togglePreview}
+                                onClosePreview={() => setOpenPreviewKey(null)}
+                                variant="v1"
+                                theme={internalTheme}
+                              />
+                            ) : (
+                              <div className="game-ui-v2-focus-empty">
+                                {board.waitingAction}
+                              </div>
+                            )}
+                          </div>
+                          <div className="game-ui-v2-focus-meta game-ui-layout-focus-meta">
+                            <strong>
+                              {displayedDiscardTitle || focusPrimaryLabel}
+                            </strong>
+                            <span>{focusSecondaryLabel}</span>
+                            <p className="game-ui-v2-zone-meta">
+                              {focusSupportingText}
+                            </p>
+                            {promoteReason ? (
+                              <p className="game-ui-v2-zone-meta">
+                                <strong>{board.blockedReason}:</strong>{' '}
+                                {promoteReason}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      </article>
+                      <article className="game-ui-v2-zone game-ui-layout-zone game-ui-v2-zone-discard game-ui-layout-zone-discard">
+                        <div className="game-ui-v2-zone-head game-ui-layout-zone-head">
+                          <span className="game-ui-v2-stage-label">
+                            {t.discardPile}
+                          </span>
+                          <strong>{G.discard?.length ?? 0}</strong>
+                        </div>
+                        <div className="game-ui-v2-zone-card game-ui-layout-zone-card">
+                          {actualDiscardTitle ? (
                             <PilePreview
-                              imageSrc={displayedDiscardImage}
-                              alt={displayedDiscardTitle}
-                              previewKey={`v2-focus-${botPlaybackCardTitle || lastDiscard?.id || displayedDiscardTitle}`}
+                              imageSrc={actualDiscardImage}
+                              alt={actualDiscardTitle}
+                              previewKey={`v2-discard-${lastDiscard?.id || actualDiscardTitle}`}
                               openPreviewKey={openPreviewKey}
                               onTogglePreview={togglePreview}
                               onClosePreview={() => setOpenPreviewKey(null)}
@@ -737,134 +866,124 @@ export const GameBoardV2 = ({
                               theme={internalTheme}
                             />
                           ) : (
-                            <div className="game-ui-v2-focus-empty">{board.waitingAction}</div>
+                            <div className="pile-empty">
+                              {t.noCardsInDiscard}
+                            </div>
                           )}
                         </div>
-                        <div className="game-ui-v2-focus-meta game-ui-layout-focus-meta">
-                          <strong>{displayedDiscardTitle || focusPrimaryLabel}</strong>
-                          <span>{focusSecondaryLabel}</span>
-                          <p className="game-ui-v2-zone-meta">
-                            {focusSupportingText}
-                          </p>
-                          {promoteReason ? (
-                            <p className="game-ui-v2-zone-meta">
-                              <strong>{board.blockedReason}:</strong> {promoteReason}
-                            </p>
-                          ) : null}
-                        </div>
-                      </div>
-                    </article>
-                    <article className="game-ui-v2-zone game-ui-layout-zone game-ui-v2-zone-discard game-ui-layout-zone-discard">
-                      <div className="game-ui-v2-zone-head game-ui-layout-zone-head">
-                        <span className="game-ui-v2-stage-label">{t.discardPile}</span>
-                        <strong>{G.discard?.length ?? 0}</strong>
-                      </div>
-                      <div className="game-ui-v2-zone-card game-ui-layout-zone-card">
-                        {actualDiscardTitle ? (
-                          <PilePreview
-                            imageSrc={actualDiscardImage}
-                            alt={actualDiscardTitle}
-                            previewKey={`v2-discard-${lastDiscard?.id || actualDiscardTitle}`}
-                            openPreviewKey={openPreviewKey}
-                            onTogglePreview={togglePreview}
-                            onClosePreview={() => setOpenPreviewKey(null)}
-                            variant="v1"
-                            theme={internalTheme}
-                          />
-                        ) : <div className="pile-empty">{t.noCardsInDiscard}</div>}
-                      </div>
-                    </article>
+                      </article>
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
-          />
+                </>
+              }
+            />
           ) : null}
 
           {!isSpectator ? (
-          <V2PlayerDockSection
-            mainContent={(
-              <>
-              <V2HandSection
-                title={`${t.yourHand} (${hand.length}/8)`}
-                subtitle={mustDiscardOverflow ? board.handOverflowWarning.replace('{count}', String(handOverflow)) : undefined}
-                headRight={(
-                  <div className="game-ui-v2-hand-controls">
-                    <label>
-                      <span>{board.handFilter}</span>
-                      <select value={handFilter} onChange={(e) => setHandFilter(e.target.value as HandFilter)}>
-                        <option value="all">{board.filterAll}</option>
-                        <option value="playable">{board.filterPlayable}</option>
-                        {['LYAP', 'SCANDAL', 'SUPPORT', 'COMMAND', 'VVNZ'].map((category) => (
-                          <option key={`filter-${category}`} value={category}>{categoryLabel(category, lang)}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      <span>{board.handSort}</span>
-                      <select value={handSort} onChange={(e) => setHandSort(e.target.value as HandSort)}>
-                        <option value="default">{board.sortDefault}</option>
-                        <option value="playable">{board.sortPlayable}</option>
-                        <option value="category">{board.sortCategory}</option>
-                        <option value="title">{board.sortTitle}</option>
-                      </select>
-                    </label>
-                  </div>
-                )}
-                cards={handCardsView.map(({ card }) => card)}
-                cardImageById={cardImageById}
-                lang={lang}
-                openPreviewKey={openPreviewKey}
-                togglePreview={togglePreview}
-                closePreview={() => setOpenPreviewKey(null)}
-                categoryText={(card) => categoryLabel(card.category, lang)}
-                actionLabel={board.play}
-                onAction={(card) => handleHandCardAction(card, requestPlayHandCard)}
-                actionDisabled={(card) => isHandPlaySubmitting || !(handCardsView.find((row) => row.card.id === card.id)?.actionState.allowed ?? false)}
-                selected={(card) => visibleHandSelectedId === card.id}
-                cardClickAction={handleV2HandCardClick}
-                effectLabel={effectLabel}
-                badges={(card) => handCardsView.find((row) => row.card.id === card.id)?.badges}
-                actionTitle={(card) => handCardsView.find((row) => row.card.id === card.id)?.actionState.reason ?? board.play}
-                extraAction={(card) => {
-                  const canDiscardThisCard = mustDiscardOverflow && card.category !== 'LYAP' && card.category !== 'SCANDAL';
-                  return canDiscardThisCard ? {
-                    label: board.discard,
-                    onClick: () => moves.discardFromHand?.(card.id),
-                    disabled: typeof moves.discardFromHand !== 'function',
-                    className: 'game-card-inline-discard',
-                  } : undefined;
-                }}
-              />
-              <V2HandSection
-                className="game-ui-v2-legendary-frame game-ui-layout-legendary-frame"
-                title={`${t.legendaryHand} (${legendaryHand.length})`}
-                subtitle={t.legendaryHandHint}
-                cards={legendaryHand}
-                cardImageById={cardImageById}
-                lang={lang}
-                openPreviewKey={openPreviewKey}
-                togglePreview={togglePreview}
-                closePreview={() => setOpenPreviewKey(null)}
-                categoryText={() => t.legendaryDeckLabel}
-                actionLabel={board.playLegendary}
-                onAction={(card) => handleLegendaryCardAction(card, requestPlayLegendaryCard)}
-                actionDisabled={() => typeof moves.playLegendaryCard !== 'function'}
-                effectLabel={effectLabel}
-                badges={(card) => [
-                  ...(card.id === 'legendary-10' ? [board.requiresTarget] : []),
-                  ...(['legendary-06', 'legendary-09', 'legendary-17'].includes(card.id) ? [board.requiresResource] : []),
-                ]}
-              />
-            </>
-            )}
-            sideContent={null}
-          />
+            <V2PlayerDockSection
+              mainContent={
+                <>
+                  <V2HandSection
+                    title={`${t.yourHand} (${hand.length}/8)`}
+                    subtitle={
+                      mustDiscardOverflow
+                        ? board.handOverflowWarning.replace(
+                            '{count}',
+                            String(handOverflow),
+                          )
+                        : undefined
+                    }
+                    cards={handCardsView.map(({ card }) => card)}
+                    cardImageById={cardImageById}
+                    lang={lang}
+                    openPreviewKey={openPreviewKey}
+                    togglePreview={togglePreview}
+                    closePreview={() => setOpenPreviewKey(null)}
+                    categoryText={(card) => categoryLabel(card.category, lang)}
+                    actionLabel={board.play}
+                    onAction={(card) =>
+                      handleHandCardAction(card, requestPlayHandCard)
+                    }
+                    actionDisabled={(card) =>
+                      isHandPlaySubmitting ||
+                      !(
+                        handCardsView.find((row) => row.card.id === card.id)
+                          ?.actionState.allowed ?? false
+                      )
+                    }
+                    selected={(card) => visibleHandSelectedId === card.id}
+                    cardClickAction={handleV2HandCardClick}
+                    effectLabel={effectLabel}
+                    badges={(card) =>
+                      handCardsView.find((row) => row.card.id === card.id)
+                        ?.badges
+                    }
+                    actionTitle={(card) =>
+                      handCardsView.find((row) => row.card.id === card.id)
+                        ?.actionState.reason ?? board.play
+                    }
+                    extraAction={(card) => {
+                      const canDiscardThisCard =
+                        mustDiscardOverflow &&
+                        card.category !== 'LYAP' &&
+                        card.category !== 'SCANDAL';
+                      return canDiscardThisCard
+                        ? {
+                            label: board.discard,
+                            onClick: () => moves.discardFromHand?.(card.id),
+                            disabled:
+                              typeof moves.discardFromHand !== 'function',
+                            className: 'game-card-inline-discard',
+                          }
+                        : undefined;
+                    }}
+                  />
+                  <V2HandSection
+                    className="game-ui-v2-legendary-frame game-ui-layout-legendary-frame"
+                    title={`${t.legendaryHand} (${legendaryHand.length})`}
+                    subtitle={t.legendaryHandHint}
+                    cards={legendaryHand}
+                    cardImageById={cardImageById}
+                    lang={lang}
+                    openPreviewKey={openPreviewKey}
+                    togglePreview={togglePreview}
+                    closePreview={() => setOpenPreviewKey(null)}
+                    categoryText={() => ''}
+                    actionLabel={board.playLegendary}
+                    onAction={(card) =>
+                      handleLegendaryCardAction(card, requestPlayLegendaryCard)
+                    }
+                    actionDisabled={() =>
+                      typeof moves.playLegendaryCard !== 'function'
+                    }
+                    effectLabel={effectLabel}
+                    badges={(card) => [
+                      ...(card.id === 'legendary-10'
+                        ? [board.requiresTarget]
+                        : []),
+                      ...([
+                        'legendary-06',
+                        'legendary-09',
+                        'legendary-17',
+                      ].includes(card.id)
+                        ? [board.requiresResource]
+                        : []),
+                    ]}
+                  />
+                </>
+              }
+              sideContent={null}
+            />
           ) : null}
 
           {ctx.gameover ? (
             <>
-              <p className="gameover">{t.winner}: {playerLabelById(String((ctx.gameover as { winner?: string }).winner ?? ''))}</p>
+              <p className="gameover">
+                {t.winner}:{' '}
+                {playerLabelById(
+                  String((ctx.gameover as { winner?: string }).winner ?? ''),
+                )}
+              </p>
               <V2GameoverModal
                 open={!gameoverModalClosed}
                 ariaLabel={board.gameStatsAria}
@@ -872,8 +991,16 @@ export const GameBoardV2 = ({
                 winnerLabel={board.winnerLabel}
                 winnerName={playerLabelById(winnerPlayerID)}
                 winnerRankName={winnerRankName}
-                autoEndedLabel={gameoverMeta?.endReason === 'stalled-no-cards' ? board.gameAutoEndedSkip : undefined}
-                agreedEndLabel={gameoverMeta?.endReason === 'agreed-end' ? board.gameEndedByAgreement : undefined}
+                autoEndedLabel={
+                  gameoverMeta?.endReason === 'stalled-no-cards'
+                    ? board.gameAutoEndedSkip
+                    : undefined
+                }
+                agreedEndLabel={
+                  gameoverMeta?.endReason === 'agreed-end'
+                    ? board.gameEndedByAgreement
+                    : undefined
+                }
                 stats={{
                   totalTurns: G.gameStats?.turnsCompleted ?? 0,
                   resourcesGained: G.gameStats?.resourcesGainedTotal ?? 0,
@@ -907,7 +1034,7 @@ export const GameBoardV2 = ({
           ) : null}
         </div>
 
-          <V2SidePanel
+        <V2SidePanel
           sidePanelTab={sidePanelTab}
           setSidePanelTab={setSidePanelTab}
           board={board}
@@ -920,7 +1047,9 @@ export const GameBoardV2 = ({
           setChatInput={setChatInput}
           sendChatMessage={sendChatMessage}
           chatLogRef={chatLogRef}
-          eventsTitle={isSpectator ? board.spectatorTimelineTitle : board.recentEvents}
+          eventsTitle={
+            isSpectator ? board.spectatorTimelineTitle : board.recentEvents
+          }
           spectatorMode={isSpectator}
           helpTitle={board.helpPanelTitle}
           helpItems={turnHelpItems}
@@ -928,17 +1057,41 @@ export const GameBoardV2 = ({
       </div>
 
       {!isSpectator ? (
-      <div className="game-ui-v2-mobile-bar game-ui-layout-mobile-bar" aria-label={board.mobileActions}>
-        <button type="button" onClick={handleDraw} disabled={!canDraw || blockPlayerTurnControls}>{t.draw}</button>
-        <button type="button" className="is-promote-action" onClick={() => handlePromote(promoteReason)} disabled={!canPlay || Boolean(promoteReason) || blockPlayerTurnControls}>{t.promote}</button>
-        <button type="button" className={`is-end-turn-action${canEndTurn && !blockPlayerTurnControls ? ' is-ready-action' : ''}`} onClick={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)} disabled={!canEndTurn || blockPlayerTurnControls}>
-          {blockPlayerTurnControls ? botPlaybackControlLabel : passButtonLabel}
-        </button>
-      </div>
+        <div
+          className="game-ui-v2-mobile-bar game-ui-layout-mobile-bar"
+          aria-label={board.mobileActions}
+        >
+          <button
+            type="button"
+            onClick={handleDraw}
+            disabled={!canDraw || blockPlayerTurnControls}
+          >
+            {t.draw}
+          </button>
+          <button
+            type="button"
+            className="is-promote-action"
+            onClick={() => handlePromote(promoteReason)}
+            disabled={
+              !canPlay || Boolean(promoteReason) || blockPlayerTurnControls
+            }
+          >
+            {t.promote}
+          </button>
+          <button
+            type="button"
+            className={`is-end-turn-action${canEndTurn && !blockPlayerTurnControls ? ' is-ready-action' : ''}`}
+            onClick={() =>
+              handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)
+            }
+            disabled={!canEndTurn || blockPlayerTurnControls}
+          >
+            {blockPlayerTurnControls
+              ? botPlaybackControlLabel
+              : passButtonLabel}
+          </button>
+        </div>
       ) : null}
     </section>
   );
 };
-
-
-

@@ -1,17 +1,26 @@
 import { useMemo, useRef, useState } from 'react';
-import { cardNeedsTargetSelection, getCardPlayBehavior } from '../../game/cardRules';
+import {
+  cardNeedsTargetSelection,
+  getCardPlayBehavior,
+} from '../../game/cardRules';
 import { getHandCardActionState } from '../../game/actionValidation';
-import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from '../../game/types';
+import type {
+  CardDefinition,
+  JojGameState,
+  RankDefinition,
+  ResourceKey,
+} from '../../game/types';
 import type { JojMoveApi } from './types';
 
 type NoticeKind = 'info' | 'error' | 'success';
 export type BoardNotice = { id: string; type: NoticeKind; text: string };
-type HandFilter = 'all' | 'playable' | CardDefinition['category'];
-type HandSort = 'default' | 'playable' | 'category' | 'title';
 type SidePanelTab = 'events' | 'chat' | 'help';
 
 export const useBoardUiController = (args: {
-  G: Pick<JojGameState, 'players' | 'ranks' | 'resources' | 'promotedThisTurn'> | null | undefined;
+  G:
+    | Pick<JojGameState, 'players' | 'ranks' | 'resources' | 'promotedThisTurn'>
+    | null
+    | undefined;
   id: string;
   knownPlayerNames: Record<string, string>;
   playerNames?: Record<string, string>;
@@ -47,8 +56,6 @@ export const useBoardUiController = (args: {
   const [draftSelection, setDraftSelection] = useState<string[]>([]);
   const [notices, setNotices] = useState<BoardNotice[]>([]);
   const [gameoverModalClosed, setGameoverModalClosed] = useState(false);
-  const [handFilter, setHandFilter] = useState<HandFilter>('all');
-  const [handSort, setHandSort] = useState<HandSort>('playable');
   const [sidePanelTab, setSidePanelTab] = useState<SidePanelTab>('events');
   const syncedNameRef = useRef('');
   const syncedNamesSignatureRef = useRef('');
@@ -56,13 +63,17 @@ export const useBoardUiController = (args: {
 
   const playerLabelById = (idValue: string | null | undefined) => {
     if (!idValue) return t.systemTag;
-    const name = playerNames?.[idValue]?.trim() || knownPlayerNames[idValue]?.trim();
+    const name =
+      playerNames?.[idValue]?.trim() || knownPlayerNames[idValue]?.trim();
     return name || t.genericPlayer;
   };
 
-  const effectLabel = (resource: ResourceKey | 'rank') => (resource === 'rank' ? t.rankResource : resourceLabels[resource]);
-  const togglePreview = (key: string) => setOpenPreviewKey((prev) => (prev === key ? null : key));
-  const dismissNotice = (noticeId: string) => setNotices((prev) => prev.filter((row) => row.id !== noticeId));
+  const effectLabel = (resource: ResourceKey | 'rank') =>
+    resource === 'rank' ? t.rankResource : resourceLabels[resource];
+  const togglePreview = (key: string) =>
+    setOpenPreviewKey((prev) => (prev === key ? null : key));
+  const dismissNotice = (noticeId: string) =>
+    setNotices((prev) => prev.filter((row) => row.id !== noticeId));
   const postNotice = (type: NoticeKind, msg: string) => {
     if (!msg) {
       setNotices([]);
@@ -83,7 +94,8 @@ export const useBoardUiController = (args: {
   );
 
   const resolveMoveErrorText = (error: unknown, fallback: string) => {
-    if (error instanceof Error && error.message.trim()) return error.message.trim();
+    if (error instanceof Error && error.message.trim())
+      return error.message.trim();
     if (typeof error === 'string' && error.trim()) return error.trim();
     return fallback;
   };
@@ -111,18 +123,24 @@ export const useBoardUiController = (args: {
     setChatInput('');
   };
 
-  const handleHandCardAction = (card: CardDefinition, requestPlayHandCard: (card: CardDefinition) => void) => {
+  const handleHandCardAction = (
+    card: CardDefinition,
+    requestPlayHandCard: (card: CardDefinition) => void,
+  ) => {
     const actionState = G
       ? getHandCardActionState({
-        card,
-        G,
-        playerID: id,
-        ranks: sharedRanks,
-        resourceLabels,
-        canPlayHandCard,
-        lang,
-      })
-      : { allowed: canPlayHandCard, reason: canPlayHandCard ? null : board.actionUnavailable };
+          card,
+          G,
+          playerID: id,
+          ranks: sharedRanks,
+          resourceLabels,
+          canPlayHandCard,
+          lang,
+        })
+      : {
+          allowed: canPlayHandCard,
+          reason: canPlayHandCard ? null : board.actionUnavailable,
+        };
     if (!actionState.allowed) {
       postNotice('error', actionState.reason ?? board.actionUnavailable);
       return;
@@ -130,7 +148,10 @@ export const useBoardUiController = (args: {
     requestPlayHandCard(card);
   };
 
-  const handleLegendaryCardAction = (card: CardDefinition, requestPlayLegendaryCard: (card: CardDefinition) => void) => {
+  const handleLegendaryCardAction = (
+    card: CardDefinition,
+    requestPlayLegendaryCard: (card: CardDefinition) => void,
+  ) => {
     if (typeof moves.playLegendaryCard !== 'function') return;
     requestPlayLegendaryCard(card);
   };
@@ -169,48 +190,66 @@ export const useBoardUiController = (args: {
 
   const handleDraftToggle = (cardId: string) => {
     setDraftSelection((prev) => {
-      if (prev.includes(cardId)) return prev.filter((idValue) => idValue !== cardId);
+      if (prev.includes(cardId))
+        return prev.filter((idValue) => idValue !== cardId);
       if (prev.length >= 5) return prev;
       return [...prev, cardId];
     });
   };
 
-  const getHandBadges = (card: CardDefinition, handCardsView: Array<{ card: CardDefinition; playable: boolean }>) => {
-    const playable = handCardsView.find((row) => row.card.id === card.id)?.playable ?? false;
+  const getHandBadges = (
+    card: CardDefinition,
+    handCardsView: Array<{ card: CardDefinition; playable: boolean }>,
+  ) => {
+    const playable =
+      handCardsView.find((row) => row.card.id === card.id)?.playable ?? false;
     const actionState = G
       ? getHandCardActionState({
-        card,
-        G,
-        playerID: id,
-        ranks: sharedRanks,
-        resourceLabels,
-        canPlayHandCard,
-        lang,
-      })
+          card,
+          G,
+          playerID: id,
+          ranks: sharedRanks,
+          resourceLabels,
+          canPlayHandCard,
+          lang,
+        })
       : null;
-    const vvnzReason = actionState?.behavior === 'vvnz' ? actionState.reason : null;
+    const vvnzReason =
+      actionState?.behavior === 'vvnz' ? actionState.reason : null;
     return [
       playable ? board.canPlayNow : board.notNow,
-      ...(cardNeedsTargetSelection(card) && getCardPlayBehavior(card) === 'lyap' ? [board.requiresTarget] : []),
-      ...(getCardPlayBehavior(card) === 'vvnz' && vvnzReason ? [board.blockedReason] : []),
+      ...(cardNeedsTargetSelection(card) && getCardPlayBehavior(card) === 'lyap'
+        ? [board.requiresTarget]
+        : []),
+      ...(getCardPlayBehavior(card) === 'vvnz' && vvnzReason
+        ? [board.blockedReason]
+        : []),
     ];
   };
 
-  const getHandHelperText = (card: CardDefinition, handCardsView: Array<{ card: CardDefinition; playable: boolean }>) => {
-    const playable = handCardsView.find((row) => row.card.id === card.id)?.playable ?? false;
+  const getHandHelperText = (
+    card: CardDefinition,
+    handCardsView: Array<{ card: CardDefinition; playable: boolean }>,
+  ) => {
+    const playable =
+      handCardsView.find((row) => row.card.id === card.id)?.playable ?? false;
     const actionState = G
       ? getHandCardActionState({
-        card,
-        G,
-        playerID: id,
-        ranks: sharedRanks,
-        resourceLabels,
-        canPlayHandCard,
-        lang,
-      })
+          card,
+          G,
+          playerID: id,
+          ranks: sharedRanks,
+          resourceLabels,
+          canPlayHandCard,
+          lang,
+        })
       : null;
-    const vvnzReason = actionState?.behavior === 'vvnz' ? actionState.reason : null;
-    return vvnzReason || (!playable && !canPlayHandCard ? board.actionUnavailable : undefined);
+    const vvnzReason =
+      actionState?.behavior === 'vvnz' ? actionState.reason : null;
+    return (
+      vvnzReason ||
+      (!playable && !canPlayHandCard ? board.actionUnavailable : undefined)
+    );
   };
 
   return {
@@ -223,10 +262,6 @@ export const useBoardUiController = (args: {
     notices,
     gameoverModalClosed,
     setGameoverModalClosed,
-    handFilter,
-    setHandFilter,
-    handSort,
-    setHandSort,
     sidePanelTab,
     setSidePanelTab,
     syncedNameRef,
@@ -251,4 +286,3 @@ export const useBoardUiController = (args: {
     getHandHelperText,
   };
 };
-

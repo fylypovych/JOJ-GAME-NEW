@@ -5,13 +5,37 @@ export type SystemEventMeta = {
   tone: 'neutral' | 'warn' | 'good' | 'legendary';
 };
 
+export type HighlightedPlayerMessage = {
+  before: string;
+  player: string;
+  after: string;
+};
+
+export const splitHighlightedPlayerMessage = (
+  text: string,
+  playerName?: string,
+): HighlightedPlayerMessage | null => {
+  const normalizedName = playerName?.trim();
+  if (!normalizedName) return null;
+  const playerIndex = text.indexOf(normalizedName);
+  if (playerIndex < 0) return null;
+  return {
+    before: text.slice(0, playerIndex),
+    player: normalizedName,
+    after: text.slice(playerIndex + normalizedName.length),
+  };
+};
+
 const explicitSystemEventMeta = (
   eventKind: SystemEventKind,
   lang: 'uk' | 'en',
 ): SystemEventMeta => {
   switch (eventKind) {
     case 'legendary':
-      return { label: lang === 'uk' ? 'Легендарне' : 'Legendary', tone: 'legendary' };
+      return {
+        label: lang === 'uk' ? 'Легендарне' : 'Legendary',
+        tone: 'legendary',
+      };
     case 'scandal':
       return { label: 'SCANDAL', tone: 'warn' };
     case 'lyap':
@@ -19,7 +43,10 @@ const explicitSystemEventMeta = (
     case 'rank':
       return { label: lang === 'uk' ? 'Звання' : 'Rank', tone: 'good' };
     case 'protection':
-      return { label: lang === 'uk' ? 'Захист' : 'Protection', tone: 'neutral' };
+      return {
+        label: lang === 'uk' ? 'Захист' : 'Protection',
+        tone: 'neutral',
+      };
     case 'skip':
       return { label: lang === 'uk' ? 'Пропуск' : 'Skip', tone: 'neutral' };
     default:
@@ -42,7 +69,8 @@ export const classifySystemEvent = (
   if (trimmed.startsWith('🎖️') || trimmed.startsWith('🎓')) {
     return explicitSystemEventMeta('rank', lang);
   }
-  if (trimmed.startsWith('🛡️')) return explicitSystemEventMeta('protection', lang);
+  if (trimmed.startsWith('🛡️'))
+    return explicitSystemEventMeta('protection', lang);
   if (trimmed.startsWith('⏭️')) return explicitSystemEventMeta('skip', lang);
   if (trimmed.startsWith('⚠️') || trimmed.startsWith('🎯')) {
     return explicitSystemEventMeta('lyap', lang);
@@ -60,7 +88,11 @@ export const classifySystemEvent = (
   if (text.includes('lyap') || text.includes('ляп')) {
     return explicitSystemEventMeta('lyap', lang);
   }
-  if (text.includes('rank') || text.includes('звання') || text.includes('ввнз')) {
+  if (
+    text.includes('rank') ||
+    text.includes('звання') ||
+    text.includes('ввнз')
+  ) {
     return explicitSystemEventMeta('rank', lang);
   }
   if (text.includes('shield') || text.includes('щит')) {

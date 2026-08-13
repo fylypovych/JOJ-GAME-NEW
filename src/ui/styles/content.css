@@ -32,19 +32,14 @@
 }
 
 .content-page__header {
-  padding: clamp(28px, 5vw, 64px);
-  margin-bottom: 24px;
+  padding: clamp(20px, 4vw, 48px);
+  margin-bottom: 20px;
   color: var(--content-text);
-  border: 1px solid var(--content-border);
-  border-radius: 24px;
-  background:
-    radial-gradient(
-      circle at 90% 0%,
-      color-mix(in srgb, var(--content-accent) 16%, transparent),
-      transparent 45%
-    ),
-    linear-gradient(135deg, var(--content-bg-soft), var(--content-bg));
-  box-shadow: var(--content-shadow);
+  background: radial-gradient(
+    circle at 90% 0%,
+    color-mix(in srgb, var(--content-accent) 16%, transparent),
+    transparent 45%
+  );
 }
 
 .content-page__header h1 {
@@ -72,8 +67,7 @@
 }
 
 .news-card,
-.download-card,
-.content-empty {
+.download-card {
   overflow: hidden;
   color: var(--content-text);
   border: 1px solid var(--content-border);
@@ -175,7 +169,8 @@
   filter: brightness(1.12);
 }
 .content-empty {
-  padding: 44px;
+  padding: 32px 20px;
+  border-top: 1px solid var(--content-border);
   text-align: center;
 }
 .content-empty h2 {

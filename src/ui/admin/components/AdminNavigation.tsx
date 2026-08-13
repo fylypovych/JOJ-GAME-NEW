@@ -9,7 +9,6 @@ interface AdminNavigationProps {
   activeTabLabel: string;
   adminCategories: AdminNavCategory[];
   setActiveTab: (tab: AdminTab) => void;
-  contextStatus: string;
   activeTabDescriptionMap: Record<AdminTab, string>;
   children?: ReactNode;
 }
@@ -20,7 +19,6 @@ export const AdminNavigation = ({
   activeTabLabel,
   adminCategories,
   setActiveTab,
-  contextStatus,
   activeTabDescriptionMap,
   children,
 }: AdminNavigationProps) => {
@@ -61,25 +59,8 @@ export const AdminNavigation = ({
               className={`admin-v2-tab-strip is-${activeCategory.id}`}
             />
           </div>
-          <aside
-            className={`admin-v2-category-banner is-${activeCategory.id}`}
-          >
-            <img
-              src={activeCategory.iconPath}
-              alt=""
-              className="admin-v2-category-banner-icon"
-            />
-            <span className="admin-v2-category-art-label">
-              {activeCategory.artLabel}
-            </span>
-            <strong>{activeCategory.label}</strong>
-            <small>{activeCategory.description}</small>
-            <span className="admin-v2-badge is-muted">{contextStatus}</span>
-          </aside>
         </header>
-        <div className="admin-v2-workspace-body">
-          {children}
-        </div>
+        <div className="admin-v2-workspace-body">{children}</div>
       </section>
     </>
   );

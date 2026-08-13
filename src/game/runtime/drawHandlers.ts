@@ -2,9 +2,16 @@ import type { ResourceKey } from '../types';
 import type { JojMovesDeps, MoveArgs, ReplacementByTarget } from '../moveTypes';
 import { validateMoveAction } from '../actionRules';
 import { appendAppliedEffectLog } from '../effectLog';
-import { consumeImmediateSkipForCurrentPlayer, createInvalidMoveRollback, summarizeCardEffectForPlayer } from './runtimeHelpers';
+import {
+  consumeImmediateSkipForCurrentPlayer,
+  createInvalidMoveRollback,
+  summarizeCardEffectForPlayer,
+} from './runtimeHelpers';
 
-export { isLegendaryDraftPending, isDrawAutoResolutionPending } from '../actionRules';
+export {
+  isLegendaryDraftPending,
+  isDrawAutoResolutionPending,
+} from '../actionRules';
 
 export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
   const playerID = args.playerID;
@@ -20,24 +27,42 @@ export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
   const card = args.G.deck.pop();
   if (card) {
     if (card.category === 'LYAP') {
-      const protectedSelf = d.isProtectedFromLyapScandal(args.G, args.ctx, playerID);
+      const protectedSelf = d.isProtectedFromLyapScandal(
+        args.G,
+        args.ctx,
+        playerID,
+      );
       if (protectedSelf) {
         const seq = d.nextSystemMessageSeq(args.G);
         d.appendChat(args.G, {
           type: 'system',
+          playerID,
           eventKind: 'protection',
           text: `🛡️ [${seq}] ${d.getPlayerLabel(args.G, playerID)} витягнув «${card.title}», але щит від Грамоти скасував ЛЯП.`,
         });
         args.G.discard.push(card);
         autoPlayed = true;
       } else {
-        const requiredReplacementUnits = d.getReplacementUnitsForCard(args.G.resources[playerID], card);
+        const requiredReplacementUnits = d.getReplacementUnitsForCard(
+          args.G.resources[playerID],
+          card,
+        );
         if (requiredReplacementUnits > 0) {
-          args.G.pendingDrawAutoResolution = { kind: 'LYAP', sourcePlayerID: playerID, card: { ...card } };
+          args.G.pendingDrawAutoResolution = {
+            kind: 'LYAP',
+            sourcePlayerID: playerID,
+            card: { ...card },
+          };
           pendingAutoResolution = true;
         } else {
           try {
-            const summary = summarizeCardEffectForPlayer(d, args.G, playerID, card, []);
+            const summary = summarizeCardEffectForPlayer(
+              d,
+              args.G,
+              playerID,
+              card,
+              [],
+            );
             if (!summary) return invalidMove();
             appendAppliedEffectLog(args.G, {
               sourceCardId: card.id,
@@ -51,8 +76,14 @@ export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
             const seq = d.nextSystemMessageSeq(args.G);
             d.appendChat(args.G, {
               type: 'system',
+              playerID,
               eventKind: 'lyap',
-              text: d.buildLyapSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, summary),
+              text: d.buildLyapSystemMessage(
+                seq,
+                d.getPlayerLabel(args.G, playerID),
+                card,
+                summary,
+              ),
             });
           } catch {
             return invalidMove();
@@ -68,7 +99,11 @@ export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
         return d.getReplacementUnitsForCard(args.G.resources[pid], card) > 0;
       });
       if (hasAnyReplacementNeed) {
-        args.G.pendingDrawAutoResolution = { kind: 'SCANDAL', sourcePlayerID: playerID, card: { ...card } };
+        args.G.pendingDrawAutoResolution = {
+          kind: 'SCANDAL',
+          sourcePlayerID: playerID,
+          card: { ...card },
+        };
         pendingAutoResolution = true;
       } else {
         const targetSummaries: string[] = [];
@@ -82,10 +117,18 @@ export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
         let invalidScandalAutoPlay = false;
         for (const pid of targetIds) {
           if (d.isProtectedFromLyapScandal(args.G, args.ctx, pid)) {
-            targetSummaries.push(`${d.getPlayerLabel(args.G, pid)}: щит від Грамоти (без змін)`);
+            targetSummaries.push(
+              `${d.getPlayerLabel(args.G, pid)}: щит від Грамоти (без змін)`,
+            );
           } else {
             try {
-              const summary = summarizeCardEffectForPlayer(d, args.G, pid, card, []);
+              const summary = summarizeCardEffectForPlayer(
+                d,
+                args.G,
+                pid,
+                card,
+                [],
+              );
               if (!summary) {
                 invalidScandalAutoPlay = true;
                 break;
@@ -99,7 +142,9 @@ export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
                 summary,
                 createdAtTurn: args.ctx.turn,
               });
-              targetSummaries.push(`${d.getPlayerLabel(args.G, pid)}: ${d.effectSummaryToText(summary)}`);
+              targetSummaries.push(
+                `${d.getPlayerLabel(args.G, pid)}: ${d.effectSummaryToText(summary)}`,
+              );
             } catch {
               invalidScandalAutoPlay = true;
               break;
@@ -120,8 +165,14 @@ export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
         const seq = d.nextSystemMessageSeq(args.G);
         d.appendChat(args.G, {
           type: 'system',
+          playerID,
           eventKind: 'scandal',
-          text: d.buildScandalSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, targetSummaries),
+          text: d.buildScandalSystemMessage(
+            seq,
+            d.getPlayerLabel(args.G, playerID),
+            card,
+            targetSummaries,
+          ),
         });
         args.G.discard.push(card);
         autoPlayed = true;
@@ -134,7 +185,14 @@ export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
   d.recordResourceFlowStats(args.G, beforeResources);
   d.resetNoPlayablePassStreak(args.G);
   d.resetEndGameVote(args.G);
-  if (consumeImmediateSkipForCurrentPlayer(args.G, args.ctx.currentPlayer, playerID, skippedTurnsBeforeMove)) {
+  if (
+    consumeImmediateSkipForCurrentPlayer(
+      args.G,
+      args.ctx.currentPlayer,
+      playerID,
+      skippedTurnsBeforeMove,
+    )
+  ) {
     d.incrementTurnsCompleted(args.G, playerID);
     args.events?.endTurn?.();
     return undefined;
@@ -160,19 +218,37 @@ export const resolveDrawAutoCardHandler = (
   const skippedTurnsBeforeMove = args.G.skippedTurnCounts?.[playerID] ?? 0;
   const invalidMove = createInvalidMoveRollback(d, args.G);
   if (pending.kind === 'LYAP') {
-    const protectedSelf = d.isProtectedFromLyapScandal(args.G, args.ctx, playerID);
+    const protectedSelf = d.isProtectedFromLyapScandal(
+      args.G,
+      args.ctx,
+      playerID,
+    );
     if (protectedSelf) {
       const seq = d.nextSystemMessageSeq(args.G);
       d.appendChat(args.G, {
         type: 'system',
+        playerID,
         eventKind: 'protection',
         text: `🛡️ [${seq}] ${d.getPlayerLabel(args.G, playerID)} витягнув «${card.title}», але щит від Грамоти скасував ЛЯП.`,
       });
     } else {
-      const requiredReplacementUnits = d.getReplacementUnitsForCard(args.G.resources[playerID], card);
-      if (requiredReplacementUnits > 0 && replacementResources.length !== requiredReplacementUnits) return invalidMove();
+      const requiredReplacementUnits = d.getReplacementUnitsForCard(
+        args.G.resources[playerID],
+        card,
+      );
+      if (
+        requiredReplacementUnits > 0 &&
+        replacementResources.length !== requiredReplacementUnits
+      )
+        return invalidMove();
       try {
-        const summary = summarizeCardEffectForPlayer(d, args.G, playerID, card, replacementResources);
+        const summary = summarizeCardEffectForPlayer(
+          d,
+          args.G,
+          playerID,
+          card,
+          replacementResources,
+        );
         if (!summary) return invalidMove();
         appendAppliedEffectLog(args.G, {
           sourceCardId: card.id,
@@ -186,8 +262,14 @@ export const resolveDrawAutoCardHandler = (
         const seq = d.nextSystemMessageSeq(args.G);
         d.appendChat(args.G, {
           type: 'system',
+          playerID,
           eventKind: 'lyap',
-          text: d.buildLyapSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, summary),
+          text: d.buildLyapSystemMessage(
+            seq,
+            d.getPlayerLabel(args.G, playerID),
+            card,
+            summary,
+          ),
         });
       } catch {
         return invalidMove();
@@ -199,7 +281,14 @@ export const resolveDrawAutoCardHandler = (
     d.recordResourceFlowStats(args.G, beforeResources);
     d.resetNoPlayablePassStreak(args.G);
     d.resetEndGameVote(args.G);
-    if (consumeImmediateSkipForCurrentPlayer(args.G, args.ctx.currentPlayer, playerID, skippedTurnsBeforeMove)) {
+    if (
+      consumeImmediateSkipForCurrentPlayer(
+        args.G,
+        args.ctx.currentPlayer,
+        playerID,
+        skippedTurnsBeforeMove,
+      )
+    ) {
       d.incrementTurnsCompleted(args.G, playerID);
       args.events?.endTurn?.();
       return undefined;
@@ -213,17 +302,31 @@ export const resolveDrawAutoCardHandler = (
     Object.keys(args.G.players).forEach((pid) => {
       if (invalidScandalReplacement) return;
       if (d.isProtectedFromLyapScandal(args.G, args.ctx, pid)) {
-        targetSummaries.push(`${d.getPlayerLabel(args.G, pid)}: щит від Грамоти (без змін)`);
+        targetSummaries.push(
+          `${d.getPlayerLabel(args.G, pid)}: щит від Грамоти (без змін)`,
+        );
         return;
       }
       const replacementForTarget = replacementByTarget?.[pid] ?? [];
-      const requiredReplacementUnits = d.getReplacementUnitsForCard(args.G.resources[pid], card);
-      if (requiredReplacementUnits > 0 && replacementForTarget.length !== requiredReplacementUnits) {
+      const requiredReplacementUnits = d.getReplacementUnitsForCard(
+        args.G.resources[pid],
+        card,
+      );
+      if (
+        requiredReplacementUnits > 0 &&
+        replacementForTarget.length !== requiredReplacementUnits
+      ) {
         invalidScandalReplacement = true;
         return;
       }
       try {
-        const summary = summarizeCardEffectForPlayer(d, args.G, pid, card, replacementForTarget);
+        const summary = summarizeCardEffectForPlayer(
+          d,
+          args.G,
+          pid,
+          card,
+          replacementForTarget,
+        );
         if (!summary) {
           invalidScandalReplacement = true;
           return;
@@ -237,7 +340,9 @@ export const resolveDrawAutoCardHandler = (
           summary,
           createdAtTurn: args.ctx.turn,
         });
-        targetSummaries.push(`${d.getPlayerLabel(args.G, pid)}: ${d.effectSummaryToText(summary)}`);
+        targetSummaries.push(
+          `${d.getPlayerLabel(args.G, pid)}: ${d.effectSummaryToText(summary)}`,
+        );
       } catch {
         invalidScandalReplacement = true;
         return;
@@ -249,16 +354,31 @@ export const resolveDrawAutoCardHandler = (
     const seq = d.nextSystemMessageSeq(args.G);
     d.appendChat(args.G, {
       type: 'system',
+      playerID,
       eventKind: 'scandal',
-      text: d.buildScandalSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, targetSummaries),
+      text: d.buildScandalSystemMessage(
+        seq,
+        d.getPlayerLabel(args.G, playerID),
+        card,
+        targetSummaries,
+      ),
     });
     args.G.discard.push(card);
-    Object.keys(args.G.players).forEach((pid) => d.syncPlayerState(args.G, pid));
+    Object.keys(args.G.players).forEach((pid) =>
+      d.syncPlayerState(args.G, pid),
+    );
     args.G.pendingDrawAutoResolution = null;
     d.recordResourceFlowStats(args.G, beforeResources);
     d.resetNoPlayablePassStreak(args.G);
     d.resetEndGameVote(args.G);
-    if (consumeImmediateSkipForCurrentPlayer(args.G, args.ctx.currentPlayer, playerID, skippedTurnsBeforeMove)) {
+    if (
+      consumeImmediateSkipForCurrentPlayer(
+        args.G,
+        args.ctx.currentPlayer,
+        playerID,
+        skippedTurnsBeforeMove,
+      )
+    ) {
       d.incrementTurnsCompleted(args.G, playerID);
       args.events?.endTurn?.();
       return undefined;

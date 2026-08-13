@@ -1,8 +1,16 @@
 import { useMemo } from 'react';
 import { getHandCardActionState } from '../../game/actionValidation';
-import { cardNeedsTargetSelection, getCardPlayBehavior } from '../../game/cardRules';
-import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from '../../game/types';
-import { cardTitle, rankLabel } from '../i18n';
+import {
+  cardNeedsTargetSelection,
+  getCardPlayBehavior,
+} from '../../game/cardRules';
+import type {
+  CardDefinition,
+  JojGameState,
+  RankDefinition,
+  ResourceKey,
+} from '../../game/types';
+import { rankLabel } from '../i18n';
 import { getNextRankSeatMeta } from './rankHints';
 import { classifySystemEvent } from './systemEventMeta';
 
@@ -11,7 +19,8 @@ const describeCardEffects = (
   resourceLabels: Record<ResourceKey, string>,
 ) => {
   const parts = (card.effects ?? []).map((effect) => {
-    if (effect.resource === 'rank') return `Rank ${effect.value > 0 ? `+${effect.value}` : effect.value}`;
+    if (effect.resource === 'rank')
+      return `Rank ${effect.value > 0 ? `+${effect.value}` : effect.value}`;
     return `${resourceLabels[effect.resource]} ${effect.value > 0 ? `+${effect.value}` : effect.value}`;
   });
   return parts.length ? parts.join(', ') : 'No direct resource change.';
@@ -27,13 +36,19 @@ const buildCardPreviewText = (args: {
   const effectsText = describeCardEffects(card, resourceLabels);
   const behavior = getCardPlayBehavior(card);
   if (behavior === 'lyap') {
-    return lang === 'uk' ? `Цільовий тиск на одного суперника: ${effectsText}` : `Single-target pressure on one opponent: ${effectsText}`;
+    return lang === 'uk'
+      ? `Цільовий тиск на одного суперника: ${effectsText}`
+      : `Single-target pressure on one opponent: ${effectsText}`;
   }
   if (behavior === 'scandal') {
-    return lang === 'uk' ? `Удар по всіх суперниках: ${effectsText}` : `Hits all opponents: ${effectsText}`;
+    return lang === 'uk'
+      ? `Удар по всіх суперниках: ${effectsText}`
+      : `Hits all opponents: ${effectsText}`;
   }
   if (behavior === 'command') {
-    return lang === 'uk' ? `Ефект на себе і вплив на стіл: ${effectsText}` : `Self effect plus table impact: ${effectsText}`;
+    return lang === 'uk'
+      ? `Ефект на себе і вплив на стіл: ${effectsText}`
+      : `Self effect plus table impact: ${effectsText}`;
   }
   if (behavior === 'vvnz' && card.grantRank) {
     const rankName = nextRankNameById(card.grantRank);
@@ -42,9 +57,13 @@ const buildCardPreviewText = (args: {
       : `Promotes to "${rankName}" with extra effect: ${effectsText}`;
   }
   if (behavior === 'legendary') {
-    return lang === 'uk' ? 'Легендарна карта з окремою спеціальною дією.' : 'Legendary card with a separate special ability.';
+    return lang === 'uk'
+      ? 'Легендарна карта з окремою спеціальною дією.'
+      : 'Legendary card with a separate special ability.';
   }
-  return lang === 'uk' ? `Очікуваний ефект: ${effectsText}` : `Expected effect: ${effectsText}`;
+  return lang === 'uk'
+    ? `Очікуваний ефект: ${effectsText}`
+    : `Expected effect: ${effectsText}`;
 };
 
 export const useBoardDerivedState = (args: {
@@ -59,19 +78,40 @@ export const useBoardDerivedState = (args: {
   sharedRanks: RankDefinition[];
   resourceLabels: Record<ResourceKey, string>;
   lang: 'uk' | 'en';
-  handFilter: 'all' | 'playable' | CardDefinition['category'];
-  handSort: 'default' | 'playable' | 'category' | 'title';
   board: Record<string, string>;
   endTurnLabel: string;
 }) => {
-  const { G, ctx, stage, id, hand, legendaryHand, canPlay, canPlayHandCard, sharedRanks, resourceLabels, lang, handFilter, handSort, board, endTurnLabel } = args;
+  const {
+    G,
+    ctx,
+    stage,
+    id,
+    hand,
+    legendaryHand,
+    canPlay,
+    canPlayHandCard,
+    sharedRanks,
+    resourceLabels,
+    lang,
+    board,
+    endTurnLabel,
+  } = args;
 
-  const nextRankMeta = useMemo(() => getNextRankSeatMeta({ G, playerID: id, sharedRanks }), [G, id, sharedRanks]);
-  const gameoverMeta = (ctx?.gameover ?? null) as { winner?: string; endReason?: string } | null;
-  const winnerPlayerID = gameoverMeta?.winner ? String(gameoverMeta.winner) : '';
+  const nextRankMeta = useMemo(
+    () => getNextRankSeatMeta({ G, playerID: id, sharedRanks }),
+    [G, id, sharedRanks],
+  );
+  const gameoverMeta = (ctx?.gameover ?? null) as {
+    winner?: string;
+    endReason?: string;
+  } | null;
+  const winnerPlayerID = gameoverMeta?.winner
+    ? String(gameoverMeta.winner)
+    : '';
   const winnerRankId = winnerPlayerID ? (G?.ranks?.[winnerPlayerID] ?? '') : '';
   const winnerRankName = winnerRankId
-    ? (sharedRanks.find((row) => row.id === winnerRankId)?.name ?? rankLabel(winnerRankId, lang))
+    ? (sharedRanks.find((row) => row.id === winnerRankId)?.name ??
+      rankLabel(winnerRankId, lang))
     : '';
   const latestEvents = (G?.chat ?? [])
     .filter((row) => row.type === 'system')
@@ -102,30 +142,36 @@ export const useBoardDerivedState = (args: {
       ...row,
       badges: [
         row.actionState.allowed ? board.canPlayNow : board.notNow,
-        ...(cardNeedsTargetSelection(row.card) && getCardPlayBehavior(row.card) === 'lyap' ? [board.requiresTarget] : []),
-        ...(getCardPlayBehavior(row.card) === 'vvnz' && row.actionState.reason ? [board.blockedReason] : []),
+        ...(getCardPlayBehavior(row.card) === 'vvnz'
+          ? [`${board.cost}: ${resourceLabels.time} × 2`]
+          : []),
+        ...(cardNeedsTargetSelection(row.card) &&
+        getCardPlayBehavior(row.card) === 'lyap'
+          ? [board.requiresTarget]
+          : []),
+        ...(getCardPlayBehavior(row.card) === 'vvnz' && row.actionState.reason
+          ? [board.blockedReason]
+          : []),
       ],
-      helperText: row.actionState.reason ?? (!row.actionState.allowed && !canPlayHandCard ? board.actionUnavailable : undefined),
+      helperText:
+        row.actionState.reason ??
+        (!row.actionState.allowed && !canPlayHandCard
+          ? board.actionUnavailable
+          : undefined),
     }));
   }, [hand, canPlayHandCard, G, id, sharedRanks, resourceLabels, lang, board]);
 
-  const handCardsView = useMemo(() => {
-    const filtered = allHandCardsView.filter(({ card, playable }) => {
-      if (handFilter === 'all') return true;
-      if (handFilter === 'playable') return playable;
-      return card.category === handFilter;
-    });
-    filtered.sort((a, b) => {
-      if (handSort === 'default') return a.index - b.index;
-      if (handSort === 'playable') return a.playable === b.playable ? a.index - b.index : (a.playable ? -1 : 1);
-      if (handSort === 'category') return a.card.category.localeCompare(b.card.category) || a.index - b.index;
-      return cardTitle(a.card.id, a.card.title, lang).localeCompare(cardTitle(b.card.id, b.card.title, lang)) || a.index - b.index;
-    });
-    return filtered;
-  }, [allHandCardsView, handFilter, handSort, lang]);
+  const handCardsView = useMemo(
+    () =>
+      [...allHandCardsView].sort((a, b) =>
+        a.playable === b.playable ? a.index - b.index : a.playable ? -1 : 1,
+      ),
+    [allHandCardsView],
+  );
 
   const rankNameById = (rankId: string) =>
-    sharedRanks.find((row) => row.id === rankId)?.name ?? rankLabel(rankId, lang);
+    sharedRanks.find((row) => row.id === rankId)?.name ??
+    rankLabel(rankId, lang);
 
   const handCardsViewWithPreview = useMemo(
     () =>
@@ -146,11 +192,14 @@ export const useBoardDerivedState = (args: {
     [allHandCardsView],
   );
   const hasPlayableLegendaryCard = canPlay && legendaryHand.length > 0;
-  const shouldShowSkipTurnLabel = stage === 'play'
-    && (G.deck?.length ?? 0) === 0
-    && !hasPlayableHandCard
-    && !hasPlayableLegendaryCard;
-  const passButtonLabel = shouldShowSkipTurnLabel ? board.skipTurn : endTurnLabel;
+  const shouldShowSkipTurnLabel =
+    stage === 'play' &&
+    (G.deck?.length ?? 0) === 0 &&
+    !hasPlayableHandCard &&
+    !hasPlayableLegendaryCard;
+  const passButtonLabel = shouldShowSkipTurnLabel
+    ? board.skipTurn
+    : endTurnLabel;
 
   return {
     nextRankMeta,
@@ -167,4 +216,3 @@ export const useBoardDerivedState = (args: {
     passButtonLabel,
   };
 };
-

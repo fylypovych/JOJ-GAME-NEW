@@ -22,10 +22,10 @@ test('hand play submission stays locked until authoritative state changes', asyn
   );
   assert.match(
     boardSource,
-    /primaryActionDisabled=\{primaryActionDisabled \|\| isHandPlaySubmitting\}/,
+    /primaryActionDisabled=\{\s*primaryActionDisabled \|\| isHandPlaySubmitting\s*\}/,
   );
   assert.match(
     boardSource,
-    /actionDisabled=\{\(card\) => isHandPlaySubmitting \|\|/,
+    /actionDisabled=\{\(card\) =>\s*isHandPlaySubmitting \|\|/,
   );
 });

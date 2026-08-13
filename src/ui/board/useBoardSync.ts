@@ -1,16 +1,15 @@
-import { useEffect, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
+import {
+  useEffect,
+  type Dispatch,
+  type MutableRefObject,
+  type SetStateAction,
+} from 'react';
 import type { JojGameState, ResourceKey } from '../../game/types';
 import type { JojMoveApi } from './types';
-import { getPendingReplacementTargetIds } from './usePendingSelection';
-
-type PendingSelection =
-  | { type: 'hand-lyap'; cardId: string }
-  | { type: 'hand-scandal'; cardId: string }
-  | { type: 'draw-lyap'; cardId: string }
-  | { type: 'draw-scandal'; cardId: string }
-  | { type: 'legendary-drone'; cardId: string; fromHand?: boolean }
-  | { type: 'legendary-water'; cardId: string; fromHand?: boolean }
-  | { type: 'vvnz-payment'; cardId: string };
+import {
+  getPendingReplacementTargetIds,
+  type PendingSelection,
+} from './usePendingSelection';
 
 export const useBoardSync = (args: {
   G?: JojGameState;
@@ -31,7 +30,9 @@ export const useBoardSync = (args: {
   setPendingSelection: Dispatch<SetStateAction<PendingSelection | null>>;
   setSelectedTargetId: Dispatch<SetStateAction<string | null>>;
   setSelectedResource: Dispatch<SetStateAction<ResourceKey | null>>;
-  setReplacementSelectionsByTarget: Dispatch<SetStateAction<Record<string, ResourceKey[]>>>;
+  setReplacementSelectionsByTarget: Dispatch<
+    SetStateAction<Record<string, ResourceKey[]>>
+  >;
   setActiveReplacementTargetId: Dispatch<SetStateAction<string | null>>;
   setDraftSelection: Dispatch<SetStateAction<string[]>>;
   setGameoverModalClosed: Dispatch<SetStateAction<boolean>>;
@@ -44,12 +45,21 @@ export const useBoardSync = (args: {
     const element = target as HTMLElement | null;
     if (!element) return false;
     const tagName = element.tagName;
-    if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT' || tagName === 'BUTTON') return true;
-    return Boolean(element.closest('[contenteditable="true"], [role="button"]'));
+    if (
+      tagName === 'INPUT' ||
+      tagName === 'TEXTAREA' ||
+      tagName === 'SELECT' ||
+      tagName === 'BUTTON'
+    )
+      return true;
+    return Boolean(
+      element.closest('[contenteditable="true"], [role="button"]'),
+    );
   };
 
   const resolveMoveErrorText = (error: unknown, fallback: string) => {
-    if (error instanceof Error && error.message.trim()) return error.message.trim();
+    if (error instanceof Error && error.message.trim())
+      return error.message.trim();
     if (typeof error === 'string' && error.trim()) return error.trim();
     return fallback;
   };
@@ -72,7 +82,12 @@ export const useBoardSync = (args: {
   }, [args.G, args.ctx, args.onStateChange]);
 
   useEffect(() => {
-    if (!args.playerID || !args.playerName.trim() || typeof args.moves.setPlayerName !== 'function') return;
+    if (
+      !args.playerID ||
+      !args.playerName.trim() ||
+      typeof args.moves.setPlayerName !== 'function'
+    )
+      return;
     const trimmed = args.playerName.trim();
     if (args.syncedNameRef.current === trimmed) return;
     args.moves.setPlayerName(trimmed);
@@ -80,7 +95,8 @@ export const useBoardSync = (args: {
   }, [args.moves, args.playerID, args.playerName]);
 
   useEffect(() => {
-    if (!args.playerID || typeof args.moves.syncPlayerNames !== 'function') return;
+    if (!args.playerID || typeof args.moves.syncPlayerNames !== 'function')
+      return;
     const cachedName = args.knownPlayerNames[args.playerID]?.trim() ?? '';
     if (!cachedName || cachedName === args.playerName.trim()) return;
     const signature = `${args.playerID}:${cachedName}`;
@@ -96,7 +112,12 @@ export const useBoardSync = (args: {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.repeat || event.isComposing || isInteractiveTarget(event.target)) return;
+      if (
+        event.repeat ||
+        event.isComposing ||
+        isInteractiveTarget(event.target)
+      )
+        return;
       if (event.key === 'Escape') {
         args.setOpenPreviewKey(null);
         args.setPendingSelection(null);
@@ -128,10 +149,18 @@ export const useBoardSync = (args: {
 
   useEffect(() => {
     const pending = args.G?.pendingDrawAutoResolution;
-    if (!pending || pending.sourcePlayerID !== args.id || args.stage !== 'draw') {
-      if (pending?.kind && (pending.kind === 'LYAP' || pending.kind === 'SCANDAL')) {
+    if (
+      !pending ||
+      pending.sourcePlayerID !== args.id ||
+      args.stage !== 'draw'
+    ) {
+      if (
+        pending?.kind &&
+        (pending.kind === 'LYAP' || pending.kind === 'SCANDAL')
+      ) {
         args.setPendingSelection((prev) => {
-          if (prev?.type === 'draw-lyap' || prev?.type === 'draw-scandal') return null;
+          if (prev?.type === 'draw-lyap' || prev?.type === 'draw-scandal')
+            return null;
           return prev;
         });
         args.setReplacementSelectionsByTarget({});
@@ -146,15 +175,19 @@ export const useBoardSync = (args: {
       selectedTargetId: null,
       shieldByPlayer: args.G?.lyapScandalShieldUntilTurn,
       allPlayerIds: Object.keys(args.G?.players ?? {}),
-      opponentIds: Object.keys(args.G?.players ?? {}).filter((pid) => pid !== args.id),
+      opponentIds: Object.keys(args.G?.players ?? {}).filter(
+        (pid) => pid !== args.id,
+      ),
       resourcesByPlayer: args.G?.resources,
       currentTurn: args.ctx?.turn,
       selfPlayerId: args.id,
     });
     if (replacementTargetIds.length === 0) {
-      args.setPendingSelection((prev) => (
-        prev?.type === 'draw-lyap' || prev?.type === 'draw-scandal' ? null : prev
-      ));
+      args.setPendingSelection((prev) =>
+        prev?.type === 'draw-lyap' || prev?.type === 'draw-scandal'
+          ? null
+          : prev,
+      );
       args.setSelectedTargetId(null);
       args.setSelectedResource(null);
       args.setReplacementSelectionsByTarget({});
@@ -166,18 +199,30 @@ export const useBoardSync = (args: {
       return;
     }
     args.setPendingSelection((prev) => {
-      if (prev?.type === nextType && prev.cardId === pending.card.id) return prev;
+      if (prev?.type === nextType && prev.cardId === pending.card.id)
+        return prev;
       args.setSelectedTargetId(null);
       args.setSelectedResource(null);
       args.setReplacementSelectionsByTarget({});
       args.setActiveReplacementTargetId(replacementTargetIds[0] ?? null);
-      args.postNotice('info', `${args.board.replacementSelection}: ${args.cardTitle(pending.card.id, pending.card.title, args.lang)}`);
+      args.postNotice(
+        'info',
+        `${args.board.replacementSelection}: ${args.cardTitle(pending.card.id, pending.card.title, args.lang)}`,
+      );
       return { type: nextType, cardId: pending.card.id };
     });
-  }, [args.G?.pendingDrawAutoResolution, args.G?.players, args.G?.lyapScandalShieldUntilTurn, args.G?.resources, args.ctx?.turn, args.id, args.stage, args.lang]);
+  }, [
+    args.G?.pendingDrawAutoResolution,
+    args.G?.players,
+    args.G?.lyapScandalShieldUntilTurn,
+    args.G?.resources,
+    args.ctx?.turn,
+    args.id,
+    args.stage,
+    args.lang,
+  ]);
 
   useEffect(() => {
     args.setGameoverModalClosed(false);
   }, [args.ctx?.gameover]);
 };
-
