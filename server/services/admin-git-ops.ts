@@ -181,8 +181,23 @@ const truncateText = (value: string, maxChars: number) => {
   };
 };
 
-const summarizeCommandOutput = (result: { stdout: string; stderr: string }) =>
-  truncateText(result.stdout.trim() || result.stderr.trim() || '(ok)', 24_000).value;
+export const summarizeCommandFailure = (error: string) => {
+  const value = String(error ?? '').trim();
+  const command = value.split(/\r?\n/, 1)[0]?.trim();
+  const stderr = value.includes('\nstderr:\n') ? value.split('\nstderr:\n').pop()?.trim() : '';
+  if (stderr) return truncateText([command, stderr].filter(Boolean).join('\n'), 6_000).value;
+
+  const stdout = value.includes('\nstdout:\n')
+    ? value.split('\nstdout:\n').pop()?.split('\nstderr:\n', 1)[0]?.trim()
+    : value;
+  const lines = String(stdout ?? '').split(/\r?\n/).filter(Boolean);
+  const usefulLines = lines.filter((line) => (
+    /(?:error|failed|missing|not found|throw|code:|aborted)/i.test(line)
+    || /(?:public\/card-assets|scripts\/|\.tsx?:\d+)/i.test(line)
+  ));
+  const detail = (usefulLines.length ? usefulLines : lines.slice(-30)).slice(-40).join('\n');
+  return truncateText([command, detail].filter(Boolean).join('\n'), 6_000).value;
+};
 
 export const registerAdminGitRoutes = ({
   router,
@@ -459,10 +474,10 @@ export const registerAdminGitRoutes = ({
         action: 'deploy', route: '/api/admin/git/deploy', correlationId, actor,
         durationMs: Date.now() - startedAt, outcome: 'error', details: { failedStep: 'production backup' },
       }));
-      routeError(ctx, 500, 'Production backup failed; update was not started', { details: backupRes.error, status, steps });
+      routeError(ctx, 500, 'Production backup failed; update was not started', { details: summarizeCommandFailure(backupRes.error), status, steps });
       return;
     }
-    steps.push({ step: 'production backup', output: summarizeCommandOutput(backupRes) });
+    steps.push({ step: 'Production backup' });
 
     if (status.dirty) {
       const stashRes = await stashAllLocalGitChanges(runGit);
@@ -471,7 +486,7 @@ export const registerAdminGitRoutes = ({
         routeError(ctx, 500, 'Failed to stash local changes before deploy', { details: stashRes.error, status });
         return;
       }
-      steps.push({ step: 'git stash push -u -m admin-auto-stash-local-changes', output: stashRes.output || '(ok)' });
+      steps.push({ step: 'Local changes stashed' });
       await logLine('WARN', 'admin deploy stashed local git changes before pull/build');
       status = await getGitUpdateStatus(runGit);
       if (!status.ok) {
@@ -496,12 +511,12 @@ export const registerAdminGitRoutes = ({
       const pullRes = await runGit(['pull', '--ff-only']);
       if (!pullRes.ok) {
         await logLine('ERROR', `git deploy pull failed: ${pullRes.error}`);
-        routeError(ctx, 500, 'Git pull failed', { details: pullRes.error, status, steps });
+        routeError(ctx, 500, 'Git pull failed', { details: summarizeCommandFailure(pullRes.error), status, steps });
         return;
       }
-      steps.push({ step: 'git pull --ff-only', output: pullRes.stdout.trim() || pullRes.stderr.trim() || '(ok)' });
+      steps.push({ step: 'GitHub files updated' });
     } else {
-      steps.push({ step: 'git pull --ff-only', output: 'Already up to date' });
+      steps.push({ step: 'GitHub files already current' });
     }
 
     const installRes = await runShellCommand(ADMIN_DEPLOY_COMMANDS.install, 30 * 60_000);
@@ -511,10 +526,10 @@ export const registerAdminGitRoutes = ({
         action: 'deploy', route: '/api/admin/git/deploy', correlationId, actor,
         durationMs: Date.now() - startedAt, outcome: 'error', details: { failedStep: ADMIN_DEPLOY_COMMANDS.install },
       }));
-      routeError(ctx, 500, 'Locked dependency installation failed', { details: installRes.error, steps });
+      routeError(ctx, 500, 'Locked dependency installation failed', { details: summarizeCommandFailure(installRes.error), steps });
       return;
     }
-    steps.push({ step: ADMIN_DEPLOY_COMMANDS.install, output: summarizeCommandOutput(installRes) });
+    steps.push({ step: 'Dependencies installed' });
 
     const verifyRes = await runShellCommand(ADMIN_DEPLOY_COMMANDS.verify, 45 * 60_000);
     if (!verifyRes.ok) {
@@ -523,10 +538,10 @@ export const registerAdminGitRoutes = ({
         action: 'deploy', route: '/api/admin/git/deploy', correlationId, actor,
         durationMs: Date.now() - startedAt, outcome: 'error', details: { failedStep: ADMIN_DEPLOY_COMMANDS.verify },
       }));
-      routeError(ctx, 500, 'Release checks failed', { details: verifyRes.error, steps });
+      routeError(ctx, 500, 'Release checks failed', { details: summarizeCommandFailure(verifyRes.error), steps });
       return;
     }
-    steps.push({ step: ADMIN_DEPLOY_COMMANDS.verify, output: summarizeCommandOutput(verifyRes) });
+    steps.push({ step: 'Release checks passed' });
 
     for (const deploymentStep of [
       { command: ADMIN_DEPLOY_COMMANDS.migrate, label: 'Database migrations' },
@@ -539,10 +554,10 @@ export const registerAdminGitRoutes = ({
           action: 'deploy', route: '/api/admin/git/deploy', correlationId, actor,
           durationMs: Date.now() - startedAt, outcome: 'error', details: { failedStep: deploymentStep.command },
         }));
-        routeError(ctx, 500, `${deploymentStep.label} failed`, { details: result.error, steps });
+        routeError(ctx, 500, `${deploymentStep.label} failed`, { details: summarizeCommandFailure(result.error), steps });
         return;
       }
-      steps.push({ step: deploymentStep.command, output: summarizeCommandOutput(result) });
+      steps.push({ step: `${deploymentStep.label} completed` });
     }
 
     const nextStatus = await getGitUpdateStatus(runGit);
@@ -562,7 +577,7 @@ export const registerAdminGitRoutes = ({
       outcome: 'success',
       details: { head: nextStatus.head, branch: nextStatus.branch },
     }));
-    steps.push({ step: 'PM2 restart + health check', output: 'Scheduled; the admin panel will reconnect after the health check succeeds.' });
+    steps.push({ step: 'PM2 restart and health check scheduled' });
     routeOk(ctx, {
       message: 'Повне оновлення завершено; перезапуск і перевірку стану заплановано',
       restarted: true,

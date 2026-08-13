@@ -286,19 +286,21 @@ export const useAdminGitActions = ({
         steps?: Array<{ step?: string; output?: string }>;
         details?: string;
       };
+      const formatDeployLog = () => {
+        const completed = Array.isArray(payload.steps)
+          ? payload.steps.map((step) => `✓ ${step.step ?? ''}${step.output?.trim() ? `\n${step.output.trim()}` : ''}`.trim())
+          : [];
+        if (payload.details?.trim()) completed.push(`✗ ${payload.error ?? gitActionErrors.deployProject}\n${payload.details.trim()}`);
+        return completed.join('\n').trim();
+      };
       if (!response.ok || !payload.ok) {
         setAdminActionError(payload.error ?? gitActionErrors.deployProject);
-        setGitActionLog(payload.details ?? payload.error ?? '');
+        setGitActionLog(formatDeployLog() || payload.error || '');
         return;
       }
       if (payload.status) setGitStatus(payload.status);
       if (Array.isArray(payload.steps)) {
-        setGitActionLog(
-          payload.steps
-            .map((step) => `$ ${step.step ?? ''}\n${(step.output ?? '').trim()}`.trim())
-            .join('\n\n')
-            .trim(),
-        );
+        setGitActionLog(formatDeployLog());
       }
       deployRecoveryActiveRef.current = true;
       setGitActionMessage(

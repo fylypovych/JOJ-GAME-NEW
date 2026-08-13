@@ -31,11 +31,9 @@ export const AdminGithubTab = ({
   saveGitAuthConfig,
   clearGitAuthConfig,
   checkGitUpdates,
-  applyGitUpdate,
   applyGitDeploy,
   gitStatus,
   gitStatusLoading,
-  gitUpdateRunning,
   gitDeployRunning,
   gitPublishRunning,
   publishGitChanges,
@@ -64,11 +62,9 @@ export const AdminGithubTab = ({
   saveGitAuthConfig: () => Promise<void> | void;
   clearGitAuthConfig: () => Promise<void> | void;
   checkGitUpdates: () => Promise<void> | void;
-  applyGitUpdate: () => Promise<void> | void;
   applyGitDeploy: () => Promise<void> | void;
   gitStatus: GitUpdateStatus | null;
   gitStatusLoading: boolean;
-  gitUpdateRunning: boolean;
   gitDeployRunning: boolean;
   gitPublishRunning: boolean;
   publishGitChanges: () => Promise<void> | void;
@@ -84,7 +80,7 @@ export const AdminGithubTab = ({
   const [section, setSection] = useState<'status' | 'publish' | 'access'>('status');
   const [actionLogTarget, setActionLogTarget] = useState<ActionLogTarget>('github');
   const [actionFeedback, setActionFeedback] = useState(emptyActionFeedback);
-  const busy = gitStatusLoading || gitUpdateRunning || gitDeployRunning || gitPublishRunning;
+  const busy = gitStatusLoading || gitDeployRunning || gitPublishRunning;
   useEffect(() => {
     setActionFeedback((current) => ({
       ...current,
@@ -171,22 +167,13 @@ export const AdminGithubTab = ({
         ) : <AdminEmptyState>{t.githubCheckUpdates}</AdminEmptyState>}
 
         <label className="admin-checkbox-card"><input type="checkbox" checked={gitIgnoreLocalChanges} onChange={(e) => setGitIgnoreLocalChanges(e.target.checked)} /><span><strong>{t.githubIgnoreLocalChanges}</strong><small>{t.githubIgnoreLocalChangesHint}</small></span></label>
-        <div className="admin-update-process-grid">
-          <section className="admin-operation-panel admin-update-process-card">
-            <AdminSectionHeader title={t.githubUpdatesTitle} actions={<AdminStatusBadge tone={(gitStatus?.behind ?? 0) > 0 ? 'warning' : 'success'}>{t.githubBehind}: {gitStatus?.behind ?? 0}</AdminStatusBadge>} />
-            <div className="admin-action-group">
-              <button className="admin-card-primary-action" type="button" onClick={() => runAction('github', applyGitUpdate)} disabled={busy || (gitStatus ? (!gitStatus.canUpdate && !gitIgnoreLocalChanges) : false)}>{gitUpdateRunning ? t.githubApplyUpdateLoading : t.githubApplyUpdate}</button>
-            </div>
-            {renderActionFeedback('github')}
-          </section>
-          <section className="admin-operation-panel admin-update-process-card">
-            <AdminSectionHeader title={t.githubDeploy} description={t.githubDeployTooltip} />
-            <div className="admin-action-group">
-              <button className="admin-card-primary-action" type="button" onClick={() => runAction('production', applyGitDeploy)} disabled={busy || (gitStatus ? (gitStatus.dirty && !gitIgnoreLocalChanges) : false)}>{gitDeployRunning ? t.githubDeployLoading : t.githubDeploy}</button>
-            </div>
-            {renderActionFeedback('production')}
-          </section>
-        </div>
+        <section className="admin-operation-panel admin-update-process-card">
+          <AdminSectionHeader title={t.githubDeploy} description={t.githubDeployTooltip} actions={<AdminStatusBadge tone={(gitStatus?.behind ?? 0) > 0 ? 'warning' : 'success'}>{t.githubBehind}: {gitStatus?.behind ?? 0}</AdminStatusBadge>} />
+          <div className="admin-action-group">
+            <button className="admin-card-primary-action" type="button" onClick={() => runAction('production', applyGitDeploy)} disabled={busy || (gitStatus ? (gitStatus.dirty && !gitIgnoreLocalChanges) : false)}>{gitDeployRunning ? t.githubDeployLoading : t.githubDeploy}</button>
+          </div>
+          {renderActionFeedback('production')}
+        </section>
       </div>
     ) : null}
 

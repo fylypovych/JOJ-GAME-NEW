@@ -380,7 +380,6 @@ export const AdminPage = ({
   const {
     gitStatus,
     gitStatusLoading,
-    gitUpdateRunning,
     gitDeployRunning,
     gitPublishRunning,
     gitAuthStatus,
@@ -405,7 +404,6 @@ export const AdminPage = ({
     saveGitAuthConfig,
     clearGitAuthConfig,
     checkGitUpdates,
-    applyGitUpdate,
     applyGitDeploy,
     viewGitLocalChanges,
     publishGitChanges,
@@ -1221,11 +1219,9 @@ export const AdminPage = ({
             saveGitAuthConfig={saveGitAuthConfig}
             clearGitAuthConfig={clearGitAuthConfig}
             checkGitUpdates={checkGitUpdates}
-            applyGitUpdate={applyGitUpdate}
             applyGitDeploy={applyGitDeploy}
             gitStatus={gitStatus}
             gitStatusLoading={gitStatusLoading}
-            gitUpdateRunning={gitUpdateRunning}
             gitDeployRunning={gitDeployRunning}
             gitPublishRunning={gitPublishRunning}
             publishGitChanges={publishGitChanges}

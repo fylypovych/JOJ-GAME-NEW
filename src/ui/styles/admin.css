@@ -4403,13 +4403,6 @@ pre.admin-github-log-viewer {
   gap: 14px;
 }
 
-.admin-update-process-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-  gap: 14px;
-}
-
 .admin-update-process-card {
   min-width: 0;
 }
@@ -4428,10 +4421,6 @@ pre.admin-github-log-viewer {
 
 .admin-process-feedback .admin-success {
   margin: 0;
-}
-
-@media (max-width: 980px) {
-  .admin-update-process-grid { grid-template-columns: 1fr; }
 }
 
 .admin-info-grid {
