@@ -5,7 +5,7 @@ export type UserTab = UserTabType;
 export const DEFAULT_PUBLIC_TAB: UserTab = 'home';
 
 const TAB_PATHS: Record<UserTab, string> = {
-  home: '/',
+  home: '/news',
   games: '/games',
   gallery: '/cards',
   rules: '/rules',
@@ -16,6 +16,7 @@ const TAB_PATHS: Record<UserTab, string> = {
 
 const PATH_TO_TAB = new Map<string, UserTab>([
   ['/', DEFAULT_PUBLIC_TAB],
+  ['/news', 'home'],
   ['/home', 'home'],
   ['/games', 'games'],
   ['/cards', 'gallery'],
@@ -33,6 +34,6 @@ export const getPublicTabFromPathname = (pathname: string): UserTab | null => {
 };
 
 export const getCanonicalPublicPath = (pathname: string, activeTab: UserTab): string => {
-  if (pathname === '/') return '/';
+  if (pathname === '/') return getPublicTabPath(DEFAULT_PUBLIC_TAB);
   return getPublicTabPath(activeTab);
 };
