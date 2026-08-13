@@ -12,7 +12,7 @@ type Params = {
   setImagePreviewNonce: Dispatch<SetStateAction<number>>;
   onSetDeckBackImage: (path?: string) => void;
   setDeckBackImageInput: Dispatch<SetStateAction<string>>;
-  uploadDataUrl: (filename: string, dataUrl: string, cardId?: string) => Promise<string | null>;
+  uploadDataUrl: (filename: string, dataUrl: string, cardId?: string, moduleId?: string) => Promise<string | null>;
   blobToDataUrl: (blob: Blob) => Promise<string>;
   optimizeBlobForUpload: (
     blob: Blob,
@@ -25,6 +25,7 @@ type Params = {
     imageHeight: number,
   ) => { sx: number; sy: number; sw: number; sh: number };
   cropQuality: number;
+  cardModuleId?: string;
 };
 
 const createAdminImageToolErrors = (lang: 'uk' | 'en') => ({
@@ -47,6 +48,7 @@ export const useAdminImageTools = ({
   optimizeBlobForUpload,
   getAspectLockedCropRect,
   cropQuality,
+  cardModuleId,
 }: Params) => {
   const imageToolErrors = createAdminImageToolErrors(lang);
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null);
@@ -144,7 +146,7 @@ export const useAdminImageTools = ({
       setEditError(imageToolErrors.readImage);
       return;
     }
-    const path = await uploadDataUrl(optimized?.filename ?? cropDraft.filename, dataUrl);
+    const path = await uploadDataUrl(optimized?.filename ?? cropDraft.filename, dataUrl, editCard.id, cardModuleId);
     if (!path) return;
     setEditError('');
     setEditCard((prev) => ({ ...prev, image: path }));
@@ -183,7 +185,7 @@ export const useAdminImageTools = ({
       outDataUrl = canvas.toDataURL('image/jpeg', cropQuality);
       outFilename = outFilename.replace(/\.webp$/u, '.jpg');
     }
-    const path = await uploadDataUrl(outFilename, outDataUrl);
+    const path = await uploadDataUrl(outFilename, outDataUrl, editCard.id, cardModuleId);
     if (!path) return;
     setEditError('');
     setEditCard((prev) => ({ ...prev, image: path }));

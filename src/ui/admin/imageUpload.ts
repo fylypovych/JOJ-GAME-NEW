@@ -64,12 +64,14 @@ export const uploadAdminImageDataUrl = async ({
   filename,
   dataUrl,
   cardId,
+  moduleId,
 }: {
   serverUrl: string;
   adminHeaders: () => Record<string, string>;
   filename: string;
   dataUrl: string;
   cardId?: string;
+  moduleId?: string;
 }): Promise<{ path: string | null; error?: string }> => {
   try {
     const response = await fetch(`${serverUrl}/api/upload-card-image`, {
@@ -83,6 +85,7 @@ export const uploadAdminImageDataUrl = async ({
         filename,
         dataUrl,
         cardId,
+        moduleId,
       }),
     });
     const payload = (await response.json()) as { path?: string; error?: string };

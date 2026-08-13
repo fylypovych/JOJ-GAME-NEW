@@ -164,7 +164,8 @@ export const registerUploadRoutes = ({
               : 'image/webp';
       if (typeof ctx.set === 'function') {
         ctx.set('Content-Type', mime);
-        ctx.set('Cache-Control', 'public, max-age=31536000, immutable');
+        // Card IDs use stable asset paths, so replacements must be revalidated.
+        ctx.set('Cache-Control', 'no-store');
       }
       ctx.body = fileBuffer;
     } catch {
@@ -181,6 +182,7 @@ export const registerUploadRoutes = ({
     const dataUrl = typeof body.dataUrl === 'string' ? body.dataUrl : '';
     const filename = typeof body.filename === 'string' ? body.filename : '';
     const cardId = typeof body.cardId === 'string' ? body.cardId : '';
+    const moduleId = typeof body.moduleId === 'string' ? body.moduleId : '';
     if (!dataUrl) {
       ctx.status = 400;
       ctx.body = { ok: false, error: 'Missing dataUrl' };
@@ -199,6 +201,7 @@ export const registerUploadRoutes = ({
       dataUrl,
       filename,
       cardId,
+      moduleId,
       mime: match[1],
       base64: match[2],
     };
@@ -210,6 +213,7 @@ export const registerUploadRoutes = ({
     fallbackBaseName,
     assetKind,
     cardId,
+    moduleId,
   }: {
     mime: string;
     base64: string;
@@ -217,6 +221,7 @@ export const registerUploadRoutes = ({
     fallbackBaseName: string;
     assetKind: string;
     cardId?: string;
+    moduleId?: string;
   }) => {
     const extByMime: Record<string, string> = {
       'image/png': 'png',
@@ -227,7 +232,7 @@ export const registerUploadRoutes = ({
     };
     const fallbackExt = extByMime[mime] ?? 'png';
     const parsedInput = path.parse(filename || '');
-    const inputBase = parsedInput.name || fallbackBaseName || `asset-${Date.now()}`;
+    const inputBase = cardId || parsedInput.name || fallbackBaseName || `asset-${Date.now()}`;
     const inputExt = (parsedInput.ext || '').replace(/^\./, '').toLowerCase();
     const ext = /^[a-z0-9]+$/.test(inputExt) ? inputExt : fallbackExt;
     const normalizedBase = inputBase
@@ -240,13 +245,18 @@ export const registerUploadRoutes = ({
 
     // Get module name if this is a card image
     let moduleName: string | undefined;
-    if (assetKind === 'card-image' && cardId && getModules) {
+    if (assetKind === 'card-image' && (cardId || moduleId) && getModules) {
       const modules = getModules();
       for (const module of modules) {
         if (module && typeof module === 'object' && 'cardIds' in module && 'name' in module) {
-          const cardIds = (module as { cardIds: string[] }).cardIds || [];
-          if (cardIds.includes(cardId)) {
-            moduleName = (module as { name: string }).name;
+          const moduleRow = module as { id?: unknown; name?: unknown; cardIds?: unknown };
+          const cardIds = Array.isArray(moduleRow.cardIds) ? moduleRow.cardIds.map(String) : [];
+          if ((moduleId && String(moduleRow.id ?? '') === moduleId) || (cardId && cardIds.includes(cardId))) {
+            const normalizedModuleName = String(moduleRow.name ?? '')
+              .trim()
+              .replace(/[^a-zA-Z0-9._-]+/g, '-')
+              .replace(/^[-_.]+|[-_.]+$/g, '');
+            moduleName = normalizedModuleName || undefined;
             break;
           }
         }
@@ -270,12 +280,14 @@ export const registerUploadRoutes = ({
     await mkdir(targetDir, { recursive: true });
     let candidate = `${safeNameBase}.${ext}`;
     let outPath = path.join(targetDir, candidate);
-    try {
-      await access(outPath);
-      candidate = `${safeNameBase}-${Date.now()}.${ext}`;
-      outPath = path.join(targetDir, candidate);
-    } catch {
-      // file doesn't exist
+    if (!(isCard && cardId)) {
+      try {
+        await access(outPath);
+        candidate = `${safeNameBase}-${Date.now()}.${ext}`;
+        outPath = path.join(targetDir, candidate);
+      } catch {
+        // file doesn't exist
+      }
     }
 
     const buffer = Buffer.from(base64, 'base64');
@@ -327,6 +339,7 @@ export const registerUploadRoutes = ({
         fallbackBaseName: parsed.cardId || `card-${Date.now()}`,
         assetKind: 'card-image',
         cardId: parsed.cardId || undefined,
+        moduleId: parsed.moduleId || undefined,
       });
       await auditAdminAction?.({ action: 'uploads.card-image.upload', ctx, success: true, details: { path: assetPath } });
       ctx.body = { ok: true, path: assetPath };

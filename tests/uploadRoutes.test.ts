@@ -25,7 +25,7 @@ const readJsonBodySafe = async ({ ctx }: { ctx: RouteCtx }) => (ctx.request?.bod
 const logLine = async () => undefined;
 const pngDataUrl = 'data:image/png;base64,aGVsbG8=';
 
-test('upload-card-image stores file and records asset metadata', async () => {
+test('upload-card-image stores a card under its module and card id', async () => {
   const uploadsDir = await mkdtemp(path.join(os.tmpdir(), 'joj-upload-'));
   const { router, getHandlers, postHandlers } = makeRouter();
   const upsertCalls: Array<Record<string, unknown>> = [];
@@ -39,6 +39,11 @@ test('upload-card-image stores file and records asset metadata', async () => {
     JSON_BODY_LIMIT: 10_000,
     IMAGE_UPLOAD_BODY_LIMIT: 100_000,
     uploadsDir,
+    getModules: () => [{
+      id: 'lyap-starter',
+      name: '2026.LYAP.STARTER',
+      cardIds: ['lyap-04'],
+    }],
     assetStore: {
       upsertAsset: async (input) => { upsertCalls.push(input as unknown as Record<string, unknown>); },
       markDeleted: async () => undefined,
@@ -61,7 +66,8 @@ test('upload-card-image stores file and records asset metadata', async () => {
       body: {
         dataUrl: pngDataUrl,
         filename: 'Card Image.PNG',
-        cardId: 'card-001',
+        cardId: 'lyap-04',
+        moduleId: 'lyap-starter',
       },
     },
   };
@@ -70,19 +76,33 @@ test('upload-card-image stores file and records asset metadata', async () => {
 
   assert.equal((ctx.body as { ok: boolean }).ok, true);
   const savedPath = String((ctx.body as { path: string }).path);
-  assert.match(savedPath, /^\/api\/card-assets\//);
-  const savedFile = path.join(uploadsDir, path.basename(savedPath));
+  assert.equal(savedPath, '/api/card-assets/2026.LYAP.STARTER/lyap-04.png');
+  const savedFile = path.join(uploadsDir, '2026.LYAP.STARTER', 'lyap-04.png');
   const buffer = await readFile(savedFile);
   assert.equal(buffer.toString('utf8'), 'hello');
   assert.equal(upsertCalls.length, 1);
   assert.equal(upsertCalls[0]?.kind, 'card-image');
+  assert.equal(upsertCalls[0]?.fileName, 'lyap-04.png');
+
+  if (ctx.request?.body && typeof ctx.request.body === 'object') {
+    (ctx.request.body as Record<string, unknown>).dataUrl = 'data:image/png;base64,d29ybGQ=';
+  }
+  await handler?.(ctx);
+  assert.equal((ctx.body as { path: string }).path, savedPath);
+  assert.equal((await readFile(savedFile)).toString('utf8'), 'world');
+  assert.equal(upsertCalls.length, 2);
 
   const serveHandler = getHandlers.get('/api/card-assets/:assetPath(.*)');
   assert.ok(serveHandler);
-  const serveCtx = { params: { assetPath: path.basename(savedPath) }, set: () => undefined } as RouteCtx;
+  const responseHeaders = new Map<string, string>();
+  const serveCtx = {
+    params: { assetPath: '2026.LYAP.STARTER/lyap-04.png' },
+    set: (name: string, value: string) => { responseHeaders.set(name, value); },
+  } as RouteCtx;
   await serveHandler?.(serveCtx);
   assert.equal(Buffer.isBuffer(serveCtx.body), true);
-  assert.equal((serveCtx.body as Buffer).toString('utf8'), 'hello');
+  assert.equal((serveCtx.body as Buffer).toString('utf8'), 'world');
+  assert.equal(responseHeaders.get('Cache-Control'), 'no-store');
 });
 
 test('avatar upload creates a new immutable URL and persists it to the user profile', async () => {

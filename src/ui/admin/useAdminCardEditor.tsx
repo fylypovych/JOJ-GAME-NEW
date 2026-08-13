@@ -367,13 +367,14 @@ export const useAdminCardEditor = ({
     }
   };
 
-  const uploadDataUrl = async (filename: string, dataUrl: string, cardId?: string): Promise<string | null> => {
+  const uploadDataUrl = async (filename: string, dataUrl: string, cardId?: string, moduleId?: string): Promise<string | null> => {
     const { path, error } = await uploadAdminImageDataUrl({
       serverUrl,
       adminHeaders,
       filename,
       dataUrl,
       cardId,
+      moduleId,
     });
     if (!path) {
       setEditError(error ?? t.uploadFailedGeneric);
@@ -404,6 +405,8 @@ export const useAdminCardEditor = ({
     optimizeBlobForUpload,
     getAspectLockedCropRect,
     cropQuality: 0.85,
+    cardModuleId: createCardModuleId
+      || deckModules.find((module) => module.cardIds.includes(editOriginalCardId || editCard.id))?.id,
   });
 
   const withCacheBust = (src?: string) => {
