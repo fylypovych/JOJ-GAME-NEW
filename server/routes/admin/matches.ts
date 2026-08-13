@@ -354,6 +354,10 @@ export const registerAdminMatchRoutes = ({
             return acc;
           }, []).sort((a, b) => a.id - b.id)
           : [];
+        if (!players.some((player) => Boolean(player.name?.trim()))) {
+          await logLine('WARN', `Lobby matches: skipping ownerless match ${matchId}`);
+          continue;
+        }
         matches.push({
           matchID: matchId,
           metadata: metadata ?? {},

@@ -63,7 +63,7 @@ export const LobbySection = ({
   setSelectedOptionalModuleIds,
   uiVariant = 'v2',
 }: LobbySectionProps) => {
-  const { matches, loading, error, createRoom, joinRoom, spectateRoom, refreshMatches } = useLobby();
+  const { matches, session, activeSessionMatch, canStart, loading, error, createRoom, joinRoom, spectateRoom, leaveRoom, refreshMatches } = useLobby();
   const { optionalLobbyModules: optionalModules } = useDeck();
   const [roomFilter, setRoomFilter] = useState<'all' | 'open' | 'free' | 'no_bots' | 'standard' | 'standard_plus'>('all');
   const moduleNameById = useMemo(
@@ -114,6 +114,43 @@ export const LobbySection = ({
       return b.matchID.localeCompare(a.matchID);
     });
   }, [invitedRoomId, matches, roomFilter]);
+
+  if (session && !canStart) {
+    const missingSeats = activeSessionMatch
+      ? activeSessionMatch.players.filter((player) => !player.name?.trim()).length
+      : 0;
+    return (
+      <section className={`board board-v2-panel board-v2-active-room${uiVariant === 'v1' ? ' board-v1-panel board-v1-active-room' : ''}`}>
+        <h2 className="lobby-active-room-title">{t.activeRoom}: {session.matchID}</h2>
+        <p className="lobby-active-room-meta">{t.joinedAs}: {effectivePlayerName || '-'} (#{session.playerID})</p>
+        <div className="lobby-room-blockers">
+          <p>{activeSessionMatch ? t.roomBlockedNeedPlayersCount.replace('{count}', String(missingSeats)) : t.loadingRooms}</p>
+        </div>
+        {activeSessionMatch ? (
+          <div className="lobby-room-seat-list">
+            {activeSessionMatch.players.map((player) => (
+              <span key={`${activeSessionMatch.matchID}-waiting-seat-${player.id}`} className={`lobby-room-seat${player.name ? ' is-filled' : ' is-empty'}`}>
+                #{player.id} {player.name?.trim() || t.lobbySeatOpen}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <p className="admin-controls">
+          <button type="button" onClick={refreshMatches} disabled={loading}>{t.refreshRooms}</button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!window.confirm(t.leaveRoomConfirm)) return;
+              void leaveRoom();
+            }}
+            disabled={loading}
+          >
+            {t.leaveRoom}
+          </button>
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className={`board board-v2-panel board-v2-lobby${uiVariant === 'v1' ? ' board-v1-panel board-v1-lobby' : ''}`}>

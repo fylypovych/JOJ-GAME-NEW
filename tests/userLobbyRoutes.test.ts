@@ -237,6 +237,45 @@ test('public lobby create-and-join works without an authenticated user session',
   assert.deepEqual(joinedPlayerIDs, ['0', '1', '2', '3']);
 });
 
+test('public lobby removes a partially created room when its owner cannot join', async () => {
+  const { router, postHandlers } = makeRouter();
+  const wipedMatchIDs: string[] = [];
+  registerUserLobbyRoutes({
+    router,
+    userStore: baseStore() as never,
+    logLine: async () => undefined,
+    jsonBodyLimit: 10_000,
+    gameUiConfigPath: 'unused',
+    pool: createSettingsPool() as never,
+    enforceRateLimit: allowRateLimit,
+    lobbyApiFactory: () => ({
+      createMatch: async () => ({ matchID: 'partial-room' }),
+      joinMatch: async () => { throw new Error('Player 0 not found'); },
+      leaveMatch,
+      wipeMatch: async (matchID) => { wipedMatchIDs.push(matchID); },
+    }),
+  });
+  const handler = postHandlers.get('/api/lobby/create-and-join');
+  assert.ok(handler);
+  const ctx: RouteCtx = {
+    request: {
+      body: { gameName: 'joj-game', playerName: 'Browser player', numPlayers: 2 },
+      headers: {
+        cookie: 'joj_user_csrf=csrf-token',
+        'x-csrf-token': 'csrf-token',
+        host: 'localhost:8000',
+        origin: 'http://localhost:8000',
+      },
+    },
+  };
+
+  await handler?.(ctx);
+
+  assert.equal(ctx.status, 400);
+  assert.match(String((ctx.body as { error?: string }).error), /Player 0 not found/);
+  assert.deepEqual(wipedMatchIDs, ['partial-room']);
+});
+
 test('user-lobby join returns controlled error when internal lobby api fails', async () => {
   const { router, postHandlers } = makeRouter();
   registerUserLobbyRoutes({

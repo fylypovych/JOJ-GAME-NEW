@@ -607,7 +607,11 @@ export const App = () => {
               />
 
               <LobbyFeature
-                visible={!isAdminRoute && activeUserTab === 'games' && !session}
+                visible={
+                  !isAdminRoute &&
+                  activeUserTab === 'games' &&
+                  (!session || !canStart)
+                }
                 t={t}
                 playerName={playerName}
                 fallbackPlayerName={

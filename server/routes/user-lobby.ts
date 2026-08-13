@@ -34,6 +34,7 @@ type InternalLobbyApi = {
   createMatch: (gameName: string, args: { numPlayers: number; setupData: unknown }) => Promise<{ matchID: string }>;
   joinMatch: (gameName: string, matchID: string, args: { playerID: string; playerName: string }) => Promise<{ playerID: string; playerCredentials: string }>;
   leaveMatch: (gameName: string, matchID: string, args: { playerID: string; credentials: string }) => Promise<void>;
+  wipeMatch?: (matchID: string) => Promise<void>;
 };
 
 const INTERNAL_LOBBY_TIMEOUT_MS = 10_000;
@@ -126,10 +127,6 @@ const createInternalLobbyApi = (ctx: RouteCtx): InternalLobbyApi => {
       };
       const originalEnd = response.end.bind(response) as (...args: unknown[]) => Writable;
       response.end = ((...args: unknown[]) => {
-        const [chunk] = args;
-        if (typeof chunk !== 'undefined' && typeof chunk !== 'function') {
-          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
-        }
         response.headersSent = true;
         originalEnd(...args);
         finish({
@@ -184,6 +181,12 @@ const createInternalLobbyApi = (ctx: RouteCtx): InternalLobbyApi => {
       if (result.status < 200 || result.status >= 300) {
         throw new Error(String(result.body.error ?? 'Failed to leave match.'));
       }
+    },
+    wipeMatch: async (matchID) => {
+      const dbCandidate = ctx?.db ?? ctx?.app?.context?.db;
+      const wipe = (dbCandidate as { wipe?: unknown } | undefined)?.wipe;
+      if (typeof wipe !== 'function') return;
+      await (wipe as (id: string) => Promise<void>).call(dbCandidate, matchID);
     },
   };
 };
@@ -245,23 +248,29 @@ const createAndJoinLobby = async (args: {
   const normalizedSetupData = setupData && typeof setupData === 'object'
     ? { ...(setupData as Record<string, unknown>), bots: botSetup }
     : { bots: botSetup };
-  const created = await lobbyApi.createMatch(gameName, { numPlayers: effectiveNumPlayers, setupData: normalizedSetupData });
-  const matchID = String(created.matchID ?? '');
-  if (!matchID) throw new Error('Match ID missing after creation.');
-  const joined = await lobbyApi.joinMatch(gameName, matchID, { playerID: '0', playerName });
-  if (botSetup) {
-    for (const [index, botPlayerID] of getBotSeatIds(effectiveNumPlayers, botSetup.count).entries()) {
-      await lobbyApi.joinMatch(gameName, matchID, {
-        playerID: botPlayerID,
-        playerName: createBotPlayerName({ difficulty: botSetup.difficulty, profile: botSetup.profile, seatIndex: index + 1 }),
-      });
+  let matchID = '';
+  try {
+    const created = await lobbyApi.createMatch(gameName, { numPlayers: effectiveNumPlayers, setupData: normalizedSetupData });
+    matchID = String(created.matchID ?? '');
+    if (!matchID) throw new Error('Match ID missing after creation.');
+    const joined = await lobbyApi.joinMatch(gameName, matchID, { playerID: '0', playerName });
+    if (botSetup) {
+      for (const [index, botPlayerID] of getBotSeatIds(effectiveNumPlayers, botSetup.count).entries()) {
+        await lobbyApi.joinMatch(gameName, matchID, {
+          playerID: botPlayerID,
+          playerName: createBotPlayerName({ difficulty: botSetup.difficulty, profile: botSetup.profile, seatIndex: index + 1 }),
+        });
+      }
     }
+    return {
+      matchID,
+      playerID: String(joined.playerID ?? '0'),
+      credentials: String(joined.playerCredentials ?? ''),
+    };
+  } catch (error) {
+    if (matchID) await lobbyApi.wipeMatch?.(matchID).catch(() => undefined);
+    throw error;
   }
-  return {
-    matchID,
-    playerID: String(joined.playerID ?? '0'),
-    credentials: String(joined.playerCredentials ?? ''),
-  };
 };
 
 export const registerUserLobbyRoutes = (args: {
