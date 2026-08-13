@@ -3675,6 +3675,144 @@
   }
 }
 
+/* Keep the V2 game palette dark even when legacy light component rules follow. */
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-panel,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-selection-panel,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-hand-section,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-events,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-side > section,
+.app.app-v2 .game-ui-layout-shell .board-chat,
+.app.app-v2 .game-ui-layout-shell .board-status {
+  border-color: rgba(178, 181, 170, 0.2);
+  background: linear-gradient(180deg, rgba(38, 43, 45, 0.98), rgba(20, 24, 26, 0.98));
+  color: #eef2ec;
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-action-slot,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-resource-card,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-player-card,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-confirm-card,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-token-row,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-mini-list button,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-card-thumb,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-pinned,
+.app.app-v2 .game-ui-layout-shell .hand .game-card,
+.app.app-v2 .game-ui-layout-shell .resources span,
+.app.app-v2 .game-ui-layout-shell .pile,
+.app.app-v2 .game-ui-layout-shell .chat-log {
+  border-color: rgba(178, 181, 170, 0.18);
+  background: linear-gradient(180deg, rgba(48, 54, 57, 0.96), rgba(27, 32, 34, 0.98));
+  color: #eef2ec;
+}
+
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-event-row,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-help-row {
+  border-color: rgba(178, 181, 170, 0.18);
+  background: rgba(43, 49, 51, 0.94);
+  color: #e7ede6;
+}
+
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-event-row.is-warn,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-help-row.is-warn {
+  border-color: rgba(221, 171, 91, 0.42);
+  background: rgba(73, 55, 29, 0.9);
+}
+
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-event-row.is-good,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-help-row.is-good {
+  border-color: rgba(105, 185, 137, 0.38);
+  background: rgba(28, 65, 43, 0.86);
+}
+
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-event-row.is-legendary {
+  border-color: rgba(172, 126, 221, 0.42);
+  background: linear-gradient(180deg, rgba(66, 43, 88, 0.94), rgba(43, 31, 57, 0.96));
+}
+
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-event-chip {
+  border-color: rgba(155, 177, 207, 0.34);
+  background: rgba(43, 58, 76, 0.94);
+  color: #dbe8f7;
+}
+
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-event-chip.is-warn {
+  border-color: rgba(221, 171, 91, 0.42);
+  background: rgba(91, 64, 24, 0.94);
+  color: #f4d28f;
+}
+
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-event-chip.is-good {
+  border-color: rgba(105, 185, 137, 0.38);
+  background: rgba(25, 79, 48, 0.94);
+  color: #bfe8cd;
+}
+
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-event-chip.is-legendary {
+  border-color: rgba(172, 126, 221, 0.42);
+  background: rgba(75, 45, 105, 0.94);
+  color: #e1c8fa;
+}
+
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-selection-panel-inline,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-steps span,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-chip,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-side-tab-row button,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-mobile-bar,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-mobile-bar button {
+  border-color: rgba(156, 170, 182, 0.28);
+  background: rgba(43, 49, 53, 0.96);
+  color: #e4eaf0;
+}
+
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-progress-bar {
+  background: rgba(9, 12, 14, 0.7);
+}
+
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-notice.is-info,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-notice.is-error,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-notice.is-success {
+  border-color: rgba(156, 170, 182, 0.3);
+  background: rgba(35, 42, 45, 0.94);
+  color: #eef2ec;
+}
+
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-player-card.is-active,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-chip.is-active,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-steps span.is-done {
+  border-color: rgba(105, 185, 137, 0.46);
+  background: rgba(28, 65, 43, 0.9);
+  color: #c9ead4;
+}
+
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-player-card.is-selected,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-pick-chip.is-selected,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-side-tab-row button.is-active {
+  border-color: rgba(114, 156, 222, 0.62);
+  background: rgba(38, 59, 91, 0.94);
+  color: #dce9ff;
+}
+
+.app.app-v2 .game-ui-layout-shell input,
+.app.app-v2 .game-ui-layout-shell select,
+.app.app-v2 .game-ui-layout-shell textarea {
+  border-color: rgba(178, 181, 170, 0.28);
+  background: #171b1d;
+  color: #eef2ec;
+}
+
+.app.app-v2 .game-ui-layout-shell input::placeholder,
+.app.app-v2 .game-ui-layout-shell textarea::placeholder,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-subtle,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-resource-name,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-player-rank,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-help-row strong,
+.app.app-v2 .game-ui-layout-shell .game-ui-v2-hand-controls label {
+  color: #aeb9ae;
+}
+
 .game-ui-v1-legendary-frame {
   position: relative;
   overflow: hidden;

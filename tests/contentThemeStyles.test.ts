@@ -39,3 +39,39 @@ test('news and downloads share a centered responsive page panel', async () => {
     /@media \(max-width:\s*720px\)\s*\{[\s\S]*\.content-page\s*\{[\s\S]*padding:\s*12px;[\s\S]*border-radius:\s*20px;/,
   );
 });
+
+test('V2 game panels keep a readable dark palette', async () => {
+  const source = await readFile(
+    new URL('../src/ui/styles/v2.css', import.meta.url),
+    'utf8',
+  );
+  const darkPalette = source.slice(
+    source.indexOf('/* Keep the V2 game palette dark'),
+  );
+
+  for (const selector of [
+    '.game-ui-v2-hand-section',
+    '.game-ui-v2-events',
+    '.board-chat',
+    '.board-status',
+    '.chat-log',
+    '.hand .game-card',
+  ]) {
+    assert.ok(
+      darkPalette.includes(selector),
+      `${selector} needs a V2 dark override`,
+    );
+  }
+  assert.match(
+    darkPalette,
+    /background:\s*linear-gradient\(180deg, rgba\(38, 43, 45, 0\.98\), rgba\(20, 24, 26, 0\.98\)\);[\s\S]*color:\s*#eef2ec;/,
+  );
+  assert.match(
+    darkPalette,
+    /background:\s*linear-gradient\(180deg, rgba\(48, 54, 57, 0\.96\), rgba\(27, 32, 34, 0\.98\)\);[\s\S]*color:\s*#eef2ec;/,
+  );
+  assert.match(
+    darkPalette,
+    /\.app\.app-v2 \.game-ui-layout-shell input,[\s\S]*\.app\.app-v2 \.game-ui-layout-shell textarea\s*\{[\s\S]*background:\s*#171b1d;[\s\S]*color:\s*#eef2ec;/,
+  );
+});
