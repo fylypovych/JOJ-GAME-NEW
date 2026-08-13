@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://joj.lol/</loc>
+    <loc>https://joj.lol/news</loc>
   </url>
   <url>
     <loc>https://joj.lol/games</loc>
@@ -13,15 +13,12 @@
     <loc>https://joj.lol/rules</loc>
   </url>
   <url>
+    <loc>https://joj.lol/downloads</loc>
+  </url>
+  <url>
     <loc>https://joj.lol/profile</loc>
   </url>
   <url>
     <loc>https://joj.lol/statistics</loc>
-  </url>
-  <url>
-    <loc>https://joj.lol/gallery</loc>
-  </url>
-  <url>
-    <loc>https://joj.lol/awards</loc>
   </url>
 </urlset>

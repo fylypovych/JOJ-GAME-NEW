@@ -1,6 +1,6 @@
 # Журнал Журналів (Web)
 
-Вебверсія гри на базі `boardgame.io` з багатокористувацькими кімнатами, двома актуальними UI-варіантами (`v1`, `v2`), акаунтами користувачів, адмінкою, редактором колоди/звань, симуляціями, bug-report системою та підтримкою `file`/`postgres` storage.
+Вебверсія гри на базі `boardgame.io` з багатокористувацькими кімнатами, UI-варіантами `v1`/`v2`, акаунтами користувачів, адмінкою, редактором колоди/звань, симуляціями, bug-report системою та PostgreSQL storage.
 
 ## Що є в проєкті
 
@@ -13,8 +13,8 @@
 - legendary deck, rank track, deck back image
 - аналітика, awards, bug reports
 - PostgreSQL backend для shared config, user data, bug reports, match mirror і самих матчів
-- file mirrors для сумісності та локальної роботи
-- SEO-friendly публічні маршрути: `/games`, `/cards`, `/rules`, `/profile`, `/statistics`
+- JSON/file mirrors для резервування та перенесення конфігурації; основним джерелом даних залишається PostgreSQL
+- публічні маршрути: `/news`, `/games`, `/cards`, `/rules`, `/downloads`, `/profile`, `/statistics`
 - `sitemap.xml` і `robots.txt` для індексації
 
 ## Технології
@@ -29,9 +29,10 @@
 
 ```bash
 npm install
-copy .env.example .env
 npm run dev:full
 ```
+
+Перед запуском скопіюйте `.env.example` у `.env`, налаштуйте `DATABASE_URL` і переконайтеся, що PostgreSQL доступний. У Windows використовуйте `copy .env.example .env`, у Linux/macOS — `cp .env.example .env`.
 
 Або окремо:
 
@@ -82,7 +83,11 @@ npm run test:simulation
 npm run coverage
 npm run check:shared-config
 npm run check:assets
+npm run check:i18n
 npm run check:runtime-data
+npm run check:changelog-shas
+npm run check:version-sync
+npm run check:release
 npm run build
 npm run preview
 ```
@@ -90,9 +95,10 @@ npm run preview
 Додатково:
 
 ```bash
-npm run setup:git-hooks
-npm run set:version -- "v=0.0.1.48"
-npm run seed:shared-config
+npm run version:next
+npm run sync:changelog-shas
+npm run db:migrate
+npm run sync:shared-config-db
 ```
 
 ## Runtime `.env`
@@ -104,6 +110,11 @@ PORT=8000
 FRONTEND_ORIGIN=http://localhost:5173
 WEB_PORT=4173
 VITE_PREVIEW_ALLOWED_HOSTS=joj.lol,www.joj.lol,localhost,127.0.0.1
+STORAGE_MODE=postgres
+DATABASE_URL=postgresql://joj_user:password@127.0.0.1:5432/joj_game
+ALLOW_IN_MEMORY_USER_STORE=0
+NODE_ENV=development
+TRUST_PROXY=
 ```
 
 Актуальні важливі змінні середовища:
@@ -112,30 +123,15 @@ VITE_PREVIEW_ALLOWED_HOSTS=joj.lol,www.joj.lol,localhost,127.0.0.1
 - `FRONTEND_ORIGIN` - дозволений frontend origin
 - `WEB_PORT` - порт для `vite preview`
 - `VITE_PREVIEW_ALLOWED_HOSTS` - allowlist для preview
-- `STORAGE_MODE` - `file`, `postgres`, або `db` (`db` нормалізується до `postgres`)
-- `DATABASE_URL` - обов'язково, якщо `STORAGE_MODE=postgres`
+- `STORAGE_MODE` - зафіксовано як `postgres`; file/in-memory fallback вимкнений
+- `DATABASE_URL` - обов'язковий для запуску backend
+- `ALLOW_IN_MEMORY_USER_STORE` - має залишатися `0`; in-memory user store не використовується
 - `NODE_ENV` - стандартна runtime-змінна Node.js
+- `TRUST_PROXY` - довірені reverse proxy; у production за Caddy значення має бути задане
 
-## Storage режими
+## Storage
 
-### `file`
-
-Локальний режим без залежності від PostgreSQL.
-
-Основні runtime-файли:
-
-- shared deck template: `database/shared-deck-template.json`
-- shared ranks: `database/shared-ranks.json`
-- simulation baselines: `database/simulation-baselines.json`
-- game UI config: `database/game-ui-config.json`
-- bug report UI config: `database/bug-report-ui-config.json`
-- admin DB UI config: `database/admin-db-ui-config.json`
-- boardgame.io match data: `database/matches/`
-- server logs: `logs/server.log`
-
-### `postgres`
-
-Поточний production-oriented режим.
+Backend працює лише з PostgreSQL. File/in-memory fallback вимкнений і без робочого `DATABASE_URL` сервер не запускається.
 
 У цьому режимі PostgreSQL використовується для:
 
@@ -150,8 +146,8 @@ VITE_PREVIEW_ALLOWED_HOSTS=joj.lol,www.joj.lol,localhost,127.0.0.1
 
 - піднімає PostgreSQL pool
 - проганяє SQL migrations
-- за потреби мігрує FlatFile match storage в PostgreSQL backend
-- залишає file mirrors для shared config сумісності / backup-сценаріїв
+- за потреби імпортує історичні FlatFile matches у PostgreSQL
+- синхронізує дозволені JSON mirrors для backup та перенесення конфігурації
 
 Політика runtime data і file mirrors: [docs/ops/runtime-data-policy.md](docs/ops/runtime-data-policy.md)
 
@@ -165,15 +161,13 @@ STORAGE_MODE=postgres
 DATABASE_URL=postgresql://joj_user:password@127.0.0.1:5432/joj_game
 ```
 
-3. Імпортуйте схему:
-
-Через CLI:
+3. Застосуйте міграції:
 
 ```bash
-psql "$DATABASE_URL" -f db/schema/db.sql
+npm run db:migrate
 ```
 
-Або через `/admin` -> `База Даних` -> `Імпортувати db.sql`
+Сервер та production-інсталятор також автоматично застосовують міграції під час запуску/оновлення. `db/schema/db.sql` залишається базовою схемою для ручного відновлення.
 
 4. Перезапустіть сервіси з оновленим env:
 
@@ -181,10 +175,10 @@ psql "$DATABASE_URL" -f db/schema/db.sql
 pm2 restart joj-game-server joj-game-web --update-env
 ```
 
-5. За потреби імпортуйте поточні JSON-конфіги в БД:
+5. За потреби синхронізуйте поточні дозволені JSON-конфіги з БД:
 
 - `/admin` -> `База Даних` -> `Імпортувати дані JSON в БД`
-- або `npm run seed:shared-config`
+- або `npm run sync:shared-config-db`
 
 ## Admin
 
@@ -256,30 +250,30 @@ Admin API:
 
 ## UI варіанти
 
-Клієнт підтримує два актуальні UI-шари:
+Клієнт підтримує два варіанти оформлення:
 
 - `v1`
 - `v2`
 
-`v2` є основним сучасним інтерфейсом з immersive layout-логікою для активної гри.
-
-`LegacyGameBoard` залишено в кодовій базі як legacy-реалізацію для старих внутрішніх секцій і поступового рефакторингу, але перемикач дизайну працює через `v1` / `v2`.
+Обидва мережеві клієнти використовують спільну актуальну дошку `GameBoardV2WithContext`; відмінності варіантів задаються UI-станом і CSS. Окремих `GameBoardV1` та `LegacyGameBoard` у кодовій базі немає.
 
 Основні файли UI:
 
 - [src/ui/App.tsx](src/ui/App.tsx)
-- [src/ui/GameBoardV1.tsx](src/ui/GameBoardV1.tsx)
 - [src/ui/GameBoardV2.tsx](src/ui/GameBoardV2.tsx)
-- [src/ui/LegacyGameBoard.tsx](src/ui/LegacyGameBoard.tsx)
+- [src/ui/board/GameBoardV2WithContext.tsx](src/ui/board/GameBoardV2WithContext.tsx)
+- [src/ui/app/networkClients.tsx](src/ui/app/networkClients.tsx)
 - [src/ui/styles.css](src/ui/styles.css)
 
 ## SEO маршрути
 
 Публічні сторінки, які мають окремі URL:
 
+- `/news` — стартова сторінка; запит до `/` канонізується сюди
 - `/games`
 - `/cards`
 - `/rules`
+- `/downloads`
 - `/profile`
 - `/statistics`
 
@@ -288,34 +282,19 @@ Admin API:
 - `sitemap.xml`
 - `robots.txt`
 
-## Version sync із commit message
+## Версії та CHANGELOG
 
-Якщо commit message містить маркер виду `v=0.0.1.48`, git hook синхронізує `package.json` і `package-lock.json`.
-
-Приклади:
-
-- `v=0.0.1.48`
-- `fix lobby auth, v=0.0.1.49`
-
-Перший запуск hooks:
+Summary релізного коміту — чистий номер `x.y.z.a`, наприклад `0.0.4.27`. `prebuild` синхронізує `package.json` і `package-lock.json` із номером останнього релізного коміту. Старий маркер `v=...` розпізнається лише для сумісності з історією і не використовується для нових комітів.
 
 ```bash
-npm run setup:git-hooks
+npm run version:next
+npm run sync:version-from-commit
+npm run sync:changelog-shas
+npm run check:version-sync
+npm run check:changelog-shas
 ```
 
-Автоматична синхронізація під час білду:
-
-```bash
-npm run build
-```
-
-`prebuild` автоматично підтягує `package.json` і `package-lock.json` під версію з останнього `HEAD` commit message, якщо в ньому є маркер `v=...`.
-
-Явна синхронізація:
-
-```bash
-npm run set:version -- "v=0.0.1.48"
-```
+`version:next` обчислює наступний номер за Git-історією. `sync:changelog-shas` заповнює фактичні SHA вже створених комітів у `CHANGELOG.md`; SHA найновішого запису з'являється після створення наступного коміту.
 
 ## Build і preview
 
@@ -363,15 +342,18 @@ pm2 restart joj-game-server joj-game-web --update-env
 
 ## Admin deploy flow
 
-В адмінці є сценарії:
+Повне production-оновлення з адмінки виконує:
 
-- перевірка git status
-- конфігурація GitHub HTTPS credentials
-- `git pull`
-- `npm ci` / fallback `npm install`
-- `npm run typecheck`
-- `npm run build`
-- `pm2 restart ... --update-env`
+1. обов'язковий production backup;
+2. безпечний Git stash локальних змін, якщо оператор це дозволив;
+3. `git pull --ff-only`;
+4. `npm ci --include=dev`;
+5. повний `npm run check:release`;
+6. `npm run db:migrate`;
+7. `npm run sync:shared-config-db`;
+8. PM2 restart і health check.
+
+Адмінка показує завершені та активний етапи процесу через endpoint прогресу deployment.
 
 Є окремі admin endpoints для:
 
@@ -423,7 +405,7 @@ joj.lol, www.joj.lol {
 }
 ```
 
-Важливо: `/games`, `/cards`, `/rules`, `/profile`, `/statistics` мають залишатися frontend-роутами і не повинні прокситись у backend як API-маски.
+Важливо: `/news`, `/games`, `/cards`, `/rules`, `/downloads`, `/profile`, `/statistics` мають залишатися frontend-роутами і не повинні прокситись у backend як API-маски. У backend прокситься `/api/*` та `/socket.io/*`.
 
 ## Безпека і runtime policy
 
@@ -434,10 +416,7 @@ joj.lol, www.joj.lol {
 - payload size limits для JSON / import / image upload
 - runtime validation для production env
 
-Небезпечні режими припустимі лише локально:
-
-- вимкнена/зламана admin session auth
-- пряме публічне відкриття server port без reverse proxy
+Admin auth не вимикається конфігураційними прапорцями. Backend-порт не слід відкривати напряму назовні — production працює через reverse proxy.
 
 ## Структура проєкту
 
@@ -446,7 +425,7 @@ joj.lol, www.joj.lol {
 - `src/` - frontend UI + клієнтська логіка гри
 - `server/` - backend routes / services / runtime bootstrap
 - `server/db/` - PostgreSQL helpers / migrations
-- `server/storage/shared-config/` - adapters для `file` / `postgres`
+- `server/storage/shared-config/` - PostgreSQL storage і синхронізація дозволених JSON mirrors
 - `db/schema/` - SQL schema
 - `db/migrations/` - SQL migrations
 - `tests/` - unit/invariant/config/simulation tests
@@ -454,8 +433,8 @@ joj.lol, www.joj.lol {
 
 Runtime data:
 
-- `database/` - JSON mirrors, bug reports, match data, local mutable state
-- `public/card-assets/` - картки та інші зображення
+- `database/` - JSON mirrors і локальні службові конфігурації; production content зберігається у PostgreSQL
+- `public/card-assets/` - фізичні зображення карт, що видаються через `/api/card-assets/*`
 - `logs/` - серверні логи
 
 ## Корисні документи
