@@ -67,6 +67,7 @@ export const ActiveGameFeature = ({
           matchID={session.matchID}
           playerID={playerId}
           credentials={session.credentials}
+          uiTheme={gameUiVariant}
           lang={lang}
           playerName={resolvedPlayerName}
           knownPlayerNames={roomPlayerNames}

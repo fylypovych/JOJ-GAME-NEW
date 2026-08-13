@@ -75,3 +75,40 @@ test('V2 game panels keep a readable dark palette', async () => {
     /\.app\.app-v2 \.game-ui-layout-shell input,[\s\S]*\.app\.app-v2 \.game-ui-layout-shell textarea\s*\{[\s\S]*background:\s*#171b1d;[\s\S]*color:\s*#eef2ec;/,
   );
 });
+
+test('active game receives the selected theme and V1 panels stay readable', async () => {
+  const featureSource = await readFile(
+    new URL('../src/ui/app/AppFeatureContainers.tsx', import.meta.url),
+    'utf8',
+  );
+  const lightStyles = await readFile(
+    new URL('../src/ui/styles/v1.css', import.meta.url),
+    'utf8',
+  );
+  const lightPalette = lightStyles.slice(
+    lightStyles.indexOf('/* The light application theme must also win'),
+  );
+
+  assert.match(
+    featureSource,
+    /<ClientComponent[\s\S]*uiTheme=\{gameUiVariant\}/,
+  );
+  for (const selector of [
+    '.game-ui-v2-hand-section',
+    '.game-ui-v2-events',
+    '.board-chat',
+    '.board-status',
+    '.chat-log',
+    '.game-card-body.is-v1',
+  ]) {
+    assert.ok(
+      lightPalette.includes(selector),
+      `${selector} needs a V1 light override`,
+    );
+  }
+  assert.match(
+    lightPalette,
+    /background:\s*linear-gradient\(180deg, rgba\(251, 248, 242, 0\.98\), rgba\(233, 225, 212, 0\.98\)\);[\s\S]*color:\s*#504538;/,
+  );
+  assert.match(lightPalette, /background:\s*#fffdf9;[\s\S]*color:\s*#3e372f;/);
+});
