@@ -50,11 +50,17 @@ const collectNewChatRows = (
   return rows.slice(lastSeenIndex + 1);
 };
 
-const resolveBotActorNameFromText = (text: string, G: JojGameState) => {
+export const resolveBotActorNameFromText = (text: string, G: JojGameState) => {
+  const sequenceMarker = text.match(/\[\d+\]\s*/);
+  const actorText = sequenceMarker?.index === undefined
+    ? text.trimStart()
+    : text.slice(sequenceMarker.index + sequenceMarker[0].length).trimStart();
   const botIds = Object.keys(G?.botPlayers ?? {});
   for (const playerID of botIds) {
     const botName = String(G?.playerNames?.[playerID] ?? G?.botPlayers?.[playerID]?.name ?? '').trim();
-    if (botName && text.includes(botName)) return botName;
+    if (!botName || !actorText.startsWith(botName)) continue;
+    const nextCharacter = actorText.charAt(botName.length);
+    if (!nextCharacter || /[\s:—–-]/u.test(nextCharacter)) return botName;
   }
   return '';
 };

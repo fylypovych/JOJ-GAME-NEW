@@ -309,6 +309,28 @@ test('playCardHandler applies hand scandal to all other players except source pl
   assert.equal(G.discard.at(-1)?.id, 'scandal-all-others');
 });
 
+test('playCardHandler rejects a second ordinary card when stale requests reuse the play stage', () => {
+  const G = makeState();
+  G.hands['0'] = [
+    { id: 'support-first', title: 'First', category: 'SUPPORT', effects: [] },
+    { id: 'support-second', title: 'Second', category: 'SUPPORT', effects: [] },
+  ];
+  G.players['0'].hand = G.hands['0'];
+  const args: MoveArgs = {
+    G,
+    ctx: { currentPlayer: '0', activePlayers: { '0': 'play' }, turn: 1, numPlayers: 2 },
+    playerID: '0',
+    events: { setStage: () => undefined },
+  };
+  const deps = makeDeps();
+
+  assert.equal(playCardHandler(deps, args, 'support-first'), undefined);
+  assert.equal(playCardHandler(deps, args, 'support-second'), 'INVALID_MOVE');
+  assert.equal(G.hands['0'].map((card) => card.id).join(','), 'support-second');
+  assert.equal(G.discard.map((card) => card.id).join(','), 'support-first');
+  assert.equal(G.handCardsPlayedThisTurn?.['0'], 1);
+});
+
 test('playCardHandler rolls back command soft effects when self-resolution fails', () => {
   const G = makeState();
   G.hands['0'] = [
@@ -836,6 +858,7 @@ test('playCardHandler applies VVNZ with two time resources, grants rank bonus, a
     playerID: '0',
     events: { setStage: () => undefined },
   };
+  let loggedSummary: { resources: Partial<Record<'time' | 'reputation' | 'discipline' | 'documents' | 'tech', number>>; rank: number } | null = null;
 
   const result = playCardHandler(
     makeDeps({
@@ -845,6 +868,17 @@ test('playCardHandler applies VVNZ with two time resources, grants rank bonus, a
           { id: 'soldier', requirement: { reputation: 3, discipline: 2 }, cost: {}, bonus: { discipline: 1 } },
         ] as never,
       applyCardEffects: () => true,
+      summarizeAppliedDiff: (before, after, beforeRank, afterRank) => ({
+        resources: {
+          time: after.time - before.time,
+          discipline: after.discipline - before.discipline,
+        },
+        rank: beforeRank === afterRank ? 0 : 1,
+      }),
+      buildVvnzRankSystemMessage: (_seq, _player, _card, _from, _to, _cost, _bonus, summary) => {
+        loggedSummary = summary;
+        return 'vvnz';
+      },
       snapshotResourcesForStats: () => ({
         '0': { ...G.resources['0'] },
         '1': { ...G.resources['1'] },
@@ -862,6 +896,11 @@ test('playCardHandler applies VVNZ with two time resources, grants rank bonus, a
   assert.equal(G.resources['0'].documents, 1);
   assert.equal(G.resources['0'].discipline, 1);
   assert.equal(G.skippedTurnCounts?.['0'], 1);
+  assert.equal(G.vvnzSkippedTurnCounts?.['0'], 1);
+  assert.deepEqual(loggedSummary, {
+    resources: { time: -2, discipline: 1 },
+    rank: 1,
+  });
   assert.equal(G.discard.at(-1)?.id, 'vvnz-pay');
 });
 

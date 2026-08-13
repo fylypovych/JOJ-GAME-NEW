@@ -84,7 +84,7 @@
 .game-ui-layout-shell.is-theme-v1 .game-ui-layout-center-badge,
 .game-ui-layout-shell.is-theme-v1 .game-ui-layout-zone,
 .game-ui-layout-shell.is-theme-v1 .game-ui-layout-player-dock,
-.game-ui-layout-shell.is-theme-v1 .game-ui-layout-player-dock-side .game-ui-layout-legendary-frame {
+.game-ui-layout-shell.is-theme-v1 .game-ui-layout-legendary-frame {
   border-color: rgba(171, 154, 126, 0.28);
   background  :
     linear-gradient(180deg, rgba(251, 247, 241, 0.9), rgba(235, 226, 212, 0.92));
@@ -120,9 +120,26 @@
   color       : #645543;
 }
 
-.game-ui-layout-shell.is-theme-v1 .game-ui-layout-hand-rail,
 .game-ui-layout-shell.is-theme-v1 .game-ui-layout-hand-head {
   color: #7b6a58;
+}
+
+.pile-preview-modal.is-theme-v1 {
+  background: rgba(72, 62, 49, 0.42);
+}
+
+.pile-preview-modal.is-theme-v1 .pile-preview-modal-card {
+  border-color: rgba(139, 119, 88, 0.52);
+  background: linear-gradient(180deg, #fffdf8, #e9e0d2);
+  box-shadow:
+    0 24px 56px rgba(73, 59, 39, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.pile-preview-modal.is-theme-v1 .pile-preview-modal-close {
+  border-color: rgba(125, 103, 70, 0.58);
+  background: #f3eadc;
+  color: #443726;
 }
 
 .game-ui-layout-shell.is-theme-v1 .game-ui-layout-player-dock-main .game-card.is-v3,

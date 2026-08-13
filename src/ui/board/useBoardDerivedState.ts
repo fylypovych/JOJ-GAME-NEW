@@ -4,6 +4,7 @@ import { cardNeedsTargetSelection, getCardPlayBehavior } from '../../game/cardRu
 import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from '../../game/types';
 import { cardTitle, rankLabel } from '../i18n';
 import { getNextRankSeatMeta } from './rankHints';
+import { classifySystemEvent } from './systemEventMeta';
 
 const describeCardEffects = (
   card: CardDefinition,
@@ -46,44 +47,6 @@ const buildCardPreviewText = (args: {
   return lang === 'uk' ? `Очікуваний ефект: ${effectsText}` : `Expected effect: ${effectsText}`;
 };
 
-const classifySystemEvent = (textValue: string, lang: 'uk' | 'en') => {
-  const text = textValue.toLowerCase();
-  if (text.includes('legendary') || text.includes('легендар')) {
-    return {
-      label: lang === 'uk' ? 'Легендарне' : 'Legendary',
-      tone: 'legendary' as const,
-    };
-  }
-  if (text.includes('scandal') || text.includes('скандал')) {
-    return {
-      label: 'SCANDAL',
-      tone: 'warn' as const,
-    };
-  }
-  if (text.includes('lyap') || text.includes('ляп')) {
-    return {
-      label: 'LYAP',
-      tone: 'warn' as const,
-    };
-  }
-  if (text.includes('rank') || text.includes('звання') || text.includes('ввнз')) {
-    return {
-      label: lang === 'uk' ? 'Звання' : 'Rank',
-      tone: 'good' as const,
-    };
-  }
-  if (text.includes('shield') || text.includes('щит')) {
-    return {
-      label: lang === 'uk' ? 'Захист' : 'Shield',
-      tone: 'neutral' as const,
-    };
-  }
-  return {
-    label: lang === 'uk' ? 'Подія' : 'Event',
-    tone: 'neutral' as const,
-  };
-};
-
 export const useBoardDerivedState = (args: {
   G: JojGameState;
   ctx: { gameover?: unknown };
@@ -115,7 +78,7 @@ export const useBoardDerivedState = (args: {
     .reverse()
     .map((row) => ({
       ...row,
-      ...classifySystemEvent(row.text, lang),
+      ...classifySystemEvent(row.text, lang, row.eventKind),
     }));
 
   const allHandCardsView = useMemo(() => {

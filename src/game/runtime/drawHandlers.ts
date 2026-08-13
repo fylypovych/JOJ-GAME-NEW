@@ -25,6 +25,7 @@ export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
         const seq = d.nextSystemMessageSeq(args.G);
         d.appendChat(args.G, {
           type: 'system',
+          eventKind: 'protection',
           text: `🛡️ [${seq}] ${d.getPlayerLabel(args.G, playerID)} витягнув «${card.title}», але щит від Грамоти скасував ЛЯП.`,
         });
         args.G.discard.push(card);
@@ -50,6 +51,7 @@ export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
             const seq = d.nextSystemMessageSeq(args.G);
             d.appendChat(args.G, {
               type: 'system',
+              eventKind: 'lyap',
               text: d.buildLyapSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, summary),
             });
           } catch {
@@ -118,6 +120,7 @@ export const drawCardHandler = (d: JojMovesDeps, args: MoveArgs) => {
         const seq = d.nextSystemMessageSeq(args.G);
         d.appendChat(args.G, {
           type: 'system',
+          eventKind: 'scandal',
           text: d.buildScandalSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, targetSummaries),
         });
         args.G.discard.push(card);
@@ -162,6 +165,7 @@ export const resolveDrawAutoCardHandler = (
       const seq = d.nextSystemMessageSeq(args.G);
       d.appendChat(args.G, {
         type: 'system',
+        eventKind: 'protection',
         text: `🛡️ [${seq}] ${d.getPlayerLabel(args.G, playerID)} витягнув «${card.title}», але щит від Грамоти скасував ЛЯП.`,
       });
     } else {
@@ -182,6 +186,7 @@ export const resolveDrawAutoCardHandler = (
         const seq = d.nextSystemMessageSeq(args.G);
         d.appendChat(args.G, {
           type: 'system',
+          eventKind: 'lyap',
           text: d.buildLyapSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, summary),
         });
       } catch {
@@ -244,6 +249,7 @@ export const resolveDrawAutoCardHandler = (
     const seq = d.nextSystemMessageSeq(args.G);
     d.appendChat(args.G, {
       type: 'system',
+      eventKind: 'scandal',
       text: d.buildScandalSystemMessage(seq, d.getPlayerLabel(args.G, playerID), card, targetSummaries),
     });
     args.G.discard.push(card);

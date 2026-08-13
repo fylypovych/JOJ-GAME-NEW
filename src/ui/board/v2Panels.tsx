@@ -55,7 +55,6 @@ export const V2Header = (props: {
   return (
     <header className="game-ui-v2-header game-ui-layout-header">
       <div className="game-ui-v2-header-main game-ui-layout-header-main">
-        <p className="game-ui-v2-kicker">JOJ V2 TCG</p>
         <h2>{title}</h2>
         {roomMeta ? (
           <div className="game-ui-v2-room-meta">
@@ -326,6 +325,7 @@ export const V2SelectionPanel = (props: {
 };
 
 export const V2HandSection = (props: {
+  className?: string;
   title: string;
   subtitle?: string;
   headRight?: ReactNode;
@@ -348,9 +348,9 @@ export const V2HandSection = (props: {
   selected?: (card: CardDefinition) => boolean;
   cardClickAction?: (card: CardDefinition) => void;
 }) => {
-  const { title, subtitle, headRight, cards, cardImageById, lang, openPreviewKey, togglePreview, closePreview, categoryText, actionLabel, onAction, actionDisabled, actionTitle, effectLabel, badges, helperText, previewText, extraAction, selected, cardClickAction } = props;
+  const { className, title, subtitle, headRight, cards, cardImageById, lang, openPreviewKey, togglePreview, closePreview, categoryText, actionLabel, onAction, actionDisabled, actionTitle, effectLabel, badges, helperText, previewText, extraAction, selected, cardClickAction } = props;
   return (
-    <section className="game-ui-v2-hand-section game-ui-layout-hand-section">
+    <section className={`game-ui-v2-hand-section game-ui-layout-hand-section${className ? ` ${className}` : ''}`}>
       <div className="game-ui-v2-hand-head game-ui-layout-hand-head">
         <div>
           <h3>{title}</h3>

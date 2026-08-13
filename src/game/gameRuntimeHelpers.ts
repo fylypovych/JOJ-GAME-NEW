@@ -9,9 +9,33 @@ import {
   buildSupportMessageText,
   legendaryTexts,
 } from './systemMessages';
-import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from './types';
+import type { CardDefinition, ChatEntryInput, JojGameState, RankDefinition, ResourceKey } from './types';
 import { rankSeatLimitForRank } from './rankEngine';
 import type { LegendaryDeckMode } from './sharedConfig';
+import { canAffordVvnzCost } from './vvnzCost';
+
+export const canPlayVvnzCardByInventory = (args: {
+  G: JojGameState;
+  playerID: string;
+  card: CardDefinition;
+  ranks: RankDefinition[];
+}): boolean => {
+  const { G, playerID, card, ranks } = args;
+  if (!card.grantRank || G.promotedThisTurn?.[playerID]) return false;
+  const resources = G.resources[playerID];
+  if (!resources || !canAffordVvnzCost(resources)) return false;
+
+  const playerCount = Object.keys(G.players ?? {}).length || 2;
+  const currentRankIdx = ranks.findIndex((rank) => rank.id === G.ranks[playerID]);
+  const targetRankIdx = ranks.findIndex((rank) => rank.id === card.grantRank);
+  if (currentRankIdx < 0 || targetRankIdx <= currentRankIdx) return false;
+  const targetRank = ranks[targetRankIdx];
+  if (!targetRank) return false;
+  const occupied = Object.entries(G.ranks)
+    .filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id)
+    .length;
+  return occupied < rankSeatLimitForRank(playerCount, targetRank.id, ranks);
+};
 
 export const normalizeGameModeByLegendaryMode = (
   requestedMode: 'standard' | 'standard_plus' | 'simplified',
@@ -28,7 +52,7 @@ export const createGameRuntimeHelpers = (args: {
   getTopRankId: () => string;
   resolveRandomRankImage: (rankId: string) => string | undefined;
   nextSystemMessageSeq: (G: JojGameState) => number;
-  appendChat: (G: JojGameState, entry: { type: 'player' | 'system'; text: string; playerID?: string }) => void;
+  appendChat: (G: JojGameState, entry: ChatEntryInput) => void;
   getPlayerLabel: (G: JojGameState, playerID: string) => string;
   clampNonNegativeResources: (resources: Record<ResourceKey, number>) => void;
   syncPlayerState: (G: JojGameState, playerID: string) => void;
@@ -99,6 +123,7 @@ export const createGameRuntimeHelpers = (args: {
       const seq = nextSystemMessageSeq(G);
       appendChat(G, {
         type: 'system',
+        eventKind: 'legendary',
         text: `🥫 [${seq}] ${legendaryTexts.sukhpayTriggered(getPlayerLabel(G, pid))}`,
       });
     });
@@ -354,22 +379,6 @@ export const createGameRuntimeHelpers = (args: {
     G.noPlayablePassStreak = 0;
   };
 
-  const canGrantSpecificRankIgnoringRequirementsWithoutMutation = (
-    G: JojGameState,
-    playerID: string,
-    targetRankId: string,
-  ): boolean => {
-    const ranks = getActiveRanks();
-    const playerCount = Object.keys(G.players ?? {}).length || 2;
-    const currentRankIdx = Math.max(0, ranks.findIndex((r) => r.id === G.ranks[playerID]));
-    const targetRankIdx = ranks.findIndex((r) => r.id === targetRankId);
-    if (targetRankIdx < 0 || targetRankIdx <= currentRankIdx) return false;
-    const targetRank = ranks[targetRankIdx];
-    if (!targetRank) return false;
-    const occupied = Object.entries(G.ranks).filter(([pid, rankId]) => pid !== playerID && rankId === targetRank.id).length;
-    return occupied < rankSeatLimitForRank(playerCount, targetRank.id, ranks);
-  };
-
   const canDemoteAnyOpponentWithoutMutation = (G: JojGameState, sourcePlayerID: string): boolean => {
     const ranks = getActiveRanks();
     const playerCount = Object.keys(G.players ?? {}).length || 2;
@@ -391,8 +400,7 @@ export const createGameRuntimeHelpers = (args: {
 
   const canPlayRegularHandCardByInventory = (G: JojGameState, playerID: string, card: CardDefinition): boolean => {
     if (card.category === 'VVNZ') {
-      if (!card.grantRank) return true;
-      return canGrantSpecificRankIgnoringRequirementsWithoutMutation(G, playerID, card.grantRank);
+      return canPlayVvnzCardByInventory({ G, playerID, card, ranks: getActiveRanks() });
     }
     if (card.category === 'LYAP' || card.category === 'SCANDAL') return Object.keys(G.players ?? {}).some((pid) => pid !== playerID);
     return planReplacementResources(G.resources[playerID], card.effects) !== null;

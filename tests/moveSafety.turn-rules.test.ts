@@ -9,6 +9,8 @@ import {
   passHandler,
 } from './moveSafety.helpers';
 import type { JojMovesDeps, MoveArgs } from './moveSafety.helpers';
+import { canPlayVvnzCardByInventory } from '../src/game/gameRuntimeHelpers';
+import type { RankDefinition } from '../src/game/types';
 
 test('syncPlayerNames only updates current player name', () => {
   const G = makeState();
@@ -135,6 +137,65 @@ test('passHandler allows pass only when deck is empty and no playable cards rema
       shouldCountNoPlayablePass: () => true,
     }),
     args,
+  );
+
+  assert.equal(result, undefined);
+  assert.equal(ended, true);
+});
+
+test('passHandler allows a player stuck with an unaffordable VVNZ card to pass', () => {
+  const G = makeState();
+  const ranks: RankDefinition[] = [
+    { id: 'recruit', name: 'Recruit', requirement: {}, cost: {}, bonus: {} },
+    {
+      id: 'senior_master_sergeant',
+      name: 'Senior master sergeant',
+      requirement: {},
+      cost: {},
+      bonus: {},
+    },
+  ];
+  G.deck = [];
+  G.resources['0'].time = 1;
+  G.hands['0'] = [
+    {
+      id: 'vvnz-up',
+      title: 'VVNZ',
+      category: 'VVNZ',
+      grantRank: 'senior_master_sergeant',
+      effects: [],
+    },
+  ];
+  G.players['0'].hand = G.hands['0'];
+  let ended = false;
+  const hasPlayableCardsByInventory = (state: typeof G, playerID: string) =>
+    state.hands[playerID].some(
+      (card) =>
+        card.category === 'VVNZ' &&
+        canPlayVvnzCardByInventory({
+          G: state,
+          playerID,
+          card,
+          ranks,
+        }),
+    );
+
+  const result = passHandler(
+    makeDeps({
+      hasPlayableCardsByInventory,
+      shouldCountNoPlayablePass: (state, playerID) =>
+        !hasPlayableCardsByInventory(state, playerID),
+    }),
+    {
+      G,
+      ctx: { currentPlayer: '0', activePlayers: { '0': 'play' } },
+      playerID: '0',
+      events: {
+        endTurn: () => {
+          ended = true;
+        },
+      },
+    },
   );
 
   assert.equal(result, undefined);

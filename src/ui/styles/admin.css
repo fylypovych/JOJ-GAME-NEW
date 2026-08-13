@@ -1112,8 +1112,10 @@
 
 .lobby-layout {
   display              : grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr);
   gap                  : 16px;
+  width                : 100%;
+  max-width            : 100%;
 }
 
 @media screen and (max-width: 991px) {
@@ -1135,10 +1137,21 @@
   min-width: 0;
 }
 
-.lobby-room-filters,
 .lobby-room-list {
   display: grid;
   gap    : 10px;
+}
+
+.lobby-room-filters {
+  display    : flex;
+  flex-wrap  : wrap;
+  align-items: center;
+  gap        : 10px;
+}
+
+.lobby-room-filters button {
+  width    : auto;
+  min-width: 0;
 }
 
 .lobby-room-card {
@@ -1227,6 +1240,13 @@
 .lobby-room-create-summary,
 .lobby-active-room-grid {
   margin-top: 8px;
+}
+
+.lobby-room-create-summary {
+  min-width    : 0;
+  max-width    : 100%;
+  box-sizing   : border-box;
+  overflow-wrap: anywhere;
 }
 
 .lobby-active-room-title {

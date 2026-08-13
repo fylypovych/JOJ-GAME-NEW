@@ -12,6 +12,18 @@ export type CardCategory =
 export type GameMode = 'standard' | 'standard_plus' | 'simplified';
 export type BotDifficulty = 'easy' | 'normal' | 'hard';
 export type BotProfile = 'balanced' | 'aggressive' | 'control';
+export type SystemEventKind = 'event' | 'legendary' | 'scandal' | 'lyap' | 'rank' | 'protection' | 'skip';
+
+export type ChatEntry = {
+  id: string;
+  type: 'player' | 'system';
+  text: string;
+  playerID?: string;
+  eventKind?: SystemEventKind;
+  createdAt: number;
+};
+
+export type ChatEntryInput = Omit<ChatEntry, 'id' | 'createdAt'>;
 
 export interface BotPlayerConfig {
   difficulty: BotDifficulty;
@@ -64,13 +76,7 @@ export interface JOJState {
   systemMessageSeq: number;
   playerNames: Record<string, string>;
   botPlayers: Record<string, BotPlayerConfig>;
-  chat: Array<{
-    id: string;
-    type: 'player' | 'system';
-    text: string;
-    playerID?: string;
-    createdAt: number;
-  }>;
+  chat: ChatEntry[];
   players: Record<string, PlayerState>;
   hands: Record<string, Card[]>;
   legendaryHands: Record<string, Card[]>;
@@ -80,6 +86,7 @@ export interface JOJState {
   promotedThisTurn: Record<string, boolean>;
   lyapScandalShieldUntilTurn: Record<string, number>;
   extraHandPlayTokens: Record<string, number>;
+  handCardsPlayedThisTurn?: Record<string, number>;
   sukhpayZsuWatchUntilTurn: Record<string, number>;
   sukhpayZsuPendingBonus: Record<string, boolean>;
   ignoreSeatLimitForPromotionUntilTurn: Record<string, number>;
@@ -101,6 +108,7 @@ export interface JOJState {
   }>;
   noPlayablePassStreak: number;
   skippedTurnCounts?: Record<string, number>;
+  vvnzSkippedTurnCounts?: Record<string, number>;
   endGameVote: {
     active: boolean;
     requestedBy: string | null;

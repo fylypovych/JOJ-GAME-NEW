@@ -1,4 +1,4 @@
-import type { CardDefinition, JojGameState, RankDefinition, ResourceKey } from './types';
+import type { CardDefinition, ChatEntryInput, JojGameState, RankDefinition, ResourceKey } from './types';
 import type { legendaryTexts as LegendaryTexts } from './systemMessages';
 
 export type MoveCtx = {
@@ -38,7 +38,7 @@ export type JojMovesDeps = {
     stage?: string;
     extraHandPlayTokens: number;
   }) => boolean;
-  appendChat: (G: JojGameState, entry: { type: 'player' | 'system'; text: string; playerID?: string }) => void;
+  appendChat: (G: JojGameState, entry: ChatEntryInput) => void;
   nextSystemMessageSeq: (G: JojGameState) => number;
   getPlayerLabel: (G: JojGameState, playerID: string) => string;
   syncPlayerState: (G: JojGameState, playerID: string) => void;

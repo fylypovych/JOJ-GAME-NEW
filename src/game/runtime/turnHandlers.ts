@@ -20,6 +20,7 @@ export const discardFromHandHandler = (d: JojMovesDeps, args: MoveArgs, cardId: 
   const seq = d.nextSystemMessageSeq(args.G);
   d.appendChat(args.G, {
     type: 'system',
+    eventKind: 'event',
     text: `🗂️ [${seq}] ${d.getPlayerLabel(args.G, playerID)} скидає «${card.title}» у скид, щоб вкластися в ліміт руки (${d.HAND_LIMIT}).`,
   });
   args.events?.setStage?.(d.PLAY_STAGE);
@@ -43,6 +44,7 @@ export const promoteHandler = (d: JojMovesDeps, args: MoveArgs) => {
   const seq = d.nextSystemMessageSeq(args.G);
   d.appendChat(args.G, {
     type: 'system',
+    eventKind: 'rank',
     text: d.buildPromotionSystemMessage(
       seq,
       d.getPlayerLabel(args.G, playerID),

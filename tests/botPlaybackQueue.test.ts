@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { JojGameState } from '../src/game/types';
-import { buildBotPlaybackQueuedSnapshots, clonePlaybackSnapshot, createPlaybackSignature, resolveBotPlaybackMeta } from '../src/ui/board/useBotPlaybackQueue';
+import {
+  buildBotPlaybackQueuedSnapshots,
+  clonePlaybackSnapshot,
+  createPlaybackSignature,
+  resolveBotActorNameFromText,
+  resolveBotPlaybackMeta,
+} from '../src/ui/board/useBotPlaybackQueue';
 import { extractPlaybackCardTitle } from '../src/ui/board/playbackCardMeta';
 
 const createGameState = (): JojGameState => ({
@@ -69,6 +75,25 @@ test('resolveBotPlaybackMeta does not delay human-origin snapshot', () => {
     shouldDelay: false,
     actorName: '',
   });
+});
+
+test('bot playback detection only accepts a bot as the event actor', () => {
+  const G = createGameState();
+
+  assert.equal(
+    resolveBotActorNameFromText(
+      '🧭 [31] You played «Shared order». Effects: You: Time +1 | Bot Alpha: Time +1.',
+      G,
+    ),
+    '',
+  );
+  assert.equal(
+    resolveBotActorNameFromText(
+      '🧭 [32] Bot Alpha played «Shared order». Effects: You: Time +1.',
+      G,
+    ),
+    'Bot Alpha',
+  );
 });
 
 test('clonePlaybackSnapshot freezes queued bot frame from later incoming mutations', () => {

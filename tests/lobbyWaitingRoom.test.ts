@@ -34,6 +34,31 @@ test('public lobby listing excludes ownerless rooms from interrupted creation', 
   );
 });
 
+test('an active client keeps its finished match until final standings are shown', async () => {
+  const routeSource = await readFile(
+    new URL('../server/routes/admin/matches.ts', import.meta.url),
+    'utf8',
+  );
+  const sessionSource = await readFile(
+    new URL('../src/ui/app/useLobbySession.ts', import.meta.url),
+    'utf8',
+  );
+  const lobbySource = await readFile(
+    new URL('../src/ui/app/sections/LobbySection.tsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(
+    sessionSource,
+    /activeMatchID=\$\{encodeURIComponent\(activeMatchID\)\}/,
+  );
+  assert.match(
+    routeSource,
+    /if \(metadata\?\.gameover && matchId !== activeMatchID\)/,
+  );
+  assert.match(lobbySource, /if \(match\.gameover\) return false;/);
+});
+
 test('internal lobby response body is captured exactly once', async () => {
   const source = await readFile(
     new URL('../server/routes/user-lobby.ts', import.meta.url),

@@ -48,6 +48,7 @@ export const validateMoveAction = (
     case 'resolve-draw-auto':
       return stage === d.DRAW_STAGE && isDrawAutoResolutionPending(args.G);
     case 'play-hand-card':
+      if (stage === d.PLAY_STAGE && (args.G.handCardsPlayedThisTurn?.[playerID] ?? 0) > 0) return false;
       return d.canPlayHandCardAtStage({
         isCurrentPlayer: true,
         stage,

@@ -3,6 +3,7 @@ import { CARD_ASSET_BASE_PATH, normalizeImagePath } from '../../game/imagePaths'
 import type { CardDefinition, JojGameState, ResourceKey } from '../../game/types';
 import type { Language } from '../i18n';
 import { cardFlavor, cardTitleWithOverride, categoryLabel, localizeSystemMessageText } from '../i18n';
+import { createPortal } from 'react-dom';
 
 type PilePreviewProps = {
   imageSrc?: string;
@@ -13,6 +14,7 @@ type PilePreviewProps = {
   onClosePreview: () => void;
   fallback?: ReactNode;
   variant?: 'default' | 'v1';
+  theme?: 'v1' | 'v2';
 };
 
 export const PilePreview = ({
@@ -24,18 +26,22 @@ export const PilePreview = ({
   onClosePreview,
   fallback,
   variant = 'default',
+  theme = 'v2',
 }: PilePreviewProps) => {
   if (!imageSrc) return <>{fallback ?? null}</>;
+  const previewOpen = openPreviewKey === previewKey;
   return (
-    <div className={`pile-preview${variant === 'v1' ? ' is-v1' : ''}${openPreviewKey === previewKey ? ' has-open-preview' : ''}`}>
+    <div className={`pile-preview${variant === 'v1' ? ' is-v1' : ''}${previewOpen ? ' has-open-preview' : ''}`}>
       <img src={imageSrc} alt={alt} onClick={(e) => { e.stopPropagation(); onTogglePreview(previewKey); }} />
-      <div
-        className={`game-card-popover${variant === 'v1' ? ' is-v1' : ''}${openPreviewKey === previewKey ? ' is-open' : ''}`}
-        aria-hidden={openPreviewKey !== previewKey}
-        onClick={(e) => { e.stopPropagation(); onClosePreview(); }}
-      >
-        <img src={imageSrc} alt={alt} />
-      </div>
+      {previewOpen && typeof document !== 'undefined' ? createPortal(
+        <div className={`pile-preview-modal is-theme-${theme}`} role="dialog" aria-modal="true" aria-label={alt} onClick={onClosePreview}>
+          <div className="pile-preview-modal-card" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="pile-preview-modal-close" aria-label={`Close ${alt}`} onClick={onClosePreview}>×</button>
+            <img src={imageSrc} alt={alt} />
+          </div>
+        </div>,
+        document.body,
+      ) : null}
     </div>
   );
 };

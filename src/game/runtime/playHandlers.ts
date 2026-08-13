@@ -46,6 +46,8 @@ export const playCardHandler = (
   d.recordResourceFlowStats(args.G, beforeResources);
   d.resetNoPlayablePassStreak(args.G);
   d.resetEndGameVote(args.G);
+  if (!args.G.handCardsPlayedThisTurn) args.G.handCardsPlayedThisTurn = {};
+  args.G.handCardsPlayedThisTurn[playerID] = (args.G.handCardsPlayedThisTurn[playerID] ?? 0) + 1;
   if (usingExtraToken) args.G.extraHandPlayTokens[playerID] = Math.max(0, (args.G.extraHandPlayTokens[playerID] ?? 0) - 1);
   else args.events?.setStage?.(d.END_STAGE);
   return undefined;

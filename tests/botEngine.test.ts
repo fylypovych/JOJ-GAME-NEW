@@ -227,6 +227,25 @@ test('bot engine plays a support card from hand', () => {
   assert.equal(G.resources['1'].reputation, 3);
 });
 
+test('bot engine plays at most one legendary card during a turn', () => {
+  const G = makeState();
+  G.legendaryHands['1'] = [
+    { id: 'legendary-03', title: 'Extra play', category: 'LEGENDARY', effects: [] },
+    { id: 'legendary-12', title: 'Shield', category: 'LEGENDARY', effects: [] },
+  ];
+  const engine = makeBotEngine(makeDeps());
+
+  engine.playTurn({
+    G,
+    ctx: { currentPlayer: '1', activePlayers: { '1': 'play' }, numPlayers: 2, playOrder: ['0', '1'], turn: 1 },
+    playerID: '1',
+    initialStage: 'play',
+  });
+
+  assert.equal(G.legendaryDiscard.length, 1);
+  assert.equal(G.legendaryHands['1'].length, 1);
+});
+
 test('end game vote auto-adds bot approvals', () => {
   const G = makeState();
   addBotSeat(G, '2', 'Bot Easy 2');

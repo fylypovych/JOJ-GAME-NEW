@@ -40,7 +40,7 @@ import {
   type LegendaryDeckMode,
   type SharedGameSetup,
 } from './sharedConfig';
-import type { CardDefinition, GameMode, JojGameState, ResourceKey } from './types';
+import type { CardDefinition, ChatEntryInput, GameMode, JojGameState, ResourceKey } from './types';
 export {
   addCardToSharedDeckTemplate,
   addCustomCardToSharedDeckTemplate,
@@ -136,7 +136,7 @@ const resolveBotSetup = (setupData: unknown, totalPlayers: number) => {
 
 const appendChat = (
   G: JojGameState,
-  entry: { type: 'player' | 'system'; text: string; playerID?: string },
+  entry: ChatEntryInput,
 ) => appendChatBase(G, entry, CHAT_LIMIT);
 
 const applyRankImageForPlayer = (G: JojGameState, playerID: string) => {
@@ -478,6 +478,8 @@ export const jojGame: Game<JojGameState> = {
     activePlayers: { currentPlayer: DRAW_STAGE },
     onBegin: ({ G, ctx, events }) => {
       G.extraHandPlayTokens[ctx.currentPlayer] = 0;
+      if (!G.handCardsPlayedThisTurn) G.handCardsPlayedThisTurn = {};
+      G.handCardsPlayedThisTurn[ctx.currentPlayer] = 0;
       Object.keys(G.promotedThisTurn).forEach((pid) => {
         G.promotedThisTurn[pid] = false;
       });
@@ -491,6 +493,10 @@ export const jojGame: Game<JojGameState> = {
       });
       if ((G.skippedTurnCounts?.[ctx.currentPlayer] ?? 0) > 0) {
         G.skippedTurnCounts![ctx.currentPlayer] = Math.max(0, (G.skippedTurnCounts?.[ctx.currentPlayer] ?? 0) - 1);
+        const skippedByVvnz = (G.vvnzSkippedTurnCounts?.[ctx.currentPlayer] ?? 0) > 0;
+        if (skippedByVvnz) {
+          G.vvnzSkippedTurnCounts![ctx.currentPlayer] = Math.max(0, (G.vvnzSkippedTurnCounts?.[ctx.currentPlayer] ?? 0) - 1);
+        }
         G.gameStats.turnsCompleted = (G.gameStats.turnsCompleted ?? 0) + 1;
         if (G.playerGameStats?.[ctx.currentPlayer]) {
           G.playerGameStats[ctx.currentPlayer].turnsTaken = (G.playerGameStats[ctx.currentPlayer].turnsTaken ?? 0) + 1;
@@ -499,7 +505,10 @@ export const jojGame: Game<JojGameState> = {
         const seq = nextSystemMessageSeq(G);
         appendChat(G, {
           type: 'system',
-          text: `⏭️ [${seq}] ${getPlayerLabel(G, ctx.currentPlayer)} пропускає хід через нестачу ресурсів для обов'язкового списання.`,
+          text: skippedByVvnz
+            ? `⏭️ [${seq}] ${getPlayerLabel(G, ctx.currentPlayer)} пропускає хід після розіграшу карти ВВНЗ.`
+            : `⏭️ [${seq}] ${getPlayerLabel(G, ctx.currentPlayer)} пропускає хід через нестачу ресурсів для обов'язкового списання.`,
+          eventKind: 'skip',
         });
         events?.endTurn?.();
         return;

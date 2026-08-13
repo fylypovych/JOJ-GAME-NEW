@@ -123,7 +123,7 @@
 
 .app[class*="app-v"]:not([class*="1"]) a.is-active,
 .app[class*="app-v"]:not([class*="1"]) .app-toolbar-link-button,
-.app[class*="app-v"]:not([class*="1"]) button:disabled {
+.app[class*="app-v"]:not([class*="1"]) .user-tabs button:disabled {
   border-color: rgba(255, 255, 225, 0.5) !important;
   background  : linear-gradient(180deg, #fff, #ccc) !important;
   color       : #161c1c !important;

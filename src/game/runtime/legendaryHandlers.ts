@@ -58,6 +58,7 @@ export const playLegendaryCardHandler = (
   const seq = d.nextSystemMessageSeq(args.G);
   d.appendChat(args.G, {
     type: 'system',
+    eventKind: 'legendary',
     text: d.buildLegendaryPlayedMessageText({ seq, playerLabel, cardTitle: card.title, specialMessage }),
   });
   if (stage) args.events?.setStage?.(stage);

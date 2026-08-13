@@ -86,3 +86,23 @@ test('unused extra hand play expires at the next own turn', () => {
 
   assert.equal(G.extraHandPlayTokens['0'], 0);
 });
+
+test('VVNZ skip is logged with its real reason', () => {
+  const G = makeState();
+  G.skippedTurnCounts = { '0': 1, '1': 0 };
+  G.vvnzSkippedTurnCounts = { '0': 1, '1': 0 };
+  const onBegin = (jojGame.turn as unknown as { onBegin: (args: unknown) => void }).onBegin;
+  let ended = false;
+
+  onBegin({
+    G,
+    ctx: { currentPlayer: '0', playOrder: ['0', '1'], turn: 4, numPlayers: 2 },
+    events: { setActivePlayers: () => undefined, endTurn: () => { ended = true; } },
+  });
+
+  assert.equal(ended, true);
+  assert.equal(G.skippedTurnCounts['0'], 0);
+  assert.equal(G.vvnzSkippedTurnCounts['0'], 0);
+  assert.match(G.chat.at(-1)?.text ?? '', /ВВНЗ/);
+  assert.equal(G.chat.at(-1)?.eventKind, 'skip');
+});

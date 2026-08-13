@@ -99,6 +99,7 @@ export const V2BottomBar = (props: {
   primaryActionDisabled: boolean;
   secondaryActionLabel: string;
   secondaryActionDisabled: boolean;
+  actionsHidden?: boolean;
   onPrimaryAction: () => void;
   onSecondaryAction: () => void;
 }) => {
@@ -110,6 +111,7 @@ export const V2BottomBar = (props: {
     primaryActionDisabled,
     secondaryActionLabel,
     secondaryActionDisabled,
+    actionsHidden = false,
     onPrimaryAction,
     onSecondaryAction,
   } = props;
@@ -133,10 +135,12 @@ export const V2BottomBar = (props: {
         <strong>{rankName}</strong>
         <small>{rankHint}</small>
       </div>
-      <div className="game-ui-v2-footer-actions game-ui-layout-footer-actions">
-        <button type="button" className="is-primary" onClick={onPrimaryAction} disabled={primaryActionDisabled}>{primaryActionLabel}</button>
-        <button type="button" className="is-secondary" onClick={onSecondaryAction} disabled={secondaryActionDisabled}>{secondaryActionLabel}</button>
-      </div>
+      {!actionsHidden ? (
+        <div className="game-ui-v2-footer-actions game-ui-layout-footer-actions">
+          <button type="button" className="is-primary" onClick={onPrimaryAction} disabled={primaryActionDisabled}>{primaryActionLabel}</button>
+          <button type="button" className={`is-secondary${secondaryActionDisabled ? '' : ' is-ready-action'}`} onClick={onSecondaryAction} disabled={secondaryActionDisabled}>{secondaryActionLabel}</button>
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -200,7 +204,6 @@ export const V2OpponentsArea = (props: {
   handLabel: string;
   centerPortraitImage?: string;
   centerInitials: string;
-  centerKicker: string;
   centerTitle: string;
   centerSubtitle: string;
   centerResources: V2ResourceDisplayItem[];
@@ -212,7 +215,6 @@ export const V2OpponentsArea = (props: {
     handLabel,
     centerPortraitImage,
     centerInitials,
-    centerKicker,
     centerTitle,
     centerSubtitle,
     centerResources,
@@ -234,7 +236,6 @@ export const V2OpponentsArea = (props: {
           )}
         </div>
         <div className="game-ui-v2-center-badge-copy game-ui-layout-center-badge-copy">
-          <span>{centerKicker}</span>
           <strong>{centerTitle}</strong>
           <small>{centerSubtitle}</small>
           <div className="game-ui-v2-center-badge-resources game-ui-layout-center-badge-resources" aria-label={`${centerTitle} resources`}>
@@ -297,7 +298,7 @@ export const V2PlayerDockSection = (props: {
 }) => {
   const { mainContent, sideContent } = props;
   return (
-    <section className="game-ui-v2-panel game-ui-layout-panel game-ui-v2-player-dock game-ui-layout-player-dock">
+    <section className={`game-ui-v2-panel game-ui-layout-panel game-ui-v2-player-dock game-ui-layout-player-dock${sideContent ? ' has-side-content' : ' is-main-only'}`}>
       <div className="game-ui-v2-player-dock-main game-ui-layout-player-dock-main game-ui-v2-hand-frame game-ui-layout-hand-frame">
         <div className="game-ui-v2-player-station game-ui-layout-player-station" aria-hidden="true">
           <span className="game-ui-v2-player-station-edge" />
@@ -305,9 +306,11 @@ export const V2PlayerDockSection = (props: {
         </div>
         {mainContent}
       </div>
-      <aside className="game-ui-v2-player-dock-side game-ui-layout-player-dock-side">
-        {sideContent}
-      </aside>
+      {sideContent ? (
+        <aside className="game-ui-v2-player-dock-side game-ui-layout-player-dock-side">
+          {sideContent}
+        </aside>
+      ) : null}
     </section>
   );
 };

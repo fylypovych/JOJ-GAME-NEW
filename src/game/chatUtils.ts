@@ -1,4 +1,4 @@
-import type { JojGameState } from './types';
+import type { ChatEntryInput, JojGameState } from './types';
 
 export const getPlayerLabel = (G: JojGameState, playerID: string) => {
   const name = G.playerNames[playerID]?.trim();
@@ -7,7 +7,7 @@ export const getPlayerLabel = (G: JojGameState, playerID: string) => {
 
 export const appendChat = (
   G: JojGameState,
-  entry: { type: 'player' | 'system'; text: string; playerID?: string },
+  entry: ChatEntryInput,
   chatLimit: number,
 ) => {
   const row = {

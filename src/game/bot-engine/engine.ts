@@ -20,6 +20,7 @@ const forceResolvePendingForBot = (d: BotEngineDeps, G: JojGameState, playerID: 
     const seq = d.nextSystemMessageSeq(G);
     d.appendChat(G, {
       type: 'system',
+      eventKind: 'lyap',
       text: d.buildLyapSystemMessage(seq, d.getPlayerLabel(G, playerID), card, summary),
     });
     d.syncPlayerState(G, playerID);
@@ -44,6 +45,7 @@ const forceResolvePendingForBot = (d: BotEngineDeps, G: JojGameState, playerID: 
   const seq = d.nextSystemMessageSeq(G);
   d.appendChat(G, {
     type: 'system',
+    eventKind: 'scandal',
     text: d.buildScandalSystemMessage(seq, d.getPlayerLabel(G, playerID), card, targetSummaries),
   });
   G.discard.push(card);
@@ -115,6 +117,9 @@ export const createBotEngine = (d: BotEngineDeps) => ({
     if (!isBotPlayer(G, playerID)) return false;
     let stage = initialStage;
     let endedTurn = false;
+    let legendaryPlayedThisTurn = false;
+    const difficulty = getBotDifficulty(G, playerID);
+    const profile = getBotProfile(G, playerID);
     const localEvents = {
       setStage: (nextStage: string) => {
         stage = nextStage;
@@ -152,11 +157,13 @@ export const createBotEngine = (d: BotEngineDeps) => ({
     }
 
     const executionResult = executeBotPlanSequence({
-      getPlans: () => buildBotPlans(d, G, playerID, getBotDifficulty(G, playerID), getBotProfile(G, playerID)),
+      getPlans: () => buildBotPlans(d, G, playerID, difficulty, profile)
+        .filter((plan) => difficulty !== 'easy' || !legendaryPlayedThisTurn || plan.kind !== 'play-legendary'),
       executePlan: (plan) => executePlan(d, plan, makeArgs),
       maxIterations: 16,
       shouldStop: () => endedTurn,
-      onExecuted: () => {
+      onExecuted: (plan) => {
+        if (plan.kind === 'play-legendary') legendaryPlayedThisTurn = true;
         if (G.pendingDrawAutoResolution?.sourcePlayerID === playerID) {
           tryResolvePending();
         }

@@ -1,15 +1,32 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createBotPlayerName, getBotSeatIds } from '../../game/bot-engine/config';
-import { clampBotCountToAllowed, clampRoomCapacityToAllowed } from '../../game/lobbyConfig';
+import {
+  createBotPlayerName,
+  getBotSeatIds,
+} from '../../game/bot-engine/config';
+import {
+  clampBotCountToAllowed,
+  clampRoomCapacityToAllowed,
+} from '../../game/lobbyConfig';
 import type { BotDifficulty, BotProfile, GameMode } from '../../game/types';
 import type { LobbyMatch, Session } from './model';
 import { findFirstAvailableLobbySeat } from './lobbyJoin';
 
 type LobbyClientLike = {
   listMatches: (gameName: string) => Promise<{ matches: LobbyMatch[] }>;
-  createMatch: (gameName: string, args: { numPlayers: number; setupData: unknown }) => Promise<{ matchID: string }>;
-  joinMatch: (gameName: string, matchID: string, args: { playerID: string; playerName: string }) => Promise<{ playerID: string; playerCredentials: string }>;
-  leaveMatch: (gameName: string, matchID: string, args: { playerID: string; credentials: string }) => Promise<void>;
+  createMatch: (
+    gameName: string,
+    args: { numPlayers: number; setupData: unknown },
+  ) => Promise<{ matchID: string }>;
+  joinMatch: (
+    gameName: string,
+    matchID: string,
+    args: { playerID: string; playerName: string },
+  ) => Promise<{ playerID: string; playerCredentials: string }>;
+  leaveMatch: (
+    gameName: string,
+    matchID: string,
+    args: { playerID: string; credentials: string },
+  ) => Promise<void>;
   serverUrl?: string;
 };
 
@@ -34,10 +51,25 @@ export const useLobbySession = (args: {
   roomFullText: string;
   createFailedText: string;
   joinFailedText: string;
-  onSessionEstablished?: (session: Session, playerName: string) => Promise<void> | void;
-  createOwnedSession?: (args: { numPlayers: number; setupData: unknown; playerName: string }) => Promise<Session>;
-  joinOwnedSession?: (args: { matchID: string; playerID: string; playerName: string }) => Promise<Session>;
-  leaveOwnedSession?: (args: { matchID: string; playerID: string; credentials: string }) => Promise<void>;
+  onSessionEstablished?: (
+    session: Session,
+    playerName: string,
+  ) => Promise<void> | void;
+  createOwnedSession?: (args: {
+    numPlayers: number;
+    setupData: unknown;
+    playerName: string;
+  }) => Promise<Session>;
+  joinOwnedSession?: (args: {
+    matchID: string;
+    playerID: string;
+    playerName: string;
+  }) => Promise<Session>;
+  leaveOwnedSession?: (args: {
+    matchID: string;
+    playerID: string;
+    credentials: string;
+  }) => Promise<void>;
 }) => {
   const {
     lobbyClient,
@@ -71,6 +103,7 @@ export const useLobbySession = (args: {
   const [error, setError] = useState('');
   const [matchesSynced, setMatchesSynced] = useState(false);
   const joinInFlightRef = useRef(false);
+  const sessionRef = useRef<Session | null>(initialSession);
   const resolveLobbyPlayerName = () => {
     const profileName = fallbackPlayerName?.trim() || '';
     const localName = playerName.trim();
@@ -84,9 +117,15 @@ export const useLobbySession = (args: {
     try {
       // Use custom endpoint from DB instead of boardgame.io
       if (lobbyClient.serverUrl) {
-        const response = await fetch(`${lobbyClient.serverUrl}/api/lobby/matches`);
+        const activeMatchID = sessionRef.current?.matchID.trim() ?? '';
+        const activeMatchQuery = activeMatchID
+          ? `?activeMatchID=${encodeURIComponent(activeMatchID)}`
+          : '';
+        const response = await fetch(
+          `${lobbyClient.serverUrl}/api/lobby/matches${activeMatchQuery}`,
+        );
         if (!response.ok) throw new Error('Failed to fetch matches');
-        const payload = await response.json() as {
+        const payload = (await response.json()) as {
           matches?: Array<{
             matchID: string;
             metadata: Record<string, unknown>;
@@ -98,9 +137,11 @@ export const useLobbySession = (args: {
         // Convert to LobbyMatch format
         const lobbyMatches: LobbyMatch[] = (payload.matches ?? []).map((m) => ({
           matchID: m.matchID,
-          createdAt: typeof m.metadata?.updatedAt === 'number' || typeof m.metadata?.updatedAt === 'string'
-            ? m.metadata.updatedAt
-            : undefined,
+          createdAt:
+            typeof m.metadata?.updatedAt === 'number' ||
+            typeof m.metadata?.updatedAt === 'string'
+              ? m.metadata.updatedAt
+              : undefined,
           players: Array.isArray(m.players) ? m.players : [],
           setupData: m.setupData,
           gameover: m.gameover === true,
@@ -119,17 +160,21 @@ export const useLobbySession = (args: {
     }
   };
 
-  const effectiveRoomCapacity = clampRoomCapacityToAllowed(roomCapacity, allowedRoomCapacities);
+  const effectiveRoomCapacity = clampRoomCapacityToAllowed(
+    roomCapacity,
+    allowedRoomCapacities,
+  );
   const requestedBotCount = createWithBots
     ? clampBotCountToAllowed(botCount, allowedBotCounts, effectiveRoomCapacity)
     : 0;
-  const botSetup = requestedBotCount > 0
-    ? {
-      count: requestedBotCount,
-      difficulty: botDifficulty,
-      profile: botProfile,
-    }
-    : null;
+  const botSetup =
+    requestedBotCount > 0
+      ? {
+          count: requestedBotCount,
+          difficulty: botDifficulty,
+          profile: botProfile,
+        }
+      : null;
 
   const autoJoinBots = async (matchID: string, totalPlayers: number) => {
     if (!botSetup || botSetup.count <= 0) return;
@@ -137,7 +182,11 @@ export const useLobbySession = (args: {
     for (const [index, playerID] of seatIds.entries()) {
       await lobbyClient.joinMatch(gameName, matchID, {
         playerID,
-        playerName: createBotPlayerName({ difficulty: botSetup.difficulty, profile: botSetup.profile, seatIndex: index + 1 }),
+        playerName: createBotPlayerName({
+          difficulty: botSetup.difficulty,
+          profile: botSetup.profile,
+          seatIndex: index + 1,
+        }),
       });
     }
   };
@@ -153,40 +202,56 @@ export const useLobbySession = (args: {
     try {
       const nextSession: Session = createOwnedSession
         ? await createOwnedSession({
-          numPlayers: Math.max(2, Math.min(6, effectiveRoomCapacity)),
-          setupData: {
-            gameMode,
-            gameSetup: { optionalMainDeckModuleIds: selectedOptionalModuleIds },
-            bots: botSetup,
-          },
-          playerName: name,
-        })
-        : await (async () => {
-          const result = await lobbyClient.createMatch(gameName, {
             numPlayers: Math.max(2, Math.min(6, effectiveRoomCapacity)),
             setupData: {
               gameMode,
-              gameSetup: { optionalMainDeckModuleIds: selectedOptionalModuleIds },
+              gameSetup: {
+                optionalMainDeckModuleIds: selectedOptionalModuleIds,
+              },
               bots: botSetup,
             },
-          });
-          const joined = await lobbyClient.joinMatch(gameName, result.matchID, {
-            playerID: '0',
             playerName: name,
-          });
-          await autoJoinBots(result.matchID, Math.max(2, Math.min(6, effectiveRoomCapacity)));
-          return {
-            matchID: result.matchID,
-            playerID: joined.playerID,
-            credentials: joined.playerCredentials,
-          };
-        })();
+          })
+        : await (async () => {
+            const result = await lobbyClient.createMatch(gameName, {
+              numPlayers: Math.max(2, Math.min(6, effectiveRoomCapacity)),
+              setupData: {
+                gameMode,
+                gameSetup: {
+                  optionalMainDeckModuleIds: selectedOptionalModuleIds,
+                },
+                bots: botSetup,
+              },
+            });
+            const joined = await lobbyClient.joinMatch(
+              gameName,
+              result.matchID,
+              {
+                playerID: '0',
+                playerName: name,
+              },
+            );
+            await autoJoinBots(
+              result.matchID,
+              Math.max(2, Math.min(6, effectiveRoomCapacity)),
+            );
+            return {
+              matchID: result.matchID,
+              playerID: joined.playerID,
+              credentials: joined.playerCredentials,
+            };
+          })();
       setSession(nextSession);
-      window.localStorage.setItem(sessionStorageKey, JSON.stringify(nextSession));
+      window.localStorage.setItem(
+        sessionStorageKey,
+        JSON.stringify(nextSession),
+      );
       await onSessionEstablished?.(nextSession, name);
       await refreshMatches();
     } catch (nextError) {
-      const message = String(nextError instanceof Error ? nextError.message : nextError).trim();
+      const message = String(
+        nextError instanceof Error ? nextError.message : nextError,
+      ).trim();
       setError(message || createFailedText);
     } finally {
       setLoading(false);
@@ -211,27 +276,36 @@ export const useLobbySession = (args: {
     try {
       const nextSession: Session = joinOwnedSession
         ? await joinOwnedSession({
-          matchID: match.matchID,
-          playerID: String(freePlayer.id),
-          playerName: name,
-        })
-        : await (async () => {
-          const joined = await lobbyClient.joinMatch(gameName, match.matchID, {
+            matchID: match.matchID,
             playerID: String(freePlayer.id),
             playerName: name,
-          });
-          return {
-            matchID: match.matchID,
-            playerID: joined.playerID,
-            credentials: joined.playerCredentials,
-          };
-        })();
+          })
+        : await (async () => {
+            const joined = await lobbyClient.joinMatch(
+              gameName,
+              match.matchID,
+              {
+                playerID: String(freePlayer.id),
+                playerName: name,
+              },
+            );
+            return {
+              matchID: match.matchID,
+              playerID: joined.playerID,
+              credentials: joined.playerCredentials,
+            };
+          })();
       setSession(nextSession);
-      window.localStorage.setItem(sessionStorageKey, JSON.stringify(nextSession));
+      window.localStorage.setItem(
+        sessionStorageKey,
+        JSON.stringify(nextSession),
+      );
       await onSessionEstablished?.(nextSession, name);
       await refreshMatches();
     } catch (nextError) {
-      const message = String(nextError instanceof Error ? nextError.message : nextError).trim();
+      const message = String(
+        nextError instanceof Error ? nextError.message : nextError,
+      ).trim();
       setError(message || joinFailedText);
     } finally {
       joinInFlightRef.current = false;
@@ -248,10 +322,15 @@ export const useLobbySession = (args: {
         spectator: true,
       };
       setSession(nextSession);
-      window.localStorage.setItem(sessionStorageKey, JSON.stringify(nextSession));
+      window.localStorage.setItem(
+        sessionStorageKey,
+        JSON.stringify(nextSession),
+      );
       await refreshMatches();
     } catch (nextError) {
-      const message = String(nextError instanceof Error ? nextError.message : nextError).trim();
+      const message = String(
+        nextError instanceof Error ? nextError.message : nextError,
+      ).trim();
       setError(message || joinFailedText);
     } finally {
       setLoading(false);
@@ -270,7 +349,8 @@ export const useLobbySession = (args: {
           credentials: session.credentials,
         };
         if (leaveOwnedSession) await leaveOwnedSession(leaveArgs);
-        else await lobbyClient.leaveMatch(gameName, leaveArgs.matchID, leaveArgs);
+        else
+          await lobbyClient.leaveMatch(gameName, leaveArgs.matchID, leaveArgs);
       }
     } catch {
       // ignore, local cleanup still needed
@@ -286,7 +366,9 @@ export const useLobbySession = (args: {
     () => matches.find((match) => match.matchID === session?.matchID) ?? null,
     [matches, session?.matchID],
   );
-  const sessionBroken = Boolean(session && matchesSynced && !activeMatch && !loading);
+  const sessionBroken = Boolean(
+    session && matchesSynced && !activeMatch && !loading,
+  );
   const roomPlayerNames = useMemo<Record<string, string>>(() => {
     if (!activeMatch) return {};
     return activeMatch.players.reduce<Record<string, string>>((acc, player) => {
@@ -296,13 +378,20 @@ export const useLobbySession = (args: {
     }, {});
   }, [activeMatch]);
   const canStart = Boolean(
-    (activeMatch && activeMatch.players.every((player) => Boolean(player.name)))
-    || (session?.spectator && activeMatch),
+    (activeMatch &&
+      activeMatch.players.every((player) => Boolean(player.name))) ||
+    (session?.spectator && activeMatch),
   );
 
   useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
+
+  useEffect(() => {
     void refreshMatches();
-    const id = window.setInterval(() => { void refreshMatches(); }, 4000);
+    const id = window.setInterval(() => {
+      void refreshMatches();
+    }, 4000);
     return () => window.clearInterval(id);
   }, []);
 

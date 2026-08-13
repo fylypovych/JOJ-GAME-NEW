@@ -50,6 +50,7 @@ export const createEmptyGameState = (args: {
   promotedThisTurn: {},
   lyapScandalShieldUntilTurn: {},
   extraHandPlayTokens: {},
+  handCardsPlayedThisTurn: {},
   sukhpayZsuWatchUntilTurn: {},
   sukhpayZsuPendingBonus: {},
   ignoreSeatLimitForPromotionUntilTurn: {},
@@ -65,6 +66,7 @@ export const createEmptyGameState = (args: {
   playerGameStats: {},
   noPlayablePassStreak: 0,
   skippedTurnCounts: {},
+  vvnzSkippedTurnCounts: {},
   endGameVote: {
     active: false,
     requestedBy: null,
@@ -114,6 +116,7 @@ export const initializePlayerInGameState = (args: {
   G.promotedThisTurn[playerID] = false;
   G.lyapScandalShieldUntilTurn[playerID] = 0;
   G.extraHandPlayTokens[playerID] = 0;
+  G.handCardsPlayedThisTurn![playerID] = 0;
   G.sukhpayZsuWatchUntilTurn[playerID] = 0;
   G.sukhpayZsuPendingBonus[playerID] = false;
   G.ignoreSeatLimitForPromotionUntilTurn[playerID] = 0;
@@ -121,6 +124,7 @@ export const initializePlayerInGameState = (args: {
   G.playerGameStats[playerID] = createBasePlayerGameStats();
   if (!G.skippedTurnCounts) G.skippedTurnCounts = {};
   G.skippedTurnCounts[playerID] = 0;
+  G.vvnzSkippedTurnCounts![playerID] = 0;
 
   drawCards(G, playerID, startingHandSize);
   if (drawLegendaryCards && legendarySourceCards && legendarySourceCards.length > 0) {

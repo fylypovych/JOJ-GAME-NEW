@@ -45,6 +45,7 @@ export const handleLyapPlay = (args: {
   const seq = d.nextSystemMessageSeq(moveArgs.G);
   d.appendChat(moveArgs.G, {
     type: 'system',
+    eventKind: protectedTarget ? 'protection' : 'lyap',
     text: protectedTarget
       ? `🛡️ [${seq}] ${d.getPlayerLabel(moveArgs.G, playerID)} розіграв ЛЯП «${card.title}» на ${d.getPlayerLabel(moveArgs.G, targetPlayerID)}, але щит від Грамоти скасував дію.`
       : d.buildPlayedLyapSystemMessage(seq, d.getPlayerLabel(moveArgs.G, playerID), d.getPlayerLabel(moveArgs.G, targetPlayerID), card, summary),
@@ -103,6 +104,7 @@ export const handleScandalPlay = (args: {
   const seq = d.nextSystemMessageSeq(moveArgs.G);
   d.appendChat(moveArgs.G, {
     type: 'system',
+    eventKind: 'scandal',
     text: d.buildPlayedScandalSystemMessage(seq, d.getPlayerLabel(moveArgs.G, playerID), card, targetSummaries),
   });
   return undefined;
@@ -123,6 +125,7 @@ export const handleSupportPlay = (args: {
     const seq = d.nextSystemMessageSeq(moveArgs.G);
     d.appendChat(moveArgs.G, {
       type: 'system',
+      eventKind: 'event',
       text: d.buildSupportSystemMessage(seq, d.getPlayerLabel(moveArgs.G, playerID), card, summary),
     });
     return undefined;
@@ -167,6 +170,7 @@ export const handleCommandPlay = (args: {
   const seq = d.nextSystemMessageSeq(moveArgs.G);
   d.appendChat(moveArgs.G, {
     type: 'system',
+    eventKind: 'event',
     text: d.buildPlayedDecisionSystemMessage(seq, d.getPlayerLabel(moveArgs.G, playerID), card, targetSummaries),
   });
   return undefined;
@@ -199,6 +203,7 @@ export const handleVvnzPlay = (args: {
   if (!canAffordVvnzCost(playerResources)) return invalidMove();
   const payment = replacementResources.length > 0 ? replacementResources : (selectVvnzPaymentResources(playerResources) ?? []);
   if (!isValidVvnzPayment(playerResources, payment)) return invalidMove();
+  const beforeResources = { ...playerResources };
   spendVvnzPayment(playerResources, payment);
   Object.entries(targetRank.bonus ?? {}).forEach(([key, amount]) => {
     playerResources[key as ResourceKey] = (playerResources[key as ResourceKey] ?? 0) + (amount ?? 0);
@@ -208,11 +213,18 @@ export const handleVvnzPlay = (args: {
   moveArgs.G.promotedThisTurn[playerID] = true;
   if (!moveArgs.G.skippedTurnCounts) moveArgs.G.skippedTurnCounts = {};
   moveArgs.G.skippedTurnCounts[playerID] = (moveArgs.G.skippedTurnCounts[playerID] ?? 0) + 1;
+  if (!moveArgs.G.vvnzSkippedTurnCounts) moveArgs.G.vvnzSkippedTurnCounts = {};
+  moveArgs.G.vvnzSkippedTurnCounts[playerID] = (moveArgs.G.vvnzSkippedTurnCounts[playerID] ?? 0) + 1;
   d.syncPlayerState(moveArgs.G, playerID);
   try {
-    const summary = summarizeCardEffectForPlayer(d, moveArgs.G, playerID, card, []);
-    if (!summary) return invalidMove();
+    if (!summarizeCardEffectForPlayer(d, moveArgs.G, playerID, card, [])) return invalidMove();
     const afterRankId = moveArgs.G.ranks[playerID];
+    const totalSummary = d.summarizeAppliedDiff(
+      beforeResources,
+      moveArgs.G.resources[playerID],
+      beforeRankId,
+      afterRankId,
+    );
     const seq = d.nextSystemMessageSeq(moveArgs.G);
     d.appendChat(moveArgs.G, {
       type: 'system',
@@ -224,8 +236,9 @@ export const handleVvnzPlay = (args: {
         afterRankId,
         Object.fromEntries(payment.map((key) => [key, ((payment.filter((item) => item === key).length))])),
         targetRank.bonus ?? {},
-        summary,
+        totalSummary,
       ),
+      eventKind: 'rank',
     });
     return undefined;
   } catch {
@@ -254,6 +267,7 @@ export const handleLegendaryPlayFromHand = (args: {
   const seq = d.nextSystemMessageSeq(moveArgs.G);
   d.appendChat(moveArgs.G, {
     type: 'system',
+    eventKind: 'legendary',
     text: d.buildLegendaryPlayedMessageText({ seq, playerLabel: d.getPlayerLabel(moveArgs.G, playerID), cardTitle: card.title, specialMessage }),
   });
   return undefined;

@@ -7,19 +7,34 @@ import type {
   RequireAdminWriteAccess,
 } from './types';
 
-type AdminMatchRoutesDeps = Pick<AdminRouteSharedDeps, 'router' | 'requireAdminAuth' | 'enforceRateLimit' | 'logLine'> & {
+type AdminMatchRoutesDeps = Pick<
+  AdminRouteSharedDeps,
+  'router' | 'requireAdminAuth' | 'enforceRateLimit' | 'logLine'
+> & {
   requireAdminWriteAccess: RequireAdminWriteAccess;
   persistMatchSnapshot?: (args: {
     matchId: string;
     state: MatchDbStateLike;
     metadata?: MatchDbMetadataLike;
-    snapshotKind?: 'initial' | 'autosave' | 'manual' | 'admin_stop' | 'admin_reset' | 'final';
+    snapshotKind?:
+      | 'initial'
+      | 'autosave'
+      | 'manual'
+      | 'admin_stop'
+      | 'admin_reset'
+      | 'final';
   }) => Promise<boolean> | boolean;
   markMatchDeleted?: (matchId: string) => Promise<void> | void;
   pool?: import('pg').Pool | null;
 };
 
-const getMatchDb = (ctx: Parameters<AdminRouteSharedDeps['router']['get']>[1] extends (ctx: infer T) => unknown ? T : never) => {
+const getMatchDb = (
+  ctx: Parameters<AdminRouteSharedDeps['router']['get']>[1] extends (
+    ctx: infer T,
+  ) => unknown
+    ? T
+    : never,
+) => {
   const dbCandidate = ctx?.db ?? ctx?.app?.context?.db;
   return dbCandidate as MatchDbLike | undefined;
 };
@@ -37,7 +52,8 @@ export const registerAdminMatchRoutes = ({
   router.get('/api/admin/match-state', async (ctx) => {
     if (!(await requireAdminAuth(ctx, '/api/admin/match-state'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-match-state', 60, 60_000))) return;
-    const matchID = typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
+    const matchID =
+      typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
     if (!matchID) {
       routeError(ctx, 400, 'Missing matchID');
       return;
@@ -76,14 +92,20 @@ export const registerAdminMatchRoutes = ({
   router.post('/api/admin/match-stop', async (ctx) => {
     if (!(await requireAdminWriteAccess(ctx, '/api/admin/match-stop'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-match-stop', 10, 60_000))) return;
-    const matchID = typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
+    const matchID =
+      typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
     if (!matchID) {
       routeError(ctx, 400, 'Missing matchID');
       return;
     }
 
     const db = getMatchDb(ctx);
-    if (!db || typeof db.fetch !== 'function' || typeof db.setState !== 'function' || typeof db.setMetadata !== 'function') {
+    if (
+      !db ||
+      typeof db.fetch !== 'function' ||
+      typeof db.setState !== 'function' ||
+      typeof db.setMetadata !== 'function'
+    ) {
       routeError(ctx, 500, 'Database stop controls are unavailable');
       return;
     }
@@ -136,19 +158,29 @@ export const registerAdminMatchRoutes = ({
   router.post('/api/admin/match-reset', async (ctx) => {
     if (!(await requireAdminWriteAccess(ctx, '/api/admin/match-reset'))) return;
     if (!(await enforceRateLimit(ctx, 'admin-match-reset', 10, 60_000))) return;
-    const matchID = typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
+    const matchID =
+      typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
     if (!matchID) {
       routeError(ctx, 400, 'Missing matchID');
       return;
     }
 
     const db = getMatchDb(ctx);
-    if (!db || typeof db.fetch !== 'function' || typeof db.setState !== 'function' || typeof db.setMetadata !== 'function') {
+    if (
+      !db ||
+      typeof db.fetch !== 'function' ||
+      typeof db.setState !== 'function' ||
+      typeof db.setMetadata !== 'function'
+    ) {
       routeError(ctx, 500, 'Database reset controls are unavailable');
       return;
     }
 
-    const fetched = await db.fetch(matchID, { state: true, metadata: true, initialState: true });
+    const fetched = await db.fetch(matchID, {
+      state: true,
+      metadata: true,
+      initialState: true,
+    });
     const state = fetched?.state;
     const initialState = fetched?.initialState;
     if (!state || !initialState) {
@@ -185,9 +217,12 @@ export const registerAdminMatchRoutes = ({
   });
 
   router.post('/api/admin/match-delete', async (ctx) => {
-    if (!(await requireAdminWriteAccess(ctx, '/api/admin/match-delete'))) return;
-    if (!(await enforceRateLimit(ctx, 'admin-match-delete', 10, 60_000))) return;
-    const matchID = typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/match-delete')))
+      return;
+    if (!(await enforceRateLimit(ctx, 'admin-match-delete', 10, 60_000)))
+      return;
+    const matchID =
+      typeof ctx?.query?.matchID === 'string' ? ctx.query.matchID : '';
     if (!matchID) {
       routeError(ctx, 400, 'Missing matchID');
       return;
@@ -198,9 +233,10 @@ export const registerAdminMatchRoutes = ({
       routeError(ctx, 500, 'Database delete controls are unavailable');
       return;
     }
-    const fetched = typeof db.fetch === 'function'
-      ? await db.fetch(matchID, { state: true, metadata: true })
-      : null;
+    const fetched =
+      typeof db.fetch === 'function'
+        ? await db.fetch(matchID, { state: true, metadata: true })
+        : null;
     if (!fetched?.state && !fetched?.metadata) {
       routeOk(ctx, { matchID, deleted: false, missing: true });
       return;
@@ -213,11 +249,17 @@ export const registerAdminMatchRoutes = ({
   });
 
   router.post('/api/admin/matches-delete-all', async (ctx) => {
-    if (!(await requireAdminWriteAccess(ctx, '/api/admin/matches-delete-all'))) return;
-    if (!(await enforceRateLimit(ctx, 'admin-matches-delete-all', 3, 60_000))) return;
+    if (!(await requireAdminWriteAccess(ctx, '/api/admin/matches-delete-all')))
+      return;
+    if (!(await enforceRateLimit(ctx, 'admin-matches-delete-all', 3, 60_000)))
+      return;
 
     const db = getMatchDb(ctx);
-    if (!db || typeof db.listMatches !== 'function' || typeof db.wipe !== 'function') {
+    if (
+      !db ||
+      typeof db.listMatches !== 'function' ||
+      typeof db.wipe !== 'function'
+    ) {
       routeError(ctx, 500, 'Database delete-all controls are unavailable');
       return;
     }
@@ -235,14 +277,21 @@ export const registerAdminMatchRoutes = ({
           failed.push(matchId);
         }
       }
-      await logLine('WARN', `admin deleted all matches requested=${matchIds.length} deleted=${deleted} failed=${failed.length}`);
+      await logLine(
+        'WARN',
+        `admin deleted all matches requested=${matchIds.length} deleted=${deleted} failed=${failed.length}`,
+      );
       routeOk(ctx, {
         requested: matchIds.length,
         deleted,
         failed,
       });
     } catch (error) {
-      routeError(ctx, 500, String(error instanceof Error ? error.message : error));
+      routeError(
+        ctx,
+        500,
+        String(error instanceof Error ? error.message : error),
+      );
     }
   });
 
@@ -258,29 +307,42 @@ export const registerAdminMatchRoutes = ({
 
     try {
       const matchIds = await db.listMatches();
-      await logLine('INFO', `Admin matches: total matchIds from listMatches: ${matchIds.length}`);
+      await logLine(
+        'INFO',
+        `Admin matches: total matchIds from listMatches: ${matchIds.length}`,
+      );
       const matches = [];
       for (const matchId of matchIds) {
         // Check match lifecycle in match_records first.
         if (pool) {
           const deletedCheck = await pool.query<{ status: string }>(
             'SELECT status FROM match_records WHERE id = $1 LIMIT 1',
-            [matchId]
+            [matchId],
           );
           if (deletedCheck.rows.length === 0) {
-            await logLine('WARN', `Admin matches: skipping orphan live match ${matchId} (no match_records row)`);
+            await logLine(
+              'WARN',
+              `Admin matches: skipping orphan live match ${matchId} (no match_records row)`,
+            );
             continue;
           }
           if (deletedCheck.rows[0]?.status === 'deleted') {
-            await logLine('INFO', `Admin matches: skipping deleted match ${matchId}`);
+            await logLine(
+              'INFO',
+              `Admin matches: skipping deleted match ${matchId}`,
+            );
             continue;
           }
         }
-        const fetched = typeof db.fetch === 'function'
-          ? await db.fetch(matchId, { metadata: true, state: true })
-          : null;
+        const fetched =
+          typeof db.fetch === 'function'
+            ? await db.fetch(matchId, { metadata: true, state: true })
+            : null;
         if (!fetched?.state && !fetched?.metadata) {
-          await logLine('WARN', `Admin matches: skipping broken match ${matchId} (no state and no metadata)`);
+          await logLine(
+            'WARN',
+            `Admin matches: skipping broken match ${matchId} (no state and no metadata)`,
+          );
           continue;
         }
         matches.push({
@@ -291,13 +353,22 @@ export const registerAdminMatchRoutes = ({
       await logLine('INFO', `Admin matches: showing ${matches.length}`);
       routeOk(ctx, { matches });
     } catch (error) {
-      routeError(ctx, 500, String(error instanceof Error ? error.message : error));
+      routeError(
+        ctx,
+        500,
+        String(error instanceof Error ? error.message : error),
+      );
     }
   });
 
   // Public endpoint for lobby to get matches from DB
   router.get('/api/lobby/matches', async (ctx) => {
     if (!(await enforceRateLimit(ctx, 'lobby-matches', 30, 60_000))) return;
+
+    const activeMatchID =
+      typeof ctx?.query?.activeMatchID === 'string'
+        ? ctx.query.activeMatchID.trim().slice(0, 128)
+        : '';
 
     const db = getMatchDb(ctx);
     if (!db || typeof db.listMatches !== 'function') {
@@ -307,29 +378,42 @@ export const registerAdminMatchRoutes = ({
 
     try {
       const matchIds = await db.listMatches();
-      await logLine('INFO', `Lobby matches: total matchIds from listMatches: ${matchIds.length}`);
+      await logLine(
+        'INFO',
+        `Lobby matches: total matchIds from listMatches: ${matchIds.length}`,
+      );
       const matches = [];
       for (const matchId of matchIds) {
         // Check match lifecycle in match_records first.
         if (pool) {
           const deletedCheck = await pool.query<{ status: string }>(
             'SELECT status FROM match_records WHERE id = $1 LIMIT 1',
-            [matchId]
+            [matchId],
           );
           if (deletedCheck.rows.length === 0) {
-            await logLine('WARN', `Lobby matches: skipping orphan live match ${matchId} (no match_records row)`);
+            await logLine(
+              'WARN',
+              `Lobby matches: skipping orphan live match ${matchId} (no match_records row)`,
+            );
             continue;
           }
           if (deletedCheck.rows[0]?.status === 'deleted') {
-            await logLine('INFO', `Lobby matches: skipping deleted match ${matchId}`);
+            await logLine(
+              'INFO',
+              `Lobby matches: skipping deleted match ${matchId}`,
+            );
             continue;
           }
         }
-        const fetched = typeof db.fetch === 'function'
-          ? await db.fetch(matchId, { metadata: true, state: true })
-          : null;
+        const fetched =
+          typeof db.fetch === 'function'
+            ? await db.fetch(matchId, { metadata: true, state: true })
+            : null;
         if (!fetched?.state && !fetched?.metadata) {
-          await logLine('WARN', `Lobby matches: skipping broken match ${matchId} (no state and no metadata)`);
+          await logLine(
+            'WARN',
+            `Lobby matches: skipping broken match ${matchId} (no state and no metadata)`,
+          );
           continue;
         }
         const metadata = fetched?.metadata as {
@@ -338,40 +422,62 @@ export const registerAdminMatchRoutes = ({
           setupData?: unknown;
           players?: Record<string, { name?: string | null }>;
         } | null;
-        // Skip gameover matches for lobby
-        if (metadata?.gameover) {
-          await logLine('INFO', `Lobby matches: skipping gameover match ${matchId}`);
+        // Finished matches stay hidden from the public room list. The client
+        // currently connected to one may still request it so the board remains
+        // mounted long enough to display the final standings modal.
+        if (metadata?.gameover && matchId !== activeMatchID) {
+          await logLine(
+            'INFO',
+            `Lobby matches: skipping gameover match ${matchId}`,
+          );
           continue;
         }
-        const players = metadata?.players && typeof metadata.players === 'object'
-          ? Object.entries(metadata.players).reduce<Array<{ id: number; name?: string }>>((acc, [playerId, playerMeta]) => {
-            const id = Number.parseInt(playerId, 10);
-            if (!Number.isFinite(id)) return acc;
-            acc.push({
-              id,
-              name: typeof playerMeta?.name === 'string' ? playerMeta.name : undefined,
-            });
-            return acc;
-          }, []).sort((a, b) => a.id - b.id)
-          : [];
+        const players =
+          metadata?.players && typeof metadata.players === 'object'
+            ? Object.entries(metadata.players)
+                .reduce<Array<{ id: number; name?: string }>>(
+                  (acc, [playerId, playerMeta]) => {
+                    const id = Number.parseInt(playerId, 10);
+                    if (!Number.isFinite(id)) return acc;
+                    acc.push({
+                      id,
+                      name:
+                        typeof playerMeta?.name === 'string'
+                          ? playerMeta.name
+                          : undefined,
+                    });
+                    return acc;
+                  },
+                  [],
+                )
+                .sort((a, b) => a.id - b.id)
+            : [];
         if (!players.some((player) => Boolean(player.name?.trim()))) {
-          await logLine('WARN', `Lobby matches: skipping ownerless match ${matchId}`);
+          await logLine(
+            'WARN',
+            `Lobby matches: skipping ownerless match ${matchId}`,
+          );
           continue;
         }
         matches.push({
           matchID: matchId,
           metadata: metadata ?? {},
           players,
-          setupData: metadata?.setupData && typeof metadata.setupData === 'object'
-            ? metadata.setupData
-            : undefined,
+          setupData:
+            metadata?.setupData && typeof metadata.setupData === 'object'
+              ? metadata.setupData
+              : undefined,
           gameover: Boolean(metadata?.gameover),
         });
       }
       await logLine('INFO', `Lobby matches: showing ${matches.length}`);
       routeOk(ctx, { matches });
     } catch (error) {
-      routeError(ctx, 500, String(error instanceof Error ? error.message : error));
+      routeError(
+        ctx,
+        500,
+        String(error instanceof Error ? error.message : error),
+      );
     }
   });
 };

@@ -441,7 +441,7 @@ export const GameBoardV2 = ({
         activeRoomLabel={board.activeRoom}
         joinedAsLabel={board.joinedAs}
         spectatorModeLabel={board.spectatorMode}
-        stageFocus={currentStageFocus}
+        stageFocus={blockPlayerTurnControls ? undefined : currentStageFocus}
         seatConnectionMissing={seatConnectionMissing}
         seatConnectionMissingText={t.seatConnectionMissing}
         onLeaveRoom={onLeaveRoom}
@@ -462,6 +462,7 @@ export const GameBoardV2 = ({
             primaryActionDisabled={primaryActionDisabled || isHandPlaySubmitting}
             secondaryActionLabel={footerActionLabel}
             secondaryActionDisabled={!canEndTurn || blockPlayerTurnControls}
+            actionsHidden={blockPlayerTurnControls}
             onPrimaryAction={handleFooterPrimaryAction}
             onSecondaryAction={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)}
           />
@@ -470,11 +471,6 @@ export const GameBoardV2 = ({
           <>
               <div className="game-ui-v2-header-tools-head">
                 <span className="game-ui-v2-header-tools-label">{board.botControlsTitle}</span>
-                {botThinkingPlayerName ? (
-                  <span className="game-ui-v2-subtle game-ui-v2-bot-thinking">
-                    {board.botThinkingPrefix}: <strong>{botThinkingPlayerName}</strong>
-                  </span>
-                ) : null}
               </div>
             <div className="game-ui-v2-header-tools-row">
               <button type="button" onClick={() => setBotAutoplayEnabled((prev) => !prev)}>
@@ -683,7 +679,6 @@ export const GameBoardV2 = ({
                 handLabel={t.yourHand}
                 centerPortraitImage={currentTurnPortraitImage}
                 centerInitials={toInitials(currentTurnPlayerLabel)}
-                centerKicker={currentStageFocus || board.commandCenter}
                 centerTitle={currentTurnPlayerLabel}
                 centerSubtitle={activeArenaRankName || rankName}
                 centerResources={BOARD_RESOURCE_ORDER.map((key) => ({
@@ -718,10 +713,10 @@ export const GameBoardV2 = ({
                           onTogglePreview={togglePreview}
                           onClosePreview={() => setOpenPreviewKey(null)}
                           variant="v1"
+                          theme={internalTheme}
                           fallback={<div className="pile-back-fallback">JOJ</div>}
                         />
                       </div>
-                      <p className="game-ui-v2-zone-meta">{board.stageFocusDraw}</p>
                     </article>
                     <article className="game-ui-v2-zone game-ui-layout-zone game-ui-v2-zone-focus game-ui-layout-zone-focus">
                       <div className="game-ui-v2-zone-head game-ui-layout-zone-head">
@@ -739,6 +734,7 @@ export const GameBoardV2 = ({
                               onTogglePreview={togglePreview}
                               onClosePreview={() => setOpenPreviewKey(null)}
                               variant="v1"
+                              theme={internalTheme}
                             />
                           ) : (
                             <div className="game-ui-v2-focus-empty">{board.waitingAction}</div>
@@ -773,10 +769,10 @@ export const GameBoardV2 = ({
                             onTogglePreview={togglePreview}
                             onClosePreview={() => setOpenPreviewKey(null)}
                             variant="v1"
+                            theme={internalTheme}
                           />
                         ) : <div className="pile-empty">{t.noCardsInDiscard}</div>}
                       </div>
-                      <p className="game-ui-v2-zone-meta">{actualDiscardTitle || t.noCardsInDiscard}</p>
                     </article>
                   </div>
                 </div>
@@ -789,20 +785,6 @@ export const GameBoardV2 = ({
           <V2PlayerDockSection
             mainContent={(
               <>
-                <div className="game-ui-v2-hand-rail game-ui-layout-hand-rail">
-                <div className="game-ui-v2-hand-rail-chip game-ui-layout-hand-rail-chip">
-                  <span className="game-ui-v2-stage-label">{t.turnStage}</span>
-                  <strong>{stageLabel(stage, t)}</strong>
-                </div>
-                <div className="game-ui-v2-hand-rail-chip game-ui-layout-hand-rail-chip">
-                  <span className="game-ui-v2-stage-label">{t.yourHand}</span>
-                  <strong>{hand.length}/8</strong>
-                </div>
-                <div className={`game-ui-v2-hand-rail-chip game-ui-layout-hand-rail-chip${mustDiscardOverflow ? ' is-warn' : ''}`}>
-                  <span className="game-ui-v2-stage-label">{board.play}</span>
-                  <strong>{canPlayHandCard ? board.canPlayNow : board.actionUnavailable}</strong>
-                </div>
-              </div>
               <V2HandSection
                 title={`${t.yourHand} (${hand.length}/8)`}
                 subtitle={mustDiscardOverflow ? board.handOverflowWarning.replace('{count}', String(handOverflow)) : undefined}
@@ -854,27 +836,26 @@ export const GameBoardV2 = ({
                   } : undefined;
                 }}
               />
-              <section className="game-ui-v2-panel game-ui-layout-panel game-ui-v2-legendary-frame" style={{ marginTop: '16px' }}>
-                <V2HandSection
-                  title={`${t.legendaryHand} (${legendaryHand.length})`}
-                  subtitle={t.legendaryHandHint}
-                  cards={legendaryHand}
-                  cardImageById={cardImageById}
-                  lang={lang}
-                  openPreviewKey={openPreviewKey}
-                  togglePreview={togglePreview}
-                  closePreview={() => setOpenPreviewKey(null)}
-                  categoryText={() => t.legendaryDeckLabel}
-                  actionLabel={board.playLegendary}
-                  onAction={(card) => handleLegendaryCardAction(card, requestPlayLegendaryCard)}
-                  actionDisabled={() => typeof moves.playLegendaryCard !== 'function'}
-                  effectLabel={effectLabel}
-                  badges={(card) => [
-                    ...(card.id === 'legendary-10' ? [board.requiresTarget] : []),
-                    ...(['legendary-06', 'legendary-09', 'legendary-17'].includes(card.id) ? [board.requiresResource] : []),
-                  ]}
-                />
-              </section>
+              <V2HandSection
+                className="game-ui-v2-legendary-frame game-ui-layout-legendary-frame"
+                title={`${t.legendaryHand} (${legendaryHand.length})`}
+                subtitle={t.legendaryHandHint}
+                cards={legendaryHand}
+                cardImageById={cardImageById}
+                lang={lang}
+                openPreviewKey={openPreviewKey}
+                togglePreview={togglePreview}
+                closePreview={() => setOpenPreviewKey(null)}
+                categoryText={() => t.legendaryDeckLabel}
+                actionLabel={board.playLegendary}
+                onAction={(card) => handleLegendaryCardAction(card, requestPlayLegendaryCard)}
+                actionDisabled={() => typeof moves.playLegendaryCard !== 'function'}
+                effectLabel={effectLabel}
+                badges={(card) => [
+                  ...(card.id === 'legendary-10' ? [board.requiresTarget] : []),
+                  ...(['legendary-06', 'legendary-09', 'legendary-17'].includes(card.id) ? [board.requiresResource] : []),
+                ]}
+              />
             </>
             )}
             sideContent={null}
@@ -949,8 +930,8 @@ export const GameBoardV2 = ({
       {!isSpectator ? (
       <div className="game-ui-v2-mobile-bar game-ui-layout-mobile-bar" aria-label={board.mobileActions}>
         <button type="button" onClick={handleDraw} disabled={!canDraw || blockPlayerTurnControls}>{t.draw}</button>
-        <button type="button" onClick={() => handlePromote(promoteReason)} disabled={!canPlay || Boolean(promoteReason) || blockPlayerTurnControls}>{t.promote}</button>
-        <button type="button" onClick={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)} disabled={!canEndTurn || blockPlayerTurnControls}>
+        <button type="button" className="is-promote-action" onClick={() => handlePromote(promoteReason)} disabled={!canPlay || Boolean(promoteReason) || blockPlayerTurnControls}>{t.promote}</button>
+        <button type="button" className={`is-end-turn-action${canEndTurn && !blockPlayerTurnControls ? ' is-ready-action' : ''}`} onClick={() => handlePass(shouldShowSkipTurnLabel ? moves.pass : moves.endTurn)} disabled={!canEndTurn || blockPlayerTurnControls}>
           {blockPlayerTurnControls ? botPlaybackControlLabel : passButtonLabel}
         </button>
       </div>
