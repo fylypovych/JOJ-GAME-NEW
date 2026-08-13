@@ -20,3 +20,22 @@ test('public content pages define explicit contrasting palettes for light and da
     /\.content-empty h2\s*\{[^}]*color:\s*var\(--content-text\)/,
   );
 });
+
+test('news and downloads share a centered responsive page panel', async () => {
+  const source = await readFile(
+    new URL('../src/ui/styles/content.css', import.meta.url),
+    'utf8',
+  );
+  assert.match(
+    source,
+    /\.content-page\s*\{[\s\S]*width:\s*100%;[\s\S]*max-width:\s*1120px;[\s\S]*box-sizing:\s*border-box;/,
+  );
+  assert.match(
+    source,
+    /\.content-page\s*\{[\s\S]*border:\s*1px solid var\(--content-border\);[\s\S]*border-radius:\s*28px;[\s\S]*background:\s*var\(--content-bg\);/,
+  );
+  assert.match(
+    source,
+    /@media \(max-width:\s*720px\)\s*\{[\s\S]*\.content-page\s*\{[\s\S]*padding:\s*12px;[\s\S]*border-radius:\s*20px;/,
+  );
+});
