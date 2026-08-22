@@ -296,12 +296,12 @@ export const uiEnData = {
   githubIgnoreLocalChanges: 'Ignore local changes and force update',
   githubIgnoreLocalChangesHint:
     'Before pulling from GitHub, the server will preserve local tracked and untracked changes in a backup Git stash.',
-  githubCommitMessageLabel: 'Commit message',
-  githubCommitMessagePlaceholder: 'Save server changes',
+  githubCommitMessageLabel: 'Change description',
+  githubCommitMessagePlaceholder: 'Briefly describe the published changes',
   githubPublish: 'Publish production content',
   githubPublishLoading: 'Committing/pushing...',
   githubPublishHint:
-    'Commits directly to the tracked GitHub branch. Only shared deck, ranks, game UI, simulation settings, card images, and avatars are included. Force push is never used.',
+    'Commits directly to the tracked GitHub branch. The version, package files, and changelog entry are updated automatically. Only approved production content and version metadata are included. Force push is never used.',
   githubViewLocalChanges: 'View local changes',
   githubViewLocalChangesLoading: 'Loading changes...',
   githubLocalChangesTitle: 'Local changes (preview)',

@@ -297,12 +297,12 @@ export const uiUkData = {
   githubIgnoreLocalChanges: 'Ігнорувати локальні зміни і примусово оновити',
   githubIgnoreLocalChangesHint:
     'Перед pull з GitHub сервер збереже локальні tracked і untracked git-зміни в резервному Git stash.',
-  githubCommitMessageLabel: 'Повідомлення коміту',
-  githubCommitMessagePlaceholder: 'Зберегти серверні зміни',
+  githubCommitMessageLabel: 'Опис змін',
+  githubCommitMessagePlaceholder: 'Коротко опишіть опубліковані зміни',
   githubPublish: 'Опублікувати production-контент',
   githubPublishLoading: 'Commit/push...',
   githubPublishHint:
-    'Коміт надсилається прямо у прив’язану гілку GitHub. Потраплять лише колода, звання, налаштування гри й симуляції, зображення карт та аватари. Force push не використовується.',
+    'Коміт надсилається прямо у прив’язану гілку GitHub. Номер версії, package-файли та запис у журналі оновлюються автоматично. Потраплять лише дозволений production-контент і службові файли версії. Force push не використовується.',
   githubViewLocalChanges: 'Переглянути локальні зміни',
   githubViewLocalChangesLoading: 'Завантаження змін...',
   githubLocalChangesTitle: 'Локальні зміни (preview)',

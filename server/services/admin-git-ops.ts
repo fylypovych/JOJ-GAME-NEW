@@ -1,4 +1,4 @@
-import { access, copyFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { access, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { EnforceRateLimit, LogLine, ReadJsonBodySafe, RequireAdminAuth, RouterLike, RouteCtx } from '../routes/types';
@@ -64,6 +64,96 @@ const PRODUCTION_PUBLISH_CONFIG_PATHS = new Set([
 ]);
 const PRODUCTION_PUBLISH_ASSET_PATTERN = /^public\/(?:card-assets|profile-image)\/.+\.(?:avif|gif|jpe?g|png|webp)$/i;
 const PRODUCTION_DOWNLOAD_PATTERN = /^public\/downloads\/.+\.(?:pdf|zip|avif|gif|jpe?g|png|webp)$/i;
+const PRODUCTION_PUBLISH_METADATA_PATHS = ['CHANGELOG.md', 'package.json', 'package-lock.json'] as const;
+const RELEASE_VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)\.(\d+)(?:\s|$)/;
+const CHANGELOG_COUNT_PATTERN = /Задокументовано комітів: \*\*(\d+)\*\*\./;
+
+const normalizeReleaseVersionParts = ([major, minor, patch, build]: number[]) => {
+  patch += Math.floor(build / 100);
+  build %= 100;
+  minor += Math.floor(patch / 100);
+  patch %= 100;
+  major += Math.floor(minor / 100);
+  minor %= 100;
+  return [major, minor, patch, build];
+};
+
+export const getNextProductionPublishVersion = (subjects: string[]): string => {
+  for (const subject of subjects) {
+    const match = subject.trim().match(RELEASE_VERSION_PATTERN);
+    if (!match) continue;
+    const parts = normalizeReleaseVersionParts(match.slice(1, 5).map(Number));
+    parts[3] += 1;
+    return normalizeReleaseVersionParts(parts).join('.');
+  }
+  return '0.0.0.1';
+};
+
+export const buildProductionPublishChangelog = (args: {
+  changelog: string;
+  version: string;
+  description: string;
+  previousHead: string;
+}) => {
+  const countMatch = args.changelog.match(CHANGELOG_COUNT_PATTERN);
+  if (!countMatch) throw new Error('CHANGELOG.md documented commit count was not found.');
+  const firstEntryIndex = args.changelog.indexOf('\n## ');
+  if (firstEntryIndex < 0) throw new Error('CHANGELOG.md has no release entries.');
+
+  const beforeEntries = args.changelog.slice(0, firstEntryIndex);
+  let entries = args.changelog.slice(firstEntryIndex + 1);
+  const firstCorrectNumber = entries.indexOf('- **Правильний номер коміту:**');
+  if (firstCorrectNumber < 0) throw new Error('CHANGELOG.md latest release entry is invalid.');
+  const firstDescription = entries.indexOf('- **Опис змін:**', firstCorrectNumber);
+  if (firstDescription < 0) throw new Error('CHANGELOG.md latest release description is invalid.');
+  const shaLine = `- **Оригінальний SHA коміту:** \`${args.previousHead}\`\n`;
+  if (!entries.slice(firstCorrectNumber, firstDescription).includes('**Оригінальний SHA коміту:**')) {
+    entries = `${entries.slice(0, firstDescription)}${shaLine}${entries.slice(firstDescription)}`;
+  }
+
+  const nextCount = Number(countMatch[1]) + 1;
+  const header = beforeEntries.replace(CHANGELOG_COUNT_PATTERN, `Задокументовано комітів: **${nextCount}**.`);
+  const date = new Date().toISOString().slice(0, 10);
+  const newEntry = [
+    `## ${args.version} — ${date}`,
+    '',
+    `- **Правильний номер коміту:** \`${args.version}\``,
+    '- **Опис змін:**',
+    `  - ${args.description}`,
+    '',
+  ].join('\n');
+  return `${header}\n${newEntry}${entries}`;
+};
+
+const syncProductionPublishMetadata = async (args: {
+  worktreeRoot: string;
+  version: string;
+  description: string;
+  previousHead: string;
+}) => {
+  const packagePath = path.join(args.worktreeRoot, 'package.json');
+  const packageLockPath = path.join(args.worktreeRoot, 'package-lock.json');
+  const changelogPath = path.join(args.worktreeRoot, 'CHANGELOG.md');
+  const packageJson = JSON.parse(await readFile(packagePath, 'utf8')) as { version?: string };
+  const packageLock = JSON.parse(await readFile(packageLockPath, 'utf8')) as {
+    version?: string;
+    packages?: Record<string, { version?: string }>;
+  };
+  packageJson.version = args.version;
+  packageLock.version = args.version;
+  if (packageLock.packages?.['']) packageLock.packages[''].version = args.version;
+  const changelog = buildProductionPublishChangelog({
+    changelog: await readFile(changelogPath, 'utf8'),
+    version: args.version,
+    description: args.description,
+    previousHead: args.previousHead,
+  });
+  await Promise.all([
+    writeFile(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`, 'utf8'),
+    writeFile(packageLockPath, `${JSON.stringify(packageLock, null, 2)}\n`, 'utf8'),
+    writeFile(changelogPath, changelog, 'utf8'),
+  ]);
+};
 
 const normalizeGitPath = (filePath: string) => String(filePath ?? '')
   .trim()
@@ -640,9 +730,13 @@ export const registerAdminGitRoutes = ({
     if (!(await enforceRateLimit(ctx, 'admin-git-publish', 5, 60_000))) return;
     const body = await readJsonBodySafe({ ctx, routeLabel: '/api/admin/git/publish', maxBytes: JSON_BODY_LIMIT, logLine });
     if (!body) return;
-    const commitMessage = String(body.commitMessage ?? '').trim();
-    if (commitMessage.length > 200 || /[\r\n\0]/.test(commitMessage)) {
-      routeError(ctx, 400, 'Commit message must be a single line of at most 200 characters.');
+    const changeDescription = String(body.commitMessage ?? '').trim();
+    if (changeDescription.length > 200 || /[\r\n\0]/.test(changeDescription)) {
+      routeError(ctx, 400, 'Change description must be a single line of at most 200 characters.');
+      return;
+    }
+    if (RELEASE_VERSION_PATTERN.test(changeDescription)) {
+      routeError(ctx, 400, 'Enter a change description, not a version. The production version is assigned automatically.');
       return;
     }
     const status = await getGitUpdateStatus(runGit);
@@ -691,6 +785,15 @@ export const registerAdminGitRoutes = ({
       return;
     }
     const localFiles = parsePorcelainFiles(localStatusRes.stdout);
+    const dirtyMetadataFiles = localFiles.filter((filePath) =>
+      PRODUCTION_PUBLISH_METADATA_PATHS.includes(filePath as typeof PRODUCTION_PUBLISH_METADATA_PATHS[number]));
+    if (dirtyMetadataFiles.length > 0) {
+      routeError(ctx, 409, 'Version metadata has local changes. Update or reconcile these files before publishing.', {
+        status,
+        metadataFiles: dirtyMetadataFiles,
+      });
+      return;
+    }
     const classification = classifyProductionPublishFiles(localFiles);
     if (classification.publishable.length === 0) {
       routeError(ctx, 400, 'There are no publishable production content changes.', {
@@ -699,8 +802,8 @@ export const registerAdminGitRoutes = ({
       });
       return;
     }
-    if (!commitMessage) {
-      routeError(ctx, 400, 'Commit message is required when publishing production content.', {
+    if (!changeDescription) {
+      routeError(ctx, 400, 'Change description is required when publishing production content.', {
         status,
         publishableFiles: classification.publishable,
         excludedFiles: classification.excluded,
@@ -717,11 +820,25 @@ export const registerAdminGitRoutes = ({
     const worktreeRoot = await mkdtemp(path.join(tmpdir(), 'joj-production-publish-'));
     let worktreeRegistered = false;
     let publishedHead = '';
+    let publishVersion = '';
     try {
       const worktreeRes = await runGit(['worktree', 'add', '--detach', worktreeRoot, status.upstream]);
       if (!worktreeRes.ok) throw new Error(worktreeRes.error);
       worktreeRegistered = true;
       steps.push({ step: `git worktree add ${status.upstream}`, output: '(ok)' });
+
+      const subjectsRes = await runGit(['-C', worktreeRoot, 'log', '--format=%s', '-n', '500']);
+      if (!subjectsRes.ok) throw new Error(subjectsRes.error);
+      const previousHeadRes = await runGit(['-C', worktreeRoot, 'rev-parse', 'HEAD']);
+      if (!previousHeadRes.ok) throw new Error(previousHeadRes.error);
+      publishVersion = getNextProductionPublishVersion(subjectsRes.stdout.split(/\r?\n/).filter(Boolean));
+      await syncProductionPublishMetadata({
+        worktreeRoot,
+        version: publishVersion,
+        description: changeDescription,
+        previousHead: previousHeadRes.stdout.trim(),
+      });
+      steps.push({ step: 'assign production version', output: publishVersion });
 
       for (const filePath of classification.publishable) {
         await copyProductionFileToWorktree(repoRoot, worktreeRoot, filePath);
@@ -731,12 +848,19 @@ export const registerAdminGitRoutes = ({
         output: classification.publishable.join('\n'),
       });
 
-      const addRes = await runGit(['-C', worktreeRoot, 'add', '-A', '--', ...classification.publishable]);
+      const addRes = await runGit([
+        '-C', worktreeRoot, 'add', '-A', '--',
+        ...classification.publishable,
+        ...PRODUCTION_PUBLISH_METADATA_PATHS,
+      ]);
       if (!addRes.ok) throw new Error(addRes.error);
       const stagedFiles = await readGitFileList(runGit, ['-C', worktreeRoot, 'diff', '--cached', '--name-only']);
       if (!stagedFiles.ok) throw new Error(stagedFiles.error);
       const stagedClassification = classifyProductionPublishFiles(stagedFiles.files);
-      if (stagedClassification.excluded.length > 0 || stagedClassification.publishable.length === 0) {
+      const unexpectedFiles = stagedClassification.excluded.filter(
+        (filePath) => !PRODUCTION_PUBLISH_METADATA_PATHS.includes(filePath as typeof PRODUCTION_PUBLISH_METADATA_PATHS[number]),
+      );
+      if (unexpectedFiles.length > 0 || stagedClassification.publishable.length === 0) {
         throw new Error('Temporary publish commit failed the production content allowlist check.');
       }
 
@@ -754,10 +878,10 @@ export const registerAdminGitRoutes = ({
         '-C', worktreeRoot,
         '-c', 'user.name=JOJ Production',
         '-c', 'user.email=production@joj.lol',
-        'commit', '-m', commitMessage,
+        'commit', '-m', publishVersion,
       ]);
       if (!commitRes.ok) throw new Error(commitRes.error);
-      steps.push({ step: `git commit -m "${commitMessage}"`, output: commitRes.stdout.trim() || '(ok)' });
+      steps.push({ step: `git commit -m "${publishVersion}"`, output: commitRes.stdout.trim() || '(ok)' });
 
       const publishedHeadRes = await runGit(['-C', worktreeRoot, 'rev-parse', 'HEAD']);
       if (!publishedHeadRes.ok) throw new Error(publishedHeadRes.error);
@@ -769,6 +893,9 @@ export const registerAdminGitRoutes = ({
         step: `git push origin ${targetBranch}`,
         output: pushRes.stdout.trim() || pushRes.stderr.trim() || '(ok)',
       });
+      for (const metadataPath of PRODUCTION_PUBLISH_METADATA_PATHS) {
+        await copyFile(path.join(worktreeRoot, metadataPath), path.join(repoRoot, metadataPath));
+      }
     } catch (error) {
       const details = error instanceof Error ? error.message : String(error);
       await logLine('ERROR', `git production content publish failed: ${details}`);
@@ -813,13 +940,14 @@ export const registerAdminGitRoutes = ({
       actor,
       durationMs: Date.now() - startedAt,
       outcome: 'success',
-      details: { branch: targetBranch, base: status.upstream, files: classification.publishable },
+      details: { branch: targetBranch, base: status.upstream, version: publishVersion, files: classification.publishable },
     }));
     routeOk(ctx, {
       message: `Production content pushed directly to ${targetBranch}`,
       steps,
       status: nextStatus,
       publishBranch: targetBranch,
+      version: publishVersion,
       publishableFiles: classification.publishable,
       excludedFiles: classification.excluded,
     });
