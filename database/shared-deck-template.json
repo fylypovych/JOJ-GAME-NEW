@@ -6,7 +6,7 @@
       "id": "vvnz-01",
       "title": "Національний університет оборони України імені Івана Черняховського",
       "category": "VVNZ",
-      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973622889.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/vvnz-01.webp",
       "grantRank": "junior_lieutenant",
       "effects": [
         {
@@ -24,7 +24,7 @@
       "id": "vvnz-02",
       "title": "Харківський національний університет Повітряних Сил імені Івана Кожедуба",
       "category": "VVNZ",
-      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973634847.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/vvnz-02.webp",
       "grantRank": "junior_lieutenant",
       "effects": [
         {
@@ -42,7 +42,7 @@
       "id": "vvnz-03",
       "title": "Національна академія сухопутних військ імені гетьмана Петра Сагайдачного",
       "category": "VVNZ",
-      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973647835.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/vvnz-03.webp",
       "grantRank": "junior_lieutenant",
       "effects": [
         {
@@ -60,7 +60,7 @@
       "id": "vvnz-04",
       "title": "Військова академія (м. Одеса)",
       "category": "VVNZ",
-      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973666914.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/vvnz-04.webp",
       "grantRank": "junior_lieutenant",
       "effects": [
         {
@@ -78,7 +78,7 @@
       "id": "vvnz-05",
       "title": "Національна академія Національної гвардії України",
       "category": "VVNZ",
-      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973685587.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/vvnz-05.webp",
       "grantRank": "senior_master_sergeant",
       "effects": [
         {
@@ -96,7 +96,7 @@
       "id": "vvnz-06",
       "title": "Академія Державної прикордонної служби України імені Богдана Хмельницького",
       "category": "VVNZ",
-      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973710288.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/vvnz-06.webp",
       "grantRank": "senior_master_sergeant",
       "effects": [
         {
@@ -114,7 +114,7 @@
       "id": "vvnz-07",
       "title": "Військовий інститут Київського національного університету імені Тараса Шевченка",
       "category": "VVNZ",
-      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973756861.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/vvnz-07.webp",
       "grantRank": "senior_master_sergeant",
       "effects": [
         {
@@ -132,7 +132,7 @@
       "id": "vvnz-08",
       "title": "Військовий інститут телекомунікацій та інформатизації імені Героїв Крут",
       "category": "VVNZ",
-      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973769756.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/vvnz-08.webp",
       "grantRank": "senior_master_sergeant",
       "effects": [
         {
@@ -148,9 +148,9 @@
     },
     {
       "id": "vvnz-09",
-      "title": "Інститут Військово-Морських Сил Національного університету «Одеська морська академія»",
+      "title": "Інститут Військово-Морських Сил Національного університету «Одеська морс��ка академія»",
       "category": "VVNZ",
-      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973780615.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/vvnz-09.webp",
       "grantRank": "senior_sergeant",
       "effects": [
         {
@@ -168,7 +168,7 @@
       "id": "vvnz-10",
       "title": "Житомирський військовий інститут імені С. П. Корольова",
       "category": "VVNZ",
-      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973792599.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/vvnz-10.webp",
       "grantRank": "senior_sergeant",
       "effects": [
         {
@@ -186,7 +186,7 @@
       "id": "vvnz-11",
       "title": "Харківський військовий коледж сержантського складу Повітряних Сил",
       "category": "VVNZ",
-      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973804362.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/vvnz-11.webp",
       "grantRank": "senior_sergeant",
       "effects": [
         {
@@ -204,7 +204,7 @@
       "id": "vvnz-12",
       "title": "Київський військовий ліцей імені Івана Богуна",
       "category": "VVNZ",
-      "image": "/api/card-assets/2026.VVNZ.MODULE/card-1772973817479.webp",
+      "image": "/api/card-assets/2026.VVNZ.MODULE/vvnz-12.webp",
       "grantRank": "senior_sergeant",
       "effects": [
         {
@@ -1786,7 +1786,7 @@
       "id": "legendary-01",
       "title": "Мислі Головкома",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-01.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1803,7 +1803,7 @@
       "id": "legendary-02",
       "title": "Cміх BUDDA-н-OFF",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961254432.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-02.webp",
       "effects": [
         {
           "resource": "tech",
@@ -1816,7 +1816,7 @@
       "id": "legendary-03",
       "title": "Посмішка Малюка",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884348987.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-03.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1833,7 +1833,7 @@
       "id": "legendary-04",
       "title": "Фонд Добродія",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961289925.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-04.webp",
       "effects": [
         {
           "resource": "time",
@@ -1854,7 +1854,7 @@
       "id": "legendary-05",
       "title": "Сухпай ЗСУ",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884379477.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-05.webp",
       "effects": [
         {
           "resource": "time",
@@ -1875,7 +1875,7 @@
       "id": "legendary-06",
       "title": "Статуя Святого ТОРа",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884391744.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-06.webp",
       "effects": [],
       "flavor": "Коли гримить звітність — мовчи і натискай “оновити”."
     },
@@ -1883,7 +1883,7 @@
       "id": "legendary-07",
       "title": "Церква Святого Лідерства",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884403769.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-07.webp",
       "effects": [
         {
           "resource": "time",
@@ -1900,7 +1900,7 @@
       "id": "legendary-08",
       "title": "Зірколінк",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961348506.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-08.webp",
       "effects": [
         {
           "resource": "time",
@@ -1917,7 +1917,7 @@
       "id": "legendary-09",
       "title": "Вода “ПроZORRO”",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961387230.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-09.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1930,7 +1930,7 @@
       "id": "legendary-10",
       "title": "Дрончик",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884442233.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-10.webp",
       "effects": [
         {
           "resource": "tech",
@@ -1943,7 +1943,7 @@
       "id": "legendary-11",
       "title": "Старий польський корч",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884453732.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-11.webp",
       "effects": [
         {
           "resource": "time",
@@ -1960,7 +1960,7 @@
       "id": "legendary-12",
       "title": "Грамота “Єбать ти молодець”",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884466520.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-12.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1973,7 +1973,7 @@
       "id": "legendary-14",
       "title": "Відпустка",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884495159.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-14.webp",
       "effects": [
         {
           "resource": "time",
@@ -1990,20 +1990,20 @@
       "id": "legendary-16",
       "title": "Котєйка ЗСУ",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-16.webp",
       "effects": [
         {
           "resource": "time",
           "value": 2
         }
       ],
-      "flavor": "Видається разом із позиціє��. Оформлення не потребує. Доступ має всюди."
+      "flavor": "Видається разом із позицією. Оформлення не потребує. Доступ має всюди."
     },
     {
       "id": "legendary-17",
       "title": "Нептун",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-17.webp",
       "effects": [],
       "flavor": "«Стакан за тих, хто не потягнув стакан за звання.»"
     },
@@ -4489,7 +4489,7 @@
       "id": "legendary-01",
       "title": "Мислі Головкома",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-01.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4506,7 +4506,7 @@
       "id": "legendary-02",
       "title": "Cміх BUDDA-н-OFF",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961254432.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-02.webp",
       "effects": [
         {
           "resource": "tech",
@@ -4519,7 +4519,7 @@
       "id": "legendary-03",
       "title": "Посмішка Малюка",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884348987.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-03.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4536,7 +4536,7 @@
       "id": "legendary-04",
       "title": "Фонд Добродія",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961289925.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-04.webp",
       "effects": [
         {
           "resource": "time",
@@ -4557,7 +4557,7 @@
       "id": "legendary-05",
       "title": "Сухпай ЗСУ",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884379477.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-05.webp",
       "effects": [
         {
           "resource": "time",
@@ -4578,7 +4578,7 @@
       "id": "legendary-06",
       "title": "Статуя Святого ТОРа",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884391744.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-06.webp",
       "effects": [],
       "flavor": "Коли гримить звітність — мовчи і натискай “оновити”."
     },
@@ -4586,7 +4586,7 @@
       "id": "legendary-07",
       "title": "Церква Святого Лідерства",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884403769.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-07.webp",
       "effects": [
         {
           "resource": "time",
@@ -4603,7 +4603,7 @@
       "id": "legendary-08",
       "title": "Зірколінк",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961348506.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-08.webp",
       "effects": [
         {
           "resource": "time",
@@ -4620,7 +4620,7 @@
       "id": "legendary-09",
       "title": "Вода “ПроZORRO”",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961387230.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-09.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -4633,7 +4633,7 @@
       "id": "legendary-10",
       "title": "Дрончик",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884442233.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-10.webp",
       "effects": [
         {
           "resource": "tech",
@@ -4646,7 +4646,7 @@
       "id": "legendary-11",
       "title": "Старий польський корч",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884453732.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-11.webp",
       "effects": [
         {
           "resource": "time",
@@ -4663,7 +4663,7 @@
       "id": "legendary-12",
       "title": "Грамота “Єбать ти молодець”",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884466520.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-12.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4676,7 +4676,7 @@
       "id": "legendary-14",
       "title": "Відпустка",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1771884495159.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-14.webp",
       "effects": [
         {
           "resource": "time",
@@ -4693,20 +4693,20 @@
       "id": "legendary-16",
       "title": "Котєйка ЗСУ",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-16.webp",
       "effects": [
         {
           "resource": "time",
           "value": 2
         }
       ],
-      "flavor": "Видається разом із позиціє��. Оформлення не потребує. Доступ має всюди."
+      "flavor": "Видається разом із позицією. Оформлення не потребує. Доступ має всюди."
     },
     {
       "id": "legendary-17",
       "title": "Нептун",
       "category": "LEGENDARY",
-      "image": "/api/card-assets/2026.LEGENDARY.MODULE/card-1772961126046.webp",
+      "image": "/api/card-assets/2026.LEGENDARY.MODULE/legendary-17.webp",
       "effects": [],
       "flavor": "«Стакан за тих, хто не потягнув стакан за звання.»"
     }
