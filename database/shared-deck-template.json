@@ -243,7 +243,7 @@
       "id": "scandal-01",
       "title": "Яйця по 17 гривень",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614354252.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-01.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -260,7 +260,7 @@
       "id": "scandal-02",
       "title": "Куртки Резнікова",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614366040.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-02.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -277,7 +277,7 @@
       "id": "scandal-03",
       "title": "Дрони по завищеній ціні",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614378587.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-03.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -294,7 +294,7 @@
       "id": "scandal-04",
       "title": "Пропажа пального",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614390190.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-04.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -307,7 +307,7 @@
       "id": "scandal-05",
       "title": "Закупівля підписів на тендер",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614425063.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-05.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -324,7 +324,7 @@
       "id": "scandal-06",
       "title": "Пропажа дронів",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614439747.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-06.webp",
       "effects": [
         {
           "resource": "tech",
@@ -337,7 +337,7 @@
       "id": "scandal-07",
       "title": "Списання бронежилетів як витратних",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614451008.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-07.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -354,7 +354,7 @@
       "id": "scandal-08",
       "title": "Паперовий аудит без документів",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614500039.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-08.webp",
       "effects": [
         {
           "resource": "time",
@@ -371,7 +371,7 @@
       "id": "scandal-09",
       "title": "Відео з полігону",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614508047.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-09.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -384,7 +384,7 @@
       "id": "scandal-10",
       "title": "Витік наказів у пресу",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771615063474.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-10.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -401,7 +401,7 @@
       "id": "scandal-11",
       "title": "Зникнення гуманітарки",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614820343.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-11.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -418,7 +418,7 @@
       "id": "scandal-12",
       "title": "Підроблені рапорти",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614939024.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-12.webp",
       "effects": [
         {
           "resource": "documents",
@@ -431,7 +431,7 @@
       "id": "scandal-13",
       "title": "Бюджет на ремонт даху",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614949216.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-13.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -448,7 +448,7 @@
       "id": "scandal-14",
       "title": "Викриття корупційної схеми",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771615029111.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-14.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -465,7 +465,7 @@
       "id": "scandal-15",
       "title": "Тушонка",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614982549.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-15.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -482,7 +482,7 @@
       "id": "scandal-16",
       "title": "Колаборант",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771615017418.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-16.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -503,7 +503,7 @@
       "id": "scandal-17",
       "title": "Полковник із ОТУ",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772952038855.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-17.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -515,7 +515,7 @@
       "id": "scandal-18",
       "title": "ВЛК",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772956066783.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-18.webp",
       "effects": [
         {
           "resource": "time",
@@ -532,7 +532,7 @@
       "id": "scandal-19",
       "title": "гИометрія",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772956549834.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-19.webp",
       "effects": [
         {
           "resource": "time",
@@ -549,7 +549,7 @@
       "id": "scandal-20",
       "title": "Службове розслідування",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772956616687.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-20.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -993,7 +993,7 @@
           "value": 1
         }
       ],
-      "flavor": "«Прийшов, попизді�� та пішов.»"
+      "flavor": "«Прийшов, попиздів та пішов.»"
     },
     {
       "id": "support-30",
@@ -2944,7 +2944,7 @@
       "id": "scandal-01",
       "title": "Яйця по 17 гривень",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614354252.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-01.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2961,7 +2961,7 @@
       "id": "scandal-02",
       "title": "Куртки Резнікова",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614366040.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-02.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2978,7 +2978,7 @@
       "id": "scandal-03",
       "title": "Дрони по завищеній ціні",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614378587.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-03.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2995,7 +2995,7 @@
       "id": "scandal-04",
       "title": "Пропажа пального",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614390190.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-04.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3008,7 +3008,7 @@
       "id": "scandal-05",
       "title": "Закупівля підписів на тендер",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614425063.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-05.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3025,7 +3025,7 @@
       "id": "scandal-06",
       "title": "Пропажа дронів",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614439747.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-06.webp",
       "effects": [
         {
           "resource": "tech",
@@ -3038,7 +3038,7 @@
       "id": "scandal-07",
       "title": "Списання бронежилетів як витратних",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614451008.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-07.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -3055,7 +3055,7 @@
       "id": "scandal-08",
       "title": "Паперовий аудит без документів",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614500039.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-08.webp",
       "effects": [
         {
           "resource": "time",
@@ -3072,7 +3072,7 @@
       "id": "scandal-09",
       "title": "Відео з полігону",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614508047.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-09.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3085,7 +3085,7 @@
       "id": "scandal-10",
       "title": "Витік наказів у пресу",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771615063474.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-10.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3102,7 +3102,7 @@
       "id": "scandal-11",
       "title": "Зникнення гуманітарки",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614820343.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-11.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3119,7 +3119,7 @@
       "id": "scandal-12",
       "title": "Підроблені рапорти",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614939024.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-12.webp",
       "effects": [
         {
           "resource": "documents",
@@ -3132,7 +3132,7 @@
       "id": "scandal-13",
       "title": "Бюджет на ремонт даху",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614949216.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-13.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3149,7 +3149,7 @@
       "id": "scandal-14",
       "title": "Викриття корупційної схеми",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771615029111.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-14.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3166,7 +3166,7 @@
       "id": "scandal-15",
       "title": "Тушонка",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771614982549.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-15.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3183,7 +3183,7 @@
       "id": "scandal-16",
       "title": "Колаборант",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1771615017418.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-16.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3204,7 +3204,7 @@
       "id": "scandal-17",
       "title": "Полковник із ОТУ",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772952038855.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-17.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3216,7 +3216,7 @@
       "id": "scandal-18",
       "title": "ВЛК",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772956066783.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-18.webp",
       "effects": [
         {
           "resource": "time",
@@ -3233,7 +3233,7 @@
       "id": "scandal-19",
       "title": "гИометрія",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772956549834.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-19.webp",
       "effects": [
         {
           "resource": "time",
@@ -3250,7 +3250,7 @@
       "id": "scandal-20",
       "title": "Службове розслідування",
       "category": "SCANDAL",
-      "image": "/api/card-assets/2026.SCANDAL.STARTER/card-1772956616687.webp",
+      "image": "/api/card-assets/2026.SCANDAL.STARTER/scandal-20.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -3694,7 +3694,7 @@
           "value": 1
         }
       ],
-      "flavor": "«Прийшов, попизді�� та пішов.»"
+      "flavor": "«Прийшов, попиздів та пішов.»"
     },
     {
       "id": "support-30",
