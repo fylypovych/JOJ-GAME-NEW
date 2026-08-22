@@ -7,7 +7,8 @@ export const AppFooter = (props: AppFooterProps) => {
 
   return (
     <footer className="app-footer">
-      &copy; ALL RIGHTS RESERVED BY &quot;SOHODNY LLC,{' '}
+      &copy; ALL RIGHTS RESERVED BY &quot;
+      <a href="https://sohodny-usa.com">SOHODNY LLC</a>&quot; 2026,{' '}
       <a href="mailto:zhurnal.zhurnaliv@gmail.com">zhurnal.zhurnaliv@gmail.com</a>
       {buildLabel ? ` · ${buildLabel}` : ''}
     </footer>

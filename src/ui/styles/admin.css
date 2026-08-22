@@ -3226,8 +3226,9 @@
 }
 
 .admin-card-browser-row.is-selected {
-  border-color: color-mix(in srgb, var(--admin-primary) 52%, var(--admin-border));
-  background  : color-mix(in srgb, var(--admin-primary) 13%, var(--admin-card-bg));
+  border-color: color-mix(in srgb, var(--admin-primary) 65%, var(--admin-border));
+  background  : color-mix(in srgb, var(--admin-primary) 20%, var(--admin-card-bg));
+  box-shadow  : inset 4px 0 0 var(--admin-primary);
 }
 
 .admin-card-browser-open {
