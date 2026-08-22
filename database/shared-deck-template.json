@@ -993,7 +993,7 @@
           "value": 1
         }
       ],
-      "flavor": "«Прийшов, попиздів та пішов.»"
+      "flavor": "«Прийшов, попизді�� та пішов.»"
     },
     {
       "id": "support-30",
@@ -1519,7 +1519,7 @@
       "id": "lyap-02",
       "title": "Три сантиметри відступу",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/3-1771613029493.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-02.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1571,7 +1571,7 @@
       "id": "lyap-06",
       "title": "П’ять нарад за один день",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/5-1771613043832.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-06.webp",
       "effects": [
         {
           "resource": "time",
@@ -1584,7 +1584,7 @@
       "id": "lyap-07",
       "title": "Підпис за відсутнього начальника",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613058005.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-07.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1601,7 +1601,7 @@
       "id": "lyap-08",
       "title": "Фотозвіт без фото",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613066196.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-08.webp",
       "effects": [
         {
           "resource": "tech",
@@ -1614,7 +1614,7 @@
       "id": "lyap-09",
       "title": "Плутанина з печатками",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613078854.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-09.webp",
       "effects": [
         {
           "resource": "time",
@@ -1631,7 +1631,7 @@
       "id": "lyap-10",
       "title": "Карта-схема загублена у Google Maps",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613088169.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-10.webp",
       "effects": [
         {
           "resource": "tech",
@@ -1644,7 +1644,7 @@
       "id": "lyap-11",
       "title": "Плутанина з особовими справами",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/3-1771613102827.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-11.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1661,7 +1661,7 @@
       "id": "lyap-12",
       "title": "Рапорт на ім’я іншого командира",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613115148.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-12.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1674,7 +1674,7 @@
       "id": "lyap-13",
       "title": "Неправильна дата у наказі",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613133973.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-13.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1687,7 +1687,7 @@
       "id": "lyap-14",
       "title": "Втрачений журнал",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613146108.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-14.webp",
       "effects": [
         {
           "resource": "documents",
@@ -1700,7 +1700,7 @@
       "id": "lyap-15",
       "title": "Подвійна звітність",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613156561.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-15.webp",
       "effects": [
         {
           "resource": "time",
@@ -1713,7 +1713,7 @@
       "id": "lyap-16",
       "title": "Рапорт без дати",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613164308.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-16.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -1726,7 +1726,7 @@
       "id": "lyap-17",
       "title": "Неправильний шрифт у наказі",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613170671.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-17.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -1739,7 +1739,7 @@
       "id": "lyap-18",
       "title": "Майте повагу до звання",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613178947.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-18.webp",
       "effects": [
         {
           "resource": "rank",
@@ -1752,7 +1752,7 @@
       "id": "lyap-19",
       "title": "СЗЧ",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613186122.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-19.webp",
       "effects": [
         {
           "resource": "time",
@@ -1769,7 +1769,7 @@
       "id": "lyap-20",
       "title": "Задувка",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613196642.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-20.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -2021,7 +2021,7 @@
       "category": "COMMAND",
       "image": "/api/card-assets/00-1.webp",
       "grantRank": "recruit",
-      "flavor": "Знає різницю між наказом і порадою."
+      "flavor": "Знає різницю між наказ��м і порадою."
     },
     {
       "id": "rank-recruit-set-3",
@@ -2413,7 +2413,7 @@
       "category": "COMMAND",
       "image": "/api/card-assets/12-1.webp",
       "grantRank": "lieutenant",
-      "flavor": "Вивчив різницю між планом і реальністю."
+      "flavor": "Вивч��в різницю між планом і реальністю."
     },
     {
       "id": "rank-lieutenant-set-2",
@@ -3694,7 +3694,7 @@
           "value": 1
         }
       ],
-      "flavor": "«Прийшов, попиздів та пішов.»"
+      "flavor": "«Прийшов, попизді�� та пішов.»"
     },
     {
       "id": "support-30",
@@ -4220,7 +4220,7 @@
       "id": "lyap-02",
       "title": "Три сантиметри відступу",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/3-1771613029493.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-02.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4272,7 +4272,7 @@
       "id": "lyap-06",
       "title": "П’ять нарад за один день",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/5-1771613043832.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-06.webp",
       "effects": [
         {
           "resource": "time",
@@ -4285,7 +4285,7 @@
       "id": "lyap-07",
       "title": "Підпис за відсутнього начальника",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613058005.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-07.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4302,7 +4302,7 @@
       "id": "lyap-08",
       "title": "Фотозвіт без фото",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613066196.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-08.webp",
       "effects": [
         {
           "resource": "tech",
@@ -4315,7 +4315,7 @@
       "id": "lyap-09",
       "title": "Плутанина з печатками",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613078854.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-09.webp",
       "effects": [
         {
           "resource": "time",
@@ -4332,7 +4332,7 @@
       "id": "lyap-10",
       "title": "Карта-схема загублена у Google Maps",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613088169.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-10.webp",
       "effects": [
         {
           "resource": "tech",
@@ -4345,7 +4345,7 @@
       "id": "lyap-11",
       "title": "Плутанина з особовими справами",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/3-1771613102827.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-11.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4362,7 +4362,7 @@
       "id": "lyap-12",
       "title": "Рапорт на ім’я іншого командира",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613115148.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-12.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -4375,7 +4375,7 @@
       "id": "lyap-13",
       "title": "Неправильна дата у наказі",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613133973.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-13.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4388,7 +4388,7 @@
       "id": "lyap-14",
       "title": "Втрачений журнал",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613146108.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-14.webp",
       "effects": [
         {
           "resource": "documents",
@@ -4401,7 +4401,7 @@
       "id": "lyap-15",
       "title": "Подвійна звітність",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613156561.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-15.webp",
       "effects": [
         {
           "resource": "time",
@@ -4414,7 +4414,7 @@
       "id": "lyap-16",
       "title": "Рапорт без дати",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613164308.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-16.webp",
       "effects": [
         {
           "resource": "discipline",
@@ -4427,7 +4427,7 @@
       "id": "lyap-17",
       "title": "Неправильний шрифт у наказі",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613170671.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-17.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4440,7 +4440,7 @@
       "id": "lyap-18",
       "title": "Майте повагу до звання",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613178947.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-18.webp",
       "effects": [
         {
           "resource": "rank",
@@ -4453,7 +4453,7 @@
       "id": "lyap-19",
       "title": "СЗЧ",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613186122.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-19.webp",
       "effects": [
         {
           "resource": "time",
@@ -4470,7 +4470,7 @@
       "id": "lyap-20",
       "title": "Задувка",
       "category": "LYAP",
-      "image": "/api/card-assets/2026.LYAP.STARTER/card-1771613196642.webp",
+      "image": "/api/card-assets/2026.LYAP.STARTER/lyap-20.webp",
       "effects": [
         {
           "resource": "reputation",
@@ -4726,7 +4726,7 @@
       "category": "COMMAND",
       "image": "/api/card-assets/00-1.webp",
       "grantRank": "recruit",
-      "flavor": "Знає різницю між наказом і порадою."
+      "flavor": "Знає різницю між наказ��м і порадою."
     },
     {
       "id": "rank-recruit-set-3",
@@ -5118,7 +5118,7 @@
       "category": "COMMAND",
       "image": "/api/card-assets/12-1.webp",
       "grantRank": "lieutenant",
-      "flavor": "Вивчив різницю між планом і реальністю."
+      "flavor": "Вивч��в різницю між планом і реальністю."
     },
     {
       "id": "rank-lieutenant-set-2",
